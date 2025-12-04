@@ -181,14 +181,20 @@
   }
 
   function initLogoutButton() {
-    const btn = document.getElementById("ascend-logout-btn");
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      saveSession(null);
-      applyLoggedOutUI();
-      updateUserChip(null);
-    });
-  }
+  const btn = document.getElementById("ascend-logout-btn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    // Clear any existing session
+    saveSession(null);
+
+    // Put the UI back into logged-out mode
+    applyLoggedOutUI();
+    updateUserChip(null);
+
+    // IMPORTANT: start listening again for a new QR login
+    startPollingForLogin();
+  });
+}
 
   function initPrimaryButtons() {
     const artstartBtn = document.getElementById("ascend-artstart-new");
