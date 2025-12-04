@@ -1,0 +1,11 @@
+.DS_Store
+
+# Folders you do NOT want in GitHub
+.versions/
+CACHE/
+copydesk-versions/
+
+# Ignore transient/system clutter
+node_modules/
+*.log
+Thumbs.db

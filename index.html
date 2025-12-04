@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" data-ascend-state="logged-out">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ascend Visualization Studio – Nordson ICS Portal</title>
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,shrink-to-fit=no"
+    />
+    <link rel="stylesheet" href="assets/ascend.css" />
+  </head>
+  <body>
+    <div id="ascend-root">
+      <div class="ascend-shell">
+        <header class="ascend-header">
+          <div class="ascend-header-left">
+            <div class="ascend-logo-circle">A</div>
+            <div class="ascend-title-block">
+              <h1>Ascend Visualization Studio</h1>
+              <p>by jacobhenderson.studio for Nordson ICS</p>
+            </div>
+          </div>
+          <div class="ascend-header-right">
+            <div>Nordson Editorial & Visualization Portal</div>
+            <div>Scan once. Work everywhere.</div>
+          </div>
+        </header>
+
+        <main class="ascend-main">
+          <!-- LEFT: QR / login / session info -->
+          <section
+            id="ascend-login-panel"
+            class="ascend-panel"
+            aria-label="Login"
+          >
+            <div class="ascend-panel-inner">
+              <p class="ascend-login-heading">Step 1</p>
+              <h2 class="ascend-login-title">
+                Scan to link this terminal to your phone
+              </h2>
+              <p class="ascend-login-description">
+                Use the camera on your Nordson work phone. You’ll see a button
+                that says “Log me in.” Tap it once, and this screen will switch
+                into your Ascend dashboard.
+              </p>
+
+              <div class="ascend-login-body">
+                <div class="ascend-qr-frame">
+                  <!-- Replace this placeholder with a real QR asset or JS-generated QR -->
+                  <div class="ascend-qr-placeholder" id="ascend-qr-placeholder">
+                    <!-- SVG / background image via CSS -->
+                  </div>
+                </div>
+
+                <div class="ascend-login-copy">
+                  <p>
+                    <strong>On your phone:</strong><br />
+                    1. Point your camera at this code.<br />
+                    2. Tap the “Open Ascend” prompt.<br />
+                    3. Tap the “Log me in” button.<br />
+                    4. Watch this screen switch to your dashboard.
+                  </p>
+                </div>
+              </div>
+
+              <div class="ascend-toggle-row">
+                <div class="ascend-toggle-label">
+                  <strong>Keep me logged in on this terminal</strong>
+                  <div style="font-size: 0.75rem; color: #a0aec0;">
+                    Ideal for your personal workstation. Turn off on shared
+                    kiosks.
+                  </div>
+                </div>
+                <button
+                  id="ascend-keep-logged-in"
+                  class="ascend-toggle"
+                  type="button"
+                  aria-pressed="false"
+                  data-on="true"
+                >
+                  <span class="ascend-toggle-thumb"></span>
+                </button>
+              </div>
+
+              <div class="ascend-session-status" id="ascend-session-status">
+                Waiting for login via QR…
+              </div>
+            </div>
+          </section>
+
+          <!-- RIGHT: Dashboard -->
+          <section
+            id="ascend-dashboard"
+            class="ascend-dashboard"
+            aria-label="Ascend dashboard"
+          >
+            <div class="ascend-dashboard-header">
+              <div class="ascend-dashboard-title">Your Ascend Workspace</div>
+              <div>
+                <span class="ascend-user-chip" id="ascend-user-chip">
+                  <span class="ascend-user-dot"></span>
+                  <span id="ascend-user-label">Logged in</span>
+                </span>
+                <button
+                  class="ascend-logout-btn"
+                  type="button"
+                  id="ascend-logout-btn"
+                >
+                  Log out on this terminal
+                </button>
+              </div>
+            </div>
+
+            <div class="ascend-row-list">
+              <!-- Art Start -->
+              <article class="ascend-row">
+                <div class="ascend-row-primary">
+                  <div class="ascend-row-label">Art Start</div>
+                  <div class="ascend-row-title">
+                    Spin up a new Nordson creative job
+                  </div>
+                  <div class="ascend-row-description">
+                    Launch the Art Start flow to define specs, placements, and
+                    required elements for a new asset.
+                  </div>
+                  <button
+                    class="ascend-row-action-btn"
+                    type="button"
+                    id="ascend-artstart-new"
+                  >
+                    <span class="icon">➕</span>
+                    Start New Art Start Job
+                  </button>
+                </div>
+                <div class="ascend-row-secondary">
+                  <strong>Your active Art Start jobs</strong>
+                  <div id="ascend-artstart-list">
+                    Coming soon: live list of in-progress jobs from Nordson’s
+                    editorial pipeline.
+                  </div>
+                </div>
+              </article>
+
+              <!-- Copydesk -->
+              <article class="ascend-row">
+                <div class="ascend-row-primary">
+                  <div class="ascend-row-label">Copydesk</div>
+                  <div class="ascend-row-title">
+                    Edit and commit Nordson editorial
+                  </div>
+                  <div class="ascend-row-description">
+                    Open the collaborative copy editor for headlines, body copy,
+                    and translation segments.
+                  </div>
+                  <button
+                    class="ascend-row-action-btn"
+                    type="button"
+                    id="ascend-copydesk-open"
+                  >
+                    <span class="icon">📝</span>
+                    Open Copydesk
+                  </button>
+                </div>
+                <div class="ascend-row-secondary">
+                  <strong>Live editorial documents</strong>
+                  <div id="ascend-copydesk-list">
+                    Placeholder for jobs split into editorial cards &amp;
+                    translation tracks.
+                  </div>
+                </div>
+              </article>
+
+              <!-- Codedesk -->
+              <article class="ascend-row">
+                <div class="ascend-row-primary">
+                  <div class="ascend-row-label">Codedesk</div>
+                  <div class="ascend-row-title">
+                    Utilities, prototypes &amp; automations
+                  </div>
+                  <div class="ascend-row-description">
+                    Internal tools that glue everything together: QR utilities,
+                    layout helpers, and future Courier hooks.
+                  </div>
+                  <button
+                    class="ascend-row-action-btn"
+                    type="button"
+                    id="ascend-codedesk-open"
+                  >
+                    <span class="icon">⚙️</span>
+                    Open Codedesk
+                  </button>
+                </div>
+                <div class="ascend-row-secondary">
+                  <strong>Internal utilities</strong>
+                  <div id="ascend-codedesk-list">
+                    For now, this will link out to prototype utilities (okQRal,
+                    translation tooling, etc.).
+                  </div>
+                </div>
+              </article>
+
+              <!-- FileRoom -->
+              <article class="ascend-row">
+                <div class="ascend-row-primary">
+                  <div class="ascend-row-label">FileRoom</div>
+                  <div class="ascend-row-title">
+                    See where your assets live
+                  </div>
+                  <div class="ascend-row-description">
+                    A future view into AI, INDD, PSD, and rendered assets tied
+                    back to Art Start jobs.
+                  </div>
+                  <button
+                    class="ascend-row-action-btn"
+                    type="button"
+                    id="ascend-fileroom-open"
+                  >
+                    <span class="icon">📁</span>
+                    Open FileRoom
+                  </button>
+                </div>
+                <div class="ascend-row-secondary">
+                  <strong>Recent output</strong>
+                  <div id="ascend-fileroom-list">
+                    We’ll eventually surface recent exports, linked to their
+                    job IDs and destinations.
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="assets/ascend.js"></script>
+  </body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ascend Login – Nordson ICS</title>
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,shrink-to-fit=no"
+    />
+    <link rel="stylesheet" href="assets/ascend.css" />
+  </head>
+  <body>
+    <div id="ascend-root">
+      <div class="ascend-shell" style="max-width: 480px;">
+        <header class="ascend-header">
+          <div class="ascend-header-left">
+            <div class="ascend-logo-circle">A</div>
+            <div class="ascend-title-block">
+              <h1>Ascend Login</h1>
+              <p>by jacobhenderson.studio for Nordson ICS</p>
+            </div>
+          </div>
+        </header>
+
+        <main class="ascend-panel">
+          <div class="ascend-panel-inner">
+            <p class="ascend-login-heading">Phone step</p>
+            <h2 class="ascend-login-title">Link this phone to your Ascend session</h2>
+            <p class="ascend-login-description">
+              You scanned a code from a Nordson terminal. Confirm your Nordson
+              email once, and we’ll link this phone to that screen.
+            </p>
+
+            <form id="ascend-auth-form">
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <label style="font-size: 0.8rem;">
+                  Nordson work email
+                  <input
+                    id="ascend-auth-email"
+                    type="email"
+                    required
+                    inputmode="email"
+                    autocomplete="email"
+                    placeholder="you@nordson.com"
+                    style="
+                      width: 100%;
+                      margin-top: 0.25rem;
+                      padding: 0.4rem 0.55rem;
+                      border-radius: 10px;
+                      border: 1px solid rgba(255, 255, 255, 0.16);
+                      background: rgba(2, 6, 23, 0.85);
+                      color: #f7fafc;
+                      font-size: 0.85rem;
+                    "
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  style="
+                    margin-top: 0.25rem;
+                    border-radius: 999px;
+                    border: none;
+                    padding: 0.45rem 1rem;
+                    font-size: 0.85rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    background: linear-gradient(135deg, #4fd1c5, #81e6d9);
+                    color: #020617;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.35rem;
+                  "
+                >
+                  <span>Log me in</span>
+                  <span>📡</span>
+                </button>
+              </div>
+            </form>
+
+            <p
+              id="ascend-auth-status"
+              style="
+                margin-top: 0.9rem;
+                font-size: 0.78rem;
+                color: #a0aec0;
+              "
+            >
+              We’ll link this device to the screen you scanned from.
+            </p>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script src="assets/auth.js"></script>
+  </body>
+</html>
