@@ -171,6 +171,12 @@ body {
 
 /* Login state */
 
+.ascend-account-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-top: 0.15rem;
+}
+
 .ascend-login-heading {
   font-size: 0.95rem;
   font-weight: 600;
@@ -443,4 +449,15 @@ body {
 
 [data-ascend-state="logged-in"] #ascend-dashboard {
   display: block;
+}
+
+
+/* "fileroom" disabled */
+.ascend-row--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.ascend-row--disabled .ascend-row-action-btn {
+  cursor: default;
 }

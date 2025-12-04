@@ -1,15 +1,23 @@
 "use strict";
 
 (function () {
-  const SESSION_KEY = "ascend_session_v1";
-  const STATE_ATTR = "data-ascend-state";
+const SESSION_KEY = "ascend_session_v1";
+const STATE_ATTR = "data-ascend-state";
 
-  // Knobs/config grouped together:
-  const SESSION_DEFAULT_DURATION_MINUTES = 8 * 60; // 8 hours
-  const POLLING_INTERVAL_MS = 4000; // later: poll backend for QR-auth handshake
+// Knobs/config grouped together:
+const SESSION_DEFAULT_DURATION_MINUTES = 8 * 60; // 8 hours
+const POLLING_INTERVAL_MS = 4000; // poll backend for QR-auth handshake
 
-  const AUTH_ENDPOINT = 'https://api.jacobhenderson.studio/auth';
-  const HANDSHAKE_TOKEN = 'test'; // for now; later this can be unique per terminal
+// Auth + routing knobs (single source of truth)
+const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
+// NOTE: token is currently baked into the static QR as "test".
+// When we move to dynamic QR generation, this becomes per-terminal.
+const HANDSHAKE_TOKEN = "test";
+
+// App destinations (replace with real URLs when ready)
+const ARTSTART_URL = "https://YOUR-ARTSTART-INTAKE-URL.example.com";
+const COPYDESK_URL = "https://YOUR-COPYDESK-FRONTDOOR-URL.example.com";
+const CODEDESK_URL = "https://okqral.com";
 
   let pollingTimer = null;
 
@@ -51,15 +59,22 @@
     document.documentElement.setAttribute(STATE_ATTR, state);
   }
 
-  function updateUserChip(session) {
-    const chipLabel = document.getElementById("ascend-user-label");
-    if (!chipLabel) return;
-    if (!session || !session.userEmail) {
-      chipLabel.textContent = "Not logged in";
-      return;
-    }
-    chipLabel.textContent = session.userEmail;
+function updateUserChip(session) {
+  const chipLabel = document.getElementById("ascend-user-label");
+  const accountLabel = document.getElementById("ascend-account-label");
+
+  const email = session && session.userEmail ? session.userEmail : null;
+
+  if (!email) {
+    if (chipLabel) chipLabel.textContent = "Not logged in";
+    if (accountLabel) accountLabel.textContent = "Not logged in";
+    return;
   }
+
+  // For now we just show the email; later we can derive "Francesca" from it.
+  if (chipLabel) chipLabel.textContent = email;
+  if (accountLabel) accountLabel.textContent = `Signed in as ${email}`;
+}
 
   function updateKeepLoggedInToggle(session) {
     const toggle = document.getElementById("ascend-keep-logged-in");
@@ -196,39 +211,60 @@
   });
 }
 
-  function initPrimaryButtons() {
-    const artstartBtn = document.getElementById("ascend-artstart-new");
-    if (artstartBtn) {
-      artstartBtn.addEventListener("click", () => {
-        alert(
-          "[Art Start] This will eventually launch the job intake flow for a new Nordson asset."
-        );
-      });
-    }
+function buildUrlWithUser(baseUrl) {
+  const session = loadSession();
+  if (!session || !session.userEmail || !baseUrl) return baseUrl;
 
-    const copydeskBtn = document.getElementById("ascend-copydesk-open");
-    if (copydeskBtn) {
-      copydeskBtn.addEventListener("click", () => {
-        alert("[Copydesk] This will open the editorial + translation UI.");
-      });
-    }
+  const url = new URL(baseUrl);
+  url.searchParams.set("user_email", session.userEmail);
+  return url.toString();
+}
 
-    const codedeskBtn = document.getElementById("ascend-codedesk-open");
-    if (codedeskBtn) {
-      codedeskBtn.addEventListener("click", () => {
-        alert("[Codedesk] Internal utilities and prototype tools live here.");
-      });
-    }
-
-    const fileroomBtn = document.getElementById("ascend-fileroom-open");
-    if (fileroomBtn) {
-      fileroomBtn.addEventListener("click", () => {
-        alert(
-          "[FileRoom] Future view into AI/PSD/INDD assets tied to Art Start jobs."
-        );
-      });
-    }
+function initPrimaryButtons() {
+  const artstartBtn = document.getElementById("ascend-artstart-new");
+  if (artstartBtn) {
+    artstartBtn.addEventListener("click", () => {
+      const target = buildUrlWithUser(ARTSTART_URL);
+      if (!ARTSTART_URL || ARTSTART_URL.indexOf("http") !== 0) {
+        alert("[Art Start] Destination URL not configured yet.");
+        return;
+      }
+      window.open(target, "_blank", "noopener");
+    });
   }
+
+  const copydeskBtn = document.getElementById("ascend-copydesk-open");
+  if (copydeskBtn) {
+    copydeskBtn.addEventListener("click", () => {
+      const target = buildUrlWithUser(COPYDESK_URL);
+      if (!COPYDESK_URL || COPYDESK_URL.indexOf("http") !== 0) {
+        alert("[Copydesk] Destination URL not configured yet.");
+        return;
+      }
+      window.open(target, "_blank", "noopener");
+    });
+  }
+
+  const codedeskBtn = document.getElementById("ascend-codedesk-open");
+  if (codedeskBtn) {
+    codedeskBtn.addEventListener("click", () => {
+      if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
+        alert("[Codedesk] Destination URL not configured yet.");
+        return;
+      }
+      window.open(CODEDESK_URL, "_blank", "noopener");
+    });
+  }
+
+  const fileroomBtn = document.getElementById("ascend-fileroom-open");
+  if (fileroomBtn) {
+    // For now: disabled. We’ll grey it out in CSS and no-op the click.
+    fileroomBtn.addEventListener("click", (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+    });
+  }
+}
 
   function bootstrap() {
     initKeepLoggedInToggle();
