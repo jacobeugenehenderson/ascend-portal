@@ -7,3 +7,6 @@ http://192.168.1.129:666/ascend/auth.html?token=test
 
 cd /Volumes/Today/ascend
 ./publish.sh
+
+clayton.ns.cloudflare.com
+julissa.ns.cloudflare.com

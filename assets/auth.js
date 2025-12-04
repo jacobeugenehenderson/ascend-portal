@@ -1,5 +1,4 @@
-  const AUTH_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxfon_qgn5hiQ58xOf8MvYbR9QFglDz27ECYjxcGmzJuQlCaX69hKtIeOiXsF7jZDEt/exec';
-
+const AUTH_ENDPOINT = 'https://api.jacobhenderson.studio/auth';
   function getTokenFromUrl() {
     const params = new URLSearchParams(window.location.search);
     return params.get('token') || 'test';

@@ -8,7 +8,7 @@
   const SESSION_DEFAULT_DURATION_MINUTES = 8 * 60; // 8 hours
   const POLLING_INTERVAL_MS = 4000; // later: poll backend for QR-auth handshake
 
-  const AUTH_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxfon_qgn5hiQ58xOf8MvYbR9QFglDz27ECYjxcGmzJuQlCaX69hKtIeOiXsF7jZDEt/exec';
+  const AUTH_ENDPOINT = 'https://api.jacobhenderson.studio/auth';
   const HANDSHAKE_TOKEN = 'test'; // for now; later this can be unique per terminal
 
   let pollingTimer = null;
