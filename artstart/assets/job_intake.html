@@ -23,15 +23,14 @@
       <form id="intake-form" class="ascend-app-form ascend-app-form--two-column">
 
       <label>
-        Job ID <span class="required">*</span>
+        <span class="label-text">Job ID <span class="required">*</span></span>
         <input type="text" id="nordsonJobId" required>
       </label>
 
       <label>
-        Publication <span class="required">*</span>
+        <span class="label-text">Publication <span class="required">*</span></span>
         <select id="publicationId">
             <option value="">– Select publication –</option>
-            <!-- options will be populated from Sheets -->
         </select>
       </label>
 
@@ -52,7 +51,7 @@
       </label>
 
       <label>
-        Materials Due Date <span class="required">*</span>
+        <span class="label-text">Materials Due Date <span class="required">*</span></span>
         <input type="date" id="materialsDueDate">
       </label>
 
@@ -232,7 +231,7 @@ const form = document.getElementById('intake-form');
     mediaSpecPreview.textContent = `${name} – ${width} × ${height}${dpi}`;
     mediaSpecPreview.style.color = '#222';
   }
-  
+
     publicationSelect.addEventListener('change', () => {
       refreshMediaSpecOptions();
     });

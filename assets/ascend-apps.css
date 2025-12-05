@@ -252,3 +252,16 @@ body.ascend-app-body {
   height: 120px;
   resize: vertical;
 }
+
+/* Keep label text + asterisk on one line */
+.label-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Red asterisk */
+.required {
+  color: #d62121;
+  font-weight: 700;
+}
