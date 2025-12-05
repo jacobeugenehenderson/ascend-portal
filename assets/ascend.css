@@ -36,8 +36,8 @@ body {
 }
 
 body {
-  font-family: var(--ascend-font-sans);
-  background: radial-gradient(circle at top, #1a2144, #050814 60%, #02030a);
+  font-family: var(--ascend-font-body);
+  background: var(--ascend-body-bg);
   color: var(--ascend-color-text-main);
 }
 
@@ -46,7 +46,7 @@ body {
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: 2.5rem 1.5rem;
+  padding: var(--ascend-shell-padding-y) var(--ascend-shell-padding-x);
 }
 
 /* Shell */
@@ -54,15 +54,10 @@ body {
 .ascend-shell {
   width: 100%;
   max-width: var(--ascend-max-width);
-  background: linear-gradient(
-      135deg,
-      rgba(79, 209, 197, 0.07),
-      rgba(129, 230, 217, 0.03)
-    ),
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent);
-  border-radius: 32px;
+  background: var(--ascend-shell-bg);
+  border-radius: 32px; /* shell can keep its special radius */
   box-shadow: var(--ascend-shadow-soft);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
   padding: 1.75rem 1.75rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -143,9 +138,9 @@ body {
 /* Left side: Login / session card */
 
 .ascend-panel {
-  background: var(--ascend-color-surface);
+  background: var(--ascend-card-surface);
   border-radius: var(--ascend-radius-xl);
-  border: 1px solid var(--ascend-color-border-subtle);
+  border: var(--ascend-border-width) solid var(--ascend-card-border);
   padding: 1.4rem 1.3rem;
   position: relative;
   overflow: hidden;
@@ -252,7 +247,7 @@ body {
   width: 44px;
   height: 24px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--ascend-toggle-track);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -264,12 +259,12 @@ body {
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: #ffffff;
-  transition: transform 0.18s ease-out;
+  background: var(--ascend-toggle-thumb);
+  transition: transform var(--ascend-transition-fast);
 }
 
 .ascend-toggle[data-on="true"] {
-  background: linear-gradient(135deg, #4fd1c5, #81e6d9);
+  background: var(--ascend-toggle-track-active);
 }
 
 .ascend-toggle[data-on="true"] .ascend-toggle-thumb {
@@ -287,9 +282,9 @@ body {
 /* Right side: Dashboard */
 
 .ascend-dashboard {
-  background: var(--ascend-color-surface-soft);
+  background: var(--ascend-card-surface-soft);
   border-radius: var(--ascend-radius-xl);
-  border: 1px solid var(--ascend-color-border-subtle);
+  border: var(--ascend-border-width) solid var(--ascend-card-border);
   padding: 1rem 1.25rem 1.2rem;
 }
 
@@ -372,7 +367,7 @@ body {
       rgba(79, 209, 197, 0.2),
       rgba(16, 29, 61, 0.4)
     ),
-    #0b1025;
+    #0b1025; /* could become its own token later */
   border-radius: var(--ascend-radius-lg);
   padding: 0.75rem 0.9rem;
   display: flex;
@@ -400,17 +395,33 @@ body {
 .ascend-row-action-btn {
   margin-top: 0.25rem;
   align-self: flex-start;
-  border-radius: 999px;
-  border: none;
+  border-radius: var(--ascend-btn-radius);
+  border: 1px solid var(--ascend-btn-border);
   padding: 0.4rem 0.9rem;
   font-size: 0.8rem;
-  font-weight: 500;
+  font-weight: var(--ascend-weight-medium);
   cursor: pointer;
-  background: #ffffff;
-  color: #0b1025;
+  background: var(--ascend-btn-bg);
+  color: var(--ascend-btn-text);
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  transition: background-color var(--ascend-transition-fast),
+    color var(--ascend-transition-fast),
+    box-shadow var(--ascend-transition-fast);
+}
+
+.ascend-row-action-btn:hover {
+  background: var(--ascend-btn-hover-bg);
+}
+
+.ascend-row-action-btn:active {
+  background: var(--ascend-btn-active-bg);
+}
+
+.ascend-row-action-btn:focus-visible {
+  outline: 2px solid var(--ascend-btn-focus-outline);
+  outline-offset: 2px;
 }
 
 .ascend-row-action-btn span.icon {
