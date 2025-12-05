@@ -15,7 +15,7 @@ const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
 const HANDSHAKE_TOKEN = "test";
 
 // App destinations (replace with real URLs when ready)
-const ARTSTART_URL = "./artstart/job_intake.html";
+const ARTSTART_URL = "./artstart/assets/job_intake.html";
 const COPYDESK_URL = "https://YOUR-COPYDESK-FRONTDOOR-URL.example.com";
 const CODEDESK_URL = "https://okqral.com";
 
