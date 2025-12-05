@@ -153,6 +153,9 @@ const API_BASE = 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV
 // Local builder service (Node on your machine)
 const LOCAL_BUILDER_URL = 'http://localhost:43110/build-local-job';
 
+const ARTSTART_PREVIEW_BASE_URL =
+  'https://jacobeugenehenderson.github.io/ascend-portal/artstart/assets/artstart.html';
+
 const linkAreaEl = document.getElementById('link-area');
 const submitBtn = document.getElementById('submit-btn');
 const statusEl = document.getElementById('status');
@@ -398,14 +401,14 @@ const form = document.getElementById('intake-form');
         statusEl.className = 'status success';
 
         if (data.ascendJobId) {
-          // Kick off local file creation on your machine (if running locally)
+          // Kick off local file creation on your machine (still fine to keep)
           notifyLocalBuilder(data.ascendJobId);
 
-          // Build a URL to the ArtStart workspace (same folder, HTTP-safe)
-          const artstartUrl = new URL('./artstart.html', window.location.href);
-          artstartUrl.searchParams.set('jobId', data.ascendJobId);
+          // Always point preview at the live ArtStart workspace on GitHub Pages
+          const linkUrl =
+            ARTSTART_PREVIEW_BASE_URL + '?jobId=' +
+            encodeURIComponent(data.ascendJobId);
 
-          const linkUrl = artstartUrl.toString();
           linkAreaEl.innerHTML =
             'Open preview: <a href="' + linkUrl +
             '" target="_blank" rel="noopener noreferrer">' +
