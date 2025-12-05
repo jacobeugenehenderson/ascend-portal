@@ -40,6 +40,8 @@
         <option value="">– Select media spec –</option>
         <!-- options will be populated based on Publication -->
     </select>
+    
+    <div id="mediaSpecPreview" class="ascend-app-helper"></div>
 
     <!-- This is what actually gets sent to the backend -->
     <input type="hidden" id="mediaSpecId">
@@ -183,6 +185,8 @@ const form = document.getElementById('intake-form');
         ? intakeConfig.mediaSpecs
         : [];
 
+      mediaSpecSelect.disabled = !pubId;
+
       const filtered = specs.filter(ms =>
         String(ms.PublicationId || '').trim() === String(pubId || '').trim()
       );
@@ -234,9 +238,8 @@ const form = document.getElementById('intake-form');
 
     publicationSelect.addEventListener('change', () => {
       refreshMediaSpecOptions();
+      mediaSpecSelect.disabled = !publicationSelect.value;   // NEW: enables/disables dynamically
     });
-
-    mediaSpecSelect.disabled = !publicationSelect.value;
 
     mediaSpecSelect.addEventListener('change', () => {
       const specs = Array.isArray(intakeConfig.mediaSpecs)
