@@ -31,12 +31,12 @@ body.ascend-app-body {
     /* Chunky blue grid */
     linear-gradient(
       to right,
-      rgba(0, 81, 255, 0.5) 1px,
+      rgba(0, 81, 255, 0.35) 1px,
       transparent 1px
     ),
     linear-gradient(
       to bottom,
-      rgba(0, 81, 255, 0.5) 1px,
+      rgba(0, 81, 255, 0.35) 1px,
       transparent 1px
     ),
     /* Finer teal “graph paper” grid */
@@ -246,4 +246,9 @@ body.ascend-app-body {
   font-size: 0.75rem;
   color: var(--ascend-app-text-muted);
   margin-top: 4px;
+}
+
+.notes-block textarea {
+  height: 120px;
+  resize: vertical;
 }

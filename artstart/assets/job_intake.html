@@ -23,12 +23,12 @@
       <form id="intake-form" class="ascend-app-form ascend-app-form--two-column">
 
       <label>
-        Job ID (required)
+        Job ID <span class="required">*</span>
         <input type="text" id="nordsonJobId" required>
       </label>
 
       <label>
-        Publication
+        Publication <span class="required">*</span>
         <select id="publicationId">
             <option value="">– Select publication –</option>
             <!-- options will be populated from Sheets -->
@@ -37,13 +37,10 @@
 
     <label>
     Media Space / Spec
-    <select id="mediaSpecSelect">
+    <select id="mediaSpecSelect" disabled>
         <option value="">– Select media spec –</option>
         <!-- options will be populated based on Publication -->
     </select>
-    <div id="mediaSpecPreview">
-        Choose a publication to see available media specs.
-    </div>
 
     <!-- This is what actually gets sent to the backend -->
     <input type="hidden" id="mediaSpecId">
@@ -55,7 +52,7 @@
       </label>
 
       <label>
-        Materials Due Date
+        Materials Due Date <span class="required">*</span>
         <input type="date" id="materialsDueDate">
       </label>
 
@@ -84,12 +81,12 @@
         </select>
       </label>
 
-      <label>
+      <label class="notes-block">
         Topic / Editorial Notes
-        <input type="text" id="topic">
+        <textarea id="topic"></textarea>
       </label>
 
-      <label>
+      <label class="notes-block">
         Notes
         <textarea id="notes"></textarea>
       </label>
@@ -200,46 +197,47 @@ const form = document.getElementById('intake-form');
 
       mediaSpecIdInput.value = '';
 
-      if (!pubId) {
-        mediaSpecPreview.textContent =
-          'Choose a publication to see available media specs.';
-        mediaSpecPreview.style.color = '#555';
-      } else if (filtered.length === 0) {
-        mediaSpecPreview.textContent =
-          'No media specs found for this publication yet.';
-        mediaSpecPreview.style.color = '#b00020';
-      } else if (filtered.length === 1) {
-        // Auto-select the only matching spec
-        mediaSpecSelect.value = filtered[0].MediaSpecId;
-        applyMediaSpecSelection(filtered[0]);
-      } else {
-        mediaSpecPreview.textContent = 'Choose a media spec.';
-        mediaSpecPreview.style.color = '#555';
-      }
+    // Reset preview whenever the publication changes
+    mediaSpecPreview.textContent = '';
+    mediaSpecPreview.style.color = '#555';
+
+    if (!pubId) {
+      // No publication selected: keep dropdown disabled/empty, no helper copy
+      return;
     }
 
-    function applyMediaSpecSelection(ms) {
-      if (!ms) {
-        mediaSpecIdInput.value = '';
-        mediaSpecPreview.textContent = 'Choose a media spec.';
-        mediaSpecPreview.style.color = '#555';
-        return;
-      }
+    if (filtered.length === 1) {
+      // Auto-select the only matching spec and show its dimensions
+      mediaSpecSelect.value = filtered[0].MediaSpecId;
+      applyMediaSpecSelection(filtered[0]);
+    }
+  }
 
-      mediaSpecIdInput.value = ms.MediaSpecId || '';
-
-      const name  = ms.Name || ms.MediaSpecId || 'Media spec';
-      const width = ms.Width || '—';
-      const height = ms.Height || '—';
-      const dpi   = ms.DPI ? (' @ ' + ms.DPI + ' dpi') : '';
-
-      mediaSpecPreview.textContent = `${name} – ${width} × ${height}${dpi}`;
-      mediaSpecPreview.style.color = '#222';
+  function applyMediaSpecSelection(ms) {
+    if (!ms) {
+      mediaSpecIdInput.value = '';
+      mediaSpecPreview.textContent = '';
+      mediaSpecPreview.style.color = '#555';
+      return;
     }
 
+    mediaSpecIdInput.value = ms.MediaSpecId || '';
+
+    const name  = ms.Name || ms.MediaSpecId || 'Media spec';
+    const width = ms.Width || '—';
+    const height = ms.Height || '—';
+    const dpi   = ms.DPI ? (' @ ' + ms.DPI + ' dpi') : '';
+
+    // This is the part you’re keeping: the clean dimensions preview
+    mediaSpecPreview.textContent = `${name} – ${width} × ${height}${dpi}`;
+    mediaSpecPreview.style.color = '#222';
+  }
+  
     publicationSelect.addEventListener('change', () => {
       refreshMediaSpecOptions();
     });
+
+    mediaSpecSelect.disabled = !publicationSelect.value;
 
     mediaSpecSelect.addEventListener('change', () => {
       const specs = Array.isArray(intakeConfig.mediaSpecs)
