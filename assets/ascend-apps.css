@@ -1,0 +1,183 @@
+/* =========================================
+ * ASCEND APP SHELL (ArtStart / Copydesk / Codedesk)
+ * Blue + black/gray on whites
+ * ======================================= */
+
+:root {
+  /* Pull from ascend.css if present, or fall back */
+  --ascend-font-body: var(--ascend-font-body, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif);
+
+  --ascend-app-bg: #e5edf7;
+  --ascend-app-surface: #ffffff;
+  --ascend-app-border: #d4d8e3;
+  --ascend-app-shadow-soft: 0 24px 60px rgba(15, 23, 42, 0.16);
+
+  --ascend-app-accent: #2563eb;          /* strong blue */
+  --ascend-app-accent-soft: rgba(37, 99, 235, 0.08);
+
+  --ascend-app-text-main: #0f172a;
+  --ascend-app-text-muted: #6b7280;
+  --ascend-app-label: #4b5563;
+
+  --ascend-app-radius-lg: 18px;
+  --ascend-app-radius-pill: 999px;
+}
+
+/* Base for all app pages */
+body.ascend-app-body {
+  margin: 0;
+  font-family: var(--ascend-font-body);
+  background: radial-gradient(circle at top, #f3f6ff, #dde4f2 55%, #cbd5f1);
+  color: var(--ascend-app-text-main);
+}
+
+/* Centered panel */
+.ascend-app-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px 40px;
+}
+
+.ascend-app-panel {
+  width: 100%;
+  max-width: 780px;
+  background: var(--ascend-app-surface);
+  border-radius: var(--ascend-app-radius-lg);
+  border: 1px solid var(--ascend-app-border);
+  box-shadow: var(--ascend-app-shadow-soft);
+  padding: 22px 24px 26px;
+}
+
+/* Top header band */
+.ascend-app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.ascend-app-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ascend-app-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ascend-app-text-muted);
+}
+
+.ascend-app-subtitle {
+  font-size: 1.24rem;
+  font-weight: 600;
+}
+
+.ascend-app-meta {
+  font-size: 0.78rem;
+  color: var(--ascend-app-text-muted);
+  text-align: right;
+}
+
+/* Form layout */
+.ascend-app-form {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.ascend-app-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  color: var(--ascend-app-label);
+}
+
+/* Inputs */
+.ascend-app-form input[type="text"],
+.ascend-app-form input[type="date"],
+.ascend-app-form select,
+.ascend-app-form textarea {
+  margin-top: 4px;
+  padding: 8px 10px;
+  font-size: 0.86rem;
+  border-radius: 9px;
+  border: 1px solid var(--ascend-app-border);
+  background: #f9fafb;
+  color: var(--ascend-app-text-main);
+  box-sizing: border-box;
+}
+
+.ascend-app-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.ascend-app-form input[type="text"]:focus,
+.ascend-app-form input[type="date"]:focus,
+.ascend-app-form select:focus,
+.ascend-app-form textarea:focus {
+  outline: 2px solid var(--ascend-app-accent-soft);
+  border-color: var(--ascend-app-accent);
+  background: #ffffff;
+}
+
+/* Small helper text inside labels */
+.ascend-app-helper {
+  font-size: 0.72rem;
+  color: var(--ascend-app-text-muted);
+  margin-top: 2px;
+}
+
+/* Primary action button */
+.ascend-app-primary-btn {
+  margin-top: 14px;
+  align-self: flex-start;
+  padding: 9px 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: var(--ascend-app-radius-pill);
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.35);
+}
+
+.ascend-app-primary-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8, #1d4ed8);
+}
+
+.ascend-app-primary-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* Status messages */
+.status {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--ascend-app-text-muted);
+}
+
+.status.error {
+  color: #b91c1c;
+}
+
+.status.success {
+  color: #166534;
+}
+
+/* Media spec preview text inside the label */
+#mediaSpecPreview {
+  font-size: 0.75rem;
+  color: var(--ascend-app-text-muted);
+  margin-top: 4px;
+}

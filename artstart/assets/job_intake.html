@@ -3,72 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <title>ArtStart – New Job Intake</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 16px;
-      color: #222;
-    }
-    .container {
-      max-width: 640px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 16px 20px 24px;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    label {
-      display: block;
-      font-size: 13px;
-      margin-top: 10px;
-    }
-    input[type="text"],
-    input[type="date"],
-    select,
-    textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 6px 8px;
-      font-size: 13px;
-      margin-top: 4px;
-    }
-    textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-    button {
-      margin-top: 16px;
-      padding: 8px 16px;
-      font-size: 14px;
-      border-radius: 4px;
-      border: none;
-      background: #0057b8;
-      color: #fff;
-      cursor: pointer;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-    .status {
-      margin-top: 12px;
-      font-size: 13px;
-    }
-    .status.error {
-      color: #b00020;
-    }
-    .status.success {
-      color: #2e7d32;
-    }
-  </style>
+  <link rel="stylesheet" href="../assets/ascend.css">
+  <link rel="stylesheet" href="../assets/ascend-apps.css">
 </head>
-<body>
-  <div class="container">
-      <h1>ArtStart – New Job Intake</h1>
+<body class="ascend-app-body">
+  <div class="ascend-app-shell">
+    <div class="ascend-app-panel">
 
-    <form id="intake-form">
+      <header class="ascend-app-header">
+        <div class="ascend-app-title-block">
+          <div class="ascend-app-title">ArtStart</div>
+          <div class="ascend-app-subtitle">New job intake</div>
+        </div>
+        <div class="ascend-app-meta">
+          <!-- optional meta in future (e.g., today’s date or user) -->
+        </div>
+      </header>
+
+      <form id="intake-form" class="ascend-app-form">
+
       <label>
         Job ID (required)
         <input type="text" id="nordsonJobId" required>
@@ -88,9 +41,10 @@
         <option value="">– Select media spec –</option>
         <!-- options will be populated based on Publication -->
     </select>
-    <div id="mediaSpecPreview" style="font-size:12px; color:#555; margin-top:4px;">
+    <div id="mediaSpecPreview">
         Choose a publication to see available media specs.
     </div>
+    
     <!-- This is what actually gets sent to the backend -->
     <input type="hidden" id="mediaSpecId">
     </label>
@@ -140,12 +94,15 @@
         <textarea id="notes"></textarea>
       </label>
 
-      <button type="submit" id="submit-btn">Create Job &amp; Send Art Start</button>
+      <button type="submit" id="submit-btn" class="ascend-app-primary-btn">
+        Create job &amp; send ArtStart
+      </button>
     </form>
 
     <div class="status" id="status"></div>
     <div class="status" id="link-area"></div>
-  </div>
+    </div> <!-- .ascend-app-panel -->
+  </div>   <!-- .ascend-app-shell -->
 
   <script>
 
