@@ -32,12 +32,12 @@ body.ascend-app-body {
     linear-gradient(
       to right,
       rgba(0, 81, 255, 0.5) 1px,
-      transparent 2px
+      transparent 1px
     ),
     linear-gradient(
       to bottom,
       rgba(0, 81, 255, 0.5) 1px,
-      transparent 2px
+      transparent 1px
     ),
     /* Finer teal “graph paper” grid */
     linear-gradient(
