@@ -9,3 +9,10 @@ copydesk-versions/
 node_modules/
 *.log
 Thumbs.db
+
+# macOS junk
+.DS_Store
+._*
+
+# Local tools / nested repos
+codedesk/

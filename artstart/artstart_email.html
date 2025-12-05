@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>ArtStart – <?= data.ascendJobId ?></title>
+    <style>
+      /* Basic reset for email */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f7;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #111827;
+      }
+
+      .wrapper {
+        width: 100%;
+        background-color: #f5f5f7;
+        padding: 16px 0;
+      }
+
+      .card {
+        max-width: 640px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        padding: 20px 24px 24px 24px;
+      }
+
+      h1, h2, h3 {
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      h2 {
+        font-size: 15px;
+        margin-top: 16px;
+      }
+
+      p {
+        margin: 0 0 6px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .label {
+        font-weight: 600;
+      }
+
+      .muted {
+        color: #6b7280;
+        font-size: 12px;
+      }
+
+      .section {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .pill-row {
+        margin-top: 8px;
+      }
+
+      .pill {
+        display: inline-block;
+        border-radius: 9999px;
+        border: 1px solid #e5e7eb;
+        padding: 2px 10px;
+        font-size: 11px;
+        color: #4b5563;
+        margin-right: 6px;
+        margin-bottom: 6px;
+      }
+
+      ul {
+        padding-left: 18px;
+        margin: 6px 0 6px;
+      }
+
+      ul li {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .button-row {
+        margin-top: 14px;
+      }
+
+      .btn-primary {
+        display: inline-block;
+        padding: 10px 18px;
+        border-radius: 9999px;
+        background-color: #111827;
+        color: #ffffff !important;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .btn-secondary {
+        display: inline-block;
+        margin-left: 10px;
+        padding: 9px 14px;
+        border-radius: 9999px;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        color: #374151 !important;
+        font-size: 12px;
+      }
+
+      .small-meta {
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .qr {
+        margin-top: 10px;
+      }
+
+      .footer-note {
+        margin-top: 16px;
+        font-size: 11px;
+        color: #9ca3af;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="card">
+        <!-- Top summary -->
+        <h1>
+          <? if (data.jobTitle) { ?>
+            <?= data.jobTitle ?>
+            <? if (data.campaignName) { ?>
+              &nbsp;•&nbsp;<?= data.campaignName ?>
+            <? } ?>
+          <? } else if (data.campaignName) { ?>
+            <?= data.campaignName ?>
+          <? } else { ?>
+            New job created
+          <? } ?>
+        </h1>
+        <p class="small-meta">
+          <span class="label">Ascend Job ID:</span> <?= data.ascendJobId ?>
+          <? if (data.nordsonJobCode) { ?>
+            &nbsp;•&nbsp;<span class="label">Nordson code:</span> <?= data.nordsonJobCode ?>
+          <? } ?>
+          <? if (data.createdDate) { ?>
+            &nbsp;•&nbsp;<span class="label">Created:</span> <?= data.createdDate ?>
+          <? } ?>
+        </p>
+        <p class="small-meta">
+          <span class="label">Requested by:</span>
+          <?= data.requesterName ?>
+          <? if (data.requesterEmail) { ?>
+            &lt;<?= data.requesterEmail ?>&gt;
+          <? } ?>
+        </p>
+
+        <!-- Spec section -->
+        <div class="section">
+          <h2>Where this is running</h2>
+          <p>
+            <? if (data.publication) { ?>
+              <span class="label">Publication / channel:</span> <?= data.publication ?><br>
+            <? } ?>
+            <? if (data.placement) { ?>
+              <span class="label">Placement / format:</span> <?= data.placement ?><br>
+            <? } ?>
+            <? if (data.trimSizePretty) { ?>
+              <span class="label">Trim:</span> <?= data.trimSizePretty ?><br>
+            <? } ?>
+            <? if (data.bleedPretty) { ?>
+              <span class="label">Bleed:</span> <?= data.bleedPretty ?><br>
+            <? } ?>
+            <? if (data.orientation) { ?>
+              <span class="label">Orientation:</span> <?= data.orientation ?><br>
+            <? } ?>
+            <? if (data.colorExportSummary) { ?>
+              <span class="label">Color / export:</span> <?= data.colorExportSummary ?><br>
+            <? } ?>
+            <? if (data.materialsDeadlinePretty) { ?>
+              <span class="label">Materials deadline:</span> <?= data.materialsDeadlinePretty ?><br>
+            <? } ?>
+            <? if (data.runDatePretty) { ?>
+              <span class="label">Run / go-live:</span> <?= data.runDatePretty ?><br>
+            <? } ?>
+          </p>
+        </div>
+
+        <!-- What's needed -->
+        <div class="section">
+          <h2>What’s needed for this job</h2>
+          <? if (Array.isArray(data.requiredElements) && data.requiredElements.length) { ?>
+            <ul>
+              <? for (var i = 0; i < data.requiredElements.length; i++) { ?>
+                <li><?= data.requiredElements[i] ?></li>
+              <? } ?>
+            </ul>
+          <? } else { ?>
+            <p class="muted">Required elements were not specified in the intake.</p>
+          <? } ?>
+        </div>
+
+        <!-- Next steps / working draft -->
+        <div class="section">
+          <h2>Working draft space</h2>
+          <p>
+            You can use the ArtStart workspace to prepare working headlines, subheads, calls-to-action,
+            and bullets before we get into layout.
+          </p>
+          <div class="button-row">
+            <a href="<?= data.artStartUrl ?>" class="btn-primary">Open this job in ArtStart</a>
+            <? if (data.artStartQrUrl) { ?>
+              <a href="<?= data.artStartUrl ?>" class="btn-secondary">Open link</a>
+            <? } ?>
+          </div>
+          <? if (data.artStartQrUrl) { ?>
+            <div class="qr">
+              <img src="<?= data.artStartQrUrl ?>" alt="ArtStart link QR" width="96" height="96">
+            </div>
+          <? } ?>
+        </div>
+
+        <!-- Delivery & recipients -->
+        <div class="section">
+          <h2>Materials delivery</h2>
+          <? if (data.deliveryRecipientName || data.deliveryRecipientEmail) { ?>
+            <p>
+              <? if (data.deliveryRecipientName) { ?>
+                <span class="label">Recipient:</span> <?= data.deliveryRecipientName ?><br>
+              <? } ?>
+              <? if (data.deliveryRecipientEmail) { ?>
+                <span class="label">Recipient email:</span> <?= data.deliveryRecipientEmail ?><br>
+              <? } ?>
+            </p>
+          <? } else { ?>
+            <p class="muted">No materials recipient was specified in the intake.</p>
+          <? } ?>
+
+          <? if (data.deliveryInstructions) { ?>
+            <p>
+              <span class="label">Delivery instructions:</span><br>
+              <?= data.deliveryInstructions ?>
+            </p>
+          <? } ?>
+
+          <? if (data.deliveryDeadlinePretty) { ?>
+            <p>
+              <span class="label">Delivery deadline:</span> <?= data.deliveryDeadlinePretty ?>
+            </p>
+          <? } ?>
+
+          <p class="muted">
+            The system will help us prepare a draft delivery email for this recipient later. You’ll still
+            attach the final files and send.
+          </p>
+        </div>
+
+        <p class="footer-note">
+          Sent by Ascend Visualization Studio for Nordson ICS.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en" data-ascend-state="unknown">
+  <head>
+    <meta charset="UTF-8">
+    <title>ArtStart – Job View</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Shared Ascend styling -->
+    <link rel="stylesheet" href="../ascend.css">
+
+    <style>
+      /* Page-scoped layout; rely on ascend.css for core tokens */
+      body {
+        margin: 0;
+        background-color: #f5f5f7;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #111827;
+      }
+
+      .artstart-shell {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .artstart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        background-color: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .artstart-header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .artstart-mark {
+        width: 28px;
+        height: 28px;
+        border-radius: 9999px;
+        border: 1px solid #111827;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        font-weight: 600;
+      }
+
+      .artstart-title-block {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .artstart-title-main {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .artstart-title-sub {
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .artstart-header-middle {
+        text-align: center;
+        max-width: 40%;
+      }
+
+      .artstart-job-name {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .artstart-job-meta {
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .artstart-header-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+      }
+
+      .artstart-user-label {
+        font-size: 12px;
+        color: #4b5563;
+      }
+
+      .artstart-back-link {
+        font-size: 12px;
+        color: #2563eb;
+        text-decoration: none;
+      }
+
+      .artstart-main {
+        flex: 1;
+        padding: 16px 20px 80px;
+      }
+
+      .artstart-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 16px;
+      }
+
+      @media (max-width: 900px) {
+        .artstart-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .artstart-header-middle {
+          max-width: 60%;
+        }
+      }
+
+      .artstart-card {
+        background-color: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        padding: 14px 16px 16px;
+        margin-bottom: 12px;
+      }
+
+      .artstart-card h2 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .artstart-card p {
+        margin: 0 0 6px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .artstart-card .label {
+        font-weight: 600;
+      }
+
+      .artstart-muted {
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .artstart-canvas-box {
+        margin-top: 10px;
+        width: 100%;
+        max-width: 260px;
+        aspect-ratio: 4 / 3;
+        border-radius: 6px;
+        border: 1px dashed #d1d5db;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: #6b7280;
+      }
+
+      .artstart-canvas-box.landscape {
+        aspect-ratio: 4 / 3;
+      }
+
+      .artstart-canvas-box.portrait {
+        aspect-ratio: 3 / 4;
+      }
+
+      .artstart-checklist {
+        padding-left: 18px;
+        margin: 4px 0 0;
+      }
+
+      .artstart-checklist li {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .artstart-input,
+      .artstart-textarea {
+        width: 100%;
+        box-sizing: border-box;
+        font-family: inherit;
+        font-size: 13px;
+        padding: 7px 8px;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        margin-bottom: 8px;
+      }
+
+      .artstart-textarea {
+        min-height: 76px;
+        resize: vertical;
+      }
+
+      .artstart-input::placeholder,
+      .artstart-textarea::placeholder {
+        color: #9ca3af;
+      }
+
+      .artstart-save-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 4px;
+      }
+
+      .artstart-save-button {
+        padding: 7px 14px;
+        border-radius: 9999px;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        background-color: #111827;
+        color: #ffffff;
+      }
+
+      .artstart-save-status {
+        font-size: 11px;
+        color: #6b7280;
+      }
+
+      .artstart-footer-strip {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ffffff;
+        border-top: 1px solid #e5e7eb;
+        padding: 8px 20px;
+      }
+
+      .artstart-footer-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 900px) {
+        .artstart-footer-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .artstart-footer-item-title {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      .artstart-footer-item-body {
+        font-size: 11px;
+        color: #6b7280;
+      }
+
+      .artstart-error {
+        max-width: 520px;
+        margin: 32px auto;
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="artstart-shell">
+      <header class="artstart-header">
+        <div class="artstart-header-left">
+          <div class="artstart-mark">A</div>
+          <div class="artstart-title-block">
+            <div class="artstart-title-main">ArtStart – Job View</div>
+            <div class="artstart-title-sub">Ascend Visualization Studio for Nordson ICS</div>
+          </div>
+        </div>
+
+        <div class="artstart-header-middle">
+          <div id="job-title" class="artstart-job-name">Loading job…</div>
+          <div id="job-meta" class="artstart-job-meta"></div>
+        </div>
+
+        <div class="artstart-header-right">
+          <div id="artstart-user-label" class="artstart-user-label">Checking sign-in…</div>
+          <a href="../index.html" class="artstart-back-link">← Back to Ascend</a>
+        </div>
+      </header>
+
+      <main class="artstart-main">
+        <div id="artstart-error" class="artstart-error" style="display:none;"></div>
+
+        <div id="artstart-grid" class="artstart-grid" style="display:none;">
+          <!-- Left column -->
+          <div>
+            <section class="artstart-card">
+              <h2>Job overview</h2>
+              <p><span class="label">Job title:</span> <span id="job-overview-title">—</span></p>
+              <p><span class="label">Campaign:</span> <span id="job-overview-campaign">—</span></p>
+              <p><span class="label">Ascend Job ID:</span> <span id="job-overview-id">—</span></p>
+              <p><span class="label">Nordson code:</span> <span id="job-overview-nordson-code">—</span></p>
+              <p><span class="label">Requested by:</span> <span id="job-overview-requester">—</span></p>
+              <p><span class="label">Created:</span> <span id="job-overview-created">—</span></p>
+              <p><span class="label">Run / go-live:</span> <span id="job-overview-run">—</span></p>
+              <p><span class="label">Materials deadline:</span> <span id="job-overview-deadline">—</span></p>
+            </section>
+
+            <section class="artstart-card">
+              <h2>Format & canvas</h2>
+              <p><span class="label">Publication / channel:</span> <span id="format-publication">—</span></p>
+              <p><span class="label">Placement / format:</span> <span id="format-placement">—</span></p>
+              <p><span class="label">Trim:</span> <span id="format-trim">—</span></p>
+              <p><span class="label">Bleed:</span> <span id="format-bleed">—</span></p>
+              <p><span class="label">Orientation:</span> <span id="format-orientation">—</span></p>
+              <p><span class="label">Color / export:</span> <span id="format-color-export">—</span></p>
+
+              <div id="format-canvas-box" class="artstart-canvas-box">Canvas preview</div>
+            </section>
+
+            <section class="artstart-card">
+              <h2>What must be included</h2>
+              <ul id="must-include-list" class="artstart-checklist"></ul>
+              <p id="must-include-empty" class="artstart-muted" style="display:none;">
+                Required elements were not specified in the intake.
+              </p>
+            </section>
+          </div>
+
+          <!-- Right column -->
+          <div>
+            <section class="artstart-card">
+              <h2>Working draft</h2>
+              <p class="artstart-muted">
+                Use this space to prepare working headlines, subheads, calls-to-action, and bullets before we get into layout.
+              </p>
+
+              <label class="artstart-muted" for="working-headline">Headline</label>
+              <input id="working-headline" class="artstart-input" type="text"
+                     placeholder="Working headline…">
+
+              <label class="artstart-muted" for="working-subhead">Subhead</label>
+              <input id="working-subhead" class="artstart-input" type="text"
+                     placeholder="Optional subhead…">
+
+              <label class="artstart-muted" for="working-cta">Primary call-to-action</label>
+              <input id="working-cta" class="artstart-input" type="text"
+                     placeholder="Primary CTA (e.g., URL or instruction)…">
+
+              <label class="artstart-muted" for="working-bullets">Bullets</label>
+              <textarea id="working-bullets" class="artstart-textarea"
+                        placeholder="Enter one bullet per line…"></textarea>
+
+              <label class="artstart-muted" for="working-notes">Additional notes / mandatories</label>
+              <textarea id="working-notes" class="artstart-textarea"
+                        placeholder="Notes, specific phrases, or legal requirements that must appear…"></textarea>
+
+              <div class="artstart-save-row">
+                <button id="artstart-save-button" class="artstart-save-button">Save working copy</button>
+                <div id="artstart-save-status" class="artstart-save-status">Not saved yet</div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+
+      <footer class="artstart-footer-strip">
+        <div class="artstart-footer-grid">
+          <div>
+            <div class="artstart-footer-item-title">File setup (local)</div>
+            <div id="status-file-setup" class="artstart-footer-item-body">
+              Local files not yet created.
+            </div>
+          </div>
+          <div>
+            <div class="artstart-footer-item-title">ArtStart working session</div>
+            <div id="status-session" class="artstart-footer-item-body">
+              Working session not yet scheduled. Suggested window will appear here.
+            </div>
+          </div>
+          <div>
+            <div class="artstart-footer-item-title">Materials delivery</div>
+            <div id="status-delivery" class="artstart-footer-item-body">
+              Delivery email draft not yet prepared.
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Existing Ascend session/auth script -->
+    <script src="../ascend.js"></script>
+    <!-- ArtStart behavior -->
+    <script src="./artstart.js"></script>
+
+<script>
+const API_BASE = 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
+
+// Get ?jobId=ASC-... from the URL
+function getJobIdFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('jobId') || params.get('AscendJobId') || '';
+}
+
+function safeText(value, fallback = '—') {
+  if (value === null || value === undefined || value === '') return fallback;
+  return String(value);
+}
+
+// Main loader
+async function loadArtStartJob() {
+  const jobId = getJobIdFromUrl();
+
+  const headerTitleEl = document.getElementById('job-title');
+  const headerMetaEl  = document.getElementById('job-meta');
+  const gridEl        = document.getElementById('artstart-grid');
+  const errorEl       = document.getElementById('artstart-error');
+
+  if (!jobId) {
+    if (headerTitleEl) headerTitleEl.textContent = 'Missing jobId in URL';
+    if (gridEl) gridEl.style.display = 'none';
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'No jobId was provided in the URL.';
+    }
+    return;
+  }
+
+  if (headerTitleEl) headerTitleEl.textContent = 'Loading job…';
+  if (headerMetaEl)  headerMetaEl.textContent  = jobId;
+
+  try {
+    const qs = new URLSearchParams({
+      action: 'getArtStartJob',
+      jobId: jobId
+    });
+
+    const res = await fetch(`${API_BASE}?${qs.toString()}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Unknown backend error');
+
+    const job = data.job || {};
+
+    // --- Header ---
+    if (headerTitleEl) {
+      headerTitleEl.textContent = job.jobTitle || job.jobId || 'Untitled job';
+    }
+    if (headerMetaEl) {
+      const pub = job.publication || 'Publication TBD';
+      const campaign = job.campaignName || job.jobKind || '';
+      const created = job.createdDate || '';
+      headerMetaEl.textContent = [pub, campaign, created].filter(Boolean).join(' • ');
+    }
+
+    // --- Job overview card ---
+    document.getElementById('job-overview-title').textContent        = safeText(job.jobTitle);
+    document.getElementById('job-overview-campaign').textContent     = safeText(job.campaignName);
+    document.getElementById('job-overview-id').textContent           = safeText(job.jobId || jobId);
+    document.getElementById('job-overview-nordson-code').textContent = safeText(job.nordsonJobCode);
+    document.getElementById('job-overview-requester').textContent    =
+      safeText(job.requesterName || job.requesterEmail);
+    document.getElementById('job-overview-created').textContent      = safeText(job.createdDate);
+    document.getElementById('job-overview-run').textContent          = safeText(job.runDate);
+    document.getElementById('job-overview-deadline').textContent     = safeText(job.materialsDeadline);
+
+    // --- Format & canvas card ---
+    document.getElementById('format-publication').textContent   = safeText(job.publication);
+    document.getElementById('format-placement').textContent     = safeText(job.placement);
+    document.getElementById('format-trim').textContent          =
+      (job.trimWidth && job.trimHeight)
+        ? `${job.trimWidth} × ${job.trimHeight}`
+        : '—';
+    document.getElementById('format-bleed').textContent         = safeText(job.bleed);
+    document.getElementById('format-orientation').textContent   = safeText(job.orientation);
+    document.getElementById('format-color-export').textContent  = safeText(job.colorExportSummary);
+
+    const canvasBox = document.getElementById('format-canvas-box');
+    if (canvasBox) {
+      canvasBox.classList.remove('landscape', 'portrait');
+      if (/portrait/i.test(job.orientation || '')) {
+        canvasBox.classList.add('portrait');
+        canvasBox.textContent = 'Portrait canvas preview';
+      } else {
+        canvasBox.classList.add('landscape');
+        canvasBox.textContent = 'Landscape canvas preview';
+      }
+    }
+
+    // --- Required elements ---
+    const listEl  = document.getElementById('must-include-list');
+    const emptyEl = document.getElementById('must-include-empty');
+    if (listEl && emptyEl) {
+      listEl.innerHTML = '';
+      const items = Array.isArray(job.requiredElements) ? job.requiredElements : [];
+      if (items.length) {
+        emptyEl.style.display = 'none';
+        items.forEach(name => {
+          const li = document.createElement('li');
+          li.textContent = name;
+          listEl.appendChild(li);
+        });
+      } else {
+        emptyEl.style.display = 'block';
+      }
+    }
+
+    // --- Working draft fields ---
+    const wh = document.getElementById('working-headline');
+    const ws = document.getElementById('working-subhead');
+    const wc = document.getElementById('working-cta');
+    const wb = document.getElementById('working-bullets');
+    const wn = document.getElementById('working-notes');
+
+    if (wh) wh.value = job.workingHeadline || '';
+    if (ws) ws.value = job.workingSubhead || '';
+    if (wc) wc.value = job.workingCta || '';
+    if (wb) wb.value = job.workingBullets || '';
+    if (wn) wn.value = job.workingNotes || '';
+
+    // Show grid, hide error
+    if (gridEl) gridEl.style.display = 'grid';
+    if (errorEl) {
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+    }
+
+  } catch (err) {
+    console.error(err);
+    if (headerTitleEl) headerTitleEl.textContent = 'Error loading job';
+    if (gridEl) gridEl.style.display = 'none';
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Error loading job: ' + err.message;
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadArtStartJob);
+</script>
+
+
+  </body>
+</html>

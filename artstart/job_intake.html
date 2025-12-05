@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ArtStart – New Job Intake</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 16px;
+      color: #222;
+    }
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 16px 20px 24px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    button {
+      margin-top: 16px;
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: none;
+      background: #0057b8;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .status {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .status.error {
+      color: #b00020;
+    }
+    .status.success {
+      color: #2e7d32;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+      <h1>ArtStart – New Job Intake</h1>
+
+    <form id="intake-form">
+      <label>
+        Job ID (required)
+        <input type="text" id="nordsonJobId" required>
+      </label>
+
+      <label>
+        Publication
+        <select id="publicationId">
+            <option value="">– Select publication –</option>
+            <!-- options will be populated from Sheets -->
+        </select>
+      </label>
+
+    <label>
+    Media Space / Spec
+    <select id="mediaSpecSelect">
+        <option value="">– Select media spec –</option>
+        <!-- options will be populated based on Publication -->
+    </select>
+    <div id="mediaSpecPreview" style="font-size:12px; color:#555; margin-top:4px;">
+        Choose a publication to see available media specs.
+    </div>
+    <!-- This is what actually gets sent to the backend -->
+    <input type="hidden" id="mediaSpecId">
+    </label>
+
+      <label>
+        Issue / Month
+        <input type="text" id="issueName">
+      </label>
+
+      <label>
+        Materials Due Date
+        <input type="date" id="materialsDueDate">
+      </label>
+
+      <label>
+        Run Date
+        <input type="date" id="runDate">
+      </label>
+
+      <label>
+        Translation Language
+        <select id="translationTargetLanguage">
+          <option value="">– Select target language –</option>
+          <option value="DE">German (DE)</option>
+          <option value="ES">Spanish (ES)</option>
+          <option value="FR">French (FR)</option>
+          <option value="PT">Portuguese (PT)</option>
+          <option value="ZH">Chinese (ZH)</option>
+        </select>
+      </label>
+
+      <label>
+        QR Included?
+        <select id="qrIncluded">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </label>
+
+      <label>
+        Topic / Editorial Notes
+        <input type="text" id="topic">
+      </label>
+
+      <label>
+        Notes
+        <textarea id="notes"></textarea>
+      </label>
+
+      <button type="submit" id="submit-btn">Create Job &amp; Send Art Start</button>
+    </form>
+
+    <div class="status" id="status"></div>
+    <div class="status" id="link-area"></div>
+  </div>
+
+  <script>
+
+const API_BASE = 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
+// Local builder service (Node on your machine)
+const LOCAL_BUILDER_URL = 'http://localhost:43110/build-local-job';
+
+const linkAreaEl = document.getElementById('link-area');
+const submitBtn = document.getElementById('submit-btn');
+const statusEl = document.getElementById('status');
+const form = document.getElementById('intake-form');
+
+        // DOM references for dynamic fields
+    const publicationSelect = document.getElementById('publicationId');
+    const deliverableSelect = document.getElementById('deliverableType');
+    const mediaSpecIdInput  = document.getElementById('mediaSpecId');
+    const mediaSpecPreview  = document.getElementById('mediaSpecPreview');
+
+    let ascendPublications = [];
+    let ascendMediaSpecs = [];
+    
+    // Will be populated from backend
+    let intakeConfig = {
+      publications: [],
+      mediaSpecs: []
+    };
+
+    function loadIntakeConfig() {
+      // Clean up any previous JSONP script
+      const existing = document.getElementById('intake-config-script');
+      if (existing) {
+        existing.remove();
+      }
+
+      // JSONP callback – must be global
+      window.ascendIntakeConfigLoaded = function (data) {
+        try {
+          intakeConfig = data || {};
+
+          const pubs = Array.isArray(intakeConfig.publications)
+            ? intakeConfig.publications
+            : [];
+
+          // Populate Publication dropdown from Sheets
+          publicationSelect.innerHTML =
+            '<option value="">– Select publication –</option>' +
+            pubs.map(p => {
+              const label = p.Name || p.BaseName || p.PublicationId;
+              const value = p.PublicationId;
+              return `<option value="${value}">${label}</option>`;
+            }).join('');
+
+          statusEl.textContent = '';
+          statusEl.className = 'status';
+        } catch (err) {
+          console.error('Error in JSONP callback', err);
+          statusEl.textContent = 'Error processing dropdown data: ' + err.message;
+          statusEl.className = 'status error';
+        }
+      };
+
+      // Inject <script> tag to call the Apps Script endpoint
+      const s = document.createElement('script');
+      s.id = 'intake-config-script';
+      s.src = API_BASE + '?action=listConfigForIntake&callback=ascendIntakeConfigLoaded';
+      s.onerror = function () {
+        statusEl.textContent = 'Error loading dropdown data (network / JSONP).';
+        statusEl.className = 'status error';
+      };
+
+      document.body.appendChild(s);
+    }
+
+    const mediaSpecSelect   = document.getElementById('mediaSpecSelect');
+
+    function refreshMediaSpecOptions() {
+      const pubId = publicationSelect.value;
+      const specs = Array.isArray(intakeConfig.mediaSpecs)
+        ? intakeConfig.mediaSpecs
+        : [];
+
+      const filtered = specs.filter(ms =>
+        String(ms.PublicationId || '').trim() === String(pubId || '').trim()
+      );
+
+      mediaSpecSelect.innerHTML =
+        '<option value="">– Select media spec –</option>' +
+        filtered.map(ms => {
+          const label = ms.SoldAs || ms.MediaSpecId;
+          return `<option value="${ms.MediaSpecId}">${label}</option>`;
+        }).join('');
+
+      mediaSpecIdInput.value = '';
+
+      if (!pubId) {
+        mediaSpecPreview.textContent =
+          'Choose a publication to see available media specs.';
+        mediaSpecPreview.style.color = '#555';
+      } else if (filtered.length === 0) {
+        mediaSpecPreview.textContent =
+          'No media specs found for this publication yet.';
+        mediaSpecPreview.style.color = '#b00020';
+      } else if (filtered.length === 1) {
+        // Auto-select the only matching spec
+        mediaSpecSelect.value = filtered[0].MediaSpecId;
+        applyMediaSpecSelection(filtered[0]);
+      } else {
+        mediaSpecPreview.textContent = 'Choose a media spec.';
+        mediaSpecPreview.style.color = '#555';
+      }
+    }
+
+    function applyMediaSpecSelection(ms) {
+      if (!ms) {
+        mediaSpecIdInput.value = '';
+        mediaSpecPreview.textContent = 'Choose a media spec.';
+        mediaSpecPreview.style.color = '#555';
+        return;
+      }
+
+      mediaSpecIdInput.value = ms.MediaSpecId || '';
+
+      const name  = ms.Name || ms.MediaSpecId || 'Media spec';
+      const width = ms.Width || '—';
+      const height = ms.Height || '—';
+      const dpi   = ms.DPI ? (' @ ' + ms.DPI + ' dpi') : '';
+
+      mediaSpecPreview.textContent = `${name} – ${width} × ${height}${dpi}`;
+      mediaSpecPreview.style.color = '#222';
+    }
+
+    publicationSelect.addEventListener('change', () => {
+      refreshMediaSpecOptions();
+    });
+
+    mediaSpecSelect.addEventListener('change', () => {
+      const specs = Array.isArray(intakeConfig.mediaSpecs)
+        ? intakeConfig.mediaSpecs
+        : [];
+      const chosenId = mediaSpecSelect.value;
+      const ms = specs.find(s =>
+        String(s.MediaSpecId || '').trim() === String(chosenId || '').trim()
+      );
+      applyMediaSpecSelection(ms || null);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadIntakeConfig();
+    });
+
+    // JSONP helper for createJobFromForm (avoids CORS preflight)
+    function createJobViaJsonp(payload) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'ascendCreateJobFromFormCallback_' + Date.now();
+
+        // Define the JSONP callback on window
+        window[callbackName] = function (data) {
+          try {
+            delete window[callbackName];
+          } catch (e) {
+            window[callbackName] = undefined;
+          }
+          resolve(data);
+        };
+
+        const script = document.createElement('script');
+        script.src =
+          API_BASE +
+          '?action=createJobFromFormJsonp' +
+          // Important: callback must be a *raw* identifier, not URL-encoded
+          '&callback=' + callbackName +
+          '&payload=' + encodeURIComponent(JSON.stringify(payload));
+
+        console.log('JSONP URL:', script.src);
+
+        script.onerror = function () {
+          try {
+            delete window[callbackName];
+          } catch (e) {
+            window[callbackName] = undefined;
+          }
+          reject(new Error('Network / JSONP error'));
+        };
+
+        document.body.appendChild(script);
+      });
+    }
+
+    async function notifyLocalBuilder(ascendJobId) {
+      try {
+        await fetch(LOCAL_BUILDER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ascendJobId })
+        });
+        console.log('Local builder notified for', ascendJobId);
+      } catch (err) {
+        console.warn('Local builder not reachable', err);
+      }
+    }
+
+    form.addEventListener('submit', async function (evt) {
+      evt.preventDefault();
+      statusEl.textContent = '';
+      statusEl.className = 'status';
+      linkAreaEl.textContent = '';
+
+      const payload = {
+        nordsonJobId: (document.getElementById('nordsonJobId') || { value: '' }).value.trim(),
+        publicationId: (document.getElementById('publicationId') || { value: '' }).value.trim(),
+        issueName: (document.getElementById('issueName') || { value: '' }).value.trim(),
+        materialsDueDate: (document.getElementById('materialsDueDate') || { value: '' }).value || '',
+        runDate: (document.getElementById('runDate') || { value: '' }).value || '',
+        mediaSpecId: (document.getElementById('mediaSpecId') || { value: '' }).value.trim(),
+        translationRequired: (document.getElementById('translationRequired') || { value: '' }).value,
+        translationTargetLanguage: (document.getElementById('translationTargetLanguage') || { value: '' }).value.trim(),
+        qrIncluded: (document.getElementById('qrIncluded') || { value: '' }).value,
+        topic: (document.getElementById('topic') || { value: '' }).value.trim(),
+        notes: (document.getElementById('notes') || { value: '' }).value.trim()
+      };
+
+      if (!payload.nordsonJobId) {
+        statusEl.textContent = 'Job ID is required.';
+        statusEl.className = 'status error';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      statusEl.textContent = 'Creating job and sending Art Start...';
+      statusEl.className = 'status';
+
+      try {
+        const res = await fetch(API_BASE + '?action=createJobFromForm', {
+          method: 'POST',
+          // No custom headers → browser uses text/plain and avoids a CORS preflight
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+
+        const data = await res.json();
+
+        if (!data || !data.success) {
+          throw new Error((data && data.error) || 'Unknown error from backend');
+        }
+
+        statusEl.textContent = 'Job created and Art Start email triggered.';
+        statusEl.className = 'status success';
+
+        if (data.ascendJobId) {
+          // Kick off local file creation on your machine
+          notifyLocalBuilder(data.ascendJobId);
+
+          const linkUrl =
+            'file:///Volumes/Today/ascend-portal/artstart/artstart.html?jobId=' +
+            encodeURIComponent(data.ascendJobId);
+          linkAreaEl.innerHTML =
+            'Open preview: <a href="' + linkUrl + '">' + data.ascendJobId + '</a>';
+        }
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.className = 'status error';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

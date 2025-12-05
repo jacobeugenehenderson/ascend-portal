@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>copydesk_API – createEnglishJob test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 720px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+    input[type="text"],
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+    .hint {
+      font-size: 0.8rem;
+      color: #666;
+    }
+    button {
+      margin-top: 1.5rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 4px;
+      border: none;
+      font-size: 0.95rem;
+      cursor: pointer;
+      background: #005eb8;
+      color: white;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    pre {
+      background: #f5f5f7;
+      padding: 0.75rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+    .status-ok {
+      color: #0a7a2f;
+      font-weight: 600;
+    }
+    .status-error {
+      color: #b00020;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <h1>copydesk_API – createEnglishJob test</h1>
+  <p class="hint">
+    This is a simple harness that POSTs JSON to your Apps Script Web App using
+    <code>action: "createEnglishJob"</code>.
+  </p>
+
+  <label>
+    Job Name
+    <input type="text" id="jobName" value="Test VT Controller EN" />
+  </label>
+
+  <label>
+    Cutoff (optional, ISO-like string)
+    <input
+      type="text"
+      id="cutoff"
+      placeholder="e.g. 2026-01-15T23:59:00-05:00 or leave blank"
+    />
+    <span class="hint">
+      For now this is stored as-is in B4. You can wire a proper datetime picker later.
+    </span>
+  </label>
+
+  <label>
+    Collaborators (comma-separated emails, optional)
+    <input
+      type="text"
+      id="collaborators"
+      placeholder="francesca@example.com, sarah@example.com"
+    />
+  </label>
+
+  <label>
+    Seed Text (will be split into segments)
+    <textarea id="seedText">Headline paragraph for VT Controller.
+
+Body copy paragraph two, with more detailed explanation.
+
+Another paragraph as a third segment.</textarea>
+    <span class="hint">
+      v0 logic: splits on double newlines (<code>/\n\s*\n/</code>). Each chunk becomes one row.
+    </span>
+  </label>
+
+  <button id="submitBtn">Create English Job</button>
+
+  <div id="status"></div>
+  <pre id="responseBox"></pre>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyZMoioMINHuuk1ClVmFsFtZkRZ1LXMaT9JaJCInMdU52E0bKAYkrmppii9BaQ1_6RKnQ/exec';
+    const jobNameInput = document.getElementById('jobName');
+    const cutoffInput = document.getElementById('cutoff');
+    const collaboratorsInput = document.getElementById('collaborators');
+    const seedTextInput = document.getElementById('seedText');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusDiv = document.getElementById('status');
+    const responseBox = document.getElementById('responseBox');
+
+    async function createEnglishJob() {
+      const jobName = jobNameInput.value.trim() || 'Untitled Job';
+      const seedText = seedTextInput.value;
+      const cutoff = cutoffInput.value.trim();
+      const collaboratorsRaw = collaboratorsInput.value.trim();
+
+      const collaborators = collaboratorsRaw
+        ? collaboratorsRaw.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      const payload = {
+        action: 'createEnglishJob',
+        jobName,
+        seedText,
+        cutoff,
+        collaborators
+      };
+
+      statusDiv.textContent = 'Sending request…';
+      statusDiv.className = '';
+      responseBox.textContent = '';
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            // No headers block at all
+            body: JSON.stringify(payload)
+            });
+
+        const text = await res.text();
+        let json;
+
+        try {
+          json = JSON.parse(text);
+        } catch (e) {
+          json = { parseError: e.toString(), raw: text };
+        }
+
+        if (json.ok) {
+          statusDiv.textContent = 'Job created successfully ✅';
+          statusDiv.className = 'status-ok';
+        } else {
+          statusDiv.textContent = 'API returned an error ❌';
+          statusDiv.className = 'status-error';
+        }
+
+        responseBox.textContent = JSON.stringify(json, null, 2);
+      } catch (err) {
+        statusDiv.textContent = 'Request failed ❌';
+        statusDiv.className = 'status-error';
+        responseBox.textContent = err.toString();
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    submitBtn.addEventListener('click', () => {
+      createEnglishJob();
+    });
+  </script>
+</body>
+</html>
