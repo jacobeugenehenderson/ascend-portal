@@ -22,11 +22,18 @@
           </div>
 
             <div class="ascend-header-right">
-            <div>Nordson Editorial & Visualization Portal</div>
-            <div>Scan once. Work everywhere.</div>
-            <div class="ascend-account-label" id="ascend-account-label">
+              <div>Nordson Editorial & Visualization Portal</div>
+              <div>Scan once. Work everywhere.</div>
+              <div class="ascend-account-label" id="ascend-account-label">
                 Not logged in
-            </div>
+              </div>
+              <button
+                class="ascend-logout-btn"
+                type="button"
+                id="ascend-logout-btn"
+              >
+                Log out on this terminal
+              </button>
             </div>
         </header>
 
@@ -42,11 +49,6 @@
               <h2 class="ascend-login-title">
                 Scan to link this terminal to your phone
               </h2>
-              <p class="ascend-login-description">
-                Use the camera on your Nordson work phone. You’ll see a button
-                that says “Log me in.” Tap it once, and this screen will switch
-                into your Ascend dashboard.
-              </p>
 
               <div class="ascend-login-body">
                 <div class="ascend-qr-frame">
@@ -56,34 +58,6 @@
                   </div>
                 </div>
 
-                <div class="ascend-login-copy">
-                  <p>
-                    <strong>On your phone:</strong><br />
-                    1. Point your camera at this code.<br />
-                    2. Tap the “Open Ascend” prompt.<br />
-                    3. Tap the “Log me in” button.<br />
-                    4. Watch this screen switch to your dashboard.
-                  </p>
-                </div>
-              </div>
-
-              <div class="ascend-toggle-row">
-                <div class="ascend-toggle-label">
-                  <strong>Keep me logged in on this terminal</strong>
-                  <div style="font-size: 0.75rem; color: #a0aec0;">
-                    Ideal for your personal workstation. Turn off on shared
-                    kiosks.
-                  </div>
-                </div>
-                <button
-                  id="ascend-keep-logged-in"
-                  class="ascend-toggle"
-                  type="button"
-                  aria-pressed="false"
-                  data-on="true"
-                >
-                  <span class="ascend-toggle-thumb"></span>
-                </button>
               </div>
 
               <div class="ascend-session-status" id="ascend-session-status">
@@ -105,13 +79,6 @@
                   <span class="ascend-user-dot"></span>
                   <span id="ascend-user-label">Logged in</span>
                 </span>
-                <button
-                  class="ascend-logout-btn"
-                  type="button"
-                  id="ascend-logout-btn"
-                >
-                  Log out on this terminal
-                </button>
               </div>
             </div>
 

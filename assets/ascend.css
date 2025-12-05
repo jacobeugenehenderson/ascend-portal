@@ -276,7 +276,7 @@ body {
 
 .ascend-main {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
   gap: 1.5rem;
 }
 
@@ -355,13 +355,14 @@ body {
 .ascend-login-body {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1.1rem;
-  margin-top: 0.5rem;
+  margin-top: 1.25rem;
 }
 
 .ascend-qr-frame {
-  width: 140px;
-  height: 140px;
+  width: 260px;
+  height: 260px;
   border-radius: 24px;
   border: 1px solid rgba(129, 230, 217, 0.6);
   background: radial-gradient(circle at top, #1a202f, #050814);
@@ -372,8 +373,8 @@ body {
 }
 
 .ascend-qr-placeholder {
-  width: 110px;
-  height: 110px;
+  width: 210px;
+  height: 210px;
   background-image: url("qr-placeholder.png");
   background-size: contain;
   background-repeat: no-repeat;
@@ -381,9 +382,7 @@ body {
 }
 
 .ascend-login-copy {
-  flex: 1;
-  font-size: 0.8rem;
-  color: var(--ascend-color-text-muted);
+  display: none;
 }
 
 .ascend-login-copy strong {
@@ -391,11 +390,7 @@ body {
 }
 
 .ascend-toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  display: none;
 }
 
 .ascend-toggle-label {
@@ -484,6 +479,7 @@ body {
 /* Logout button */
 
 .ascend-logout-btn {
+  display: none;
   border: none;
   background: transparent;
   color: var(--ascend-color-text-muted);
@@ -495,8 +491,14 @@ body {
   text-underline-offset: 3px;
 }
 
+[data-ascend-state="logged-in"] .ascend-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .ascend-logout-btn:hover {
-  color: var(--ascend-color-text-main);
+  background: rgba(79, 209, 197, 0.22);
 }
 
 /* Dashboard rows */
