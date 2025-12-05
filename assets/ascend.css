@@ -1,23 +1,146 @@
 :root {
-  /* Brand + layout knobs (ONE PLACE) */
+  /* ============================
+   * BRAND & BASE COLORS
+   * ========================== */
+
+  /* Core surfaces */
   --ascend-color-bg: #050814;
   --ascend-color-surface: #0d1224;
   --ascend-color-surface-soft: #121830;
+
+  /* Core accent */
   --ascend-color-accent: #4fd1c5;
   --ascend-color-accent-soft: #81e6d9;
+
+  /* Text */
   --ascend-color-text-main: #f7fafc;
   --ascend-color-text-muted: #a0aec0;
+
+  /* Borders */
   --ascend-color-border-subtle: rgba(255, 255, 255, 0.08);
 
-  --ascend-radius-lg: 18px;
-  --ascend-radius-xl: 26px;
-  --ascend-shadow-soft: 0 20px 50px rgba(0, 0, 0, 0.65);
+  /* Semantic colors (for future use) */
+  --ascend-color-danger: #f56565;
+  --ascend-color-warning: #ecc94b;
+  --ascend-color-success: #48bb78;
+  --ascend-color-info: #63b3ed;
 
+  /* ============================
+   * TYPOGRAPHY
+   * ========================== */
+
+  /* Font stacks */
   --ascend-font-sans: system-ui, -apple-system, BlinkMacSystemFont,
     "SF Pro Text", "Segoe UI", sans-serif;
+  --ascend-font-heading: var(--ascend-font-sans);
+  --ascend-font-body: var(--ascend-font-sans);
+  --ascend-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
 
+  /* Weights */
+  --ascend-weight-regular: 400;
+  --ascend-weight-medium: 500;
+  --ascend-weight-bold: 600;
+
+  /* Type scale (not yet wired everywhere, but available) */
+  --ascend-text-xxl: 2.1rem;
+  --ascend-text-xl: 1.35rem;
+  --ascend-text-l: 1.05rem;
+  --ascend-text-m: 0.95rem;
+  --ascend-text-s: 0.8rem;
+  --ascend-text-xs: 0.72rem;
+
+  /* ============================
+   * LAYOUT & GEOMETRY
+   * ========================== */
+
+  /* Radii & elevation */
+  --ascend-radius-lg: 18px;
+  --ascend-radius-xl: 26px;
+  --ascend-border-width: 1px;
+  --ascend-shadow-soft: 0 20px 50px rgba(0, 0, 0, 0.65);
+  --ascend-shadow-strong: 0 26px 70px rgba(0, 0, 0, 0.75);
+
+  /* Shell & layout */
   --ascend-gap: 1.25rem;
   --ascend-max-width: 1120px;
+  --ascend-shell-padding-y: 2.5rem;
+  --ascend-shell-padding-x: 1.5rem;
+
+  /* Spacing scale */
+  --ascend-space-xxl: 3rem;
+  --ascend-space-xl: 2rem;
+  --ascend-space-l: 1.5rem;
+  --ascend-space-m: 1rem;
+  --ascend-space-s: 0.75rem;
+  --ascend-space-xs: 0.5rem;
+
+  /* ============================
+   * SURFACE & BACKGROUND PATTERNS
+   * ========================== */
+
+  /* Body backdrop */
+  --ascend-body-bg: radial-gradient(circle at top, #1a2144, #050814 60%, #02030a);
+
+  /* Shell */
+  --ascend-shell-bg: linear-gradient(
+      135deg,
+      rgba(79, 209, 197, 0.07),
+      rgba(129, 230, 217, 0.03)
+    ),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent);
+
+  /* Cards / panels */
+  --ascend-card-surface: var(--ascend-color-surface);
+  --ascend-card-surface-soft: var(--ascend-color-surface-soft);
+  --ascend-card-border: var(--ascend-color-border-subtle);
+
+  /* ============================
+   * GRID MOTIF (BACKGROUND ONLY)
+   * ========================== */
+
+  --ascend-grid-visible: 0; /* 0 or 1 (toggle in future) */
+  --ascend-grid-size: 16px;
+  --ascend-grid-color: rgba(255, 255, 255, 0.04);
+  --ascend-grid-thickness: 1px;
+  --ascend-grid-opacity: 0.2;
+  --ascend-grid-emphasis-interval: 4;
+  --ascend-grid-mode: light;
+
+  /* ============================
+   * MOTION
+   * ========================== */
+
+  --ascend-transition-fast: 120ms ease-out;
+  --ascend-transition-medium: 200ms ease-out;
+  --ascend-transition-slow: 320ms ease-out;
+
+  --ascend-ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ascend-ease-emphasized: cubic-bezier(0.19, 1, 0.22, 1);
+
+  /* ============================
+   * COMPONENT KNOBS
+   * ========================== */
+
+  /* Buttons */
+  --ascend-btn-bg: #ffffff;
+  --ascend-btn-text: #0b1025;
+  --ascend-btn-border: transparent;
+  --ascend-btn-radius: 999px;
+  --ascend-btn-hover-bg: #f7fafc;
+  --ascend-btn-active-bg: #e2e8f0;
+  --ascend-btn-focus-outline: rgba(129, 230, 217, 0.8);
+
+  /* Toggles */
+  --ascend-toggle-track: rgba(255, 255, 255, 0.18);
+  --ascend-toggle-track-active: linear-gradient(135deg, #4fd1c5, #81e6d9);
+  --ascend-toggle-thumb: #ffffff;
+
+  /* Tool-level identity (future overrides per module) */
+  --ascend-artstart-accent: var(--ascend-color-accent);
+  --ascend-copydesk-accent: var(--ascend-color-accent);
+  --ascend-codedesk-accent: var(--ascend-color-accent);
+  --ascend-fileroom-accent: var(--ascend-color-accent);
 }
 
 /* Global */
