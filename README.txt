@@ -10,5 +10,8 @@ git add .
 git commit -m "whatever"
 git push
 
+cd "/Volumes/Today/ascend-portal"
+./publish.sh
+
 clayton.ns.cloudflare.com
 julissa.ns.cloudflare.com

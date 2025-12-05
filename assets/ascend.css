@@ -178,13 +178,47 @@ body {
   width: 100%;
   max-width: var(--ascend-max-width);
   background: var(--ascend-shell-bg);
-  border-radius: 32px; /* shell can keep its special radius */
+  border-radius: 32px; /* shell keeps its special radius */
   box-shadow: var(--ascend-shadow-soft);
   border: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
   padding: 1.75rem 1.75rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+
+  /* host for grid overlay */
+  position: relative;
+  overflow: hidden;
+}
+
+.ascend-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+
+  background-image:
+    linear-gradient(
+      to right,
+      var(--ascend-grid-color) var(--ascend-grid-thickness),
+      transparent var(--ascend-grid-thickness)
+    ),
+    linear-gradient(
+      to bottom,
+      var(--ascend-grid-color) var(--ascend-grid-thickness),
+      transparent var(--ascend-grid-thickness)
+    );
+  background-size: var(--ascend-grid-size) var(--ascend-grid-size);
+
+  opacity: var(--ascend-grid-opacity);
+}
+
+/* keep actual content above the grid */
+.ascend-shell > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Header */
@@ -217,22 +251,25 @@ body {
 
 .ascend-title-block h1 {
   margin: 0;
-  font-size: 1.25rem;
-  letter-spacing: 0.04em;
+  font-size: var(--ascend-text-xl);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  font-weight: var(--ascend-weight-medium);
 }
 
 .ascend-title-block p {
   margin: 0.1rem 0 0;
-  font-size: 0.8rem;
+  font-size: var(--ascend-text-s);
   color: var(--ascend-color-text-muted);
 }
 
 .ascend-header-right {
   text-align: right;
-  font-size: 0.75rem;
+  font-size: var(--ascend-text-xs);
   color: var(--ascend-color-text-muted);
   opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
 }
 
 /* Main content layout */
@@ -420,10 +457,10 @@ body {
 }
 
 .ascend-dashboard-title {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: var(--ascend-text-s);
+  font-weight: var(--ascend-weight-medium);
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.22em;
 }
 
 .ascend-user-chip {
@@ -490,24 +527,28 @@ body {
       rgba(79, 209, 197, 0.2),
       rgba(16, 29, 61, 0.4)
     ),
-    #0b1025; /* could become its own token later */
+    #0b1025; /* candidate for future token */
   border-radius: var(--ascend-radius-lg);
   padding: 0.75rem 0.9rem;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+
+  /* control-panel accent */
+  border-left: 3px solid rgba(129, 230, 217, 0.9);
 }
 
 .ascend-row-label {
-  font-size: 0.85rem;
-  letter-spacing: 0.16em;
+  font-size: var(--ascend-text-xs);
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  opacity: 0.85;
+  opacity: 0.9;
+  color: var(--ascend-color-text-muted);
 }
 
 .ascend-row-title {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: var(--ascend-text-m);
+  font-weight: var(--ascend-weight-medium);
 }
 
 .ascend-row-description {
