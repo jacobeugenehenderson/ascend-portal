@@ -398,14 +398,18 @@ const form = document.getElementById('intake-form');
         statusEl.className = 'status success';
 
         if (data.ascendJobId) {
-          // Kick off local file creation on your machine
+          // Kick off local file creation on your machine (if running locally)
           notifyLocalBuilder(data.ascendJobId);
 
-          const linkUrl =
-            'file:///Volumes/Today/ascend-portal/artstart/artstart.html?jobId=' +
-            encodeURIComponent(data.ascendJobId);
+          // Build a URL to the ArtStart workspace (same folder, HTTP-safe)
+          const artstartUrl = new URL('./artstart.html', window.location.href);
+          artstartUrl.searchParams.set('jobId', data.ascendJobId);
+
+          const linkUrl = artstartUrl.toString();
           linkAreaEl.innerHTML =
-            'Open preview: <a href="' + linkUrl + '">' + data.ascendJobId + '</a>';
+            'Open preview: <a href="' + linkUrl +
+            '" target="_blank" rel="noopener noreferrer">' +
+            data.ascendJobId + '</a>';
         }
 
       } catch (err) {
