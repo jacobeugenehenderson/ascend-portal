@@ -1,9 +1,19 @@
-const AUTH_ENDPOINT = 'https://api.jacobhenderson.studio/auth';
-  function getTokenFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('token') || 'test';
-  }
+// assets/auth.js
+"use strict";
 
+const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
+
+/**
+ * Grab the ?token=... from the URL.
+ */
+function getTokenFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("token") || null;
+}
+
+/**
+ * Stable device ID, stored in localStorage.
+ */
 function getOrCreateDeviceId() {
   try {
     const storageKey = "ascendDeviceId";
@@ -29,6 +39,9 @@ function getOrCreateDeviceId() {
   }
 }
 
+/**
+ * Remembered email on this device.
+ */
 function getStoredEmail() {
   try {
     return (
@@ -43,131 +56,141 @@ function getStoredEmail() {
 
 function saveStoredEmail(email) {
   try {
-    if (!email) return;
+    const clean = (email || "").trim().toLowerCase();
+    if (!clean) return;
     window.localStorage &&
-      window.localStorage.setItem("ascendEmail", email);
+      window.localStorage.setItem("ascendEmail", clean);
   } catch (e) {
     // ignore storage failures
   }
-}  
-
-"use strict";
+}
 
 (function () {
-  function getTokenFromQuery() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("token") || null;
-  }
-
-    function bootstrap() {
+  function bootstrap() {
     const form = document.getElementById("ascend-auth-form");
     const emailInput = document.getElementById("ascend-auth-email");
     const statusEl = document.getElementById("ascend-auth-status");
+    const button = document.getElementById("ascend-auth-submit");
 
-    if (!form || !emailInput || !statusEl) return;
+    if (!form || !emailInput || !statusEl || !button) return;
 
-    // Prefill from previous successful login, if any
-    const rememberedEmail = getStoredEmail();
-    if (rememberedEmail && !emailInput.value.trim()) {
-      emailInput.value = rememberedEmail;
+    const initialToken = getTokenFromUrl();
+
+    if (!initialToken) {
       statusEl.textContent =
-        `You’re about to log in as ${rememberedEmail}. ` +
-        `Tap "Log me in" to continue.`;
+        "Missing token in URL. Try scanning the QR from the Ascend screen again.";
     }
 
-        const initialToken = getTokenFromUrl();
+    // STEALTH MODE: returning device = no form, auto-login
+    const rememberedEmail = getStoredEmail();
+    if (rememberedEmail) {
+      emailInput.value = rememberedEmail;
+      emailInput.style.display = "none";
+      button.style.display = "none";
+      statusEl.style.display = "none";
 
-        if (!initialToken) {
-          statusEl.textContent =
-            "Missing token in URL. Try scanning the QR from the Ascend screen again.";
+      const stealth = document.getElementById("ascend-stealth");
+      if (stealth) {
+        stealth.hidden = false;
+      }
+
+      // Auto-submit silently after a short delay
+      setTimeout(() => {
+        form.dispatchEvent(
+          new Event("submit", { bubbles: true, cancelable: true })
+        );
+      }, 150);
+
+      // Don’t show the normal form UI at all
+      return;
+    }
+
+    form.addEventListener("submit", async function (evt) {
+      evt.preventDefault();
+
+      const email = emailInput.value.trim().toLowerCase();
+      const token = getTokenFromUrl() || initialToken || "test";
+
+      if (!email) {
+        statusEl.textContent = "Please enter your Nordson email.";
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Linking…";
+      statusEl.textContent =
+        "Linking this phone to your Ascend session…";
+
+      try {
+        const deviceId = getOrCreateDeviceId();
+        const payload = { token, email };
+        if (deviceId) payload.deviceId = deviceId;
+
+        const resp = await fetch(AUTH_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await resp.json();
+        console.log("Ascend auth: response", resp.status, data);
+
+        // Treat ok:false OR status:"denied" as failure (LOSS path)
+        if (
+          !resp.ok ||
+          !data ||
+          data.ok === false ||
+          data.status === "denied"
+        ) {
+          const msg =
+            (data && data.error) ?
+              data.error :
+              `Handshake failed (status ${resp.status})`;
+          statusEl.textContent = msg;
+          button.disabled = false;
+          button.textContent = "Log me in";
+          return;
         }
 
-                form.addEventListener("submit", async function (evt) {
-          evt.preventDefault();
+        // Success – remember this email on this device
+        saveStoredEmail(email);
 
-          const button = document.getElementById("ascend-auth-submit");
-          const email = emailInput.value.trim();
-          const token = getTokenFromUrl() || initialToken || "test";
+        // Hide stealth overlay if present
+        const stealth = document.getElementById("ascend-stealth");
+        if (stealth) {
+          stealth.hidden = true;
+        }
 
-          if (!email) {
-            if (statusEl) {
-              statusEl.textContent = "Please enter your Nordson email.";
-            } else {
-              alert("Please enter your Nordson email.");
-            }
-            return;
-          }
+        statusEl.textContent =
+          "You’re all set. You can return to the terminal.";
+        button.textContent = "Linked ✅";
 
-          if (button) {
-            button.disabled = true;
-            button.textContent = "Linking…";
-          }
-          if (statusEl) {
-            statusEl.textContent =
-              "Linking this phone to your Ascend session…";
-          }
+        // Try to close the tab after a short beat
+        setTimeout(() => {
+          window.close();
+          // Fallback if window.close() is blocked
+          window.location.href = "about:blank";
+        }, 450);
+      } catch (err) {
+        console.warn("Ascend auth: failed to post handshake", err);
+        const msg =
+          (err && err.message) ?
+            err.message :
+            "Unexpected error during handshake.";
 
-          try {
-            const deviceId = getOrCreateDeviceId();
-            const payload = { token: token, email: email };
-            if (deviceId) {
-              payload.deviceId = deviceId;
-            }
+        // If stealth was active, reveal the form so user sees the error
+        const stealth = document.getElementById("ascend-stealth");
+        if (stealth) stealth.hidden = true;
+        emailInput.style.display = "";
+        button.style.display = "";
+        statusEl.style.display = "";
 
-            const resp = await fetch(AUTH_ENDPOINT, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            });
-
-            const data = await resp.json();
-            console.log("Ascend auth: response", resp.status, data);
-
-            if (!resp.ok || !data || data.ok === false) {
-              const msg =
-                (data && data.error) ?
-                  data.error :
-                  `Handshake failed (status ${resp.status})`;
-              if (statusEl) {
-                statusEl.textContent = msg;
-              } else {
-                alert(msg);
-              }
-              if (button) {
-                button.disabled = false;
-                button.textContent = "Log me in";
-              }
-              return;
-            }
-
-            // success path
-            saveStoredEmail(email);
-
-            if (statusEl) {
-              statusEl.textContent =
-                "You’re all set. You can return to the terminal.";
-            }
-            if (button) {
-              button.textContent = "Linked ✅";
-            }
-          } catch (err) {
-            console.warn("Ascend auth: failed to post handshake", err);
-            const msg =
-              (err && err.message) ?
-                err.message :
-                "Unexpected error during handshake.";
-            if (statusEl) {
-              statusEl.textContent = msg;
-            } else {
-              alert(msg);
-            }
-            if (button) {
-              button.disabled = false;
-              button.textContent = "Log me in";
-            }
-          }
-        });  }
-
+        statusEl.textContent = msg;
+        button.disabled = false;
+        button.textContent = "Log me in";
+      }
+    });
+  }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", bootstrap);
