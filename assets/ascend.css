@@ -605,10 +605,25 @@ body {
   gap: 0.35rem;
   font-size: 0.78rem;
   color: var(--ascend-color-text-muted);
+  min-height: 84px;
+}
+
+.ascend-row-secondary > div[id$="-list"] {
+  flex: 1;
+  border-radius: 10px;
+  background: radial-gradient(
+    circle at top,
+    rgba(15, 27, 54, 0.7),
+    rgba(4, 7, 20, 0.9)
+  );
 }
 
 .ascend-row-secondary strong {
   color: var(--ascend-color-text-main);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
 }
 
 /* Visibility states */
