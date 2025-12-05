@@ -549,8 +549,9 @@ body {
 }
 
 .ascend-row-title {
-  font-size: var(--ascend-text-m);
+  font-size: 1.18rem;
   font-weight: var(--ascend-weight-medium);
+  letter-spacing: 0.02em;
 }
 
 .ascend-row-description {
