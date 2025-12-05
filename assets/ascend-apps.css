@@ -1,63 +1,87 @@
 /* =========================================
  * ASCEND APP SHELL (ArtStart / Copydesk / Codedesk)
- * Blue + black/gray on whites
+ * "Reverse" of the portal: light surfaces, same DNA
  * ======================================= */
 
 :root {
-  /* Pull from ascend.css if present, or fall back */
-  --ascend-font-body: var(--ascend-font-body, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif);
-
-  --ascend-app-bg: #e5edf7;
+  /* App-level mappings derived from ascend.css tokens */
+  --ascend-app-bg: #f3f4f6;
   --ascend-app-surface: #ffffff;
-  --ascend-app-border: #d4d8e3;
-  --ascend-app-shadow-soft: 0 24px 60px rgba(15, 23, 42, 0.16);
+  --ascend-app-border: rgba(15, 23, 42, 0.10);
+  --ascend-app-shadow-soft: 0 26px 70px rgba(15, 23, 42, 0.18);
 
-  --ascend-app-accent: #2563eb;          /* strong blue */
-  --ascend-app-accent-soft: rgba(37, 99, 235, 0.08);
+  --ascend-app-accent: var(--ascend-color-accent, #4fd1c5);
+  --ascend-app-accent-soft: rgba(79, 209, 197, 0.12);
 
-  --ascend-app-text-main: #0f172a;
-  --ascend-app-text-muted: #6b7280;
-  --ascend-app-label: #4b5563;
+  --ascend-app-text-main: #020617;
+  --ascend-app-text-muted: #64748b;
+  --ascend-app-label: #475569;
 
-  --ascend-app-radius-lg: 18px;
+  --ascend-app-radius-lg: var(--ascend-radius-lg, 18px);
+  --ascend-app-radius-xl: var(--ascend-radius-xl, 26px);
   --ascend-app-radius-pill: 999px;
 }
 
-/* Base for all app pages */
+/* Base for all app pages: light version of the portal body */
 body.ascend-app-body {
   margin: 0;
-  font-family: var(--ascend-font-body);
-  background: radial-gradient(circle at top, #f3f6ff, #dde4f2 55%, #cbd5f1);
+  font-family: var(--ascend-font-body, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif);
+  background:
+    radial-gradient(circle at top, rgba(79, 209, 197, 0.12), transparent 55%),
+    var(--ascend-app-bg);
   color: var(--ascend-app-text-main);
 }
 
-/* Centered panel */
+/* Centered light panel, same radii spirit as portal shell */
 .ascend-app-shell {
   min-height: 100vh;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 32px 16px 40px;
+  padding: 32px 20px 40px;
 }
 
 .ascend-app-panel {
   width: 100%;
   max-width: 780px;
   background: var(--ascend-app-surface);
-  border-radius: var(--ascend-app-radius-lg);
+  border-radius: var(--ascend-app-radius-xl);
   border: 1px solid var(--ascend-app-border);
   box-shadow: var(--ascend-app-shadow-soft);
   padding: 22px 24px 26px;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Top header band */
+/* Soft accent wash in the corner, mirroring the portal cards */
+.ascend-app-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at top right,
+    rgba(129, 230, 217, 0.30),
+    transparent 55%
+  );
+  opacity: 0.28;
+}
+
+/* Keep content above the wash */
+.ascend-app-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Header: same uppercase system as portal, but dark-on-light */
 .ascend-app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.45);
 }
 
 .ascend-app-title-block {
@@ -76,6 +100,7 @@ body.ascend-app-body {
 .ascend-app-subtitle {
   font-size: 1.24rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .ascend-app-meta {
@@ -84,32 +109,44 @@ body.ascend-app-body {
   text-align: right;
 }
 
-/* Form layout */
+/* Form layout: single column on mobile, optional 2-col on wide */
 .ascend-app-form {
-  margin-top: 14px;
+  margin-top: 16px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
+@media (min-width: 900px) {
+  .ascend-app-form.ascend-app-form--two-column {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+    row-gap: 12px;
+  }
+}
+
+/* Labels: same uppercase rhythm as portal row labels */
 .ascend-app-form label {
   display: flex;
   flex-direction: column;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ascend-app-label);
 }
 
-/* Inputs */
+/* Inputs / selects / textareas: stroked white, not pillowy */
 .ascend-app-form input[type="text"],
 .ascend-app-form input[type="date"],
 .ascend-app-form select,
 .ascend-app-form textarea {
   margin-top: 4px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   font-size: 0.86rem;
-  border-radius: 9px;
-  border: 1px solid var(--ascend-app-border);
-  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.85);
+  background: #ffffff;
   color: var(--ascend-app-text-main);
   box-sizing: border-box;
 }
@@ -119,39 +156,41 @@ body.ascend-app-body {
   resize: vertical;
 }
 
+/* Focus: crisp stroke + subtle teal halo, echoing portal accent */
 .ascend-app-form input[type="text"]:focus,
 .ascend-app-form input[type="date"]:focus,
 .ascend-app-form select:focus,
 .ascend-app-form textarea:focus {
-  outline: 2px solid var(--ascend-app-accent-soft);
+  outline: none;
   border-color: var(--ascend-app-accent);
+  box-shadow: 0 0 0 1px var(--ascend-app-accent-soft);
   background: #ffffff;
 }
 
-/* Small helper text inside labels */
+/* Small helper text under a label, if needed */
 .ascend-app-helper {
   font-size: 0.72rem;
   color: var(--ascend-app-text-muted);
   margin-top: 2px;
 }
 
-/* Primary action button */
+/* Primary action: pill, teal-forward, but more tool than marketing */
 .ascend-app-primary-btn {
-  margin-top: 14px;
+  margin-top: 18px;
   align-self: flex-start;
-  padding: 9px 20px;
-  font-size: 0.88rem;
+  padding: 8px 20px;
+  font-size: 0.86rem;
   font-weight: 600;
   border-radius: var(--ascend-app-radius-pill);
-  border: none;
+  border: 1px solid rgba(4, 120, 87, 0.0);
   cursor: pointer;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #ffffff;
-  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.35);
+  background: linear-gradient(135deg, #4fd1c5, #2c7a7b);
+  color: #0b1025;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.25);
 }
 
 .ascend-app-primary-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1d4ed8, #1d4ed8);
+  filter: brightness(0.97);
 }
 
 .ascend-app-primary-btn:disabled {
@@ -160,7 +199,7 @@ body.ascend-app-body {
   box-shadow: none;
 }
 
-/* Status messages */
+/* Status messages (JS sets className='status' / 'status error', etc.) */
 .status {
   margin-top: 10px;
   font-size: 0.8rem;
@@ -175,7 +214,7 @@ body.ascend-app-body {
   color: #166534;
 }
 
-/* Media spec preview text inside the label */
+/* Media spec preview line inside the label */
 #mediaSpecPreview {
   font-size: 0.75rem;
   color: var(--ascend-app-text-muted);
