@@ -225,7 +225,7 @@ function initPrimaryButtons() {
   if (artstartBtn) {
     artstartBtn.addEventListener("click", () => {
       const target = buildUrlWithUser(ARTSTART_URL);
-      if (!ARTSTART_URL || ARTSTART_URL.indexOf("http") !== 0) {
+      if (!ARTSTART_URL) {
         alert("[Art Start] Destination URL not configured yet.");
         return;
       }
@@ -237,7 +237,7 @@ function initPrimaryButtons() {
   if (copydeskBtn) {
     copydeskBtn.addEventListener("click", () => {
       const target = buildUrlWithUser(COPYDESK_URL);
-      if (!COPYDESK_URL || COPYDESK_URL.indexOf("http") !== 0) {
+      if (!COPYDESK_URL) {
         alert("[Copydesk] Destination URL not configured yet.");
         return;
       }
