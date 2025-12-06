@@ -16,7 +16,7 @@ const HANDSHAKE_TOKEN = "test";
 
 // App destinations (replace with real URLs when ready)
 const ARTSTART_URL = "./artstart/assets/job_intake.html";
-const COPYDESK_URL = "https://YOUR-COPYDESK-FRONTDOOR-URL.example.com";
+const COPYDESK_URL = "https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec";
 const CODEDESK_URL = "https://okqral.com";
 
   let pollingTimer = null;
