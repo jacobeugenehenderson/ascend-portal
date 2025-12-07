@@ -1273,6 +1273,58 @@ function doGet(e) {
     }
   }
 
+  if (action === 'getEditorialTopicForJob') {
+    try {
+      var pubId = e.parameter.publicationId || '';
+      var runDateStr = e.parameter.runDate || '';
+
+      if (!pubId || !runDateStr) {
+        return jsonResponse_({ success: false, error: 'Missing publicationId or runDate' }, callback);
+      }
+
+      var edSheet = getSheet_(SHEET_NAME_EDITORIAL);
+      var edData = edSheet.getDataRange().getValues();
+      if (edData.length < 2) {
+        return jsonResponse_({ success: true, topicText: '', showContext: '' }, callback);
+      }
+
+      var edHeader = edData[0];
+      var edMap = getHeaderMap_(edSheet);
+
+      // Parse the runDate and convert to Month name, e.g., "September"
+      var runDate = new Date(runDateStr);
+      if (isNaN(runDate.getTime())) {
+        return jsonResponse_({ success: false, error: 'Invalid runDate' }, callback);
+      }
+
+      var monthName = Utilities.formatDate(runDate, Session.getScriptTimeZone(), 'MMMM');
+      var foundTopic = '';
+      var foundShowContext = '';
+
+      for (var r = 1; r < edData.length; r++) {
+        var rowPubId = String(edData[r][edMap['PublicationId']] || '');
+        var rowMonth = String(edData[r][edMap['Month']] || '');
+
+        if (rowPubId === String(pubId) && rowMonth === monthName) {
+          var rowObj = rowToObject_(edData[r], edHeader);
+
+          // Prefer EditorialTopic, fall back to Topic if that exists
+          foundTopic = rowObj.EditorialTopic || rowObj.Topic || '';
+          foundShowContext = rowObj.ShowContext || '';
+          break;
+        }
+      }
+
+      return jsonResponse_({
+        success: true,
+        topicText: foundTopic,
+        showContext: foundShowContext
+      }, callback);
+    } catch (err3) {
+      return jsonResponse_({ success: false, error: String(err3) }, callback);
+    }
+  }
+
   // fallback: no or unknown action – return JSON with CORS instead of bare HTML
   return jsonResponse_({
     ok: false,

@@ -206,7 +206,7 @@
       .artstart-canvas-bleed {
         position: relative;
         box-sizing: border-box;
-        border-radius: 8px;
+        border-radius: 0;
         border: 2px dashed rgba(79, 209, 197, 0.9);
         background-color: rgba(79, 209, 197, 0.06);
       }
@@ -215,7 +215,7 @@
         position: absolute;
         inset: 6%;
         box-sizing: border-box;
-        border-radius: 6px;
+        border-radius: 0;
         background-color: #ffffff;
         border: 1px solid rgba(15, 23, 42, 0.25);
         box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
@@ -246,9 +246,16 @@
         opacity: 0.9;
       }
 
+      .artstart-row-cta {
+        font-weight: 600;
+        font-size: clamp(9px, 1.5vw, 14px);
+      }
+
       .artstart-row-body {
         font-size: clamp(9px, 1.5vw, 14px);
         opacity: 0.9;
+        white-space: pre-line;  /* allow multiple rows from textarea */
+        overflow: hidden;
       }
 
       .artstart-row-meta {
@@ -396,9 +403,22 @@
 
       .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
         inset: 0;
-        border-radius: 8px;
+        border-radius: 0;
         box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
       }
+
+            .artstart-canvas-main {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .artstart-canvas-meta-block {
+        margin-top: 6px;
+        text-align: right;
+        align-self: flex-end;
+      }
+
     </style>
   </head>
   <body>
@@ -446,11 +466,16 @@
               <div class="artstart-canvas-inner">
                 <div class="artstart-canvas-bleed"></div>
                 <div class="artstart-canvas-safe">
-                  <div id="canvas-headline" class="artstart-canvas-row artstart-row-headline"></div>
-                  <div id="canvas-subhead" class="artstart-canvas-row artstart-row-subhead"></div>
-                  <div id="canvas-body" class="artstart-canvas-row artstart-row-body"></div>
-                  <div id="canvas-website" class="artstart-canvas-row artstart-row-meta"></div>
-                  <div id="canvas-email" class="artstart-canvas-row artstart-row-meta"></div>
+                  <div class="artstart-canvas-main">
+                    <div id="canvas-headline" class="artstart-canvas-row artstart-row-headline"></div>
+                    <div id="canvas-subhead" class="artstart-canvas-row artstart-row-subhead"></div>
+                    <div id="canvas-cta" class="artstart-canvas-row artstart-row-cta"></div>
+                    <div id="canvas-body" class="artstart-canvas-row artstart-row-body"></div>
+                  </div>
+                  <div class="artstart-canvas-meta-block">
+                    <div id="canvas-website" class="artstart-canvas-row artstart-row-meta"></div>
+                    <div id="canvas-email" class="artstart-canvas-row artstart-row-meta"></div>
+                  </div>
                 </div>
               </div>
               <div id="canvas-noinfo" class="artstart-canvas-noinfo">

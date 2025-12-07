@@ -65,15 +65,28 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
   }
 
   function inferMediaKind(job) {
-    var summary = (job.colorExportSummary || '').toLowerCase();
-    if ((job.bleed && String(job.bleed).trim()) ||
-        /pdf\/x-4|cmyk|press|print/.test(summary)) {
+    // MediaType column in MediaSpecs is the single source of truth.
+    // We only normalize that string; no guessing from bleed/export.
+    var raw = (job.mediaType || job.MediaType || '')
+      .toString()
+      .toLowerCase()
+      .trim();
+
+    // If the sheet is empty, be conservative and treat it as print.
+    if (!raw) {
       return 'print';
     }
-    if (/digital|html|web|screen/.test(summary)) {
+
+    // Allow simple synonyms like "Digital Ad", "Digital Banner", etc.
+    if (raw === 'digital' ||
+        raw.indexOf('digital') !== -1 ||
+        raw.indexOf('screen') !== -1 ||
+        raw.indexOf('html') !== -1) {
       return 'digital';
     }
-    return '';
+
+    // Anything else is treated as print.
+    return 'print';
   }
 
   function getMediaKind(job) {
@@ -180,25 +193,31 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
     function val(id) {
       var el = document.getElementById(id);
-      return el ? el.value.trim() : '';
+      return el ? el.value : '';
     }
 
-    var headline = val('working-headline');
-    var subhead = val('working-subhead');
-    var body = val('working-bullets')
-      .replace(/\s+/g, ' ')
-      .trim();
-    var website = val('working-website');
-    var email = val('working-email');
+    var headline = val('working-headline').trim();
+    var subhead = val('working-subhead').trim();
+    var cta = val('working-cta').trim();
+
+    var body = val('working-bullets');
+    if (body) {
+      body = body.trim(); // keep internal line breaks for pre-line rendering
+    }
+
+    var website = val('working-website').trim();
+    var email = val('working-email').trim();
 
     var headlineEl = document.getElementById('canvas-headline');
     var subheadEl = document.getElementById('canvas-subhead');
+    var ctaEl = document.getElementById('canvas-cta');
     var bodyEl = document.getElementById('canvas-body');
     var websiteEl = document.getElementById('canvas-website');
     var emailEl = document.getElementById('canvas-email');
 
     if (headlineEl) headlineEl.textContent = headline;
     if (subheadEl) subheadEl.textContent = subhead;
+    if (ctaEl) ctaEl.textContent = cta;
     if (bodyEl) bodyEl.textContent = body;
     if (websiteEl) websiteEl.textContent = website;
     if (emailEl) emailEl.textContent = email;
