@@ -81,30 +81,10 @@ function saveStoredEmail(email) {
         "Missing token in URL. Try scanning the QR from the Ascend screen again.";
     }
 
-    // STEALTH MODE: returning device = no form, auto-login
-    // TEMPORARILY DISABLED while we debug the spinning overlay.
-    // To re-enable later, restore the old `if (rememberedEmail)` block.
+    // Pre-fill email if we have one, but always show the form.
     const rememberedEmail = getStoredEmail();
-    if (false && rememberedEmail) {
+    if (rememberedEmail) {
       emailInput.value = rememberedEmail;
-      emailInput.style.display = "none";
-      button.style.display = "none";
-      statusEl.style.display = "none";
-
-      const stealth = document.getElementById("ascend-stealth");
-      if (stealth) {
-        stealth.hidden = false;
-      }
-
-      // Auto-submit silently after a short delay
-      setTimeout(() => {
-        form.dispatchEvent(
-          new Event("submit", { bubbles: true, cancelable: true })
-        );
-      }, 150);
-
-      // Don’t show the normal form UI at all
-      return;
     }
 
     form.addEventListener("submit", async function (evt) {
@@ -134,10 +114,15 @@ function saveStoredEmail(email) {
           body: JSON.stringify(payload),
         });
 
-        const data = await resp.json();
+        let data = null;
+        try {
+          data = await resp.json();
+        } catch (_) {
+          // ignore JSON parse errors; treat as failure below
+        }
+
         console.log("Ascend auth: response", resp.status, data);
 
-        // Treat ok:false OR status:"denied" as failure (LOSS path)
         if (
           !resp.ok ||
           !data ||
@@ -145,16 +130,9 @@ function saveStoredEmail(email) {
           data.status === "denied"
         ) {
           const msg =
-            (data && data.error) ?
-              data.error :
-              `Handshake failed (status ${resp.status})`;
-
-          // If stealth was active, reveal the form so the user sees the error
-          const stealth = document.getElementById("ascend-stealth");
-          if (stealth) stealth.hidden = true;
-          emailInput.style.display = "";
-          button.style.display = "";
-          statusEl.style.display = "";
+            (data && data.error)
+              ? data.error
+              : `Handshake failed (status ${resp.status})`;
 
           statusEl.textContent = msg;
           button.disabled = false;
@@ -164,12 +142,6 @@ function saveStoredEmail(email) {
 
         // Success – remember this email on this device
         saveStoredEmail(email);
-
-        // Hide stealth overlay if present
-        const stealth = document.getElementById("ascend-stealth");
-        if (stealth) {
-          stealth.hidden = true;
-        }
 
         statusEl.textContent =
           "You’re all set. You can return to the terminal.";
@@ -184,16 +156,9 @@ function saveStoredEmail(email) {
       } catch (err) {
         console.warn("Ascend auth: failed to post handshake", err);
         const msg =
-          (err && err.message) ?
-            err.message :
-            "Unexpected error during handshake.";
-
-        // If stealth was active, reveal the form so user sees the error
-        const stealth = document.getElementById("ascend-stealth");
-        if (stealth) stealth.hidden = true;
-        emailInput.style.display = "";
-        button.style.display = "";
-        statusEl.style.display = "";
+          (err && err.message)
+            ? err.message
+            : "Unexpected error during handshake.";
 
         statusEl.textContent = msg;
         button.disabled = false;
