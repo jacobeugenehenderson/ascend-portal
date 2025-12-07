@@ -261,6 +261,13 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     document.getElementById('job-overview-run').textContent = job.runDate || '—';
     document.getElementById('job-overview-deadline').textContent = job.materialsDeadline || '—';
 
+    // Editorial notes + intake notes
+    document.getElementById('job-overview-topic').textContent =
+      job.topic || '—';
+
+    document.getElementById('job-overview-notes').textContent =
+      job.notes || '—';
+
     // Format card
     var formatPretty = buildFormatPretty(job);
     var dimsForSize = extractCanvasDims(job);
