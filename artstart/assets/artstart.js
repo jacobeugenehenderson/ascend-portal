@@ -326,7 +326,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
       });
   }
 
-  // Dev-only hook to let us call these from the console
+  // Dev-only hook so we can drive the UI from the console
   window.artStartDebug = window.artStartDebug || {};
   window.artStartDebug.populateJob = populateJob;
   window.artStartDebug.attachBlurListeners = attachBlurListeners;
