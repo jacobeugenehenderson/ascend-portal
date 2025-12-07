@@ -82,8 +82,10 @@ function saveStoredEmail(email) {
     }
 
     // STEALTH MODE: returning device = no form, auto-login
+    // TEMPORARILY DISABLED while we debug the spinning overlay.
+    // To re-enable later, restore the old `if (rememberedEmail)` block.
     const rememberedEmail = getStoredEmail();
-    if (rememberedEmail) {
+    if (false && rememberedEmail) {
       emailInput.value = rememberedEmail;
       emailInput.style.display = "none";
       button.style.display = "none";
@@ -146,6 +148,14 @@ function saveStoredEmail(email) {
             (data && data.error) ?
               data.error :
               `Handshake failed (status ${resp.status})`;
+
+          // If stealth was active, reveal the form so the user sees the error
+          const stealth = document.getElementById("ascend-stealth");
+          if (stealth) stealth.hidden = true;
+          emailInput.style.display = "";
+          button.style.display = "";
+          statusEl.style.display = "";
+
           statusEl.textContent = msg;
           button.disabled = false;
           button.textContent = "Log me in";
