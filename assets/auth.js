@@ -74,18 +74,56 @@ function saveStoredEmail(email) {
 
     if (!form || !emailInput || !statusEl || !button) return;
 
-    const initialToken = getTokenFromUrl();
+const initialToken = getTokenFromUrl();
 
-    if (!initialToken) {
-      statusEl.textContent =
-        "Missing token in URL. Try scanning the QR from the Ascend screen again.";
-    }
+if (!initialToken) {
+  statusEl.textContent =
+    "Missing token in URL. Try scanning the QR from the Ascend screen again.";
+}
 
-    // Pre-fill email if we have one, but always show the form.
-    const rememberedEmail = getStoredEmail();
-    if (rememberedEmail) {
-      emailInput.value = rememberedEmail;
+// Pre-fill email if we have one, and offer a one-click "log in as" button.
+const rememberedEmail = getStoredEmail();
+if (rememberedEmail) {
+  emailInput.value = rememberedEmail;
+
+  const quick = document.getElementById("ascend-auth-quick");
+  if (quick) {
+    quick.style.display = "block";
+    quick.innerHTML = `
+      <button
+        type="button"
+        id="ascend-auth-quick-btn"
+        style="
+          border-radius: 999px;
+          border: none;
+          padding: 0.4rem 0.9rem;
+          cursor: pointer;
+          font-size: 0.8rem;
+          font-weight: 500;
+          background: rgba(79, 209, 197, 0.12);
+          color: #e2e8f0;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+        "
+      >
+        <span>Log in as ${rememberedEmail}</span>
+        <span>✓</span>
+      </button>
+    `;
+
+    const quickBtn = document.getElementById("ascend-auth-quick-btn");
+    if (quickBtn) {
+      quickBtn.addEventListener("click", function () {
+        // Make sure the field is synced, then reuse the normal submit path
+        emailInput.value = rememberedEmail;
+        form.dispatchEvent(
+          new Event("submit", { bubbles: true, cancelable: true })
+        );
+      });
     }
+  }
+}
 
     form.addEventListener("submit", async function (evt) {
       evt.preventDefault();

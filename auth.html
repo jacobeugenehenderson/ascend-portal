@@ -29,21 +29,29 @@
               Link this phone to your Ascend session
             </h2>
             <p class="ascend-login-description">
-              You scanned a code from a Nordson terminal. Confirm your Nordson
-              email once, and we’ll link this phone to that screen.
+              Confirm your work email to link this phone.
             </p>
+
+            <div
+              id="ascend-auth-quick"
+              style="
+                margin: 0.75rem 0;
+                display: none;
+                font-size: 0.8rem;
+              "
+            ></div>
 
             <form id="ascend-auth-form">
               <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                 <label style="font-size: 0.8rem;">
-                  Nordson work email
+                  Work email
                   <input
                     id="ascend-auth-email"
                     type="email"
                     required
                     inputmode="email"
                     autocomplete="email"
-                    placeholder="you@nordson.com"
+                    placeholder="you@email.com"
                     style="
                       width: 100%;
                       margin-top: 0.25rem;
