@@ -66,34 +66,32 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
   function inferMediaKind(job) {
     // MediaType column in MediaSpecs is the single source of truth.
-    // We only normalize that string; no guessing from bleed/export.
-    var raw = (job.mediaType || job.MediaType || '')
+    // We normalize that string into either "digital" or "print".
+    var raw = (job.MediaType || job.mediaType || '')
       .toString()
       .toLowerCase()
       .trim();
 
-    // If the sheet is empty, be conservative and treat it as print.
     if (!raw) {
+      // If MediaType is missing, default to print.
       return 'print';
     }
 
-    // Allow simple synonyms like "Digital Ad", "Digital Banner", etc.
-    if (raw === 'digital' ||
-        raw.indexOf('digital') !== -1 ||
-        raw.indexOf('screen') !== -1 ||
-        raw.indexOf('html') !== -1) {
+    if (
+      raw === 'digital' ||
+      raw.indexOf('digital') !== -1 ||
+      raw.indexOf('screen') !== -1 ||
+      raw.indexOf('html') !== -1
+    ) {
       return 'digital';
     }
 
-    // Anything else is treated as print.
+    // Everything else is treated as print.
     return 'print';
   }
 
   function getMediaKind(job) {
-    var raw = (job.mediaType || job.MediaType || '').toString().toLowerCase().trim();
-    if (raw === 'print' || raw === 'digital') {
-      return raw;
-    }
+    // Wrapper kept so existing call sites don’t change.
     return inferMediaKind(job);
   }
 
@@ -131,13 +129,10 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
     var dims = extractCanvasDims(job);
     var hasDims = !!dims;
+    var mediaKind = getMediaKind(job);
 
     box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
-    if (dims && dims.kind) {
-      box.setAttribute('data-media-kind', dims.kind);
-    } else {
-      box.removeAttribute('data-media-kind');
-    }
+    box.setAttribute('data-media-kind', mediaKind || '');
 
     if (!hasDims) {
       if (inner) {
@@ -147,6 +142,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
       if (bleedEl) {
         bleedEl.style.width = '';
         bleedEl.style.height = '';
+        bleedEl.style.display = '';
       }
       if (noInfoEl) {
         noInfoEl.style.display = 'flex';
@@ -159,12 +155,15 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     var displayWidth;
     var displayHeight;
 
-    if (dims.kind === 'digital') {
-      // Digital pieces: always 1:1 pixel size, never scaled.
+    if (mediaKind === 'digital') {
+      // Digital projects: always 1:1 pixel size, never scaled, and no bleed frame.
       displayWidth = w;
       displayHeight = h;
+      if (bleedEl) {
+        bleedEl.style.display = 'none';
+      }
     } else {
-      // Print pieces: scale to fit viewport while preserving proportions.
+      // Print projects: scale to fit viewport and show bleed box.
       var maxWidth = box.clientWidth || 520;
       var maxHeight = box.clientHeight || 260;
       if (maxHeight < 80) maxHeight = 260;
@@ -172,16 +171,19 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
       var scale = Math.min(maxWidth / w, maxHeight / h);
       displayWidth = Math.max(100, Math.round(w * scale));
       displayHeight = Math.max(100, Math.round(h * scale));
+
+      if (bleedEl) {
+        bleedEl.style.display = '';
+        bleedEl.style.width = '100%';
+        bleedEl.style.height = '100%';
+      }
     }
 
     if (inner) {
       inner.style.width = displayWidth + 'px';
       inner.style.height = displayHeight + 'px';
     }
-    if (bleedEl) {
-      bleedEl.style.width = '100%';
-      bleedEl.style.height = '100%';
-    }
+
     if (noInfoEl) {
       noInfoEl.style.display = 'none';
     }
@@ -262,7 +264,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     // Format card
     var formatPretty = buildFormatPretty(job);
     var dimsForSize = extractCanvasDims(job);
-    var mediaKind = dimsForSize ? dimsForSize.kind : getMediaKind(job);
+    var mediaKind = getMediaKind(job);
 
     var publicationEl = document.getElementById('format-publication');
     if (publicationEl) publicationEl.textContent = job.publication || '—';
