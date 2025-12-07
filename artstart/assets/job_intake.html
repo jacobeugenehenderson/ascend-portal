@@ -203,8 +203,26 @@ const notesEl           = document.getElementById('notes');
 
       window[callbackName] = function (data) {
         try {
-          if (data && typeof data.topicText === 'string' && topicEl) {
-            topicEl.value = data.topicText;
+          if (!topicEl && !notesEl) return;
+
+          const topicText =
+            data && typeof data.topicText === 'string' ? data.topicText : '';
+          const showContext =
+            data && typeof data.showContext === 'string' ? data.showContext : '';
+
+          // Always overwrite Topic / Editorial Notes with the latest helper text.
+          if (topicEl) {
+            topicEl.value = topicText;
+          }
+
+          // Also surface Show Context in the Notes field, appended to whatever spec notes exist.
+          if (notesEl && showContext) {
+            const baseNotes = (notesEl.value || '').trim();
+            if (baseNotes) {
+              notesEl.value = baseNotes + '\n\nShow context: ' + showContext;
+            } else {
+              notesEl.value = 'Show context: ' + showContext;
+            }
           }
         } catch (err) {
           console.error('Error in editorial topic callback', err);

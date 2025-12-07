@@ -76,6 +76,14 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     return '';
   }
 
+  function getMediaKind(job) {
+    var raw = (job.mediaType || job.MediaType || '').toString().toLowerCase().trim();
+    if (raw === 'print' || raw === 'digital') {
+      return raw;
+    }
+    return inferMediaKind(job);
+  }
+
   function extractCanvasDims(job) {
     var pixelWidth = parseFloat(job.pixelWidth);
     var pixelHeight = parseFloat(job.pixelHeight);
@@ -87,7 +95,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     var hasTrim = isFinite(trimWidth) && trimWidth > 0 &&
                   isFinite(trimHeight) && trimHeight > 0;
 
-    var kind = inferMediaKind(job);
+    var kind = getMediaKind(job);
     if (kind === 'digital' && hasPixel) {
       return { kind: 'digital', width: pixelWidth, height: pixelHeight };
     }
@@ -112,6 +120,11 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     var hasDims = !!dims;
 
     box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
+    if (dims && dims.kind) {
+      box.setAttribute('data-media-kind', dims.kind);
+    } else {
+      box.removeAttribute('data-media-kind');
+    }
 
     if (!hasDims) {
       if (inner) {
@@ -128,15 +141,25 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
       return;
     }
 
-    var maxWidth = box.clientWidth || 520;
-    var maxHeight = box.clientHeight || 260;
-    if (maxHeight < 80) maxHeight = 260;
-
     var w = dims.width || 1;
     var h = dims.height || 1;
-    var scale = Math.min(maxWidth / w, maxHeight / h);
-    var displayWidth = Math.max(100, Math.round(w * scale));
-    var displayHeight = Math.max(100, Math.round(h * scale));
+    var displayWidth;
+    var displayHeight;
+
+    if (dims.kind === 'digital') {
+      // Digital pieces: always 1:1 pixel size, never scaled.
+      displayWidth = w;
+      displayHeight = h;
+    } else {
+      // Print pieces: scale to fit viewport while preserving proportions.
+      var maxWidth = box.clientWidth || 520;
+      var maxHeight = box.clientHeight || 260;
+      if (maxHeight < 80) maxHeight = 260;
+
+      var scale = Math.min(maxWidth / w, maxHeight / h);
+      displayWidth = Math.max(100, Math.round(w * scale));
+      displayHeight = Math.max(100, Math.round(h * scale));
+    }
 
     if (inner) {
       inner.style.width = displayWidth + 'px';
@@ -219,13 +242,37 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
     // Format card
     var formatPretty = buildFormatPretty(job);
-    document.getElementById('format-publication').textContent = job.publication || '—';
-    document.getElementById('format-placement').textContent = job.placement || '—';
-    document.getElementById('format-trim').textContent = formatPretty.trim;
-    document.getElementById('format-bleed').textContent = formatPretty.bleed;
-    document.getElementById('format-orientation').textContent = job.orientation || '—';
-    document.getElementById('format-color-export').textContent =
-      job.colorExportSummary || 'Working: RGB → Delivery: PDF/X-4 or digital, per job spec.';
+    var dimsForSize = extractCanvasDims(job);
+    var mediaKind = dimsForSize ? dimsForSize.kind : getMediaKind(job);
+
+    var publicationEl = document.getElementById('format-publication');
+    if (publicationEl) publicationEl.textContent = job.publication || '—';
+
+    var placementEl = document.getElementById('format-placement');
+    if (placementEl) placementEl.textContent = job.placement || '—';
+
+    var sizeText = '—';
+    if (dimsForSize && dimsForSize.kind === 'digital' &&
+        isFinite(dimsForSize.width) && isFinite(dimsForSize.height)) {
+      sizeText = Math.round(dimsForSize.width) + 'px × ' + Math.round(dimsForSize.height) + 'px';
+    } else if (formatPretty.trim) {
+      sizeText = formatPretty.trim;
+    }
+
+    var sizeEl = document.getElementById('format-size');
+    if (sizeEl) sizeEl.textContent = sizeText;
+
+    var bleedRowEl = document.getElementById('format-bleed-row');
+    var bleedEl = document.getElementById('format-bleed');
+    if (bleedEl) bleedEl.textContent = formatPretty.bleed;
+    if (bleedRowEl) {
+      // Hide bleed row entirely for digital pieces.
+      bleedRowEl.style.display = mediaKind === 'digital' ? 'none' : '';
+    }
+
+    var outputText = job.outputSummary || job.outputFormat || job.output || '—';
+    var outputEl = document.getElementById('format-output');
+    if (outputEl) outputEl.textContent = outputText;
 
     // Canvas preview (digital vs print, with bleed)
     renderCanvasPreview(job);
