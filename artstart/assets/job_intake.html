@@ -298,13 +298,15 @@ const notesEl           = document.getElementById('notes');
     mediaSpecPreview.textContent = `${name} – ${width} × ${height}${dpi}`;
     mediaSpecPreview.style.color = '#222';
 
-    // Populate the freeform Notes area from the MediaSpecs tab
+    // Populate the freeform Notes area from the MediaSpecs tab.
+    // If the selected spec has no Notes, clear the field so stale content doesn't linger.
     if (notesEl) {
       const specNotes = (ms.Notes || '').trim();
       if (specNotes) {
         notesEl.value = specNotes;
+      } else {
+        notesEl.value = '';
       }
-      // If there are no notes on this spec, we leave whatever the user has typed.
     }
   }
 
