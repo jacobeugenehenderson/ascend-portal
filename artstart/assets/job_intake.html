@@ -116,11 +116,14 @@ const submitBtn = document.getElementById('submit-btn');
 const statusEl = document.getElementById('status');
 const form = document.getElementById('intake-form');
 
-        // DOM references for dynamic fields
-    const publicationSelect = document.getElementById('publicationId');
-    const deliverableSelect = document.getElementById('deliverableType');
-    const mediaSpecIdInput  = document.getElementById('mediaSpecId');
-    const mediaSpecPreview  = document.getElementById('mediaSpecPreview');
+// DOM references for dynamic fields
+const publicationSelect = document.getElementById('publicationId');
+const deliverableSelect = document.getElementById('deliverableType');
+const mediaSpecIdInput  = document.getElementById('mediaSpecId');
+const mediaSpecPreview  = document.getElementById('mediaSpecPreview');
+const runDateInput      = document.getElementById('runDate');
+const topicEl           = document.getElementById('topic');
+const notesEl           = document.getElementById('notes');
 
     let ascendPublications = [];
     let ascendMediaSpecs = [];
@@ -181,6 +184,56 @@ const form = document.getElementById('intake-form');
       document.body.appendChild(s);
     }
 
+    // Look up editorial schedule text for this job
+    function maybeFetchEditorialTopic() {
+      if (!publicationSelect || !runDateInput || !topicEl) return;
+
+      const pubId   = publicationSelect.value;
+      const runDate = runDateInput.value;
+
+      if (!pubId || !runDate) return;
+
+      // Remove any prior JSONP script for this lookup
+      const existing = document.getElementById('editorial-topic-script');
+      if (existing) {
+        existing.remove();
+      }
+
+      const callbackName = 'ascendEditorialTopicLoaded_' + Date.now();
+
+      window[callbackName] = function (data) {
+        try {
+          if (data && typeof data.topicText === 'string' && topicEl) {
+            topicEl.value = data.topicText;
+          }
+        } catch (err) {
+          console.error('Error in editorial topic callback', err);
+        } finally {
+          try {
+            delete window[callbackName];
+          } catch (e) {
+            window[callbackName] = undefined;
+          }
+        }
+      };
+
+      const s = document.createElement('script');
+      s.id = 'editorial-topic-script';
+      const cacheBust = '&_=' + Date.now();
+      s.src =
+        API_BASE +
+        '?action=getEditorialTopicForJob' +
+        '&publicationId=' + encodeURIComponent(pubId) +
+        '&runDate=' + encodeURIComponent(runDate) +
+        '&callback=' + callbackName +
+        cacheBust;
+      s.onerror = function () {
+        console.error('Error loading editorial topic via JSONP');
+      };
+
+      document.body.appendChild(s);
+    }
+
     const mediaSpecSelect   = document.getElementById('mediaSpecSelect');
 
     function refreshMediaSpecOptions() {
@@ -225,6 +278,12 @@ const form = document.getElementById('intake-form');
       mediaSpecIdInput.value = '';
       mediaSpecPreview.textContent = '';
       mediaSpecPreview.style.color = '#555';
+
+      // Clear any spec-driven default notes if we drop the selection
+      if (notesEl) {
+        notesEl.value = '';
+      }
+
       return;
     }
 
@@ -238,11 +297,25 @@ const form = document.getElementById('intake-form');
     // This is the part you’re keeping: the clean dimensions preview
     mediaSpecPreview.textContent = `${name} – ${width} × ${height}${dpi}`;
     mediaSpecPreview.style.color = '#222';
+
+    // Populate the freeform Notes area from the MediaSpecs tab
+    if (notesEl) {
+      const specNotes = (ms.Notes || '').trim();
+      if (specNotes) {
+        notesEl.value = specNotes;
+      }
+      // If there are no notes on this spec, we leave whatever the user has typed.
+    }
   }
 
     publicationSelect.addEventListener('change', () => {
       refreshMediaSpecOptions();
       mediaSpecSelect.disabled = !publicationSelect.value;   // NEW: enables/disables dynamically
+
+      // Also (re)load the editorial schedule helper text when we have dates
+      if (runDateInput) {
+        maybeFetchEditorialTopic();
+      }
     });
 
     mediaSpecSelect.addEventListener('change', () => {
@@ -255,6 +328,13 @@ const form = document.getElementById('intake-form');
       );
       applyMediaSpecSelection(ms || null);
     });
+
+    // When the Run Date changes, re-query the EditorialSchedule tab
+    if (runDateInput) {
+      runDateInput.addEventListener('change', () => {
+        maybeFetchEditorialTopic();
+      });
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       loadIntakeConfig();
