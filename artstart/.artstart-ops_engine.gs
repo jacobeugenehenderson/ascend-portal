@@ -1189,12 +1189,8 @@ function jsonResponse_(obj, callback) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  // CORS headers so fetch() from localhost can read the response
-  output
-    .setHeader('Access-Control-Allow-Origin', '*')
-    .setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+  // Note: CORS headers are intentionally omitted here.
+  // JSONP responses don't require CORS, and TextOutput does not support setHeader.
   return output;
 }
 

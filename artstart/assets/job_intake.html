@@ -168,7 +168,11 @@ const form = document.getElementById('intake-form');
       // Inject <script> tag to call the Apps Script endpoint
       const s = document.createElement('script');
       s.id = 'intake-config-script';
-      s.src = API_BASE + '?action=listConfigForIntake&callback=ascendIntakeConfigLoaded';
+      const cacheBust = '&_=' + Date.now();
+      s.src =
+        API_BASE +
+        '?action=listConfigForIntake&callback=ascendIntakeConfigLoaded' +
+        cacheBust;
       s.onerror = function () {
         statusEl.textContent = 'Error loading dropdown data (network / JSONP).';
         statusEl.className = 'status error';
