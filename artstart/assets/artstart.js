@@ -402,11 +402,23 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     setSaveStatus('Saving…');
 
     var payload = buildDraftPayload(jobId);
+    var params = new URLSearchParams();
 
-    fetch(ARTSTART_API_BASE + '?action=updateArtStartDraftFields', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    // Action for the Apps Script router
+    params.append('action', 'updateArtStartDraftFields');
+
+    // Copy all payload keys into the query string
+    Object.keys(payload).forEach(function (key) {
+      var value = payload[key];
+      if (value !== undefined && value !== null) {
+        params.append(key, value);
+      }
+    });
+
+    var url = ARTSTART_API_BASE + '?' + params.toString();
+
+    fetch(url, {
+      method: 'GET'
     })
       .then(function (res) { return res.json(); })
       .then(function (json) {
