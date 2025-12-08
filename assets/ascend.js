@@ -10,8 +10,8 @@ const POLLING_INTERVAL_MS = 4000; // poll backend for QR-auth handshake
 
 // Auth + routing knobs (single source of truth)
 const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
-// NOTE: token is currently baked into the static QR as "test".
-// When we move to dynamic QR generation, this becomes per-terminal.
+// NOTE: token is currently baked into the static QR as "test". Need to update
+
 const HANDSHAKE_TOKEN = "test";
 
 // App destinations (replace with real URLs when ready)
@@ -113,19 +113,25 @@ function updateUserChip(session) {
 
   function startPollingForLogin() {
     if (pollingTimer) {
+      console.log("Starting polling loop for login…");
       clearInterval(pollingTimer);
       pollingTimer = null;
     }
 
-    const token = HANDSHAKE_TOKEN;
+    // Prefer ?token=… from the URL, fall back to our baked-in default.
+        const urlToken = new URLSearchParams(window.location.search).get("token");
+        const token = urlToken || HANDSHAKE_TOKEN;
+
+        console.log("[Ascend] Using handshake token:", token);
 
     async function checkOnce() {
       try {
-        const resp = await fetch(
-          AUTH_ENDPOINT + '?token=' + encodeURIComponent(token),
-          { method: 'GET' }
-        );
+        const pollUrl = AUTH_ENDPOINT + '?token=' + encodeURIComponent(token);
+        console.log("Polling auth at URL:", pollUrl);
+
+        const resp = await fetch(pollUrl, { method: 'GET' });
         const data = await resp.json();
+        console.log("Poll response:", data);
 
         if (!resp.ok || !data.ok) {
           console.warn('Ascend: handshake check error', data);
@@ -156,6 +162,7 @@ function updateUserChip(session) {
           applyLoggedInUI(session);
 
           if (pollingTimer) {
+            console.log("Stopping polling loop (login complete).");
             clearInterval(pollingTimer);
             pollingTimer = null;
           }
