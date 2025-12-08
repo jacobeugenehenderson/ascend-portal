@@ -2,54 +2,80 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>ArtStart – <?= data.ascendJobId ?></title>
+    <title>ArtStart – Job Summary</title>
     <style>
       /* Basic reset for email */
       body {
         margin: 0;
         padding: 0;
-        background-color: #f5f5f7;
+        background:
+          radial-gradient(circle at top, rgba(79, 209, 197, 0.22), transparent 55%),
+          #e5edf7;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         color: #111827;
       }
 
       .wrapper {
         width: 100%;
-        background-color: #f5f5f7;
+        background-color: transparent;
         padding: 16px 0;
       }
 
       .card {
         max-width: 640px;
         margin: 0 auto;
-        background-color: #ffffff;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-        padding: 20px 24px 24px 24px;
+        background:
+          radial-gradient(circle at top right, rgba(129, 230, 217, 0.18), transparent 60%),
+          #ffffff;
+        border-radius: 10px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        box-shadow: 0 26px 70px rgba(15, 23, 42, 0.25);
+        padding: 20px 22px 22px;
       }
 
-      h1, h2, h3 {
-        margin: 0 0 8px;
-        font-weight: 600;
+      .brand-bar {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #0891b2;
+        margin: 0 0 10px;
       }
 
       h1 {
         font-size: 20px;
+        margin: 0 0 4px;
+        font-weight: 600;
+        color: #111827;
       }
 
-      h2 {
-        font-size: 15px;
-        margin-top: 16px;
-      }
-
-      p {
-        margin: 0 0 6px;
-        font-size: 13px;
-        line-height: 1.5;
+      .meta,
+      .meta-inline {
+        font-size: 12px;
+        color: #4b5563;
+        margin: 0 0 4px;
       }
 
       .label {
         font-weight: 600;
+      }
+
+      .section {
+        margin-top: 18px;
+      }
+
+      .section h2 {
+        font-size: 13px;
+        margin: 0 0 8px;
+        font-weight: 600;
+        color: #0f172a;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.65);
+        padding-bottom: 3px;
+      }
+
+      .section p {
+        margin: 0 0 6px;
+        font-size: 13px;
+        line-height: 1.5;
       }
 
       .muted {
@@ -57,214 +83,260 @@
         font-size: 12px;
       }
 
-      .section {
-        margin-top: 16px;
-        padding-top: 12px;
-        border-top: 1px solid #e5e7eb;
+      /* Format & canvas layout */
+      .format-meta {
+        display: table;
+        width: 100%;
+        font-size: 12px;
+        margin-bottom: 8px;
       }
 
-      .pill-row {
-        margin-top: 8px;
+      .format-meta-col {
+        display: table-cell;
+        vertical-align: top;
+        padding-right: 24px;
       }
 
-      .pill {
-        display: inline-block;
-        border-radius: 9999px;
-        border: 1px solid #e5e7eb;
-        padding: 2px 10px;
+      @media (max-width: 600px) {
+        .format-meta {
+          display: block;
+        }
+        .format-meta-col {
+          display: block;
+          padding-right: 0;
+          margin-bottom: 8px;
+        }
+      }
+
+      /* Canvas preview (graphic only) */
+      .canvas-wrapper {
+        margin-top: 10px;
+      }
+
+      .canvas-frame {
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        background-image:
+          linear-gradient(to right, rgba(148,163,184,.35) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(148,163,184,.35) 1px, transparent 1px),
+          linear-gradient(to right, rgba(148,163,184,.15) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(148,163,184,.15) 1px, transparent 1px);
+        background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+        padding: 14px;
+      }
+
+      .canvas-outer {
+        width: 100%;
+        max-width: 440px;
+        margin: 0 auto;
+        padding-top: 62.5%; /* 16:10-ish aspect for email preview */
+        position: relative;
+      }
+
+      .canvas-bleed {
+        position: absolute;
+        inset: 0;
+        border: 2px dashed rgba(79, 209, 197, 0.9);
+        background-color: rgba(79, 209, 197, 0.06);
+        box-sizing: border-box;
+      }
+
+      .canvas-safe {
+        position: absolute;
+        inset: 6%;
+        border: 1px solid rgba(15, 23, 42, 0.25);
+        background-color: #ffffff;
+        box-sizing: border-box;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+      }
+
+      /* Digital mode: no bleed, full canvas safe area
+         (backend can choose to toggle a data attribute if desired) */
+
+      .canvas-caption {
+        margin: 6px 0 0;
         font-size: 11px;
-        color: #4b5563;
-        margin-right: 6px;
-        margin-bottom: 6px;
+        color: #6b7280;
       }
 
-      ul {
-        padding-left: 18px;
-        margin: 6px 0 6px;
-      }
-
-      ul li {
-        font-size: 13px;
-        margin-bottom: 4px;
-      }
-
+      /* Button */
       .button-row {
-        margin-top: 14px;
+        margin-top: 12px;
+        margin-bottom: 4px;
       }
 
       .btn-primary {
         display: inline-block;
-        padding: 10px 18px;
+        padding: 8px 16px;
         border-radius: 9999px;
-        background-color: #111827;
-        color: #ffffff !important;
-        text-decoration: none;
+        background-image: linear-gradient(135deg, #14b8a6, #0f172a);
+        background-color: #0f172a;
+        border: 1px solid rgba(15, 23, 42, 0.85);
+        color: #f9fafb;
         font-size: 13px;
-        font-weight: 600;
-      }
-
-      .btn-secondary {
-        display: inline-block;
-        margin-left: 10px;
-        padding: 9px 14px;
-        border-radius: 9999px;
-        border: 1px solid #e5e7eb;
+        font-weight: 500;
         text-decoration: none;
-        color: #374151 !important;
-        font-size: 12px;
       }
 
-      .small-meta {
-        font-size: 12px;
-        color: #6b7280;
-      }
-
-      .qr {
-        margin-top: 10px;
+      .btn-primary:hover {
+        background-image: linear-gradient(135deg, #0f172a, #14b8a6);
+        background-color: #020617;
       }
 
       .footer-note {
-        margin-top: 16px;
+        margin-top: 20px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(148, 163, 184, 0.6);
         font-size: 11px;
-        color: #9ca3af;
+        color: #e5e7eb;
+        background: linear-gradient(to right, #020617, #0b1120);
+        border-radius: 0 0 6px 6px;
+        margin-left: -22px;
+        margin-right: -22px;
+        padding-left: 22px;
+        padding-right: 22px;
       }
     </style>
   </head>
   <body>
     <div class="wrapper">
       <div class="card">
-        <!-- Top summary -->
+        <!-- Brand bar -->
+        <p class="brand-bar">Ascend Visualization Studio – ArtStart Job Summary</p>
+
+        <!-- Job title + top meta -->
         <h1>
           <? if (data.jobTitle) { ?>
             <?= data.jobTitle ?>
-            <? if (data.campaignName) { ?>
-              &nbsp;•&nbsp;<?= data.campaignName ?>
-            <? } ?>
-          <? } else if (data.campaignName) { ?>
-            <?= data.campaignName ?>
           <? } else { ?>
             New job created
           <? } ?>
         </h1>
-        <p class="small-meta">
-          <span class="label">Ascend Job ID:</span> <?= data.ascendJobId ?>
+
+        <p class="meta-inline">
           <? if (data.nordsonJobCode) { ?>
-            &nbsp;•&nbsp;<span class="label">Nordson code:</span> <?= data.nordsonJobCode ?>
+            <span class="label">Job ID:</span> <?= data.nordsonJobCode ?>
           <? } ?>
           <? if (data.createdDate) { ?>
-            &nbsp;•&nbsp;<span class="label">Created:</span> <?= data.createdDate ?>
-          <? } ?>
-        </p>
-        <p class="small-meta">
-          <span class="label">Requested by:</span>
-          <?= data.requesterName ?>
-          <? if (data.requesterEmail) { ?>
-            &lt;<?= data.requesterEmail ?>&gt;
+            <? if (data.nordsonJobCode) { ?>&nbsp;•&nbsp;<? } ?>
+            <span class="label">Created:</span> <?= data.createdDate ?>
           <? } ?>
         </p>
 
-        <!-- Spec section -->
-        <div class="section">
-          <h2>Where this is running</h2>
-          <p>
-            <? if (data.publication) { ?>
-              <span class="label">Publication / channel:</span> <?= data.publication ?><br>
+        <? if (data.requesterName || data.requesterEmail) { ?>
+          <p class="meta">
+            <span class="label">Requested by:</span>
+            <? if (data.requesterName) { ?>
+              <?= data.requesterName ?>
             <? } ?>
-            <? if (data.placement) { ?>
-              <span class="label">Placement / format:</span> <?= data.placement ?><br>
-            <? } ?>
-            <? if (data.trimSizePretty) { ?>
-              <span class="label">Trim:</span> <?= data.trimSizePretty ?><br>
-            <? } ?>
-            <? if (data.bleedPretty) { ?>
-              <span class="label">Bleed:</span> <?= data.bleedPretty ?><br>
-            <? } ?>
-            <? if (data.orientation) { ?>
-              <span class="label">Orientation:</span> <?= data.orientation ?><br>
-            <? } ?>
-            <? if (data.colorExportSummary) { ?>
-              <span class="label">Color / export:</span> <?= data.colorExportSummary ?><br>
-            <? } ?>
-            <? if (data.materialsDeadlinePretty) { ?>
-              <span class="label">Materials deadline:</span> <?= data.materialsDeadlinePretty ?><br>
-            <? } ?>
-            <? if (data.runDatePretty) { ?>
-              <span class="label">Run / go-live:</span> <?= data.runDatePretty ?><br>
+            <? if (data.requesterEmail) { ?>
+              <? if (data.requesterName) { ?>&nbsp;<? } ?>
+              &lt;<?= data.requesterEmail ?>&gt;
             <? } ?>
           </p>
+        <? } ?>
+
+        <!-- Format & canvas -->
+        <div class="section">
+          <h2>Format &amp; canvas</h2>
+
+          <div class="format-meta">
+            <div class="format-meta-col">
+              <? if (data.publication) { ?>
+                <p>
+                  <span class="label">Publication / channel:</span>
+                  <?= data.publication ?>
+                </p>
+              <? } ?>
+              <? if (data.placement) { ?>
+                <p>
+                  <span class="label">Placement / format:</span>
+                  <?= data.placement ?>
+                </p>
+              <? } ?>
+            </div>
+            <div class="format-meta-col">
+              <? if (data.trimSizePretty) { ?>
+                <p>
+                  <span class="label">Size:</span>
+                  <?= data.trimSizePretty ?>
+                </p>
+              <? } ?>
+              <? if (data.bleedPretty) { ?>
+                <p>
+                  <span class="label">Bleed:</span>
+                  <?= data.bleedPretty ?>
+                </p>
+              <? } ?>
+              <? if (data.colorExportSummary) { ?>
+                <p>
+                  <span class="label">Output:</span>
+                  <?= data.colorExportSummary ?>
+                </p>
+              <? } ?>
+              <? if (data.materialsDeadlinePretty) { ?>
+                <p>
+                  <span class="label">Materials deadline:</span>
+                  <?= data.materialsDeadlinePretty ?>
+                </p>
+              <? } ?>
+              <? if (data.runDatePretty) { ?>
+                <p>
+                  <span class="label">Run / go-live:</span>
+                  <?= data.runDatePretty ?>
+                </p>
+              <? } ?>
+            </div>
+          </div>
+
+          <!-- Static graphic preview: format-only, no job text -->
+          <div class="canvas-wrapper">
+            <div class="canvas-frame">
+              <div class="canvas-outer">
+                <div class="canvas-bleed">
+                  <div class="canvas-safe"></div>
+                </div>
+              </div>
+            </div>
+            <p class="canvas-caption">
+              Canvas preview reflects size &amp; format only. Final layout will be built in design tools.
+            </p>
+          </div>
         </div>
 
-        <!-- What's needed -->
+        <!-- Editorial notes -->
         <div class="section">
-          <h2>What’s needed for this job</h2>
-          <? if (Array.isArray(data.requiredElements) && data.requiredElements.length) { ?>
-            <ul>
-              <? for (var i = 0; i < data.requiredElements.length; i++) { ?>
-                <li><?= data.requiredElements[i] ?></li>
-              <? } ?>
-            </ul>
-          <? } else { ?>
-            <p class="muted">Required elements were not specified in the intake.</p>
+          <h2>Editorial notes</h2>
+          <? if (data.topic) { ?>
+            <p>
+              <span class="label">Topic / editorial notes:</span><br>
+              <?= data.topic ?>
+            </p>
+          <? } ?>
+          <? if (data.notes) { ?>
+            <p>
+              <span class="label">Notes:</span><br>
+              <?= data.notes ?>
+            </p>
+          <? } ?>
+          <? if (!data.topic && !data.notes) { ?>
+            <p class="muted">No editorial notes were provided in the intake.</p>
           <? } ?>
         </div>
 
-        <!-- Next steps / working draft -->
+        <!-- ArtStart workspace CTA -->
         <div class="section">
-          <h2>Working draft space</h2>
-          <p>
-            You can use the ArtStart workspace to prepare working headlines, subheads, calls-to-action,
-            and bullets before we get into layout.
+          <h2>ArtStart workspace</h2>
+          <p class="muted">
+            Use the ArtStart workspace to collaborate on this job and prepare working content before final layout.
           </p>
           <div class="button-row">
             <a href="<?= data.artStartUrl ?>" class="btn-primary">Open this job in ArtStart</a>
-            <? if (data.artStartQrUrl) { ?>
-              <a href="<?= data.artStartUrl ?>" class="btn-secondary">Open link</a>
-            <? } ?>
           </div>
-          <? if (data.artStartQrUrl) { ?>
-            <div class="qr">
-              <img src="<?= data.artStartQrUrl ?>" alt="ArtStart link QR" width="96" height="96">
-            </div>
-          <? } ?>
-        </div>
-
-        <!-- Delivery & recipients -->
-        <div class="section">
-          <h2>Materials delivery</h2>
-          <? if (data.deliveryRecipientName || data.deliveryRecipientEmail) { ?>
-            <p>
-              <? if (data.deliveryRecipientName) { ?>
-                <span class="label">Recipient:</span> <?= data.deliveryRecipientName ?><br>
-              <? } ?>
-              <? if (data.deliveryRecipientEmail) { ?>
-                <span class="label">Recipient email:</span> <?= data.deliveryRecipientEmail ?><br>
-              <? } ?>
-            </p>
-          <? } else { ?>
-            <p class="muted">No materials recipient was specified in the intake.</p>
-          <? } ?>
-
-          <? if (data.deliveryInstructions) { ?>
-            <p>
-              <span class="label">Delivery instructions:</span><br>
-              <?= data.deliveryInstructions ?>
-            </p>
-          <? } ?>
-
-          <? if (data.deliveryDeadlinePretty) { ?>
-            <p>
-              <span class="label">Delivery deadline:</span> <?= data.deliveryDeadlinePretty ?>
-            </p>
-          <? } ?>
-
-          <p class="muted">
-            The system will help us prepare a draft delivery email for this recipient later. You’ll still
-            attach the final files and send.
-          </p>
         </div>
 
         <p class="footer-note">
-          Sent by Ascend Visualization Studio for Nordson ICS.
+          Sent by Ascend Visualization Studio.
         </p>
       </div>
     </div>
