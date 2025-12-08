@@ -240,7 +240,6 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     headerTitleEl.textContent = titleParts.join(' • ') || job.jobId || 'Job';
 
     var metaBits = [];
-    if (job.jobId) metaBits.push('ID ' + job.jobId);
     if (job.publication) metaBits.push(job.publication);
     if (job.placement) metaBits.push(job.placement);
     headerMetaEl.textContent = metaBits.join(' • ');
@@ -248,7 +247,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     // Overview card
     document.getElementById('job-overview-title').textContent = job.jobTitle || '—';
     document.getElementById('job-overview-campaign').textContent = job.campaignName || '—';
-    document.getElementById('job-overview-id').textContent = job.jobId || '—';
+    document.getElementById('job-overview-id').textContent = '—';
     document.getElementById('job-overview-nordson-code').textContent = job.nordsonJobCode || '—';
 
     var requesterBits = [];
