@@ -15,7 +15,7 @@
           <div class="ascend-app-title">ArtStart</div>
           <div class="ascend-app-subtitle">New job intake</div>
         </div>
-        <div class="ascend-app-meta">
+        <div class="ascend-app-meta" id="ascend-app-meta">
           <!-- optional meta in future (e.g., today’s date or user) -->
         </div>
       </header>
@@ -118,6 +118,20 @@ const form = document.getElementById('intake-form');
 
 // DOM references for dynamic fields
 const publicationSelect = document.getElementById('publicationId');
+const metaEl = document.getElementById('ascend-app-meta');
+
+// Pull requester info from query params (if present)
+const qs = new URLSearchParams(window.location.search);
+const requesterEmail = qs.get('user_email') || '';
+const requesterNameFirst = qs.get('user_name_first') || '';
+const requesterNameFull = qs.get('user_name') || '';
+
+const requesterLabel =
+  requesterNameFirst || requesterNameFull || requesterEmail || '';
+
+if (metaEl && requesterLabel) {
+  metaEl.textContent = `Requested by ${requesterLabel}`;
+}
 const deliverableSelect = document.getElementById('deliverableType');
 const mediaSpecIdInput  = document.getElementById('mediaSpecId');
 const mediaSpecPreview  = document.getElementById('mediaSpecPreview');
@@ -429,6 +443,9 @@ const notesEl           = document.getElementById('notes');
         qrIncluded: (document.getElementById('qrIncluded') || { value: '' }).value,
         topic: (document.getElementById('topic') || { value: '' }).value.trim(),
         notes: (document.getElementById('notes') || { value: '' }).value.trim()
+        requestedByEmail: requesterEmail,
+        requestedByNameFirst: requesterNameFirst,
+        requestedByName: requesterNameFull
       };
 
       if (!payload.nordsonJobId) {
