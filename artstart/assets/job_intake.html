@@ -370,9 +370,14 @@ const notesEl           = document.getElementById('notes');
       });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    if (document.readyState === 'loading') {
+      // Normal case: wait for DOM to finish parsing
+      document.addEventListener('DOMContentLoaded', loadIntakeConfig);
+    } else {
+      // If DOMContentLoaded has already fired (e.g., script injected late),
+      // just run immediately so the dropdowns get populated.
       loadIntakeConfig();
-    });
+    }
 
     // JSONP helper for createJobFromForm (avoids CORS preflight)
     function createJobViaJsonp(payload) {
