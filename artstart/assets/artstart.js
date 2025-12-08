@@ -236,7 +236,6 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     var headerMetaEl = document.getElementById('job-meta');
     var titleParts = [];
     if (job.jobTitle) titleParts.push(job.jobTitle);
-    if (job.campaignName) titleParts.push(job.campaignName);
     headerTitleEl.textContent = titleParts.join(' • ') || job.jobId || 'Job';
 
     var metaBits = [];
@@ -245,10 +244,26 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     headerMetaEl.textContent = metaBits.join(' • ');
 
     // Overview card
-    document.getElementById('job-overview-title').textContent = job.jobTitle || '—';
-    document.getElementById('job-overview-campaign').textContent = job.campaignName || '—';
-    document.getElementById('job-overview-id').textContent = '—';
-    document.getElementById('job-overview-nordson-code').textContent = job.nordsonJobCode || '—';
+    var overviewTitleEl = document.getElementById('job-overview-title');
+    if (overviewTitleEl) {
+      overviewTitleEl.textContent = job.jobTitle || '—';
+    }
+
+    var requesterBits = [];
+    if (job.requesterName) requesterBits.push(job.requesterName);
+    if (job.requesterEmail) requesterBits.push('<' + job.requesterEmail + '>');
+    document.getElementById('job-overview-requester').textContent =
+      requesterBits.join(' ') || '—';
+
+    document.getElementById('job-overview-created').textContent = job.createdDate || '—';
+    document.getElementById('job-overview-run').textContent = job.runDate || '—';
+    document.getElementById('job-overview-deadline').textContent = job.materialsDeadline || '—';
+
+    document.getElementById('job-overview-topic').textContent =
+      job.topic || '—';
+
+    document.getElementById('job-overview-notes').textContent =
+      job.notes || '—';
 
     var requesterBits = [];
     if (job.requesterName) requesterBits.push(job.requesterName);
