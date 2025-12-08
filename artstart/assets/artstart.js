@@ -248,42 +248,82 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     // Overview card
     var overviewTitleEl = document.getElementById('job-overview-title');
     if (overviewTitleEl) {
-      overviewTitleEl.textContent = job.jobTitle || '—';
+      // Prefer the internal Ascend job id (ASC-…) as the filename,
+      // with fallbacks to other known fields.
+      overviewTitleEl.textContent =
+        job.ascendJobId ||
+        job.jobId ||
+        job.nordsonJobCode ||
+        job.jobTitle ||
+        '—';
     }
 
-    var requesterBits = [];
-    if (job.requesterName) requesterBits.push(job.requesterName);
-    if (job.requesterEmail) requesterBits.push('<' + job.requesterEmail + '>');
-    document.getElementById('job-overview-requester').textContent =
-      requesterBits.join(' ') || '—';
-
-    document.getElementById('job-overview-created').textContent = job.createdDate || '—';
-    document.getElementById('job-overview-run').textContent = job.runDate || '—';
-    document.getElementById('job-overview-deadline').textContent = job.materialsDeadline || '—';
-
-    document.getElementById('job-overview-topic').textContent =
-      job.topic || '—';
-
-    document.getElementById('job-overview-notes').textContent =
-      job.notes || '—';
+    // Requested by
+    var requesterName =
+      job.requesterName ||
+      job.requestedByName ||
+      job.requestedByNameFirst ||
+      '';
+    var requesterEmail =
+      job.requesterEmail ||
+      job.requestedByEmail ||
+      job.requestedByEmailAddress ||
+      '';
 
     var requesterBits = [];
-    if (job.requesterName) requesterBits.push(job.requesterName);
-    if (job.requesterEmail) requesterBits.push('<' + job.requesterEmail + '>');
-    document.getElementById('job-overview-requester').textContent =
-      requesterBits.join(' ') || '—';
+    if (requesterName) requesterBits.push(requesterName);
+    if (requesterEmail) requesterBits.push('<' + requesterEmail + '>');
 
-    document.getElementById('job-overview-created').textContent = job.createdDate || '—';
-    document.getElementById('job-overview-run').textContent = job.runDate || '—';
-    document.getElementById('job-overview-deadline').textContent = job.materialsDeadline || '—';
+    var requesterEl = document.getElementById('job-overview-requester');
+    if (requesterEl) {
+      requesterEl.textContent = requesterBits.join(' ') || '—';
+    }
+
+    // Dates
+    var created =
+      job.createdDatePretty ||
+      job.createdDate ||
+      job.createdOn ||
+      '';
+    var run =
+      job.runDatePretty ||
+      job.runDate ||
+      job.goLiveDatePretty ||
+      job.goLiveDate ||
+      '';
+    var materials =
+      job.materialsDeadlinePretty ||
+      job.materialsDeadline ||
+      job.materialsDueDatePretty ||
+      job.materialsDueDate ||
+      job.materialsDue ||
+      '';
+
+    var createdEl = document.getElementById('job-overview-created');
+    if (createdEl) createdEl.textContent = created || '—';
+
+    var runEl = document.getElementById('job-overview-run');
+    if (runEl) runEl.textContent = run || '—';
+
+    var deadlineEl = document.getElementById('job-overview-deadline');
+    if (deadlineEl) deadlineEl.textContent = materials || '—';
 
     // Editorial notes + intake notes
-    document.getElementById('job-overview-topic').textContent =
-      job.topic || '—';
+    var topicEl = document.getElementById('job-overview-topic');
+    if (topicEl) {
+      topicEl.textContent =
+        job.topic ||
+        job.editorialNotes ||
+        '—';
+    }
 
-    document.getElementById('job-overview-notes').textContent =
-      job.notes || '—';
-
+    var notesEl = document.getElementById('job-overview-notes');
+    if (notesEl) {
+      notesEl.textContent =
+        job.notes ||
+        job.intakeNotes ||
+        '—';
+    }
     // Format card
     var formatPretty = buildFormatPretty(job);
     var dimsForSize = extractCanvasDims(job);
