@@ -126,30 +126,63 @@ function updateUserChip(session) {
 
     async function checkOnce() {
       try {
-        const pollUrl = AUTH_ENDPOINT + '?token=' + encodeURIComponent(token);
-        console.log("Polling auth at URL:", pollUrl);
+        const pollUrl = AUTH_ENDPOINT + "?token=" + encodeURIComponent(token);
+        console.log("[Ascend] Polling auth at URL:", pollUrl);
 
-        const resp = await fetch(pollUrl, { method: 'GET' });
+        const resp = await fetch(pollUrl, { method: "GET" });
+
+        // Hard HTTP failure (network / 4xx / 5xx)
+        if (!resp.ok) {
+          console.warn(
+            "Ascend: handshake HTTP error",
+            resp.status,
+            resp.statusText
+          );
+          return;
+        }
+
         const data = await resp.json();
-        console.log("Poll response:", data);
+        console.log("[Ascend] Poll response:", data);
 
-        if (!resp.ok || !data.ok) {
-          console.warn('Ascend: handshake check error', data);
+        if (!data || typeof data !== "object") {
+          console.warn("Ascend: unexpected handshake payload", data);
           return;
         }
 
-        if (data.status === 'pending') {
-          renderSessionStatus('Waiting for login via QR…');
+        // --- Normalize legacy / alternate shapes ---
+
+        // If backend returns { ok: true, email: "…" } without status,
+        // treat that as a completed login.
+        if (data.ok && !data.status) {
+          console.log("[Ascend] Normalizing legacy auth payload");
+          data.status = "complete";
+        }
+
+        // Try multiple possible email fields
+        const userEmail =
+          data.user_email || data.userEmail || data.email || null;
+
+        // Pending / initialized → keep waiting
+        if (data.status === "pending" || data.status === "initialized") {
+          renderSessionStatus("Waiting for login via QR…");
           return;
         }
 
-        if (data.status === 'complete' && data.user_email) {
-          const keepToggle = document.getElementById('ascend-keep-logged-in');
+        // Explicitly denied
+        if (data.status === "denied") {
+          console.warn("Ascend: phone login denied");
+          renderSessionStatus("Phone login denied. Try again.");
+          return;
+        }
+
+        // Completed
+        if (data.status === "complete" && userEmail) {
+          const keepToggle = document.getElementById("ascend-keep-logged-in");
           const keepOn =
-            keepToggle && keepToggle.dataset.on === 'true' ? true : false;
+            keepToggle && keepToggle.dataset.on === "true" ? true : false;
 
           const session = {
-            userEmail: data.user_email,
+            userEmail: userEmail,
             keepLoggedIn: keepOn,
             createdAt: nowTs(),
             expiresAt: keepOn
@@ -166,9 +199,17 @@ function updateUserChip(session) {
             clearInterval(pollingTimer);
             pollingTimer = null;
           }
+
+          return;
         }
+
+        // Anything else → treat as "no change yet", let the next interval try again
+        console.log(
+          "Ascend: handshake state not recognized yet; will re-check.",
+          data
+        );
       } catch (err) {
-        console.warn('Ascend: handshake check failed', err);
+        console.warn("Ascend: handshake check failed", err);
       }
     }
 
