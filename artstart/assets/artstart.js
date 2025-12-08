@@ -469,18 +469,18 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
         var data = JSON.stringify(payload);
 
         if (navigator && typeof navigator.sendBeacon === 'function') {
-          // sendBeacon is designed specifically for unload-safe fire-and-forget
+          // sendBeacon is designed for unload-safe fire-and-forget
           var blob = new Blob([data], { type: 'application/json' });
           navigator.sendBeacon(url, blob);
         } else {
-          // Fallback for older browsers: synchronous XHR on unload.
+          // Fallback: synchronous XHR on unload
           var xhr = new XMLHttpRequest();
           xhr.open('POST', url, false);
           xhr.setRequestHeader('Content-Type', 'application/json');
           xhr.send(data);
         }
       } catch (e) {
-        // Swallow errors – nothing useful to do during unload.
+        // Nothing useful to do during unload.
       }
     }
 
