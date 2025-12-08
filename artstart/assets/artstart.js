@@ -385,10 +385,8 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     el.textContent = text;
   }
 
-  function saveDraft(jobId) {
-    setSaveStatus('Saving…');
-
-    var payload = {
+  function buildDraftPayload(jobId) {
+    return {
       jobId: jobId,
       workingHeadline: document.getElementById('working-headline').value,
       workingSubhead: document.getElementById('working-subhead').value,
@@ -398,6 +396,12 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
       workingEmail: (document.getElementById('working-email') || {}).value || '',
       workingNotes: document.getElementById('working-notes').value
     };
+  }
+
+  function saveDraft(jobId) {
+    setSaveStatus('Saving…');
+
+    var payload = buildDraftPayload(jobId);
 
     fetch(ARTSTART_API_BASE + '?action=updateArtStartDraftFields', {
       method: 'POST',
@@ -418,24 +422,65 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
   }
 
   function attachBlurListeners(jobId) {
+    var debounceTimer = null;
+    var DEBOUNCE_MS = 1500;
+
+    function scheduleAutosave() {
+      setSaveStatus('Editing…');
+
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+
+      debounceTimer = setTimeout(function () {
+        debounceTimer = null;
+        saveDraft(jobId);
+      }, DEBOUNCE_MS);
+    }
+
     ['working-headline', 'working-subhead', 'working-cta', 'working-bullets', 'working-website', 'working-email', 'working-notes']
       .forEach(function (id) {
         var el = document.getElementById(id);
         if (!el) return;
-        el.addEventListener('blur', function () {
-          saveDraft(jobId);
-        });
+
         el.addEventListener('input', function () {
+          // Keep the canvas in sync while typing
           syncCanvasTextFromFields();
+          // Debounced autosave while user pauses
+          scheduleAutosave();
+        });
+
+        el.addEventListener('blur', function () {
+          // On explicit field exit, ensure a save happens promptly
+          scheduleAutosave();
         });
       });
 
     function finalSave() {
-      // fire-and-forget; we don't care about response here
       try {
-        saveDraft(jobId);
+        // If there is a pending debounce, flush it and save immediately.
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+          debounceTimer = null;
+        }
+
+        var payload = buildDraftPayload(jobId);
+        var url = ARTSTART_API_BASE + '?action=updateArtStartDraftFields';
+        var data = JSON.stringify(payload);
+
+        if (navigator && typeof navigator.sendBeacon === 'function') {
+          // sendBeacon is designed specifically for unload-safe fire-and-forget
+          var blob = new Blob([data], { type: 'application/json' });
+          navigator.sendBeacon(url, blob);
+        } else {
+          // Fallback for older browsers: synchronous XHR on unload.
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', url, false);
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.send(data);
+        }
       } catch (e) {
-        // ignore
+        // Swallow errors – nothing useful to do during unload.
       }
     }
 

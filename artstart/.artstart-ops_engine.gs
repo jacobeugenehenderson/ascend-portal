@@ -11,14 +11,14 @@ const SHEET_NAME_EDITORIAL = 'EditorialSchedule';
 const SHEET_NAME_CONTACTS = 'Contacts';
 const SHEET_NAME_REQUIRED_ELEMENTS = 'RequiredElements';
 
-const FRONTEND_BASE_URL = 'https://example.com/job'; // (legacy) live layout preview URL – no longer used by ArtStart
+const FRONTEND_BASE_URL = 'https://jacobhenderson.studio/ascend';
 const DEFAULT_CLIENT_NAME = 'Nordson';
 const OWNER_EMAIL = 'jacob@jacobhenderson.studio';   // Jacob's direct address
 const SYSTEM_EMAIL = 'ascend@jacobhenderson.studio'; // Ascend Studio system mailbox
 
 // ArtStart
 const ARTSTART_FRONTEND_BASE_URL =
-  'https://jacobeugenehenderson.github.io/ascend-portal/artstart/artstart.html';
+  'https://jacobhenderson.studio/ascend/artstart/assets/artstart.html';
 const PRIMARY_ARTSTART_EMAIL = 'francesca.lendrum@example.com';
 
 // ---------- Utilities ----------
@@ -635,6 +635,11 @@ function getArtStartJob_(jobId) {
     deliveryInstructions: '',
     deliveryDeadline: '',
 
+    // Intake context
+    topic: ad.Topic || p.Topic || '',
+    notes: p.Notes || ad.Notes || '',
+
+    // Working-draft text
     workingHeadline: workingHeadline,
     workingSubhead: workingSubhead,
     workingCta: workingCta,
@@ -1113,9 +1118,12 @@ function sendArtStartEmail(jobId) {
   const htmlBody = template.evaluate().getContent();
   const subject = '[ArtStart] ' + (jobTitle || campaignName || ascendJobId);
 
-  // Primary: Francesca; CC Jacob
-  const to = PRIMARY_ARTSTART_EMAIL;
-  const cc = OWNER_EMAIL;
+  // Determine primary recipient: whoever requested the job, fall back to Jacob
+  const primaryRecipient = requesterEmail || OWNER_EMAIL;
+
+  // Always send to requester; CC Jacob only if requester is someone else
+  const to = primaryRecipient;
+  const cc = (primaryRecipient === OWNER_EMAIL) ? '' : OWNER_EMAIL;
 
   MailApp.sendEmail({
     to: to,
@@ -1376,7 +1384,7 @@ function doPost(e) {
 }
 
 function testSendArtStartEmail() {
-  var jobId = 'ASC-2025-11-23-001'; // <-- Replace with a real AscendJobId in your sheet
+  var jobId = 'ASC-2025-12-07-014'; // <-- Replace with a real AscendJobId in your sheet
   var result = sendArtStartEmail(jobId);
   Logger.log(JSON.stringify(result, null, 2));
 }
