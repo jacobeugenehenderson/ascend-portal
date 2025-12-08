@@ -4,9 +4,11 @@
 (function () {
   'use strict';
 
-var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';  function getJobIdFromQuery() {
-    var params = new URLSearchParams(window.location.search || '');
-    return params.get('jobId');
+var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
+  function getJobIdFromQuery() {
+  var params = new URLSearchParams(window.location.search || '');
+  // accept both spellings
+  return params.get('jobid') || params.get('jobId');
   }
 
   function setError(message) {
