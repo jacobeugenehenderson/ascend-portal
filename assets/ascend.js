@@ -64,16 +64,19 @@ function updateUserChip(session) {
   const accountLabel = document.getElementById("ascend-account-label");
 
   const email = session && session.userEmail ? session.userEmail : null;
+  const firstName = session && session.userNameFirst ? session.userNameFirst : null;
+  const fullName = session && session.userNameFull ? session.userNameFull : null;
 
-  if (!email) {
+  const label = firstName || fullName || email;
+
+  if (!label) {
     if (chipLabel) chipLabel.textContent = "Not logged in";
     if (accountLabel) accountLabel.textContent = "Not logged in";
     return;
   }
 
-  // For now we just show the email; later we can derive "Francesca" from it.
-  if (chipLabel) chipLabel.textContent = email;
-  if (accountLabel) accountLabel.textContent = `Signed in as ${email}`;
+  if (chipLabel) chipLabel.textContent = label;
+  if (accountLabel) accountLabel.textContent = `Signed in as ${label}`;
 }
 
   function updateKeepLoggedInToggle(session) {
@@ -162,6 +165,11 @@ function updateUserChip(session) {
         const userEmail =
           data.user_email || data.userEmail || data.email || null;
 
+        const userNameFirst =
+          data.user_name_first || data.userNameFirst || null;
+        const userNameFull =
+          data.user_name || data.userName || null;
+
         // Pending / initialized → keep waiting
         if (data.status === "pending" || data.status === "initialized") {
           renderSessionStatus("Waiting for login via QR…");
@@ -183,6 +191,8 @@ function updateUserChip(session) {
 
           const session = {
             userEmail: userEmail,
+            userNameFirst: userNameFirst,
+            userNameFull: userNameFull,
             keepLoggedIn: keepOn,
             createdAt: nowTs(),
             expiresAt: keepOn
@@ -265,6 +275,14 @@ function buildUrlWithUser(baseUrl) {
 
   const url = new URL(baseUrl, window.location.href);
   url.searchParams.set("user_email", session.userEmail);
+
+  if (session.userNameFirst) {
+    url.searchParams.set("user_name_first", session.userNameFirst);
+  }
+  if (session.userNameFull) {
+    url.searchParams.set("user_name", session.userNameFull);
+  }
+
   return url.toString();
 }
 
