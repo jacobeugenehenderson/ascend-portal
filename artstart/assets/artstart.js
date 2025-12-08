@@ -388,12 +388,21 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
         });
       });
 
-    var button = document.getElementById('artstart-save-button');
-    if (button) {
-      button.addEventListener('click', function () {
+    function finalSave() {
+      // fire-and-forget; we don't care about response here
+      try {
         saveDraft(jobId);
-      });
+      } catch (e) {
+        // ignore
+      }
     }
+
+    window.addEventListener('beforeunload', finalSave);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') {
+        finalSave();
+      }
+    });
   }
 
   function fetchJob(jobId) {
