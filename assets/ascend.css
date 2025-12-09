@@ -608,6 +608,7 @@ body {
   min-height: 84px;
 }
 
+/* Hopper lists (ArtStart / Copydesk / Codedesk) */
 .ascend-row-secondary > div[id$="-list"] {
   flex: 1;
   border-radius: 10px;
@@ -616,6 +617,65 @@ body {
     rgba(15, 27, 54, 0.7),
     rgba(4, 7, 20, 0.9)
   );
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  overflow-y: auto;
+}
+
+/* Individual hopper items (jobs / docs / QRs) */
+.ascend-row-secondary > div[id$="-list"] > button,
+.ascend-row-secondary > div[id$="-list"] > a,
+.ascend-row-secondary > div[id$="-list"] > div {
+  /* reset native button look */
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  /* pill/card styling */
+  border-radius: 9px;
+  background: linear-gradient(
+      135deg,
+      rgba(79, 209, 197, 0.15),
+      rgba(10, 19, 43, 0.9)
+    );
+  border: 1px solid rgba(79, 209, 197, 0.4);
+  padding: 0.45rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  transition: transform var(--ascend-transition-fast),
+    box-shadow var(--ascend-transition-fast),
+    border-color var(--ascend-transition-fast),
+    background-color var(--ascend-transition-fast);
+}
+
+.ascend-row-secondary > div[id$="-list"] > button:hover,
+.ascend-row-secondary > div[id$="-list"] > a:hover,
+.ascend-row-secondary > div[id$="-list"] > div:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
+  border-color: rgba(129, 230, 217, 0.9);
+}
+
+/* First line = job ID / name */
+.ascend-row-secondary > div[id$="-list"] > * > :first-child {
+  font-weight: var(--ascend-weight-medium);
+  letter-spacing: 0.01em;
+}
+
+/* Second line = meta (publication, run date, etc.) */
+.ascend-row-secondary > div[id$="-list"] > * > :nth-child(2) {
+  font-size: 0.72rem;
+  color: var(--ascend-color-text-muted);
 }
 
 .ascend-row-secondary strong {
