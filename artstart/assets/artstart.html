@@ -197,14 +197,6 @@
         padding: 18px;
       }
 
-      /* Digital formats: show the canvas at 1:1 pixel size */
-      .artstart-canvas-box[data-media-kind="digital"] {
-        max-width: none;       /* allow a 2000px banner, etc. */
-        min-height: 0;
-        align-self: flex-start;
-        overflow: auto;        /* scrollbars if it’s wider than the viewport */
-      }
-
       .artstart-canvas-inner {
         position: relative;
         max-width: 100%;
@@ -436,14 +428,14 @@
         box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
       }
 
-            .artstart-canvas-box[data-media-kind="digital"] {
-        /* For digital, the canvas should reflect actual pixel size. */
+      /* Digital formats: show the canvas at 1:1 pixel size */
+      .artstart-canvas-box[data-media-kind="digital"] {
         width: auto;        /* shrink/grow to content width */
         max-width: none;    /* do not clamp to 520px */
-        overflow: visible;  /* allow it to extend if larger than panel */
+        min-height: 0;
+        overflow: auto;     /* scroll if it's wider than the panel */
         align-self: center; /* keep it centered in the card */
       }
-
             .artstart-canvas-main {
         display: flex;
         flex-direction: column;
@@ -478,7 +470,8 @@
         <div class="artstart-header-right">
           <div id="artstart-user-label" class="artstart-user-label">Checking sign-in…</div>
           <a href="../../index.html" class="artstart-back-link">← Back to Ascend</a>
-      </header>
+        </div>
+        </header>
 
       <main class="artstart-main">
         <div id="artstart-error" class="artstart-error" style="display:none;"></div>
