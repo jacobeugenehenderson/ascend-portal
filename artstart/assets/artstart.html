@@ -227,15 +227,13 @@
         overflow: hidden;
       }
 
-      /* Allow multi-line wrapping in canvas preview rows */
+      /* Canvas text rows: single-line meters + multi-line body */
       .artstart-canvas-row {
-        white-space: normal;          /* allow wrapping */
-        overflow-wrap: break-word;    /* wrap long words */
-        word-break: break-word;       /* fallback */
-        overflow: hidden;             /* keep the visual containment */
-        text-overflow: clip;          /* no more ellipsis */
-        font-size: clamp(10px, 1.7vw, 16px);
+        font-size: 18px;        /* starting size – JS will shrink from here */
         line-height: 1.2;
+        white-space: nowrap;    /* force single line */
+        overflow: hidden;
+        text-overflow: clip;    /* no ellipsis; JS keeps it inside */
       }
 
       .artstart-row-headline {
@@ -251,40 +249,19 @@
 
       .artstart-row-cta {
         font-weight: 600;
-        font-size: clamp(9px, 1.5vw, 14px);
         text-transform: uppercase;
-      }
-
-      .artstart-row-meta {
-        font-size: clamp(9px, 1.3vw, 13px);
-        opacity: 0.85;
-      }
-
-      .artstart-row-headline {
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-
-      .artstart-row-subhead {
-        font-weight: 500;
-        opacity: 0.9;
-      }
-
-      .artstart-row-cta {
-        font-weight: 600;
-        font-size: clamp(9px, 1.5vw, 14px);
       }
 
       .artstart-row-body {
-        font-size: clamp(9px, 1.5vw, 14px);
-        opacity: 0.9;
-        white-space: pre-line;  /* allow multiple rows from textarea */
-        overflow: hidden;
+        /* Body copy is allowed to wrap across multiple lines */
+        font-size: 12px;
+        line-height: 1.3;
+        white-space: pre-line;
+        overflow: visible;
       }
 
       .artstart-row-meta {
-        font-size: clamp(9px, 1.3vw, 13px);
+        font-size: 11px;
         opacity: 0.85;
       }
 
@@ -594,6 +571,78 @@
 
     <script src="../ascend.js"></script>
     <script src="./artstart.js"></script>
+
+    <script>
+  (function () {
+    "use strict";
+
+    // These are the Working Draft inputs and their corresponding
+    // preview elements in the canvas.
+    const SINGLE_LINE_ROWS = [
+      { inputId: "working-headline", canvasId: "canvas-headline", max: 22, min: 10 },
+      { inputId: "working-subhead",  canvasId: "canvas-subhead",  max: 20, min: 10 },
+      { inputId: "working-cta",      canvasId: "canvas-cta",      max: 18, min: 10 },
+      { inputId: "working-website",  canvasId: "canvas-website",  max: 16, min: 9  },
+      { inputId: "working-email",    canvasId: "canvas-email",    max: 16, min: 9  }
+    ];
+
+    function autoscaleSingleLine(el, minPx, maxPx) {
+      if (!el) return;
+
+      // If the row somehow has no width yet, bail out quietly.
+      const containerWidth = el.clientWidth;
+      if (!containerWidth) return;
+
+      // Start from the max and shrink until it fits or we hit the minimum.
+      let size = maxPx;
+      el.style.fontSize = size + "px";
+
+      // Use scrollWidth vs clientWidth to see if text is overflowing.
+      // Step down in small increments to keep it smooth.
+      while (size > minPx && el.scrollWidth > containerWidth) {
+        size -= 0.5;
+        el.style.fontSize = size + "px";
+      }
+    }
+
+    function syncAndScaleSingleLineRows() {
+      SINGLE_LINE_ROWS.forEach(({ inputId, canvasId, min, max }) => {
+        const inputEl = document.getElementById(inputId);
+        const canvasEl = document.getElementById(canvasId);
+        if (!canvasEl) return;
+
+        // Mirror the latest text from the Working Draft input (if present).
+        if (inputEl) {
+          canvasEl.textContent = inputEl.value || "";
+        }
+
+        autoscaleSingleLine(canvasEl, min, max);
+      });
+    }
+
+    // Hook into page lifecycle.
+    window.addEventListener("load", function () {
+      // 1) Run once after the ArtStart job data is loaded into the form.
+      //    (If the main script sets the input values on load, this will
+      //     just read them and sync the preview.)
+      syncAndScaleSingleLineRows();
+
+      // 2) Keep the preview in sync as the user types.
+      SINGLE_LINE_ROWS.forEach(({ inputId }) => {
+        const inputEl = document.getElementById(inputId);
+        if (!inputEl) return;
+        inputEl.addEventListener("input", syncAndScaleSingleLineRows);
+      });
+
+      // Optional: if you want to be extra safe, re-run on window resize
+      // so scaling stays correct if the user resizes the browser.
+      window.addEventListener("resize", function () {
+        syncAndScaleSingleLineRows();
+      });
+    });
+  })();
+
+</script>
 
   </body>
 </html>
