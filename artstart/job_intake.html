@@ -494,10 +494,14 @@ const notesEl           = document.getElementById('notes');
             ARTSTART_PREVIEW_BASE_URL + '?jobId=' +
             encodeURIComponent(data.ascendJobId);
 
+          // Visible label: use user-entered Job ID; fall back to Ascend ID.
+          const visibleJobId =
+            (payload && payload.nordsonJobId) ? payload.nordsonJobId : data.ascendJobId;
+
           linkAreaEl.innerHTML =
             'Open preview: <a href="' + linkUrl +
             '" target="_blank" rel="noopener noreferrer">' +
-            data.ascendJobId + '</a>';
+            visibleJobId + '</a>';
         }
 
       } catch (err) {

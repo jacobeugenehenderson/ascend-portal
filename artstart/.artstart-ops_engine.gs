@@ -18,7 +18,6 @@ const OWNER_EMAIL = 'jacob@jacobhenderson.studio';   // Jacob's direct address
 const SYSTEM_EMAIL = 'ascend@jacobhenderson.studio'; // Ascend Studio system mailbox
 
 // ---- Dave (courier) integration ----
-// TODO: paste the actual ID of your "Dave" spreadsheet here.
 const DAVE_SPREADSHEET_ID = '1F9v7fOJw7Jeqv3_R6WO1_NQBowOOmWDylVlEH1G68ak';
 
 // Default local device that should receive create_seeds tasks.
@@ -214,6 +213,81 @@ function enqueueDaveCreateSeedsTask_(ascendJobId, intakePayload, artStartDate, r
   Logger.log('Enqueued Dave create_seeds task for ' + ascendJobId + ' as ' + taskId);
 }
 
+/**
+ * Return the *latest* Dave task row for a given jobId (App = artstart, Type = create_seeds).
+ */
+function getLatestDaveTaskForJob_(jobId) {
+  if (!jobId || !DAVE_SPREADSHEET_ID) {
+    return null;
+  }
+
+  var ss = SpreadsheetApp.openById(DAVE_SPREADSHEET_ID);
+  var tasksSheet = ss.getSheetByName('Tasks');
+  if (!tasksSheet) return null;
+
+  var data = tasksSheet.getDataRange().getValues();
+  if (data.length < 2) return null;
+
+  var header = data[0];
+  var map = {};
+  header.forEach(function (name, idx) {
+    map[String(name).trim()] = idx;
+  });
+
+  var latestRow = null;
+
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    var rowJobId = String(row[map['JobId']] || '');
+    var rowApp = String(row[map['App']] || '');
+    var rowType = String(row[map['Type']] || '');
+
+    if (rowJobId === String(jobId) &&
+        (!rowApp || rowApp === 'artstart') &&
+        (!rowType || rowType === 'create_seeds')) {
+      // Last matching row wins (sheet is append-only)
+      latestRow = row;
+    }
+  }
+
+  if (!latestRow) return null;
+
+  function getField(name) {
+    var idx = map[name];
+    return idx == null ? '' : latestRow[idx];
+  }
+
+  return {
+    TaskId: getField('TaskId'),
+    Status: getField('Status'),
+    Type: getField('Type'),
+    App: getField('App'),
+    DeviceId: getField('DeviceId'),
+    RunDate: getField('RunDate'),
+    CreatedAt: getField('CreatedAt'),
+    UpdatedAt: getField('UpdatedAt'),
+    LastError: getField('LastError')
+  };
+}
+
+/**
+ * Public-ish payload used by front-ends.
+ */
+function getDaveStatusForJob_(jobId) {
+  if (!jobId) {
+    return { success: false, error: 'Missing jobId' };
+  }
+
+  var task = getLatestDaveTaskForJob_(jobId);
+
+  return {
+    success: true,
+    jobId: jobId,
+    hasTask: !!task,
+    task: task
+  };
+}
+
 // ---------- Core: createJob ----------
 
 /**
@@ -269,23 +343,8 @@ function createJob(intakePayload) {
   }
 
   if (!createdByContactId) {
-    try {
-      const contactsSheet = getSheet_(SHEET_NAME_CONTACTS);
-      const cData = contactsSheet.getDataRange().getValues();
-      const cHeader = cData[0];
-      const cMap = getHeaderMap_(contactsSheet);
-      const ownerEmailLower = String(OWNER_EMAIL || '').toLowerCase();
-
-      for (let r = 1; r < cData.length; r++) {
-        const rowEmail = String(cData[r][cMap['Email']] || '').toLowerCase();
-        if (rowEmail && rowEmail === ownerEmailLower) {
-          createdByContactId = String(cData[r][cMap['ContactId']] || '');
-          break;
-        }
-      }
-    } catch (err) {
-      // best-effort only; if we can't resolve, leave createdByContactId blank
-    }
+    // Fallback: treat OWNER_EMAIL as the creator email.
+    createdByContactId = String(OWNER_EMAIL || '').trim();
   }
 
   // Timeline logic:
@@ -653,6 +712,60 @@ function findProjectRowByAscendJobId_(jobId) {
   return null;
 }
 
+/**
+ * softDeleteArtStartJob_(jobId, userEmail)
+ * Marks the job's Status as "Deleted" in Projects.
+ * Optionally checks CreatedByContactId against userEmail.
+ */
+function softDeleteArtStartJob_(jobId, userEmail) {
+  if (!jobId) {
+    throw new Error('Missing jobId for delete');
+  }
+
+  var sheet = getSheet_(SHEET_NAME_PROJECTS);
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) {
+    throw new Error('No projects rows found');
+  }
+
+  var headers = data[0];
+  var map = getHeaderMap_(sheet);
+  var colAsc = map['AscendJobId'];
+  if (colAsc == null) {
+    throw new Error('AscendJobId column not found in Projects sheet');
+  }
+
+  var statusCol = map['Status'];
+  if (statusCol == null) {
+    throw new Error('Status column not found in Projects sheet');
+  }
+
+  var createdByCol = map['CreatedByContactId'];
+  var targetRowIndex = -1;
+
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    if (String(row[colAsc]) === String(jobId)) {
+      if (createdByCol != null && userEmail) {
+        var rowEmail = String(row[createdByCol] || '').toLowerCase();
+        var reqEmail = String(userEmail || '').toLowerCase();
+        if (rowEmail && rowEmail !== reqEmail) {
+          throw new Error('Job does not belong to this user');
+        }
+      }
+      targetRowIndex = r + 1; // 1-based row in sheet
+      break;
+    }
+  }
+
+  if (targetRowIndex === -1) {
+    throw new Error('Project not found for delete: ' + jobId);
+  }
+
+  // Set Status = "Deleted"
+  sheet.getRange(targetRowIndex, statusCol + 1).setValue('Deleted');
+}
+
 function setProjectFieldIfPresent_(sheet, headers, rowIndex, headerName, value) {
   // Try exact match first
   var idx = headers.indexOf(headerName);
@@ -979,16 +1092,53 @@ function listJobs_(limit, statusFilter) {
       MaterialsDueDate: job.MaterialsDueDate || '',
       ArtStartDate: job.ArtStartDate || '',
       TouchpointMeetingDate: job.TouchpointMeetingDate || '',
+      PublicationDate: ad ? (ad.PublicationDate || '') : '',
       Status: status,
       QRIncluded: job.QRIncluded || '',
       TranslationRequired: job.TranslationRequired || '',
-      CreatedAt: job.CreatedAt || ''
+      CreatedAt: job.CreatedAt || '',
+      CreatedByContactId: job.CreatedByContactId || ''
     });
 
     if (results.length >= max) break;
   }
 
   return results;
+}
+
+/**
+ * listArtStartJobsForUser_(userEmail, limit)
+ * Filters listJobs_ down to jobs created by a specific user and
+ * hides anything marked Status = "Deleted".
+ */
+function listArtStartJobsForUser_(userEmail, limit) {
+  var max = limit && limit > 0 ? limit : 200;
+  var all = listJobs_(max, ''); // no Status filter here
+  if (!all.length) return [];
+
+  var emailLower = String(userEmail || '').toLowerCase();
+  var filtered = [];
+
+  for (var i = 0; i < all.length; i++) {
+    var job = all[i];
+
+    // Hide hard-deleted jobs from the hopper by convention
+    if (String(job.Status || '') === 'Deleted') {
+      continue;
+    }
+
+    if (emailLower) {
+      var created = String(job.CreatedByContactId || '').toLowerCase();
+      // If we have a creator email on the job and it doesn't match, skip it
+      if (created && created !== emailLower) {
+        continue;
+      }
+    }
+
+    filtered.push(job);
+  }
+
+  return filtered;
 }
 
 // ---------- Core: buildArtStartEmail ----------
@@ -1262,8 +1412,8 @@ function sendArtStartEmail(jobId) {
   const campaignName = p.DeliverableType || (ed.EditorialTopic || '');
 
   const trimSizePretty =
-    ms.Width && ms.Height ? ms.Width + '" \u00d7 ' + ms.Height + '"' : '';
-  const bleedPretty = ms.Bleed ? ms.Bleed + '"' : '';
+      ms.Width && ms.Height ? ms.Width + ' × ' + ms.Height : '';
+  const bleedPretty = ms.Bleed || '';
 
   const artStartUrl = ARTSTART_FRONTEND_BASE_URL + '?jobId=' + encodeURIComponent(ascendJobId);
 
@@ -1407,11 +1557,40 @@ function doGet(e) {
     return jsonResponse_({ jobs: jobs }, callback);
   }
 
+  if (action === 'listArtStartJobsForUser') {
+    var limit2 = e.parameter.limit ? parseInt(e.parameter.limit, 10) : 50;
+    var userEmail2 = (e.parameter.user_email || e.parameter.userEmail || '').trim();
+    var artJobs = listArtStartJobsForUser_(userEmail2, limit2);
+    return jsonResponse_({ jobs: artJobs }, callback);
+  }
+
+  if (action === 'deleteArtStartJob') {
+    var jobIdDel = e.parameter.jobId || e.parameter.jobid || '';
+    var userEmailDel = e.parameter.user_email || e.parameter.userEmail || '';
+
+    try {
+      softDeleteArtStartJob_(jobIdDel, userEmailDel);
+      return jsonResponse_({ success: true, jobId: jobIdDel }, callback);
+    } catch (errDel) {
+      return jsonResponse_({ success: false, error: String(errDel) }, callback);
+    }
+  }
+
   if (action === 'getRequiredElementsForJob') {
     var jobId2 = e.parameter.jobId;
     try {
       var payload = getRequiredElementsForJobPublic_(jobId2);
       return jsonResponse_(payload, callback);
+    } catch (err) {
+      return jsonResponse_({ success: false, error: String(err) }, callback);
+    }
+  }
+
+  if (action === 'getDaveStatusForJob') {
+    var jobId3 = e.parameter.jobId;
+    try {
+      var davePayload = getDaveStatusForJob_(jobId3);
+      return jsonResponse_(davePayload, callback);
     } catch (err) {
       return jsonResponse_({ success: false, error: String(err) }, callback);
     }
