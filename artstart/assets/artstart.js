@@ -294,13 +294,14 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     // Overview card
     var overviewTitleEl = document.getElementById('job-overview-title');
     if (overviewTitleEl) {
-      // Prefer the internal Ascend job id (ASC-…) as the filename,
-      // with fallbacks to other known fields.
+      // Filename: user-entered Job ID from intake (NordsonJobId),
+      // fall back to internal Ascend id and other labels.
       overviewTitleEl.textContent =
+        job.jobFilename ||      // from getArtStartJob_ (p.NordsonJobId)
+        job.nordsonJobCode ||   // NordsonJobId fallback
+        job.jobTitle ||         // extra fallback
+        job.jobId ||            // internal Ascend id
         job.ascendJobId ||
-        job.jobId ||
-        job.nordsonJobCode ||
-        job.jobTitle ||
         '—';
     }
 
