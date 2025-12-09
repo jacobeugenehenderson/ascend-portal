@@ -130,7 +130,9 @@ const requesterLabel =
   requesterNameFirst || requesterNameFull || requesterEmail || '';
 
 if (metaEl && requesterLabel) {
-  metaEl.textContent = `Requested by ${requesterLabel}`;
+  // Still parse requester info for the payload,
+  // but don't show it in the intake UI.
+  metaEl.textContent = '';
 }
 const deliverableSelect = document.getElementById('deliverableType');
 const mediaSpecIdInput  = document.getElementById('mediaSpecId');
