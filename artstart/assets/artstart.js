@@ -400,11 +400,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
       // Hide bleed row entirely for digital pieces.
       bleedRowEl.style.display = mediaKind === 'digital' ? 'none' : '';
     }
-
-    var outputText = job.outputSummary || job.outputFormat || job.output || '—';
-    var outputEl = document.getElementById('format-output');
-    if (outputEl) outputEl.textContent = outputText;
-
+    
     // Canvas preview (digital vs print, with bleed)
     renderCanvasPreview(job);
 
