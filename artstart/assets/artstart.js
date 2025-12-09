@@ -428,6 +428,60 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     el.textContent = text;
   }
 
+  // ---------- Dave status helpers ----------
+
+  function setDaveStatusHeader(text) {
+    var el = document.getElementById('status-dave-header');
+    if (el) el.textContent = text;
+  }
+
+  function setDaveStatusBody(text) {
+    var el = document.getElementById('status-dave');
+    if (el) el.textContent = text;
+  }
+
+  function refreshDaveStatus(jobId) {
+    if (!jobId) return;
+
+    setDaveStatusHeader('Dave (courier)');
+    setDaveStatusBody('Checking task status…');
+
+    var url = ARTSTART_API_BASE +
+      '?action=getDaveStatusForJob&jobId=' +
+      encodeURIComponent(jobId);
+
+    fetch(url)
+      .then(function (resp) { return resp.json(); })
+      .then(function (data) {
+        if (!data || data.success === false) {
+          setDaveStatusBody('Dave status unavailable.');
+          return;
+        }
+
+        if (!data.hasTask) {
+          setDaveStatusBody('No courier task yet for this job.');
+          return;
+        }
+
+        var t = data.task || {};
+        var statusLabel = (t.Status || 'unknown').toString();
+
+        // Header: "Dave – queued", "Dave – running", etc.
+        setDaveStatusHeader('Dave – ' + statusLabel);
+
+        var bits = [];
+        if (t.Type) bits.push(t.Type);
+        if (t.DeviceId) bits.push('Device: ' + t.DeviceId);
+        if (t.RunDate) bits.push('Run: ' + t.RunDate);
+        if (t.LastError) bits.push('Error: ' + t.LastError);
+
+        setDaveStatusBody(bits.join(' • ') || 'Task recorded.');
+      })
+      .catch(function () {
+        setDaveStatusBody('Dave status unavailable.');
+      });
+  }
+
   function buildDraftPayload(jobId) {
     return {
       jobId: jobId,
@@ -544,7 +598,7 @@ function saveDraft(jobId) {
 
   function fetchJob(jobId) {
     clearError();
-    setSaveStatus('Autosave ready');
+    setSaveStatus('Loading job…');
 
     fetch(ARTSTART_API_BASE + '?action=getArtStartJob&jobId=' + encodeURIComponent(jobId))
       .then(function (res) { return res.json(); })
@@ -552,8 +606,13 @@ function saveDraft(jobId) {
         if (!json || !json.ok) {
           throw new Error((json && json.error) || 'Unknown error');
         }
+
+        var effectiveJobId = (json.job && (json.job.jobId || json.job.ascendJobId)) || jobId;
+
         populateJob(json.job);
-        attachBlurListeners(json.job.jobId || jobId);
+        attachBlurListeners(effectiveJobId);
+        refreshDaveStatus(effectiveJobId);
+        setSaveStatus('Autosave ready.');
       })
       .catch(function (err) {
         console.error('Error loading job', err);
@@ -568,6 +627,10 @@ function saveDraft(jobId) {
 
   function init() {
     setUserLabel();
+
+    // Prime the Dave status card before we know anything else.
+    setDaveStatusHeader('Dave (courier)');
+    setDaveStatusBody('Waiting for job…');
 
     var jobId = getJobIdFromQuery();
     if (!jobId) {

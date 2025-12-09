@@ -11,14 +11,23 @@ const SHEET_NAME_EDITORIAL = 'EditorialSchedule';
 const SHEET_NAME_CONTACTS = 'Contacts';
 const SHEET_NAME_REQUIRED_ELEMENTS = 'RequiredElements';
 
-const FRONTEND_BASE_URL = 'https://jacobhenderson.studio/ascend';
+// Canonical Ascend front-end (GitHub Pages; proxied later via CF)
+const FRONTEND_BASE_URL = 'https://jacobeugenehenderson.github.io/ascend-portal';
 const DEFAULT_CLIENT_NAME = 'Nordson';
 const OWNER_EMAIL = 'jacob@jacobhenderson.studio';   // Jacob's direct address
 const SYSTEM_EMAIL = 'ascend@jacobhenderson.studio'; // Ascend Studio system mailbox
 
+// ---- Dave (courier) integration ----
+// TODO: paste the actual ID of your "Dave" spreadsheet here.
+const DAVE_SPREADSHEET_ID = '1F9v7fOJw7Jeqv3_R6WO1_NQBowOOmWDylVlEH1G68ak';
+
+// Default local device that should receive create_seeds tasks.
+// (This is the venice-beach iMac that Dave's Getaway is running on.)
+const DAVE_DEFAULT_DEVICE_ID = 'venice-beach-imac-01';
+
 // ArtStart
 const ARTSTART_FRONTEND_BASE_URL =
-  'https://jacobhenderson.studio/ascend/artstart/assets/artstart.html';
+  FRONTEND_BASE_URL + '/artstart/assets/artstart.html';
 const PRIMARY_ARTSTART_EMAIL = 'francesca.lendrum@example.com';
 
 // ---------- Utilities ----------
@@ -119,6 +128,92 @@ function formatDate_(date) {
   return Utilities.formatDate(date, Session.getScriptTimeZone(), 'yyyy-MM-dd');
 }
 
+/**
+ * Enqueue a "create_seeds" task in Dave → Tasks for a given job.
+ */
+function enqueueDaveCreateSeedsTask_(ascendJobId, intakePayload, artStartDate, runDateIso, createdByContactId) {
+  if (!DAVE_SPREADSHEET_ID) {
+    Logger.log('DAVE_SPREADSHEET_ID not configured; skipping Dave task.');
+    return;
+  }
+
+  // Open the standalone "Dave" workbook.
+  const ss = SpreadsheetApp.openById(DAVE_SPREADSHEET_ID);
+  const tasksSheet = ss.getSheetByName('Tasks');
+  if (!tasksSheet) {
+    throw new Error('Dave Tasks sheet not found.');
+  }
+
+  // Header + index map
+  const headerRow = tasksSheet.getRange(1, 1, 1, tasksSheet.getLastColumn()).getValues()[0];
+  const map = {};
+  headerRow.forEach(function (name, idx) {
+    map[String(name).trim()] = idx;
+  });
+
+  const now = new Date();
+  const tz = Session.getScriptTimeZone();
+  const nowIso = Utilities.formatDate(now, tz, "yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+  // Decide what we treat as the "run" date for this task.
+  const effectiveRunDate =
+    runDateIso ||
+    intakePayload.runDate ||
+    intakePayload.materialsDueDate ||
+    '';
+
+  // Payload that Dave’s Getaway will see.
+  const payload = {
+    jobId: ascendJobId,
+    nordsonJobId: intakePayload.nordsonJobId || '',
+    publicationId: intakePayload.publicationId || '',
+    issueName: intakePayload.issueName || '',
+    deliverableType: intakePayload.deliverableType || '',
+    mediaSpecId: intakePayload.mediaSpecId || '',
+    materialsDueDate: intakePayload.materialsDueDate || '',
+    runDate: effectiveRunDate,
+    languagePrimary: intakePayload.languagePrimary || 'EN',
+    translationRequired: intakePayload.translationRequired || 'No',
+    translationTargetLanguage: intakePayload.translationTargetLanguage || '',
+    qrIncluded: intakePayload.qrIncluded || 'No',
+    createdByContactId: createdByContactId || intakePayload.requestedByEmail || '',
+    productLine: intakePayload.productLine || '',
+    notes: intakePayload.notes || '',
+    artStartDate: artStartDate ? Utilities.formatDate(artStartDate, tz, 'yyyy-MM-dd') : ''
+  };
+
+  // Simple, human-readable TaskId
+  const taskId =
+    'TASK-' +
+    ascendJobId +
+    '-' +
+    Utilities.formatDate(now, tz, 'HHmmss');
+
+  const row = new Array(headerRow.length).fill('');
+
+  function setIf_(colName, value) {
+    if (map[colName] != null) {
+      row[map[colName]] = value;
+    }
+  }
+
+  setIf_('TaskId', taskId);
+  setIf_('Status', 'queued');
+  setIf_('Type', 'create_seeds');
+  setIf_('App', 'artstart');
+  setIf_('JobId', ascendJobId);
+  setIf_('DeviceId', DAVE_DEFAULT_DEVICE_ID);
+  setIf_('RequestedBy', intakePayload.requestedByEmail || intakePayload.requestedByName || '');
+  setIf_('PayloadJson', JSON.stringify(payload));
+  setIf_('CreatedAt', nowIso);
+  setIf_('UpdatedAt', nowIso);
+  setIf_('LastError', '');
+  setIf_('RunDate', effectiveRunDate);
+
+  tasksSheet.appendRow(row);
+  Logger.log('Enqueued Dave create_seeds task for ' + ascendJobId + ' as ' + taskId);
+}
+
 // ---------- Core: createJob ----------
 
 /**
@@ -156,7 +251,42 @@ function createJob(intakePayload) {
 
   const now = new Date();
   const materialsDueDate = parseIsoDate_(intakePayload.materialsDueDate);
+  const publicationDate = parseIsoDate_(intakePayload.runDate); // NEW: run / go-live date
   const businessDays = countBusinessDays_(now, materialsDueDate);
+
+  // Determine who created the job.
+  // Primary source is the authenticated requester from the intake form
+  // (ascend auth passes user_email into the query string, and the form
+  // forwards that through as requestedByEmail). We store that email in
+  // CreatedByContactId. If it is missing, fall back to any legacy
+  // createdByContactId that might be passed, and finally to OWNER_EMAIL.
+  let createdByContactId = '';
+
+  if (intakePayload.requestedByEmail) {
+    createdByContactId = String(intakePayload.requestedByEmail).trim();
+  } else if (intakePayload.createdByContactId) {
+    createdByContactId = String(intakePayload.createdByContactId).trim();
+  }
+
+  if (!createdByContactId) {
+    try {
+      const contactsSheet = getSheet_(SHEET_NAME_CONTACTS);
+      const cData = contactsSheet.getDataRange().getValues();
+      const cHeader = cData[0];
+      const cMap = getHeaderMap_(contactsSheet);
+      const ownerEmailLower = String(OWNER_EMAIL || '').toLowerCase();
+
+      for (let r = 1; r < cData.length; r++) {
+        const rowEmail = String(cData[r][cMap['Email']] || '').toLowerCase();
+        if (rowEmail && rowEmail === ownerEmailLower) {
+          createdByContactId = String(cData[r][cMap['ContactId']] || '');
+          break;
+        }
+      }
+    } catch (err) {
+      // best-effort only; if we can't resolve, leave createdByContactId blank
+    }
+  }
 
   // Timeline logic:
   // D = business days between today and materials due.
@@ -234,7 +364,7 @@ function createJob(intakePayload) {
         projRow.push(intakePayload.qrIncluded || 'No');
         break;
       case 'CreatedByContactId':
-        projRow.push(intakePayload.createdByContactId || '');
+        projRow.push(createdByContactId || '');
         break;
       case 'CreatedAt':
         projRow.push(now);
@@ -281,7 +411,7 @@ function createJob(intakePayload) {
         adsRow.push(materialsDueDate || '');
         break;
       case 'PublicationDate':
-        adsRow.push(''); // can be added later
+        adsRow.push(publicationDate || '');
         break;
       case 'MediaSpecId':
         adsRow.push(intakePayload.mediaSpecId || '');
@@ -302,6 +432,13 @@ function createJob(intakePayload) {
 
   const adsRowIdx = adScheduleSheet.getLastRow() + 1;
   adScheduleSheet.getRange(adsRowIdx, 1, 1, adsRow.length).setValues([adsRow]);
+
+    try {
+    var runDateIso = intakePayload.runDate || intakePayload.materialsDueDate || '';
+    enqueueDaveCreateSeedsTask_(ascendJobId, intakePayload, artStartDate, runDateIso, createdByContactId);
+  } catch (err) {
+    Logger.log('Failed to enqueue Dave task for ' + ascendJobId + ': ' + err);
+  }
 
   return {
     success: true,
@@ -517,7 +654,23 @@ function findProjectRowByAscendJobId_(jobId) {
 }
 
 function setProjectFieldIfPresent_(sheet, headers, rowIndex, headerName, value) {
-  const idx = headers.indexOf(headerName);
+  // Try exact match first
+  var idx = headers.indexOf(headerName);
+
+  if (idx === -1) {
+    // Fallback: case-insensitive, ignore spaces in header names
+    var target = String(headerName).replace(/\s+/g, '').toLowerCase();
+    for (var i = 0; i < headers.length; i++) {
+      var h = String(headers[i]).trim();
+      if (!h) continue;
+      var normalized = h.replace(/\s+/g, '').toLowerCase();
+      if (normalized === target) {
+        idx = i;
+        break;
+      }
+    }
+  }
+
   if (idx === -1) return;
   sheet.getRange(rowIndex, idx + 1).setValue(value || '');
 }
@@ -567,28 +720,17 @@ function getArtStartJob_(jobId) {
     .map(function (item) { return item.ElementName || ''; })
     .filter(function (s) { return s; });
 
-  // Requester (from Contacts, via CreatedByContactId)
+  // Requester: we now store the authenticated user's email directly
+  // in CreatedByContactId. That becomes our primary identifier here.
   let requesterName = '';
   let requesterEmail = '';
-  try {
-    const contactsSheet = getSheet_(SHEET_NAME_CONTACTS);
-    const cData = contactsSheet.getDataRange().getValues();
-    const cHeader = cData[0];
-    const cMap = getHeaderMap_(contactsSheet);
-    const contactId = p.CreatedByContactId;
-    if (contactId) {
-      for (let r = 1; r < cData.length; r++) {
-        if (String(cData[r][cMap['ContactId']]) === String(contactId)) {
-          const rowObj = rowToObject_(cData[r], cHeader);
-          requesterName = rowObj.Name || '';
-          requesterEmail = rowObj.Email || '';
-          break;
-        }
-      }
-    }
-  } catch (e) {
-    // best-effort only
+
+  if (p.CreatedByContactId) {
+    requesterEmail = String(p.CreatedByContactId).trim();
   }
+
+  // (Optional future: look up a display name from a Contacts/ACCESS sheet
+  // using this email if you want something prettier than the raw address.)
 
   // Orientation: explicit field if present; otherwise infer from W/H
   let orientation = ms.Orientation || '';
@@ -600,15 +742,50 @@ function getArtStartJob_(jobId) {
     }
   }
 
-  // Working-draft fields (must exist as columns in Projects)
-  const workingHeadline = p.WorkingHeadline || '';
-  const workingSubhead = p.WorkingSubhead || '';
-  const workingCta = p.WorkingCTA || '';
-  const workingBullets = p.WorkingBullets || '';
-  const workingNotes = p.WorkingNotes || '';
+  // Working-draft fields (must exist as columns in Projects – allow a few header variations)
+  var workingHeadline =
+    p.WorkingHeadline ||
+    p['Working Headline'] ||
+    p['Working headline'] ||
+    '';
+  var workingSubhead =
+    p.WorkingSubhead ||
+    p['Working Subhead'] ||
+    p['Working subhead'] ||
+    '';
+  var workingCta =
+    p.WorkingCTA ||
+    p['Working CTA'] ||
+    p['Working cta'] ||
+    '';
+  var workingBullets =
+    p.WorkingBullets ||
+    p['Working Bullets'] ||
+    p['Working bullets'] ||
+    '';
+  var workingWebsite =
+    p.WorkingWebsite ||
+    p['Working Website'] ||
+    p['Working website'] ||
+    '';
+  var workingEmail =
+    p.WorkingEmail ||
+    p['Working Email'] ||
+    p['Working email'] ||
+    '';
+  var workingNotes =
+    p.WorkingNotes ||
+    p['Working Notes'] ||
+    p['Working notes'] ||
+    '';
 
   return {
+    // Internal key for APIs / autosave – keep this as AscendJobId
     jobId: p.AscendJobId || jobId,
+
+    // Filename shown in the UI: user-entered Job ID from intake
+    jobFilename: p.NordsonJobId || p.AscendJobId || jobId,
+
     jobTitle: p.NordsonJobId || '',
     campaignName: p.DeliverableType || '',
     nordsonJobCode: p.NordsonJobId || '',
@@ -644,6 +821,8 @@ function getArtStartJob_(jobId) {
     workingSubhead: workingSubhead,
     workingCta: workingCta,
     workingBullets: workingBullets,
+    workingWebsite: workingWebsite,
+    workingEmail: workingEmail,
     workingNotes: workingNotes
   };
 }
@@ -662,12 +841,28 @@ function handleGetArtStartJob_(e) {
 }
 
 function handleUpdateArtStartDraftFields_(e) {
-  const raw = e.postData && e.postData.contents ? e.postData.contents : '{}';
   let payload;
-  try {
-    payload = JSON.parse(raw);
-  } catch (err) {
-    return jsonResponse_({ ok: false, error: 'Invalid JSON payload' });
+
+  // Preferred path: JSON body (POST from tools that send JSON)
+  if (e.postData && e.postData.contents) {
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch (err) {
+      return jsonResponse_({ ok: false, error: 'Invalid JSON payload' });
+    }
+  } else {
+    // Fallback: use URL/query parameters (GET from ArtStart workspace autosave)
+    const p = e.parameter || {};
+    payload = {
+      jobId: p.jobId || p.jobid || '',
+      workingHeadline: p.workingHeadline || '',
+      workingSubhead: p.workingSubhead || '',
+      workingCta: p.workingCta || '',
+      workingBullets: p.workingBullets || '',
+      workingWebsite: p.workingWebsite || '',
+      workingEmail: p.workingEmail || '',
+      workingNotes: p.workingNotes || ''
+    };
   }
 
   const jobId = payload.jobId;
@@ -688,6 +883,9 @@ function handleUpdateArtStartDraftFields_(e) {
   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingSubhead', payload.workingSubhead);
   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingCTA', payload.workingCta);
   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingBullets', payload.workingBullets);
+  // Optional extras – safe even if these columns don't exist
+  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingWebsite', payload.workingWebsite);
+  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingEmail', payload.workingEmail);
   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingNotes', payload.workingNotes);
 
   return jsonResponse_({ ok: true });
@@ -925,7 +1123,7 @@ function buildArtStartEmail(jobId) {
         QR-based soft login will be added in a later phase.
       </p>
       <p style="margin:16px 0;">
-        <a href="${FRONTEND_BASE_URL}?AscendJobId=${encodeURIComponent(p.AscendJobId || '')}"
+        <a href="${ARTSTART_FRONTEND_BASE_URL}?jobId=${encodeURIComponent(p.AscendJobId || '')}"
            style="background:#0057b8; color:#fff; padding:10px 16px; text-decoration:none; border-radius:4px; font-size:14px;">
           Open live layout preview &amp; editing panel
         </a>
@@ -1051,27 +1249,12 @@ function sendArtStartEmail(jobId) {
     .map(function (item) { return item.ElementName || ''; })
     .filter(function (s) { return s; });
 
-  // Requester from Contacts
+  // Requester: email is stored directly in CreatedByContactId.
   let requesterName = '';
   let requesterEmail = '';
-  try {
-    const contactsSheet = getSheet_(SHEET_NAME_CONTACTS);
-    const cData = contactsSheet.getDataRange().getValues();
-    const cHeader = cData[0];
-    const cMap = getHeaderMap_(contactsSheet);
-    const contactId = p.CreatedByContactId;
-    if (contactId) {
-      for (let r = 1; r < cData.length; r++) {
-        if (String(cData[r][cMap['ContactId']]) === String(contactId)) {
-          const rowObj = rowToObject_(cData[r], cHeader);
-          requesterName = rowObj.Name || '';
-          requesterEmail = rowObj.Email || '';
-          break;
-        }
-      }
-    }
-  } catch (e) {
-    // best-effort only
+
+  if (p.CreatedByContactId) {
+    requesterEmail = String(p.CreatedByContactId).trim();
   }
 
   const ascendJobId = p.AscendJobId || jobId;
@@ -1239,6 +1422,11 @@ function doGet(e) {
     return handleGetArtStartJob_(e);
   }
 
+  if (action === 'updateArtStartDraftFields') {
+    // Allow GET-based autosave from ArtStart workspace
+    return handleUpdateArtStartDraftFields_(e);
+  }
+
   // JSONP-based job creation to avoid CORS preflight from localhost
   if (action === 'createJobFromFormJsonp') {
 
@@ -1339,7 +1527,7 @@ function doGet(e) {
     error: 'Unknown or missing action',
     action: action,
     params: e && e.parameter ? e.parameter : null,
-    marker: 'fallback-v1'
+    marker: 'fallback-v2'
   }, callback);
 }
 
