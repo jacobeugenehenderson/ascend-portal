@@ -1,23 +1,28 @@
 "use strict";
 
 (function () {
-const SESSION_KEY = "ascend_session_v1";
-const STATE_ATTR = "data-ascend-state";
+  const SESSION_KEY = "ascend_session_v1";
+  const STATE_ATTR = "data-ascend-state";
 
-// Knobs/config grouped together:
-const SESSION_DEFAULT_DURATION_MINUTES = 8 * 60; // 8 hours
-const POLLING_INTERVAL_MS = 4000; // poll backend for QR-auth handshake
+  // Knobs/config grouped together:
+  const SESSION_DEFAULT_DURATION_MINUTES = 8 * 60; // 8 hours
+  const POLLING_INTERVAL_MS = 4000; // poll backend for QR-auth handshake
 
-// Auth + routing knobs (single source of truth)
-const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
-// NOTE: token is currently baked into the static QR as "test". Need to update
+  // Auth + routing knobs (single source of truth)
+  const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
+  // NOTE: token is currently baked into the static QR as "test". Need to update
+  const HANDSHAKE_TOKEN = "test";
 
-const HANDSHAKE_TOKEN = "test";
+  // App destinations (replace with real URLs when ready)
+  const ARTSTART_URL = "artstart/job_intake.html";         // "New job" intake
+  const ARTSTART_JOB_URL = "artstart/artstart.html";       // Existing job view
+  const COPYDESK_URL =
+    "https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec";
+  const CODEDESK_URL = "https://okqral.com";
 
-// App destinations (replace with real URLs when ready)
-const ARTSTART_URL = "artstart/job_intake.html";
-const COPYDESK_URL = "https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec";
-const CODEDESK_URL = "https://okqral.com";
+  // ArtStart API base – same as art_start.js
+  const ARTSTART_API_BASE =
+    "https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec";
 
   let pollingTimer = null;
 
@@ -59,25 +64,27 @@ const CODEDESK_URL = "https://okqral.com";
     document.documentElement.setAttribute(STATE_ATTR, state);
   }
 
-function updateUserChip(session) {
-  const chipLabel = document.getElementById("ascend-user-label");
-  const accountLabel = document.getElementById("ascend-account-label");
+  function updateUserChip(session) {
+    const chipLabel = document.getElementById("ascend-user-label");
+    const accountLabel = document.getElementById("ascend-account-label");
 
-  const email = session && session.userEmail ? session.userEmail : null;
-  const firstName = session && session.userNameFirst ? session.userNameFirst : null;
-  const fullName = session && session.userNameFull ? session.userNameFull : null;
+    const email = session && session.userEmail ? session.userEmail : null;
+    const firstName =
+      session && session.userNameFirst ? session.userNameFirst : null;
+    const fullName =
+      session && session.userNameFull ? session.userNameFull : null;
 
-  const label = firstName || fullName || email;
+    const label = firstName || fullName || email;
 
-  if (!label) {
-    if (chipLabel) chipLabel.textContent = "Not logged in";
-    if (accountLabel) accountLabel.textContent = "Not logged in";
-    return;
+    if (!label) {
+      if (chipLabel) chipLabel.textContent = "Not logged in";
+      if (accountLabel) accountLabel.textContent = "Not logged in";
+      return;
+    }
+
+    if (chipLabel) chipLabel.textContent = label;
+    if (accountLabel) accountLabel.textContent = `Signed in as ${label}`;
   }
-
-  if (chipLabel) chipLabel.textContent = label;
-  if (accountLabel) accountLabel.textContent = `Signed in as ${label}`;
-}
 
   function updateKeepLoggedInToggle(session) {
     const toggle = document.getElementById("ascend-keep-logged-in");
@@ -93,9 +100,16 @@ function updateUserChip(session) {
     el.textContent = message;
   }
 
+  function clearArtStartHopper() {
+    const lane = document.getElementById("ascend-artstart-list");
+    if (!lane) return;
+    lane.innerHTML = "";
+  }
+
   function applyLoggedOutUI() {
     setAppState("logged-out");
     renderSessionStatus("Waiting for login via QR…");
+    clearArtStartHopper();
   }
 
   function applyLoggedInUI(session) {
@@ -106,12 +120,8 @@ function updateUserChip(session) {
         session.keepLoggedIn ? "On" : "Off"
       }.`
     );
-  }
-
-  function simulateServerHandshake(callback) {
-    // TODO: Replace this with real backend polling.
-    // For now, we simulate an immediate success when called.
-    setTimeout(callback, 500);
+    // Refresh the ArtStart hopper lane for this user
+    requestArtStartJobs();
   }
 
   function startPollingForLogin() {
@@ -122,10 +132,10 @@ function updateUserChip(session) {
     }
 
     // Prefer ?token=… from the URL, fall back to our baked-in default.
-        const urlToken = new URLSearchParams(window.location.search).get("token");
-        const token = urlToken || HANDSHAKE_TOKEN;
+    const urlToken = new URLSearchParams(window.location.search).get("token");
+    const token = urlToken || HANDSHAKE_TOKEN;
 
-        console.log("[Ascend] Using handshake token:", token);
+    console.log("[Ascend] Using handshake token:", token);
 
     async function checkOnce() {
       try {
@@ -167,8 +177,7 @@ function updateUserChip(session) {
 
         const userNameFirst =
           data.user_name_first || data.userNameFirst || null;
-        const userNameFull =
-          data.user_name || data.userName || null;
+        const userNameFull = data.user_name || data.userName || null;
 
         // Pending / initialized → keep waiting
         if (data.status === "pending" || data.status === "initialized") {
@@ -254,83 +263,247 @@ function updateUserChip(session) {
   }
 
   function initLogoutButton() {
-  const btn = document.getElementById("ascend-logout-btn");
-  if (!btn) return;
-  btn.addEventListener("click", () => {
-    // Clear any existing session
-    saveSession(null);
+    const btn = document.getElementById("ascend-logout-btn");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      // Clear any existing session
+      saveSession(null);
 
-    // Put the UI back into logged-out mode
-    applyLoggedOutUI();
-    updateUserChip(null);
+      // Put the UI back into logged-out mode
+      applyLoggedOutUI();
+      updateUserChip(null);
 
-    // IMPORTANT: start listening again for a new QR login
-    startPollingForLogin();
-  });
-}
-
-function buildUrlWithUser(baseUrl) {
-  const session = loadSession();
-  if (!session || !session.userEmail || !baseUrl) return baseUrl;
-
-  const url = new URL(baseUrl, window.location.href);
-  url.searchParams.set("user_email", session.userEmail);
-
-  if (session.userNameFirst) {
-    url.searchParams.set("user_name_first", session.userNameFirst);
-  }
-  if (session.userNameFull) {
-    url.searchParams.set("user_name", session.userNameFull);
+      // IMPORTANT: start listening again for a new QR login
+      startPollingForLogin();
+    });
   }
 
-  return url.toString();
-}
+  function buildUrlWithUser(baseUrl) {
+    const session = loadSession();
+    if (!session || !session.userEmail || !baseUrl) return baseUrl;
 
-function initPrimaryButtons() {
-  const artstartBtn = document.getElementById("ascend-artstart-new");
-  if (artstartBtn) {
-    artstartBtn.addEventListener("click", () => {
-      const target = buildUrlWithUser(ARTSTART_URL);
-      if (!ARTSTART_URL) {
-        alert("[Art Start] Destination URL not configured yet.");
-        return;
+    const url = new URL(baseUrl, window.location.href);
+    url.searchParams.set("user_email", session.userEmail);
+
+    if (session.userNameFirst) {
+      url.searchParams.set("user_name_first", session.userNameFirst);
+    }
+    if (session.userNameFull) {
+      url.searchParams.set("user_name", session.userNameFull);
+    }
+
+    return url.toString();
+  }
+
+  function initPrimaryButtons() {
+    const artstartBtn = document.getElementById("ascend-artstart-new");
+    if (artstartBtn) {
+      artstartBtn.addEventListener("click", () => {
+        const target = buildUrlWithUser(ARTSTART_URL);
+        if (!ARTSTART_URL) {
+          alert("[Art Start] Destination URL not configured yet.");
+          return;
+        }
+        window.open(target, "_blank", "noopener");
+      });
+    }
+
+    const copydeskBtn = document.getElementById("ascend-copydesk-open");
+    if (copydeskBtn) {
+      copydeskBtn.addEventListener("click", () => {
+        const target = buildUrlWithUser(COPYDESK_URL);
+        if (!COPYDESK_URL) {
+          alert("[Copydesk] Destination URL not configured yet.");
+          return;
+        }
+        window.open(target, "_blank", "noopener");
+      });
+    }
+
+    const codedeskBtn = document.getElementById("ascend-codedesk-open");
+    if (codedeskBtn) {
+      codedeskBtn.addEventListener("click", () => {
+        if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
+          alert("[Codedesk] Destination URL not configured yet.");
+          return;
+        }
+        window.open(CODEDESK_URL, "_blank", "noopener");
+      });
+    }
+
+    const fileroomBtn = document.getElementById("ascend-fileroom-open");
+    if (fileroomBtn) {
+      // For now: disabled. We’ll grey it out in CSS and no-op the click.
+      fileroomBtn.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+      });
+    }
+  }
+
+  // ---- Hopper: ArtStart job cards ----
+
+  function formatShortDate(value) {
+    if (!value) return "";
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function renderArtStartHopper(jobs) {
+    const lane = document.getElementById("ascend-artstart-list");
+    if (!lane) return;
+
+    lane.innerHTML = "";
+
+    if (!jobs || !jobs.length) {
+      const empty = document.createElement("div");
+      empty.className = "ascend-job-list-empty";
+      empty.textContent = "No ArtStart jobs yet.";
+      lane.appendChild(empty);
+      return;
+    }
+
+    jobs.forEach((job) => {
+      const card = document.createElement("div");
+      card.className = "ascend-job-card";
+
+      const mainBtn = document.createElement("button");
+      mainBtn.type = "button";
+      mainBtn.className = "ascend-job-card-main";
+
+      const title = document.createElement("div");
+      title.className = "ascend-job-card-title";
+      title.textContent = job.NordsonJobId || job.AscendJobId || "Untitled job";
+
+      const meta = document.createElement("div");
+      meta.className = "ascend-job-card-meta";
+
+      const metaParts = [];
+      if (job.PublicationName) {
+        metaParts.push(job.PublicationName);
       }
-      window.open(target, "_blank", "noopener");
-    });
-  }
-
-  const copydeskBtn = document.getElementById("ascend-copydesk-open");
-  if (copydeskBtn) {
-    copydeskBtn.addEventListener("click", () => {
-      const target = buildUrlWithUser(COPYDESK_URL);
-      if (!COPYDESK_URL) {
-        alert("[Copydesk] Destination URL not configured yet.");
-        return;
+      const runDatePretty = formatShortDate(
+        job.PublicationDate || job.MaterialsDueDate
+      );
+      if (runDatePretty) {
+        metaParts.push("Runs " + runDatePretty);
       }
-      window.open(target, "_blank", "noopener");
-    });
-  }
-
-  const codedeskBtn = document.getElementById("ascend-codedesk-open");
-  if (codedeskBtn) {
-    codedeskBtn.addEventListener("click", () => {
-      if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
-        alert("[Codedesk] Destination URL not configured yet.");
-        return;
+      if (job.Status) {
+        metaParts.push(job.Status);
       }
-      window.open(CODEDESK_URL, "_blank", "noopener");
+      meta.textContent = metaParts.join(" • ");
+
+      const statusPill = document.createElement("div");
+      statusPill.className = "ascend-job-card-status";
+      statusPill.textContent = job.Status || "";
+
+      mainBtn.appendChild(title);
+      mainBtn.appendChild(meta);
+      mainBtn.appendChild(statusPill);
+
+      mainBtn.addEventListener("click", () => {
+        const base =
+          ARTSTART_JOB_URL +
+          "?jobid=" +
+          encodeURIComponent(job.AscendJobId || "");
+        const target = buildUrlWithUser(base);
+        window.open(target, "_blank", "noopener");
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "ascend-job-card-delete";
+      deleteBtn.setAttribute("aria-label", "Remove job from dashboard");
+      deleteBtn.textContent = "×";
+
+      deleteBtn.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        deleteArtStartJob(job.AscendJobId);
+      });
+
+      card.appendChild(mainBtn);
+      card.appendChild(deleteBtn);
+      lane.appendChild(card);
     });
   }
 
-  const fileroomBtn = document.getElementById("ascend-fileroom-open");
-  if (fileroomBtn) {
-    // For now: disabled. We’ll grey it out in CSS and no-op the click.
-    fileroomBtn.addEventListener("click", (evt) => {
-      evt.preventDefault();
-      evt.stopPropagation();
-    });
+  function requestArtStartJobs() {
+    const session = loadSession();
+    if (!session || !session.userEmail) {
+      renderArtStartHopper([]);
+      return;
+    }
+
+    const callbackName = "ascendArtStartJobsCallback";
+
+    // JSONP callback: must be on window
+    window[callbackName] = function (payload) {
+      try {
+        const jobs = payload && payload.jobs ? payload.jobs : [];
+        renderArtStartHopper(jobs);
+      } catch (e) {
+        console.warn("Ascend: error in ArtStart jobs callback", e);
+      }
+    };
+
+    const url = new URL(ARTSTART_API_BASE);
+    url.searchParams.set("action", "listArtStartJobsForUser");
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("limit", "50");
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
   }
-}
+
+  function deleteArtStartJob(jobId) {
+    const session = loadSession();
+    if (!session || !session.userEmail) {
+      alert("Please log in again before removing jobs.");
+      return;
+    }
+    if (!jobId) return;
+
+    const confirmed = window.confirm(
+      "Remove this job from your dashboard? This won't delete any working files."
+    );
+    if (!confirmed) return;
+
+    const callbackName = "ascendDeleteArtStartJobCallback";
+
+    window[callbackName] = function (payload) {
+      if (!payload || payload.success === false) {
+        console.warn("Ascend: deleteArtStartJob failed", payload);
+      }
+      // In all cases, refresh the list so the UI stays in sync
+      requestArtStartJobs();
+    };
+
+    const url = new URL(ARTSTART_API_BASE);
+    url.searchParams.set("action", "deleteArtStartJob");
+    url.searchParams.set("jobId", jobId);
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
+  // ---- bootstrap ----
 
   function bootstrap() {
     initKeepLoggedInToggle();
