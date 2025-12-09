@@ -397,18 +397,11 @@
       if (runDatePretty) {
         metaParts.push("Runs " + runDatePretty);
       }
-      if (job.Status) {
-        metaParts.push(job.Status);
-      }
-      meta.textContent = metaParts.join(" • ");
 
-      const statusPill = document.createElement("div");
-      statusPill.className = "ascend-job-card-status";
-      statusPill.textContent = job.Status || "";
+      meta.textContent = metaParts.join(" • ");
 
       mainBtn.appendChild(title);
       mainBtn.appendChild(meta);
-      mainBtn.appendChild(statusPill);
 
       mainBtn.addEventListener("click", () => {
         const base =
