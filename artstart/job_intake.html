@@ -129,11 +129,12 @@ const requesterNameFull = qs.get('user_name') || '';
 const requesterLabel =
   requesterNameFirst || requesterNameFull || requesterEmail || '';
 
-if (metaEl && requesterLabel) {
-  // Still parse requester info for the payload,
-  // but don't show it in the intake UI.
-  metaEl.textContent = '';
+if (metaEl) {
+  // For now, show a simple back link instead of "Requested by"
+  metaEl.innerHTML =
+    '<a href="../index.html" class="ascend-app-meta-link">← Back to Ascend</a>';
 }
+
 const deliverableSelect = document.getElementById('deliverableType');
 const mediaSpecIdInput  = document.getElementById('mediaSpecId');
 const mediaSpecPreview  = document.getElementById('mediaSpecPreview');

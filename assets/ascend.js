@@ -13,15 +13,15 @@
   // NOTE: token is currently baked into the static QR as "test". Need to update
   const HANDSHAKE_TOKEN = "test";
 
-// App destinations
-const ARTSTART_URL =
-  "/ascend/artstart/job_intake.html"; // "New job" intake
-const ARTSTART_JOB_URL =
-  "/ascend/artstart/assets/artstart.html"; // Existing job view
+  // App destinations – always point to the live GitHub Pages workspace
+  const ARTSTART_URL =
+    "https://jacobeugenehenderson.github.io/ascend-portal/artstart/job_intake.html"; // "New job" intake
+  const ARTSTART_JOB_URL =
+    "https://jacobeugenehenderson.github.io/ascend-portal/artstart/assets/artstart.html"; // Existing job view
   const COPYDESK_URL =
     "https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec";
   const CODEDESK_URL = "https://okqral.com";
-
+  
   // ArtStart API base – same as art_start.js
   const ARTSTART_API_BASE =
     "https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec";

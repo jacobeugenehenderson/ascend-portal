@@ -136,6 +136,17 @@ body.ascend-app-body {
   text-align: right;
 }
 
+.ascend-app-meta a,
+.ascend-app-meta .ascend-app-meta-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ascend-app-meta a:hover,
+.ascend-app-meta .ascend-app-meta-link:hover {
+  text-decoration: underline;
+}
+
 /* Form layout: single column on mobile, optional 2-col on wide */
 .ascend-app-form {
   margin-top: 16px;
