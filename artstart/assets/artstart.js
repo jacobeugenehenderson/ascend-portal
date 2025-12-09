@@ -106,9 +106,13 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
   function buildFormatPretty(job) {
     var trim = '—';
     if (job.trimWidth && job.trimHeight) {
-      trim = job.trimWidth + '" × ' + job.trimHeight + '"';
+      // Use whatever unit is already in the data; don’t add extra quotes
+      trim = job.trimWidth + ' × ' + job.trimHeight;
     }
-    var bleed = job.bleed ? job.bleed + '"' : '—';
+
+    // Bleed as-is (e.g., "3mm"), falling back to em dash when missing
+    var bleed = job.bleed || '—';
+
     return { trim: trim, bleed: bleed };
   }
 

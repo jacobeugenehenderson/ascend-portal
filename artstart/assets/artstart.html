@@ -228,12 +228,14 @@
       }
 
       /* Canvas text rows: single-line meters + multi-line body */
+
       .artstart-canvas-row {
-        font-size: 18px;        /* starting size – JS will shrink from here */
-        line-height: 1.2;
-        white-space: nowrap;    /* force single line */
+        /* Single-line rows; font size is handled by JS autoscaling */
+        white-space: nowrap;
         overflow: hidden;
-        text-overflow: clip;    /* no ellipsis; JS keeps it inside */
+        text-overflow: clip;
+        font-size: clamp(10px, 1.7vw, 16px);
+        line-height: 1.2;
       }
 
       .artstart-row-headline {
@@ -418,7 +420,8 @@
       .artstart-canvas-meta-block {
         margin-top: 6px;
         text-align: right;
-        align-self: flex-end;
+        align-self: stretch;   /* use full safe width */
+        width: 100%;
       }
 
     </style>
