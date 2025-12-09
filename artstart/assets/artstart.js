@@ -35,17 +35,63 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     var labelEl = document.getElementById('artstart-user-label');
     if (!labelEl) return;
 
-    // If ascend.js exposes a helper, prefer that; otherwise fall back to localStorage.
     var email = '';
+
     try {
+      // 1) Prefer the shared Ascend helper if it exists.
       if (window.Ascend && typeof window.Ascend.getCurrentUser === 'function') {
         var user = window.Ascend.getCurrentUser();
-        email = user && user.email;
-      } else if (window.localStorage) {
-        email = window.localStorage.getItem('ascendUserEmail');
+        if (user && user.email) {
+          email = user.email;
+        }
+      }
+
+      // 2) Fall back to known localStorage keys if we still don't have an email.
+      if (!email && window.localStorage) {
+        var possibleKeys = [
+          'ascendUserEmail',
+          'ascend_user_email',
+          'ascendEmail',
+          'ascend.user.email',
+          'ascend-user-email'
+        ];
+
+        for (var i = 0; i < possibleKeys.length && !email; i++) {
+          var v = window.localStorage.getItem(possibleKeys[i]);
+          if (v && typeof v === 'string') {
+            email = v;
+          }
+        }
+
+        // 3) Last-resort: scan any Ascend-ish localStorage entry for an email.
+        if (!email) {
+          for (var j = 0; j < window.localStorage.length; j++) {
+            var key = window.localStorage.key(j);
+            if (!key || key.toLowerCase().indexOf('ascend') === -1) continue;
+
+            var raw = window.localStorage.getItem(key);
+            if (!raw || typeof raw !== 'string') continue;
+
+            // If it’s JSON, try to pull .email; otherwise use the string itself.
+            var candidate = '';
+            try {
+              var parsed = JSON.parse(raw);
+              if (parsed && parsed.email) {
+                candidate = parsed.email;
+              }
+            } catch (e) {
+              candidate = raw;
+            }
+
+            if (candidate && candidate.indexOf('@') !== -1) {
+              email = candidate;
+              break;
+            }
+          }
+        }
       }
     } catch (e) {
-      // ignore
+      // Swallow any weirdness; we'll just show "Not logged in".
     }
 
     if (email) {
@@ -398,40 +444,35 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     };
   }
 
-  function saveDraft(jobId) {
-    setSaveStatus('Saving…');
+function saveDraft(jobId) {
+  setSaveStatus('Saving…');
 
-    var payload = buildDraftPayload(jobId);
-    var params = new URLSearchParams();
+  var payload = buildDraftPayload(jobId);
+  var params = new URLSearchParams();
 
-    // Action for the Apps Script router
-    params.append('action', 'updateArtStartDraftFields');
+  params.append('action', 'updateArtStartDraftFields');
+  Object.keys(payload).forEach(function (key) {
+    var value = payload[key];
+    if (value !== undefined && value !== null) {
+      params.append(key, value);
+    }
+  });
 
-    // Copy all payload keys into the query string
-    Object.keys(payload).forEach(function (key) {
-      var value = payload[key];
-      if (value !== undefined && value !== null) {
-        params.append(key, value);
+  var url = ARTSTART_API_BASE + '?' + params.toString();
+
+  fetch(url, { method: 'GET' })
+    .then(function (res) { return res.json(); })
+    .then(function (json) {
+      if (!json || !json.ok) {
+        throw new Error((json && json.error) || 'Unknown error');
       }
-    });
-
-    var url = ARTSTART_API_BASE + '?' + params.toString();
-
-    fetch(url, {
-      method: 'GET'
+      setSaveStatus('Saved');
     })
-      .then(function (res) { return res.json(); })
-      .then(function (json) {
-        if (!json || !json.ok) {
-          throw new Error((json && json.error) || 'Unknown error');
-        }
-        setSaveStatus('Saved');
-      })
-      .catch(function (err) {
-        console.error('Error saving draft', err);
-        setSaveStatus('Save failed – try again');
-      });
-  }
+    .catch(function (err) {
+      console.error('Error saving draft', err);
+      setSaveStatus('Save failed – try again');
+    });
+}
 
   function attachBlurListeners(jobId) {
     var debounceTimer = null;
