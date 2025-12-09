@@ -199,8 +199,7 @@
 
       .artstart-canvas-inner {
         position: relative;
-        max-width: 100%;
-        max-height: 100%;
+        /* Let JS control width/height exactly (no implicit scaling). */
       }
 
       .artstart-canvas-bleed {
@@ -415,6 +414,14 @@
         inset: 0;
         border-radius: 0;
         box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
+      }
+
+            .artstart-canvas-box[data-media-kind="digital"] {
+        /* For digital, the canvas should reflect actual pixel size. */
+        width: auto;        /* shrink/grow to content width */
+        max-width: none;    /* do not clamp to 520px */
+        overflow: visible;  /* allow it to extend if larger than panel */
+        align-self: center; /* keep it centered in the card */
       }
 
             .artstart-canvas-main {
