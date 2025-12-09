@@ -227,12 +227,37 @@
         overflow: hidden;
       }
 
+      /* Allow multi-line wrapping in canvas preview rows */
       .artstart-canvas-row {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;          /* allow wrapping */
+        overflow-wrap: break-word;    /* wrap long words */
+        word-break: break-word;       /* fallback */
+        overflow: hidden;             /* keep the visual containment */
+        text-overflow: clip;          /* no more ellipsis */
         font-size: clamp(10px, 1.7vw, 16px);
         line-height: 1.2;
+      }
+
+      .artstart-row-headline {
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .artstart-row-subhead {
+        font-weight: 500;
+        opacity: 0.9;
+      }
+
+      .artstart-row-cta {
+        font-weight: 600;
+        font-size: clamp(9px, 1.5vw, 14px);
+        text-transform: uppercase;
+      }
+
+      .artstart-row-meta {
+        font-size: clamp(9px, 1.3vw, 13px);
+        opacity: 0.85;
       }
 
       .artstart-row-headline {
