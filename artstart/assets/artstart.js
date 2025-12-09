@@ -256,7 +256,8 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
     var body = val('working-bullets');
     if (body) {
-      body = body.trim(); // keep internal line breaks for pre-line rendering
+      // Keep internal line breaks; no soft wrapping, only hard returns.
+      body = body.trim();
     }
 
     var website = val('working-website').trim();
@@ -275,6 +276,48 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     if (bodyEl) bodyEl.textContent = body;
     if (websiteEl) websiteEl.textContent = website;
     if (emailEl) emailEl.textContent = email;
+
+    // After mirroring text into the canvas, shrink-to-fit.
+    autoscaleCanvas();
+  }
+
+  function autoscaleCanvas() {
+    var safe = document.querySelector('.artstart-canvas-safe');
+    if (!safe) return;
+
+    // Reset to full size before measuring.
+    safe.style.setProperty('--artstart-scale', '1');
+
+    // If the canvas hasn't been sized yet, bail quietly.
+    if (!safe.clientWidth || !safe.clientHeight) {
+      return;
+    }
+
+    var scale = 1.0;
+    var minScale = 0.5; // Floor – you can tweak if you want larger minimum type.
+
+    function fits() {
+      // We want *all* content to stay within the safe box, both vertically and horizontally.
+      return (
+        safe.scrollHeight <= safe.clientHeight &&
+        safe.scrollWidth <= safe.clientWidth
+      );
+    }
+
+    // If it already fits at full size, nothing to do.
+    if (fits()) {
+      return;
+    }
+
+    // Gradually shrink the entire canvas typography until it fits,
+    // or we hit the minimum scale.
+    while (scale > minScale) {
+      scale -= 0.02;
+      safe.style.setProperty('--artstart-scale', scale.toFixed(2));
+      if (fits()) {
+        break;
+      }
+    }
   }
 
   function populateJob(job) {
