@@ -7,6 +7,16 @@
       name="viewport"
       content="width=device-width,initial-scale=1,shrink-to-fit=no"
     />
+    <script>
+      (function () {
+        var path = window.location.pathname || "";
+        if (path && !path.endsWith("/") && path.indexOf(".") === -1) {
+          var search = window.location.search || "";
+          var hash = window.location.hash || "";
+          window.location.replace(path + "/" + search + hash);
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="assets/ascend.css" />
   </head>
   <body>
