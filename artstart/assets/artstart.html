@@ -197,10 +197,25 @@
         padding: 18px;
       }
 
+      /* Digital formats: show the canvas at 1:1 pixel size */
+      .artstart-canvas-box[data-media-kind="digital"] {
+        max-width: none;       /* allow a 2000px banner, etc. */
+        min-height: 0;
+        align-self: flex-start;
+        overflow: auto;        /* scrollbars if it’s wider than the viewport */
+      }
+
       .artstart-canvas-inner {
         position: relative;
-        /* Let JS control width/height exactly (no implicit scaling). */
+        max-width: 100%;
+        max-height: 100%;
       }
+
+/* Digital: inner canvas can be full pixel dimensions */
+.artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
+  max-width: none;
+  max-height: none;
+}
 
       .artstart-canvas-bleed {
         position: relative;
@@ -227,6 +242,11 @@
 
         /* Global type scale for the entire canvas – JS drives this */
         --artstart-scale: 1;
+      }
+
+      /* Digital: safe area *is* the canvas, no extra inset */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
+        inset: 0;
       }
 
       /* Canvas text rows: single-line meters + multi-line body */
