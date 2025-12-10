@@ -187,9 +187,28 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     var displayHeight;
 
     if (mediaKind === 'digital') {
-      // Digital projects: always 1:1 pixel size, never scaled, and no bleed frame.
-      displayWidth = w;
-      displayHeight = h;
+      // Digital projects: show at “real” size based on DPI, never larger than 1:1,
+      // and no bleed frame.
+      var baseDpi = 72;
+      var dpi = null;
+
+      if (job) {
+        var dpiRaw = job.dpi || job.DPI;
+        dpi = parseFloat(dpiRaw);
+      }
+
+      var factor = 1; // default: 1:1
+      if (isFinite(dpi) && dpi > 0) {
+        var candidate = baseDpi / dpi;
+        // Only shrink for > baseDpi; never upscale.
+        if (candidate < 1) {
+          factor = candidate;
+        }
+      }
+
+      displayWidth = Math.round(w * factor);
+      displayHeight = Math.round(h * factor);
+
       if (bleedEl) {
         bleedEl.style.display = 'none';
       }
