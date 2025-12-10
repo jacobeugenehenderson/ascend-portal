@@ -181,7 +181,8 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
     var dims = extractCanvasDims(job);
     var hasDims = !!dims;
-    var mediaKind = getMediaKind(job);
+    // Prefer the kind inferred from dimensions; fall back to MediaType only if needed.
+    var mediaKind = (hasDims && dims.kind) ? dims.kind : getMediaKind(job);
 
     box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
     box.setAttribute('data-media-kind', mediaKind || '');
