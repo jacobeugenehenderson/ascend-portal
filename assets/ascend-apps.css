@@ -276,3 +276,36 @@ body.ascend-app-body {
   color: #d62121;
   font-weight: 700;
 }
+
+/* -------------------------------------------------------
+   DIGITAL CANVAS MODE — overrides print-only visuals
+   ------------------------------------------------------- */
+
+.artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-bleed {
+  display: none !important;
+}
+
+.artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Remove print background grid */
+.artstart-canvas-box[data-media-kind="digital"] {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Ensure the canvas renders at 1:1 actual pixel size */
+.artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-main {
+  transform: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Disable autoscale safe-area bounding for digital */
+.artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
+  --artstart-scale: 1 !important;
+  transform: none !important;
+}
