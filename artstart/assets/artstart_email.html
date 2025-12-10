@@ -289,7 +289,7 @@
             </div>
           </div>
 
-          <!-- Static graphic preview: format-only, no job text -->
+          <!-- Static graphic preview: scaled canvas cousin of Job View -->
           <div class="canvas-wrapper">
             <div class="canvas-frame">
               <div class="canvas-outer">
@@ -304,21 +304,71 @@
           </div>
         </div>
 
-        <!-- Editorial notes -->
+        <!-- Job overview (mirrors Job View sidebar card) -->
         <div class="section">
-          <h2>Editorial notes</h2>
+          <h2>Job overview</h2>
+
+          <? if (data.jobFilename || data.nordsonJobCode || data.jobTitle) { ?>
+            <p>
+              <span class="label">Filename:</span>
+              <? if (data.jobFilename) { ?>
+                <?= data.jobFilename ?>
+              <? } else if (data.nordsonJobCode) { ?>
+                <?= data.nordsonJobCode ?>
+              <? } else { ?>
+                <?= data.jobTitle ?>
+              <? } ?>
+            </p>
+          <? } ?>
+
+          <? if (data.requesterName || data.requesterEmail) { ?>
+            <p>
+              <span class="label">Requested by:</span>
+              <? if (data.requesterName) { ?>
+                <?= data.requesterName ?>
+              <? } ?>
+              <? if (data.requesterEmail) { ?>
+                <? if (data.requesterName) { ?>&nbsp;<? } ?>
+                &lt;<?= data.requesterEmail ?>&gt;
+              <? } ?>
+            </p>
+          <? } ?>
+
+          <? if (data.createdDate) { ?>
+            <p>
+              <span class="label">Created:</span>
+              <?= data.createdDate ?>
+            </p>
+          <? } ?>
+
+          <? if (data.runDatePretty) { ?>
+            <p>
+              <span class="label">Run / go-live:</span>
+              <?= data.runDatePretty ?>
+            </p>
+          <? } ?>
+
+          <? if (data.materialsDeadlinePretty) { ?>
+            <p>
+              <span class="label">Materials deadline:</span>
+              <?= data.materialsDeadlinePretty ?>
+            </p>
+          <? } ?>
+
           <? if (data.topic) { ?>
             <p>
-              <span class="label">Topic / editorial notes:</span><br>
+              <span class="label">Editorial notes:</span><br>
               <?= data.topic ?>
             </p>
           <? } ?>
+
           <? if (data.notes) { ?>
             <p>
               <span class="label">Notes:</span><br>
               <?= data.notes ?>
             </p>
           <? } ?>
+
           <? if (!data.topic && !data.notes) { ?>
             <p class="muted">No editorial notes were provided in the intake.</p>
           <? } ?>
@@ -328,7 +378,7 @@
         <div class="section">
           <h2>ArtStart workspace</h2>
           <p class="muted">
-            Use the ArtStart workspace to collaborate on this job and prepare working content before final layout.
+            Open the ArtStart workspace to collaborate on this job and prepare content for layout.
           </p>
           <div class="button-row">
             <a href="<?= data.artStartUrl ?>" class="btn-primary">Open this job in ArtStart</a>
@@ -341,4 +391,4 @@
       </div>
     </div>
   </body>
-</html>
+  </html>
