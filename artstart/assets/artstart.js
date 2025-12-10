@@ -148,32 +148,30 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
   }
 
   function extractCanvasDims(job) {
+    // Use pixel dimensions if present (digital)
     var pixelWidth = parseFloat(job.pixelWidth);
     var pixelHeight = parseFloat(job.pixelHeight);
+
+    if (isFinite(pixelWidth) && pixelWidth > 0 &&
+        isFinite(pixelHeight) && pixelHeight > 0) {
+      return {
+        kind: 'digital',
+        width: pixelWidth,
+        height: pixelHeight
+      };
+    }
+
+    // Otherwise assume print (trim size)
     var trimWidth = parseFloat(job.trimWidth);
     var trimHeight = parseFloat(job.trimHeight);
 
-    var hasPixel = isFinite(pixelWidth) && pixelWidth > 0 &&
-                   isFinite(pixelHeight) && pixelHeight > 0;
-    var hasTrim = isFinite(trimWidth) && trimWidth > 0 &&
-                  isFinite(trimHeight) && trimHeight > 0;
-
-    var kindHint = getMediaKind(job);
-
-    // If we have pixel dimensions but NO trim, treat this as digital
-    // regardless of what MediaType says (or if it is blank).
-    if (hasPixel && !hasTrim) {
-      return { kind: 'digital', width: pixelWidth, height: pixelHeight };
-    }
-
-    // If we have a real trim, respect MediaType when deciding print vs digital.
-    if (hasTrim) {
-      return { kind: kindHint || 'print', width: trimWidth, height: trimHeight };
-    }
-
-    // Fallback: pixels only, no trim – respect the hint, default to digital.
-    if (hasPixel) {
-      return { kind: kindHint || 'digital', width: pixelWidth, height: pixelHeight };
+    if (isFinite(trimWidth) && trimWidth > 0 &&
+        isFinite(trimHeight) && trimHeight > 0) {
+      return {
+        kind: 'print',
+        width: trimWidth,
+        height: trimHeight
+      };
     }
 
     return null;
@@ -190,7 +188,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     var dims = extractCanvasDims(job);
     var hasDims = !!dims;
     // Prefer the kind inferred from dimensions; fall back to MediaType only if needed.
-    var mediaKind = (hasDims && dims.kind) ? dims.kind : getMediaKind(job);
+    var mediaKind = hasDims ? dims.kind : null;
 
     box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
     box.setAttribute('data-media-kind', mediaKind || '');
