@@ -197,10 +197,25 @@
         padding: 18px;
       }
 
+      /* Digital formats: let the canvas be its true pixel size */
+      .artstart-canvas-box[data-media-kind="digital"] {
+        width: auto;
+        max-width: none;
+        min-height: 0;
+        overflow: auto;      /* scroll if it's wider than the card */
+        align-self: center;
+      }
+
       .artstart-canvas-inner {
         position: relative;
         max-width: 100%;
         max-height: 100%;
+      }
+
+      /* Digital canvas: don’t clamp to the box; use real px size */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
+        max-width: none;
+        max-height: none;
       }
 
 /* Digital: inner canvas can be full pixel dimensions */
@@ -215,6 +230,11 @@
         border-radius: 0;
         border: 2px dashed rgba(79, 209, 197, 0.9);
         background-color: rgba(79, 209, 197, 0.06);
+      }
+
+      /* Digital projects don’t show bleed graphically */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-bleed {
+        display: none;
       }
 
       .artstart-canvas-safe {
@@ -428,14 +448,6 @@
         box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
       }
 
-      /* Digital formats: show the canvas at 1:1 pixel size */
-      .artstart-canvas-box[data-media-kind="digital"] {
-        width: auto;        /* shrink/grow to content width */
-        max-width: none;    /* do not clamp to 520px */
-        min-height: 0;
-        overflow: auto;     /* scroll if it's wider than the panel */
-        align-self: center; /* keep it centered in the card */
-      }
             .artstart-canvas-main {
         display: flex;
         flex-direction: column;

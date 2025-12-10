@@ -160,18 +160,18 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
     var kindHint = getMediaKind(job);
 
-    // If we have pixel dimensions but NO trim, treat the canvas as digital,
-    // even if MediaType is missing or misleading.
+    // If we have pixel dimensions but NO trim, treat this as digital
+    // regardless of what MediaType says (or if it is blank).
     if (hasPixel && !hasTrim) {
       return { kind: 'digital', width: pixelWidth, height: pixelHeight };
     }
 
-    // If we have a real trim, prefer that for print layouts.
+    // If we have a real trim, respect MediaType when deciding print vs digital.
     if (hasTrim) {
       return { kind: kindHint || 'print', width: trimWidth, height: trimHeight };
     }
 
-    // Fallback: pixels only, no trim info – respect the hint, default to digital.
+    // Fallback: pixels only, no trim – respect the hint, default to digital.
     if (hasPixel) {
       return { kind: kindHint || 'digital', width: pixelWidth, height: pixelHeight };
     }
@@ -430,7 +430,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     // Format card
     var formatPretty = buildFormatPretty(job);
     var dimsForSize = extractCanvasDims(job);
-    // Prefer the kind from the dimensions (pixel-only => digital).
+    // Prefer the kind coming back from the dimensions helper.
     var mediaKind = (dimsForSize && dimsForSize.kind) ? dimsForSize.kind : getMediaKind(job);
 
     var publicationEl = document.getElementById('format-publication');
