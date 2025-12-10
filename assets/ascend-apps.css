@@ -304,7 +304,7 @@ body.ascend-app-body {
   height: auto !important;
 }
 
-/* Digital: keep layout un-transformed, but still allow text autoscale */
+/* Digital: layout not transformed; JS controls --artstart-scale */
 .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
   transform: none !important;
 }

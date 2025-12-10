@@ -353,10 +353,11 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
   function autoscaleCanvas() {
     var safe = document.querySelector('.artstart-canvas-safe');
-    if (!safe) return;
+    var root = document.documentElement;
+    if (!safe || !root) return;
 
     // Reset to full size before measuring.
-    safe.style.setProperty('--artstart-scale', '1');
+    root.style.setProperty('--artstart-scale', '1');
 
     // If the canvas hasn't been sized yet, bail quietly.
     if (!safe.clientWidth || !safe.clientHeight) {
@@ -383,7 +384,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     // or we hit the minimum scale.
     while (scale > minScale) {
       scale -= 0.02;
-      safe.style.setProperty('--artstart-scale', scale.toFixed(2));
+      root.style.setProperty('--artstart-scale', scale.toFixed(2));
       if (fits()) {
         break;
       }
