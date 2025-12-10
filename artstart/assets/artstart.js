@@ -194,12 +194,23 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var displayHeight;
 
     // DIGITAL: pixel-perfect, scrollable
+    // DIGITAL: pixel-based canvas, adjusted for source DPI
     if (mediaKind === 'digital') {
-      displayWidth = w;
-      displayHeight = h;
+      // Optional: read a DPI value from the job (e.g., 144)
+      var rawDpi =
+        (job && (job.PixelDPI || job.pixelDpi || job.pixel_dpi || job.dpi)) || '';
+      var dpi = parseFloat(rawDpi);
+
+      var TARGET_DPI = 72; // CSS "native" feel
+      var dpiScale =
+        isFinite(dpi) && dpi > 0 ? (TARGET_DPI / dpi) : 1;
+
+      // Example: 144 dpi → 72 dpi => scale = 0.5
+      displayWidth  = w * dpiScale;
+      displayHeight = h * dpiScale;
 
       if (inner) {
-        inner.style.width = displayWidth + 'px';
+        inner.style.width  = displayWidth  + 'px';
         inner.style.height = displayHeight + 'px';
       }
 
@@ -218,7 +229,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         safeEl.style.bottom = '';
         safeEl.style.left = '';
 
-        // Digital: baseline scale is 1.0
+        // Digital baseline scale for text
         safeEl.dataset.baseScale = '1';
         safeEl.style.setProperty('--artstart-scale', '1');
       }
