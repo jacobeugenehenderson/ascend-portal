@@ -146,7 +146,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     return null;
   }
 
-  function renderCanvasPreview(job) {
+  function renderCanvasPreview(job, dimsOverride) {
     var box = document.getElementById('format-canvas-box');
     var noInfoEl = document.getElementById('canvas-noinfo');
     if (!box) return;
@@ -154,7 +154,8 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     var inner = box.querySelector('.artstart-canvas-inner');
     var bleedEl = box.querySelector('.artstart-canvas-bleed');
 
-    var dims = extractCanvasDims(job);
+    // Re-use dims computed by populateJob when available
+    var dims = dimsOverride || extractCanvasDims(job);
     var hasDims = !!dims;
     // Prefer the kind inferred from dimensions; fall back to MediaType only if needed.
     var mediaKind = hasDims ? dims.kind : null;
@@ -426,7 +427,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     }
     
     // Canvas preview (digital vs print, with bleed)
-    renderCanvasPreview(job);
+    renderCanvasPreview(job, dimsForSize);
 
     // Working draft fields
     document.getElementById('working-headline').value = job.workingHeadline || '';
