@@ -160,10 +160,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
     // Media kind: prefer explicit override from populateJob,
     // fall back to whatever the dims object says.
-    var mediaKind =
-      (job.MediaType ? job.MediaType.toLowerCase() : null) ||
-      mediaKindOverride ||
-      (hasDims ? dims.kind : null);
+    var mediaKind = mediaKindOverride || (hasDims ? dims.kind : null);
 
     box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
     box.setAttribute('data-media-kind', mediaKind || '');
