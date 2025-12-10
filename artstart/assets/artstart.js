@@ -217,6 +217,10 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         safeEl.style.right = '';
         safeEl.style.bottom = '';
         safeEl.style.left = '';
+
+        // Digital: baseline scale is 1.0
+        safeEl.dataset.baseScale = '1';
+        safeEl.style.setProperty('--artstart-scale', '1');
       }
 
       if (noInfoEl) {
@@ -264,6 +268,22 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     if (inner) {
       inner.style.width = displayWidth + 'px';
       inner.style.height = displayHeight + 'px';
+    }
+
+        // Establish a baseline typography scale based on preview DPI.
+    if (safeEl) {
+      var BASE_PX_PER_INCH = 72; // reference "dpi" for type
+      var baseScale = pxPerUnit / BASE_PX_PER_INCH;
+
+      if (!isFinite(baseScale) || baseScale <= 0) {
+        baseScale = 1;
+      }
+
+      // Keep within a reasonable band so nothing gets absurdly big/small.
+      baseScale = Math.max(0.55, Math.min(baseScale, 1.25));
+
+      safeEl.dataset.baseScale = String(baseScale);
+      safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
     }
 
     // 3) Position trim (magenta stroke + dashed teal) based on bleed
@@ -355,41 +375,18 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var safe = document.querySelector('.artstart-canvas-safe');
     if (!safe) return;
 
-    // Elements that *must* autoscale
-    var headlineEl = document.getElementById('canvas-headline');
-    var subheadEl  = document.getElementById('canvas-subhead');
-    var ctaEl      = document.getElementById('canvas-cta');
-    var websiteEl  = document.getElementById('canvas-website');
-    var emailEl    = document.getElementById('canvas-email');
-
-    // "Text" / body copy stays constant, so we leave canvas-body alone.
-    var bodyEl = document.getElementById('canvas-body');
-
-    // Base sizes (in px) – match your visual design
-    var BASE_HEADLINE = 22;
-    var BASE_SUBHEAD  = 15;
-    var BASE_CTA      = 15;
-    var BASE_META     = 9;
-
-    function applyScale(scale) {
-      var h = BASE_HEADLINE * scale;
-      var s = BASE_SUBHEAD  * scale;
-      var c = BASE_CTA      * scale;
-      var m = BASE_META     * scale;
-
-      if (headlineEl) headlineEl.style.fontSize = h + 'px';
-      if (subheadEl)  subheadEl.style.fontSize  = s + 'px';
-      if (ctaEl)      ctaEl.style.fontSize      = c + 'px';
-      if (websiteEl)  websiteEl.style.fontSize  = m + 'px';
-      if (emailEl)    emailEl.style.fontSize    = m + 'px';
-
-      // Body text: fixed size, no autoscale.
-      if (bodyEl) bodyEl.style.fontSize = '12px';
+    // Baseline scale is set in renderCanvasPreview (DPI-based for print,
+    // or 1.0 for digital). Fall back to 1 if missing.
+    var baseAttr = safe.dataset.baseScale;
+    var baseScale = baseAttr ? parseFloat(baseAttr) : 1;
+    if (!isFinite(baseScale) || baseScale <= 0) {
+      baseScale = 1;
     }
 
-    // Reset to base sizes before measuring
-    applyScale(1);
+    // Start from the baseline scale.
+    safe.style.setProperty('--artstart-scale', baseScale);
 
+    // If the canvas hasn't been sized yet, bail quietly.
     if (!safe.clientWidth || !safe.clientHeight) {
       return;
     }
@@ -401,15 +398,16 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       );
     }
 
-    // If it already fits at full size, we’re done.
+    // If everything fits at the baseline size, we're done.
     if (fits()) return;
 
-    var scale = 1.0;
-    var minScale = 0.5; // smallest we’ll allow
+    var scale = baseScale;
+    var minScale = baseScale * 0.5; // don't shrink below half baseline
 
+    // Gradually shrink until it fits or we hit the floor.
     while (scale > minScale) {
       scale -= 0.02;
-      applyScale(scale);
+      safe.style.setProperty('--artstart-scale', scale.toFixed(3));
       if (fits()) break;
     }
   }
