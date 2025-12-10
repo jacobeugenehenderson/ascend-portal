@@ -235,12 +235,6 @@
         background-image: none;
       }
 
-/* Digital: inner canvas can be full pixel dimensions */
-.artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
-  max-width: none;
-  max-height: none;
-}
-
       .artstart-canvas-bleed {
         position: absolute;
         box-sizing: border-box;
@@ -268,11 +262,6 @@
         gap: 4px;
         overflow: hidden;
         --artstart-scale: 1;
-      }
-
-      /* Digital: safe area *is* the canvas, no extra inset */
-      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
-        inset: 0;
       }
 
       /* Canvas text rows: single-line meters + multi-line body */
@@ -306,10 +295,10 @@
         font-size: calc(15px * var(--artstart-scale));
       }
 
-      /* Reading copy */
+      /* Reading copy: stays constant, does NOT autoscale */
       .artstart-row-body {
         line-height: 1.3;
-        font-size: calc(12px * var(--artstart-scale));
+        font-size: 12px;
       }
 
       /* Quiet utility text */
