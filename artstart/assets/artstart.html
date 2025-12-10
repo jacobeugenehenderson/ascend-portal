@@ -180,8 +180,8 @@
         position: relative;
         margin-top: 16px;
         width: 100%;
-        max-width: 520px;
-        min-height: 220px;
+        max-width: 720px;   /* give print pieces more horizontal room */
+        min-height: 320px;  /* and more vertical room */
         align-self: center;
         border-radius: 12px;
         border: 1px solid #d1d5db;
@@ -213,13 +213,12 @@
         max-height: 100%;
         box-sizing: border-box;
         border-radius: 0;
-        /* OPAQUE artboard – hides the grid completely */
         background-color: #ffffff;
         background-image: repeating-linear-gradient(
           135deg,
-          #2dd4bf,
-          #2dd4bf 1px,
-          #ffffff 1px,
+          #14b8a6,
+          #14b8a6 3px,
+          #ffffff 3px,
           #ffffff 6px
         );
         border: 1px solid rgba(15, 23, 42, 0.25);
@@ -257,18 +256,17 @@
 
       .artstart-canvas-safe {
         position: absolute;
-        inset: 6%; /* JS will overwrite this for print; acts as a safe default */
+        inset: 6%; /* JS overwrites for print */
         box-sizing: border-box;
         border-radius: 0;
         background-color: #ffffff;
+        border: 2px solid #ec4899; /* magenta trim stroke */
         padding: 6px 8px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         gap: 4px;
         overflow: hidden;
-
-        /* Global type scale for the entire canvas – JS drives this */
         --artstart-scale: 1;
       }
 

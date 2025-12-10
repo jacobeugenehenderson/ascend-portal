@@ -246,21 +246,23 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
     if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
 
-    // 2) Convert physical size to pixels at ~72 dpi
-    var BASE_DPI = 72;
-    var fullPxWidth = totalWidth * BASE_DPI;
-    var fullPxHeight = totalHeight * BASE_DPI;
+    // 2) Scale the full artboard so it fills the card nicely.
+    // Treat w/h units as "inches" and convert to pixels, but
+    // cap pixels-per-inch so giant formats don't explode.
+    var maxWidth = box.clientWidth || 720;
+    var maxHeight = box.clientHeight || 360;
 
-    // Fit into the card *without* scaling up beyond 72 dpi.
-    var maxWidth = box.clientWidth || fullPxWidth;
-    var maxHeight = box.clientHeight || fullPxHeight;
+    var MARGIN_FACTOR = 0.9;     // leave a bit of breathing room
+    var MAX_PX_PER_UNIT = 120;   // hard ceiling on px per inch
 
-    var widthCap = maxWidth / fullPxWidth;
-    var heightCap = maxHeight / fullPxHeight;
-    var scaleFactor = Math.min(1, widthCap, heightCap);
+    var pxPerUnit = Math.min(
+      (maxWidth * MARGIN_FACTOR) / totalWidth,
+      (maxHeight * MARGIN_FACTOR) / totalHeight,
+      MAX_PX_PER_UNIT
+    );
 
-    displayWidth = Math.round(fullPxWidth * scaleFactor);
-    displayHeight = Math.round(fullPxHeight * scaleFactor);
+    displayWidth = Math.round(totalWidth * pxPerUnit);
+    displayHeight = Math.round(totalHeight * pxPerUnit);
 
     if (inner) {
       inner.style.width = displayWidth + 'px';
