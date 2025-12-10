@@ -113,45 +113,90 @@
         margin-top: 10px;
       }
 
-      .canvas-frame {
-        border-radius: 10px;
+      /* Same canvas structure/behavior as Job View, scaled into the email card */
+      .artstart-canvas-box {
+        position: relative;
+        margin-top: 8px;
+        width: 100%;
+        max-width: 560px; /* fits the email card */
+        min-height: 320px;
+        border-radius: 12px;
         border: 1px solid #d1d5db;
         background-image:
-          linear-gradient(to right, rgba(148,163,184,.35) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(148,163,184,.35) 1px, transparent 1px),
-          linear-gradient(to right, rgba(148,163,184,.15) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(148,163,184,.15) 1px, transparent 1px);
+          linear-gradient(to right, rgba(148, 163, 184, 0.35) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(148, 163, 184, 0.35) 1px, transparent 1px),
+          linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
         background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
-        padding: 14px;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        margin-left: auto;
+        margin-right: auto;
       }
 
-      .canvas-outer {
-        width: 100%;
-        max-width: 440px;
-        margin: 0 auto;
-        padding-top: 62.5%; /* 16:10-ish aspect for email preview */
+      /* Digital projects: behave like Job View – no bleed, no mechanical pattern */
+      .artstart-canvas-box[data-media-kind="digital"] {
+        /* keep width constrained to the email card, but semantics match Job View */
+      }
+
+      .artstart-canvas-inner {
         position: relative;
-      }
-
-      .canvas-bleed {
-        position: absolute;
-        inset: 0;
-        border: 2px dashed rgba(79, 209, 197, 0.9);
-        background-color: rgba(79, 209, 197, 0.06);
+        max-width: 100%;
+        max-height: 100%;
         box-sizing: border-box;
-      }
-
-      .canvas-safe {
-        position: absolute;
-        inset: 6%;
-        border: 1px solid rgba(15, 23, 42, 0.25);
+        border-radius: 0;
         background-color: #ffffff;
-        box-sizing: border-box;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+        background-image: repeating-linear-gradient(
+          135deg,
+          #44a2bc,
+          #44a2bc 3px,
+          #ffffff 3px,
+          #ffffff 6px
+        );
+        border: 1px solid rgba(15, 23, 42, 0.25);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+        overflow: hidden;
       }
 
-      /* Digital mode: no bleed, full canvas safe area
-         (backend can choose to toggle a data attribute if desired) */
+      /* Digital canvas: clean white, no mechanical pattern */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
+        max-width: none;
+        max-height: none;
+        background-color: #ffffff;
+        background-image: none;
+      }
+
+      .artstart-canvas-bleed {
+        position: absolute;
+        box-sizing: border-box;
+        border-radius: 0;
+        border: 2px dashed rgba(79, 209, 197, 0.9);
+        pointer-events: none;
+        inset: 6%;
+      }
+
+      /* Digital projects don’t show bleed graphically */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-bleed {
+        display: none;
+      }
+
+      .artstart-canvas-safe {
+        position: absolute;
+        inset: 6%; /* same default as Job View when no specific bleed is configured */
+        box-sizing: border-box;
+        border-radius: 0;
+        background-color: #ffffff;
+        border: 1px solid #ec4899; /* magenta trim stroke */
+        padding: 6px 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 4px;
+        overflow: hidden;
+      }
 
       .canvas-caption {
         margin: 6px 0 0;
@@ -289,12 +334,17 @@
             </div>
           </div>
 
-          <!-- Static graphic preview: scaled canvas cousin of Job View -->
+          <!-- Canvas preview: same behavior as Job View, minus preview text -->
           <div class="canvas-wrapper">
-            <div class="canvas-frame">
-              <div class="canvas-outer">
-                <div class="canvas-bleed">
-                  <div class="canvas-safe"></div>
+            <div
+              id="format-canvas-box-email"
+              class="artstart-canvas-box"
+              data-media-kind="<?= data.mediaKind ?>"
+            >
+              <div class="artstart-canvas-inner">
+                <div class="artstart-canvas-bleed"></div>
+                <div class="artstart-canvas-safe">
+                  <!-- Intentionally no preview text in email; Job View handles Working draft -->
                 </div>
               </div>
             </div>
@@ -302,8 +352,7 @@
               Canvas preview reflects size &amp; format only. Final layout will be built in design tools.
             </p>
           </div>
-        </div>
-
+          
         <!-- Job overview (mirrors Job View sidebar card) -->
         <div class="section">
           <h2>Job overview</h2>
