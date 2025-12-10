@@ -4,78 +4,103 @@
     <meta charset="UTF-8">
     <title>ArtStart – Job Summary</title>
     <style>
-      /* Basic reset for email */
+      /* ============================
+       * Base email layout
+       * ========================== */
       body {
         margin: 0;
         padding: 0;
         background:
           radial-gradient(circle at top, rgba(79, 209, 197, 0.22), transparent 55%),
           #e5edf7;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
         color: #111827;
       }
 
       .wrapper {
         width: 100%;
-        background-color: transparent;
-        padding: 16px 0;
+        padding: 24px 12px;
+        box-sizing: border-box;
       }
 
       .card {
-        max-width: 640px;
+        max-width: 760px;
         margin: 0 auto;
-        background:
-          radial-gradient(circle at top right, rgba(129, 230, 217, 0.18), transparent 60%),
-          #ffffff;
-        border-radius: 10px;
-        border: 1px solid rgba(15, 23, 42, 0.12);
-        box-shadow: 0 26px 70px rgba(15, 23, 42, 0.25);
-        padding: 20px 22px 22px;
+        background-color: #f9fafb;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.7);
+        box-shadow:
+          0 24px 60px rgba(15, 23, 42, 0.22),
+          0 1px 0 rgba(255, 255, 255, 0.8) inset;
+        padding: 24px 28px 24px;
+        box-sizing: border-box;
       }
 
+      @media (max-width: 640px) {
+        .card {
+          padding: 18px 16px 20px;
+          border-radius: 14px;
+        }
+      }
+
+      /* ============================
+       * Typography
+       * ========================== */
       .brand-bar {
+        margin: 0 0 14px;
         font-size: 11px;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #0891b2;
-        margin: 0 0 10px;
+        font-weight: 600;
+        color: #0e7490;
       }
 
       h1 {
-        font-size: 20px;
         margin: 0 0 4px;
-        font-weight: 600;
-        color: #111827;
+        font-size: 22px;
+        line-height: 1.25;
+        color: #020617;
       }
 
-      .meta,
       .meta-inline {
+        margin: 0;
         font-size: 12px;
-        color: #4b5563;
-        margin: 0 0 4px;
+        color: #6b7280;
+      }
+
+      .meta {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #6b7280;
       }
 
       .label {
         font-weight: 600;
+        color: #0f172a;
+      }
+
+      .divider {
+        margin: 16px 0 18px;
+        border: none;
+        border-top: 1px solid rgba(148, 163, 184, 0.6);
       }
 
       .section {
-        margin-top: 18px;
+        margin-bottom: 18px;
+      }
+
+      .section:last-of-type {
+        margin-bottom: 10px;
       }
 
       .section h2 {
-        font-size: 13px;
-        margin: 0 0 8px;
+        margin: 0 0 10px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
         font-weight: 600;
         color: #0f172a;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.65);
-        padding-bottom: 3px;
-      }
-
-      .section p {
-        margin: 0 0 6px;
-        font-size: 13px;
-        line-height: 1.5;
       }
 
       .muted {
@@ -83,7 +108,15 @@
         font-size: 12px;
       }
 
-      /* Format & canvas layout */
+      p {
+        margin: 4px 0;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      /* ============================
+       * Format & canvas layout
+       * ========================== */
       .format-meta {
         display: table;
         width: 100%;
@@ -108,44 +141,65 @@
         }
       }
 
-      /* Canvas preview (graphic only) */
+      /* ============================
+       * Workspace + canvas
+       * ========================== */
+
       .canvas-wrapper {
         margin-top: 10px;
       }
 
-      /* Same canvas structure/behavior as Job View, scaled into the email card */
-      .artstart-canvas-box {
-        position: relative;
-        margin-top: 8px;
-        width: 100%;
-        max-width: 560px; /* fits the email card */
-        min-height: 320px;
-        border-radius: 12px;
+      /* Outer “workspace” – keep this as-is from the old email */
+      .canvas-frame {
+        border-radius: 10px;
         border: 1px solid #d1d5db;
         background-image:
-          linear-gradient(to right, rgba(148, 163, 184, 0.35) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(148, 163, 184, 0.35) 1px, transparent 1px),
-          linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+          linear-gradient(
+            to right,
+            rgba(148, 163, 184, 0.35) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(148, 163, 184, 0.35) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to right,
+            rgba(148, 163, 184, 0.15) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(148, 163, 184, 0.15) 1px,
+            transparent 1px
+          );
         background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+        padding: 14px;
+      }
+
+      .canvas-outer {
+        width: 100%;
+        max-width: 440px;
+        margin: 0 auto;
+        padding-top: 62.5%; /* 16:10-ish aspect */
+        position: relative;
+      }
+
+      /* ArtStart canvas overlay INSIDE the workspace */
+
+      .artstart-canvas-box {
+        position: absolute;
+        inset: 8%;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 16px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      /* Digital projects: behave like Job View – no bleed, no mechanical pattern */
-      .artstart-canvas-box[data-media-kind="digital"] {
-        /* keep width constrained to the email card, but semantics match Job View */
       }
 
       .artstart-canvas-inner {
         position: relative;
-        max-width: 100%;
-        max-height: 100%;
+        width: 100%;
+        height: 100%;
         box-sizing: border-box;
         border-radius: 0;
         background-color: #ffffff;
@@ -161,31 +215,18 @@
         overflow: hidden;
       }
 
-      /* Digital canvas: clean white, no mechanical pattern */
-      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
-        max-width: none;
-        max-height: none;
-        background-color: #ffffff;
-        background-image: none;
-      }
-
       .artstart-canvas-bleed {
         position: absolute;
+        inset: 0;
         box-sizing: border-box;
         border-radius: 0;
         border: 2px dashed rgba(79, 209, 197, 0.9);
         pointer-events: none;
-        inset: 6%;
-      }
-
-      /* Digital projects don’t show bleed graphically */
-      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-bleed {
-        display: none;
       }
 
       .artstart-canvas-safe {
         position: absolute;
-        inset: 6%; /* same default as Job View when no specific bleed is configured */
+        inset: 6%;
         box-sizing: border-box;
         border-radius: 0;
         background-color: #ffffff;
@@ -198,13 +239,57 @@
         overflow: hidden;
       }
 
+      .artstart-canvas-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .artstart-canvas-meta-block {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 4px;
+      }
+
+      .artstart-canvas-row {
+        /* rows are intentionally empty in email – structure only */
+        min-height: 10px;
+        font-size: 11px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #0f172a;
+        white-space: pre;
+        overflow: hidden;
+        text-overflow: clip;
+        line-height: 1.2;
+      }
+
+      /* Digital media kind – mirror Job View’s visual behavior:
+         no bleed ring, no mechanical page pattern. */
+
+      .artstart-canvas-box[data-media-kind="digital"]
+        .artstart-canvas-bleed {
+        display: none;
+      }
+
+      .artstart-canvas-box[data-media-kind="digital"]
+        .artstart-canvas-inner {
+        background-image: none;
+        border: 1px solid rgba(15, 23, 42, 0.25);
+        box-shadow: none;
+      }
+
       .canvas-caption {
         margin: 6px 0 0;
         font-size: 11px;
         color: #6b7280;
       }
 
-      /* Button */
+      /* ============================
+       * Buttons & footer
+       * ========================== */
       .button-row {
         margin-top: 12px;
         margin-bottom: 4px;
@@ -229,17 +314,10 @@
       }
 
       .footer-note {
-        margin-top: 20px;
-        padding-top: 8px;
-        border-top: 1px solid rgba(148, 163, 184, 0.6);
+        margin-top: 18px;
         font-size: 11px;
-        color: #e5e7eb;
-        background: linear-gradient(to right, #020617, #0b1120);
-        border-radius: 0 0 6px 6px;
-        margin-left: -22px;
-        margin-right: -22px;
-        padding-left: 22px;
-        padding-right: 22px;
+        color: #94a3b8;
+        text-align: left;
       }
     </style>
   </head>
@@ -249,7 +327,7 @@
         <!-- Brand bar -->
         <p class="brand-bar">Ascend Visualization Studio – ArtStart Job Summary</p>
 
-        <!-- Job title + top meta -->
+        <!-- Job title + meta -->
         <h1>
           <? if (data.jobTitle) { ?>
             <?= data.jobTitle ?>
@@ -273,15 +351,20 @@
             <span class="label">Requested by:</span>
             <? if (data.requesterName) { ?>
               <?= data.requesterName ?>
+            <? } else { ?>
+              Unknown requester
             <? } ?>
             <? if (data.requesterEmail) { ?>
-              <? if (data.requesterName) { ?>&nbsp;<? } ?>
-              &lt;<?= data.requesterEmail ?>&gt;
+              &nbsp;&lt;<?= data.requesterEmail ?>&gt;
             <? } ?>
           </p>
         <? } ?>
 
-        <!-- Format & canvas -->
+        <hr class="divider" />
+
+        <!-- ============================
+             Format & canvas
+             ========================== -->
         <div class="section">
           <h2>Format &amp; canvas</h2>
 
@@ -334,26 +417,43 @@
             </div>
           </div>
 
-          <!-- Canvas preview: same behavior as Job View, minus preview text -->
+          <!-- Workspace + ArtStart canvas overlay -->
           <div class="canvas-wrapper">
-            <div
-              id="format-canvas-box-email"
-              class="artstart-canvas-box"
-              data-media-kind="<?= data.mediaKind ?>"
-            >
-              <div class="artstart-canvas-inner">
-                <div class="artstart-canvas-bleed"></div>
-                <div class="artstart-canvas-safe">
-                  <!-- Intentionally no preview text in email; Job View handles Working draft -->
+            <div class="canvas-frame">
+              <div class="canvas-outer">
+                <div
+                  class="artstart-canvas-box"
+                  data-media-kind="<?= data.mediaKind ?>"
+                >
+                  <div class="artstart-canvas-inner">
+                    <div class="artstart-canvas-bleed"></div>
+                    <div class="artstart-canvas-safe">
+                      <div class="artstart-canvas-main">
+                        <!-- No preview text in email; Job View handles Working draft -->
+                        <div class="artstart-canvas-row"></div>
+                        <div class="artstart-canvas-row"></div>
+                        <div class="artstart-canvas-row"></div>
+                        <div class="artstart-canvas-row"></div>
+                      </div>
+                      <div class="artstart-canvas-meta-block">
+                        <div class="artstart-canvas-row"></div>
+                        <div class="artstart-canvas-row"></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
             <p class="canvas-caption">
-              Canvas preview reflects size &amp; format only. Final layout will be built in design tools.
+              Canvas preview reflects size &amp; format only. Final layout will be
+              built in design tools.
             </p>
           </div>
-          
-        <!-- Job overview (mirrors Job View sidebar card) -->
+        </div>
+
+        <!-- ============================
+             Job overview (mirrors Job View card)
+             ========================== -->
         <div class="section">
           <h2>Job overview</h2>
 
@@ -375,10 +475,11 @@
               <span class="label">Requested by:</span>
               <? if (data.requesterName) { ?>
                 <?= data.requesterName ?>
+              <? } else { ?>
+                Unknown requester
               <? } ?>
               <? if (data.requesterEmail) { ?>
-                <? if (data.requesterName) { ?>&nbsp;<? } ?>
-                &lt;<?= data.requesterEmail ?>&gt;
+                &nbsp;&lt;<?= data.requesterEmail ?>&gt;
               <? } ?>
             </p>
           <? } ?>
@@ -406,31 +507,38 @@
 
           <? if (data.topic) { ?>
             <p>
-              <span class="label">Editorial notes:</span><br>
+              <span class="label">Editorial notes:</span><br />
               <?= data.topic ?>
             </p>
           <? } ?>
 
           <? if (data.notes) { ?>
             <p>
-              <span class="label">Notes:</span><br>
+              <span class="label">Notes:</span><br />
               <?= data.notes ?>
             </p>
           <? } ?>
 
           <? if (!data.topic && !data.notes) { ?>
-            <p class="muted">No editorial notes were provided in the intake.</p>
+            <p class="muted">
+              No editorial notes were provided in the intake.
+            </p>
           <? } ?>
         </div>
 
-        <!-- ArtStart workspace CTA -->
+        <!-- ============================
+             ArtStart workspace CTA
+             ========================== -->
         <div class="section">
           <h2>ArtStart workspace</h2>
           <p class="muted">
-            Open the ArtStart workspace to collaborate on this job and prepare content for layout.
+            Open the ArtStart workspace to collaborate on this job and prepare
+            content for layout.
           </p>
           <div class="button-row">
-            <a href="<?= data.artStartUrl ?>" class="btn-primary">Open this job in ArtStart</a>
+            <a href="<?= data.artStartUrl ?>" class="btn-primary">
+              Open this job in ArtStart
+            </a>
           </div>
         </div>
 
@@ -440,4 +548,4 @@
       </div>
     </div>
   </body>
-  </html>
+</html>
