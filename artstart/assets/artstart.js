@@ -116,37 +116,6 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     return { trim: trim, bleed: bleed };
   }
 
-  function inferMediaKind(job) {
-    // MediaType column in MediaSpecs is the single source of truth.
-    // We normalize that string into either "digital" or "print".
-    var raw = (job.MediaType || job.mediaType || '')
-      .toString()
-      .toLowerCase()
-      .trim();
-
-    if (!raw) {
-      // If MediaType is missing, default to print.
-      return 'print';
-    }
-
-    if (
-      raw === 'digital' ||
-      raw.indexOf('digital') !== -1 ||
-      raw.indexOf('screen') !== -1 ||
-      raw.indexOf('html') !== -1
-    ) {
-      return 'digital';
-    }
-
-    // Everything else is treated as print.
-    return 'print';
-  }
-
-  function getMediaKind(job) {
-    // Wrapper kept so existing call sites don’t change.
-    return inferMediaKind(job);
-  }
-
   function extractCanvasDims(job) {
     // Use pixel dimensions if present (digital)
     var pixelWidth = parseFloat(job.pixelWidth);
@@ -425,11 +394,11 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
         job.intakeNotes ||
         '—';
     }
+
     // Format card
     var formatPretty = buildFormatPretty(job);
     var dimsForSize = extractCanvasDims(job);
-    // Prefer the kind coming back from the dimensions helper.
-    var mediaKind = (dimsForSize && dimsForSize.kind) ? dimsForSize.kind : getMediaKind(job);
+    var mediaKind = dimsForSize ? dimsForSize.kind : null;
 
     var publicationEl = document.getElementById('format-publication');
     if (publicationEl) publicationEl.textContent = job.publication || '—';
