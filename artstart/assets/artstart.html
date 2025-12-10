@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Shared Ascend styling -->
-    <link rel="stylesheet" href="./assets/ascend.css">
-    <link rel="stylesheet" href="./assets/ascend-apps.css">
+    <link rel="stylesheet" href="../../assets/ascend.css">
+    <link rel="stylesheet" href="../../assets/ascend-apps.css">
 
     <style>
       /* Page-scoped layout; rely on ascend.css for core tokens */
@@ -211,6 +211,19 @@
         position: relative;
         max-width: 100%;
         max-height: 100%;
+        box-sizing: border-box;
+        border-radius: 0;
+        background-color: rgba(79, 209, 197, 0.05);
+        background-image: repeating-linear-gradient(
+          135deg,
+          rgba(79, 209, 197, 0.25),
+          rgba(79, 209, 197, 0.25) 1px,
+          transparent 1px,
+          transparent 6px
+        );
+        border: 1px solid rgba(15, 23, 42, 0.25);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+        overflow: hidden;
       }
 
       /* Digital canvas: don’t clamp to the box; use real px size */
@@ -226,11 +239,11 @@
 }
 
       .artstart-canvas-bleed {
-        position: relative;
+        position: absolute;
         box-sizing: border-box;
         border-radius: 0;
         border: 2px dashed rgba(79, 209, 197, 0.9);
-        background-color: rgba(79, 209, 197, 0.06);
+        pointer-events: none;
       }
 
       /* Digital projects don’t show bleed graphically */
@@ -240,12 +253,10 @@
 
       .artstart-canvas-safe {
         position: absolute;
-        inset: 6%;
+        inset: 6%; /* JS will overwrite this for print; acts as a safe default */
         box-sizing: border-box;
         border-radius: 0;
         background-color: #ffffff;
-        border: 1px solid rgba(15, 23, 42, 0.25);
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
         padding: 6px 8px;
         display: flex;
         flex-direction: column;
