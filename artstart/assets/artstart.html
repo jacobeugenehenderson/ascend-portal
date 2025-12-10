@@ -175,10 +175,6 @@
         min-width: 180px;
       }
 
-      /* ================================
-       * ArtStart canvas – base styles
-       * ============================== */
-
       .artstart-canvas-box {
         position: relative;
         margin-top: 16px;
@@ -201,11 +197,32 @@
         padding: 18px;
       }
 
+      /* Digital formats: let the canvas be its true pixel size */
+      .artstart-canvas-box[data-media-kind="digital"] {
+        width: auto;
+        max-width: none;
+        min-height: 0;
+        overflow: auto;      /* scroll if it's wider than the card */
+        align-self: center;
+      }
+
       .artstart-canvas-inner {
         position: relative;
         max-width: 100%;
         max-height: 100%;
       }
+
+      /* Digital canvas: don’t clamp to the box; use real px size */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
+        max-width: none;
+        max-height: none;
+      }
+
+/* Digital: inner canvas can be full pixel dimensions */
+.artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
+  max-width: none;
+  max-height: none;
+}
 
       .artstart-canvas-bleed {
         position: relative;
@@ -213,8 +230,11 @@
         border-radius: 0;
         border: 2px dashed rgba(79, 209, 197, 0.9);
         background-color: rgba(79, 209, 197, 0.06);
-        width: 100%;
-        height: 100%;
+      }
+
+      /* Digital projects don’t show bleed graphically */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-bleed {
+        display: none;
       }
 
       .artstart-canvas-safe {
@@ -236,17 +256,52 @@
         --artstart-scale: 1;
       }
 
-      .artstart-canvas-main {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+      /* Digital: safe area *is* the canvas, no extra inset */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
+        inset: 0;
       }
 
-      .artstart-canvas-meta-block {
-        margin-top: 6px;
-        text-align: right;
-        align-self: stretch;
-        width: 100%;
+      /* Canvas text rows: single-line meters + multi-line body */
+
+      .artstart-canvas-row {
+        /* Respect only hard returns; no browser-introduced soft wraps */
+        white-space: pre;
+        overflow: hidden;
+        text-overflow: clip;
+        line-height: 1.2;
+      }
+
+      /* Big, obvious display type */
+      .artstart-row-headline {
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-size: calc(22px * var(--artstart-scale));
+      }
+
+      /* Secondary display */
+      .artstart-row-subhead {
+        font-weight: 500;
+        opacity: 0.9;
+        font-size: calc(15px * var(--artstart-scale));
+      }
+
+      .artstart-row-cta {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: calc(15px * var(--artstart-scale));
+      }
+
+      /* Reading copy */
+      .artstart-row-body {
+        line-height: 1.3;
+        font-size: calc(12px * var(--artstart-scale));
+      }
+
+      /* Quiet utility text */
+      .artstart-row-meta {
+        font-size: calc(9px * var(--artstart-scale));
+        opacity: 0.85;
       }
 
       .artstart-canvas-noinfo {
@@ -261,68 +316,128 @@
         text-align: center;
       }
 
-      /* ================================
-       * Canvas text rows
-       * ============================== */
-
-      .artstart-canvas-row {
-        white-space: pre;       /* only respect hard returns */
-        overflow: hidden;
-        text-overflow: clip;
-        line-height: 1.2;
+      .artstart-checklist {
+        padding-left: 18px;
+        margin: 4px 0 0;
       }
 
-      .artstart-row-headline {
+      .artstart-checklist li {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
+      .artstart-input,
+      .artstart-textarea {
+        width: 100%;
+        box-sizing: border-box;
+        font-family: inherit;
+        font-size: 13px;
+        padding: 7px 8px;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        margin-bottom: 8px;
+      }
+
+      .artstart-textarea {
+        min-height: 76px;
+        resize: vertical;
+      }
+
+      .artstart-input::placeholder,
+      .artstart-textarea::placeholder {
+        color: #9ca3af;
+      }
+
+      .artstart-working-row-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+
+      .artstart-working-column {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      @media (max-width: 900px) {
+        .artstart-working-row-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+            
+
+      .artstart-save-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 4px;
+      }
+
+      .artstart-save-button {
+        padding: 7px 14px;
+        border-radius: 9999px;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
         font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        font-size: calc(22px * var(--artstart-scale));
+        background-color: #111827;
+        color: #ffffff;
       }
 
-      .artstart-row-subhead {
-        font-weight: 500;
-        opacity: 0.9;
-        font-size: calc(15px * var(--artstart-scale));
+      .artstart-save-status {
+        font-size: 11px;
+        color: #6b7280;
       }
 
-      .artstart-row-cta {
+      .artstart-footer-strip {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ffffff;
+        border-top: 1px solid #e5e7eb;
+        padding: 8px 20px;
+      }
+
+      .artstart-footer-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 900px) {
+        .artstart-footer-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .artstart-footer-item-title {
+        font-size: 11px;
         font-weight: 600;
-        text-transform: uppercase;
-        font-size: calc(15px * var(--artstart-scale));
+        margin-bottom: 2px;
       }
 
-      .artstart-row-body {
-        line-height: 1.3;
-        font-size: calc(12px * var(--artstart-scale));
+      .artstart-footer-item-body {
+        font-size: 11px;
+        color: #6b7280;
       }
 
-      .artstart-row-meta {
-        font-size: calc(9px * var(--artstart-scale));
-        opacity: 0.85;
+      .artstart-error {
+        max-width: 520px;
+        margin: 32px auto;
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-size: 13px;
       }
 
-      /* ================================
-       * Media-specific overrides
-       * ============================== */
-
-      /* DIGITAL
-         - Use real pixel dimensions
-         - No bleed frame
-         - Safe area is the full canvas
-      */
-      .artstart-canvas-box[data-media-kind="digital"] {
-        width: auto;
-        max-width: none;
-        min-height: 0;
-        overflow: auto;    /* scroll if canvas is wider than card */
-        align-self: center;
-      }
-
-      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
-        max-width: none;
-        max-height: none;
-      }
-
+            /* Media-kind specific canvas tweaks */
       .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-bleed {
         display: none;
       }
@@ -333,12 +448,17 @@
         box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
       }
 
-      /* PRINT
-         - Uses scaled box with visible bleed
-         - No extra overrides needed right now, but kept for clarity
-      */
-      .artstart-canvas-box[data-media-kind="print"] .artstart-canvas-bleed {
-        display: block;
+            .artstart-canvas-main {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .artstart-canvas-meta-block {
+        margin-top: 6px;
+        text-align: right;
+        align-self: stretch;   /* use full safe width */
+        width: 100%;
       }
 
     </style>
