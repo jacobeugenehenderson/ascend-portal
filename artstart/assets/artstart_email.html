@@ -194,8 +194,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
-      }
 
+        /* FIXED: give the overlay real dimensions */
+        width: 84%;
+        height: 84%;
+        box-sizing: border-box;
+      }
       .artstart-canvas-inner {
         position: relative;
         width: 100%;
