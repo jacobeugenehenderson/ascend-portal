@@ -147,165 +147,171 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
   }
 
 function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
-  var box = document.getElementById('format-canvas-box');
-  var noInfoEl = document.getElementById('canvas-noinfo');
-  if (!box) return;
+    var box = document.getElementById('format-canvas-box');
+    var noInfoEl = document.getElementById('canvas-noinfo');
+    if (!box) return;
 
-  var inner = box.querySelector('.artstart-canvas-inner');
-  var bleedEl = box.querySelector('.artstart-canvas-bleed');
-  var safeEl = box.querySelector('.artstart-canvas-safe');
+    var inner = box.querySelector('.artstart-canvas-inner');
+    var bleedEl = box.querySelector('.artstart-canvas-bleed');
+    var safeEl = box.querySelector('.artstart-canvas-safe');
 
-  // Re-use dims computed by populateJob when available
-  var dims = dimsOverride || (job ? extractCanvasDims(job) : null);
-  var hasDims = !!dims;
+    var dims = dimsOverride || (job ? extractCanvasDims(job) : null);
+    var hasDims = !!dims;
 
-  // Media kind: prefer explicit override from populateJob,
-  // fall back to whatever the dims object says.
-  var mediaKind = mediaKindOverride || (hasDims ? dims.kind : null);
+    var mediaKind = mediaKindOverride || (hasDims ? dims.kind : null);
 
-  box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
-  box.setAttribute('data-media-kind', mediaKind || '');
+    box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
+    box.setAttribute('data-media-kind', mediaKind || '');
 
-  // Reset + empty state when we don't know the size yet
-  if (!hasDims) {
-    if (inner) {
-      inner.style.width = '';
-      inner.style.height = '';
-    }
-    if (bleedEl) {
-      bleedEl.style.display = '';
-      bleedEl.style.top = '';
-      bleedEl.style.right = '';
-      bleedEl.style.bottom = '';
-      bleedEl.style.left = '';
-    }
-    if (safeEl) {
-      safeEl.style.top = '';
-      safeEl.style.right = '';
-      safeEl.style.bottom = '';
-      safeEl.style.left = '';
-    }
-    if (noInfoEl) {
-      noInfoEl.style.display = 'flex';
-    }
-    return;
-  }
-
-  var w = dims.width || 1;
-  var h = dims.height || 1;
-
-  var displayWidth;
-  var displayHeight;
-
-  if (mediaKind === 'digital') {
-    // DIGITAL MODE
-    // Pixel dimensions map 1:1 into the canvas, clamped only by scroll.
-    displayWidth = w;
-    displayHeight = h;
-
-    if (inner) {
-      inner.style.width = displayWidth + 'px';
-      inner.style.height = displayHeight + 'px';
+    if (!hasDims) {
+      if (inner) {
+        inner.style.width = '';
+        inner.style.height = '';
+      }
+      if (bleedEl) {
+        bleedEl.style.display = '';
+        bleedEl.style.top = '';
+        bleedEl.style.right = '';
+        bleedEl.style.bottom = '';
+        bleedEl.style.left = '';
+      }
+      if (safeEl) {
+        safeEl.style.top = '';
+        safeEl.style.right = '';
+        safeEl.style.bottom = '';
+        safeEl.style.left = '';
+      }
+      if (noInfoEl) {
+        noInfoEl.style.display = 'flex';
+      }
+      return;
     }
 
-    // Digital pieces have no bleed frame; safe area == full canvas.
-    if (bleedEl) {
-      bleedEl.style.display = 'none';
-      bleedEl.style.top = '';
-      bleedEl.style.right = '';
-      bleedEl.style.bottom = '';
-      bleedEl.style.left = '';
+    var w = dims.width || 1;
+    var h = dims.height || 1;
+
+    var displayWidth;
+    var displayHeight;
+
+    // DIGITAL: pixel-perfect, scrollable
+    if (mediaKind === 'digital') {
+      displayWidth = w;
+      displayHeight = h;
+
+      if (inner) {
+        inner.style.width = displayWidth + 'px';
+        inner.style.height = displayHeight + 'px';
+      }
+
+      if (bleedEl) {
+        bleedEl.style.display = 'none';
+        bleedEl.style.top = '';
+        bleedEl.style.right = '';
+        bleedEl.style.bottom = '';
+        bleedEl.style.left = '';
+      }
+
+      if (safeEl) {
+        // Let CSS handle inset = 0 for digital
+        safeEl.style.top = '';
+        safeEl.style.right = '';
+        safeEl.style.bottom = '';
+        safeEl.style.left = '';
+      }
+
+      if (noInfoEl) {
+        noInfoEl.style.display = 'none';
+      }
+      return;
     }
-    if (safeEl) {
-      // Let CSS control the inset (0 for digital via overrides).
-      safeEl.style.top = '';
-      safeEl.style.right = '';
-      safeEl.style.bottom = '';
-      safeEl.style.left = '';
-    }
-  } else {
-    // PRINT MODE
-    // 1) Parse bleed amount from the job data (same unit as trim).
+
+    // PRINT MODE BELOW
+
+    // 1) Bleed in same units as trim (e.g., inches)
     var bleedAmount = 0;
     if (job) {
-      var bleedRaw = job.bleed;
-      if (bleedRaw !== undefined && bleedRaw !== null && bleedRaw !== '') {
-        var parsedBleed = parseFloat(bleedRaw);
-        if (isFinite(parsedBleed) && parsedBleed > 0) {
-          bleedAmount = parsedBleed;
+      var rawBleed = job.bleed;
+      if (rawBleed !== undefined && rawBleed !== null && rawBleed !== '') {
+        var parsed = parseFloat(rawBleed);
+        if (isFinite(parsed) && parsed > 0) {
+          bleedAmount = parsed;
         }
       }
     }
 
-    // 2) Compute full artboard including bleed on all four sides.
+    // Total artboard = trim + bleed on all four sides
     var totalWidth = w + bleedAmount * 2;
     var totalHeight = h + bleedAmount * 2;
 
     if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
     if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
 
-    // 3) Scale full-bleed artboard into the viewport.
-    var maxWidth = box.clientWidth || 520;
-    var maxHeight = box.clientHeight || 260;
-    if (maxHeight < 80) maxHeight = 260;
+    // 2) Convert physical size to pixels at ~72 dpi
+    var BASE_DPI = 72;
+    var fullPxWidth = totalWidth * BASE_DPI;
+    var fullPxHeight = totalHeight * BASE_DPI;
 
-    var scale = Math.min(maxWidth / totalWidth, maxHeight / totalHeight);
-    displayWidth = Math.max(100, Math.round(totalWidth * scale));
-    displayHeight = Math.max(100, Math.round(totalHeight * scale));
+    // Fit into the card *without* scaling up beyond 72 dpi.
+    var maxWidth = box.clientWidth || fullPxWidth;
+    var maxHeight = box.clientHeight || fullPxHeight;
+
+    var widthCap = maxWidth / fullPxWidth;
+    var heightCap = maxHeight / fullPxHeight;
+    var scaleFactor = Math.min(1, widthCap, heightCap);
+
+    displayWidth = Math.round(fullPxWidth * scaleFactor);
+    displayHeight = Math.round(fullPxHeight * scaleFactor);
 
     if (inner) {
       inner.style.width = displayWidth + 'px';
       inner.style.height = displayHeight + 'px';
     }
 
-    // 4) Place the trim rectangle (white content area) and dashed line
-    //    so bleed is equal on all four sides.
-    if (bleedAmount > 0 && safeEl) {
-      var bleedX = (bleedAmount / totalWidth) * displayWidth;
-      var bleedY = (bleedAmount / totalHeight) * displayHeight;
+    // 3) Position trim (magenta stroke + dashed teal) based on bleed
+    if (safeEl) {
+      if (bleedAmount > 0) {
+        var bleedX = (bleedAmount / totalWidth) * displayWidth;
+        var bleedY = (bleedAmount / totalHeight) * displayHeight;
 
-      var insetTop = bleedY + 'px';
-      var insetBottom = bleedY + 'px';
-      var insetLeft = bleedX + 'px';
-      var insetRight = bleedX + 'px';
+        var insetTop = bleedY + 'px';
+        var insetBottom = bleedY + 'px';
+        var insetLeft = bleedX + 'px';
+        var insetRight = bleedX + 'px';
 
-      // Safe/content area (white) fills right up to the trim edge.
-      safeEl.style.top = insetTop;
-      safeEl.style.bottom = insetBottom;
-      safeEl.style.left = insetLeft;
-      safeEl.style.right = insetRight;
+        safeEl.style.top = insetTop;
+        safeEl.style.bottom = insetBottom;
+        safeEl.style.left = insetLeft;
+        safeEl.style.right = insetRight;
 
-      // Dashed trim line sits exactly on that same edge.
-      if (bleedEl) {
-        bleedEl.style.display = '';
-        bleedEl.style.top = insetTop;
-        bleedEl.style.bottom = insetBottom;
-        bleedEl.style.left = insetLeft;
-        bleedEl.style.right = insetRight;
-      }
-    } else {
-      // No explicit bleed: use a simple proportional inset.
-      if (safeEl) {
+        if (bleedEl) {
+          bleedEl.style.display = '';
+          bleedEl.style.top = insetTop;
+          bleedEl.style.bottom = insetBottom;
+          bleedEl.style.left = insetLeft;
+          bleedEl.style.right = insetRight;
+        }
+      } else {
+        // No bleed configured: simple proportional inset
         safeEl.style.top = '6%';
         safeEl.style.bottom = '6%';
         safeEl.style.left = '6%';
         safeEl.style.right = '6%';
-      }
-      if (bleedEl) {
-        bleedEl.style.display = '';
-        bleedEl.style.top = '6%';
-        bleedEl.style.bottom = '6%';
-        bleedEl.style.left = '6%';
-        bleedEl.style.right = '6%';
+
+        if (bleedEl) {
+          bleedEl.style.display = '';
+          bleedEl.style.top = '6%';
+          bleedEl.style.bottom = '6%';
+          bleedEl.style.left = '6%';
+          bleedEl.style.right = '6%';
+        }
       }
     }
-  }
 
-  if (noInfoEl) {
-    noInfoEl.style.display = 'none';
+    if (noInfoEl) {
+      noInfoEl.style.display = 'none';
+    }
   }
-}
-
+  
   function syncCanvasTextFromFields() {
     var box = document.getElementById('format-canvas-box');
     if (!box || box.getAttribute('data-has-dimensions') !== 'true') return;
