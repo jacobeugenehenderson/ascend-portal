@@ -146,7 +146,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     return null;
   }
 
-  function renderCanvasPreview(job, dimsOverride) {
+  function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var box = document.getElementById('format-canvas-box');
     var noInfoEl = document.getElementById('canvas-noinfo');
     if (!box) return;
@@ -157,8 +157,10 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     // Re-use dims computed by populateJob when available
     var dims = dimsOverride || extractCanvasDims(job);
     var hasDims = !!dims;
-    // Prefer the kind inferred from dimensions; fall back to MediaType only if needed.
-    var mediaKind = hasDims ? dims.kind : null;
+
+    // Media kind: prefer explicit override from populateJob,
+    // fall back to whatever the dims object says.
+    var mediaKind = mediaKindOverride || (hasDims ? dims.kind : null);
 
     box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
     box.setAttribute('data-media-kind', mediaKind || '');
@@ -399,7 +401,23 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     // Format card
     var formatPretty = buildFormatPretty(job);
     var dimsForSize = extractCanvasDims(job);
-    var mediaKind = dimsForSize ? dimsForSize.kind : null;
+
+    // Media kind:
+    // 1) Trust MediaType from the sheet first
+    // 2) Fall back to whatever extractCanvasDims decided
+    var mediaKind = null;
+    var rawMediaType = job && (job.mediaType || job.MediaType || job.media_type || '');
+    if (rawMediaType) {
+      var mt = String(rawMediaType).toLowerCase();
+      if (mt.indexOf('digital') !== -1) {
+        mediaKind = 'digital';
+      } else if (mt.indexOf('print') !== -1) {
+        mediaKind = 'print';
+      }
+    }
+    if (!mediaKind && dimsForSize && dimsForSize.kind) {
+      mediaKind = dimsForSize.kind;
+    }
 
     var publicationEl = document.getElementById('format-publication');
     if (publicationEl) publicationEl.textContent = job.publication || '—';
@@ -427,7 +445,7 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
     }
     
     // Canvas preview (digital vs print, with bleed)
-    renderCanvasPreview(job, dimsForSize);
+    renderCanvasPreview(job, dimsForSize, mediaKind);
 
     // Working draft fields
     document.getElementById('working-headline').value = job.workingHeadline || '';
@@ -630,6 +648,21 @@ function saveDraft(jobId) {
       .then(function (json) {
         if (!json || !json.ok) {
           throw new Error((json && json.error) || 'Unknown error');
+        }
+
+        // DEBUG: inspect the job payload for MediaType / mediaType
+        try {
+          console.log('ArtStart job payload:', json.job);
+          if (json.job) {
+            console.log(
+              'MediaType fields:',
+              json.job.MediaType,
+              json.job.mediaType,
+              json.job.media_type
+            );
+          }
+        } catch (e) {
+          // ignore
         }
 
         var effectiveJobId = (json.job && (json.job.jobId || json.job.ascendJobId)) || jobId;
