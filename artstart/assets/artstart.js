@@ -353,41 +353,64 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
   function autoscaleCanvas() {
     var safe = document.querySelector('.artstart-canvas-safe');
-    var root = document.documentElement;
-    if (!safe || !root) return;
+    if (!safe) return;
 
-    // Reset to full size before measuring.
-    root.style.setProperty('--artstart-scale', '1');
+    // Elements that *must* autoscale
+    var headlineEl = document.getElementById('canvas-headline');
+    var subheadEl  = document.getElementById('canvas-subhead');
+    var ctaEl      = document.getElementById('canvas-cta');
+    var websiteEl  = document.getElementById('canvas-website');
+    var emailEl    = document.getElementById('canvas-email');
 
-    // If the canvas hasn't been sized yet, bail quietly.
+    // "Text" / body copy stays constant, so we leave canvas-body alone.
+    var bodyEl = document.getElementById('canvas-body');
+
+    // Base sizes (in px) – match your visual design
+    var BASE_HEADLINE = 22;
+    var BASE_SUBHEAD  = 15;
+    var BASE_CTA      = 15;
+    var BASE_META     = 9;
+
+    function applyScale(scale) {
+      var h = BASE_HEADLINE * scale;
+      var s = BASE_SUBHEAD  * scale;
+      var c = BASE_CTA      * scale;
+      var m = BASE_META     * scale;
+
+      if (headlineEl) headlineEl.style.fontSize = h + 'px';
+      if (subheadEl)  subheadEl.style.fontSize  = s + 'px';
+      if (ctaEl)      ctaEl.style.fontSize      = c + 'px';
+      if (websiteEl)  websiteEl.style.fontSize  = m + 'px';
+      if (emailEl)    emailEl.style.fontSize    = m + 'px';
+
+      // Body text: fixed size, no autoscale.
+      if (bodyEl) bodyEl.style.fontSize = '12px';
+    }
+
+    // Reset to base sizes before measuring
+    applyScale(1);
+
     if (!safe.clientWidth || !safe.clientHeight) {
       return;
     }
 
-    var scale = 1.0;
-    var minScale = 0.5; // Floor – you can tweak if you want larger minimum type.
-
     function fits() {
-      // We want *all* content to stay within the safe box, both vertically and horizontally.
       return (
-        safe.scrollHeight <= safe.clientHeight &&
-        safe.scrollWidth <= safe.clientWidth
+        safe.scrollWidth  <= safe.clientWidth &&
+        safe.scrollHeight <= safe.clientHeight
       );
     }
 
-    // If it already fits at full size, nothing to do.
-    if (fits()) {
-      return;
-    }
+    // If it already fits at full size, we’re done.
+    if (fits()) return;
 
-    // Gradually shrink the entire canvas typography until it fits,
-    // or we hit the minimum scale.
+    var scale = 1.0;
+    var minScale = 0.5; // smallest we’ll allow
+
     while (scale > minScale) {
       scale -= 0.02;
-      root.style.setProperty('--artstart-scale', scale.toFixed(2));
-      if (fits()) {
-        break;
-      }
+      applyScale(scale);
+      if (fits()) break;
     }
   }
 
