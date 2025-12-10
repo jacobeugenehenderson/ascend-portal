@@ -304,8 +304,7 @@ body.ascend-app-body {
   height: auto !important;
 }
 
-/* Disable autoscale safe-area bounding for digital */
+/* Digital: keep layout un-transformed, but still allow text autoscale */
 .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
-  --artstart-scale: 1 !important;
   transform: none !important;
 }
