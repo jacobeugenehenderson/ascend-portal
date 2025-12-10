@@ -246,18 +246,15 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
     if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
 
-    // 2) Scale the full artboard so it fills the card nicely.
-    // Treat w/h units as "inches" and convert to pixels, but
-    // cap pixels-per-inch so giant formats don't explode.
+    // 2) Scale the full artboard so it fills the card width.
+    // Treat units as "inches" and convert to pixels, but cap
+    // pixels-per-inch so huge formats don't explode.
     var maxWidth = box.clientWidth || 720;
-    var maxHeight = box.clientHeight || 360;
-
-    var MARGIN_FACTOR = 0.9;     // leave a bit of breathing room
-    var MAX_PX_PER_UNIT = 120;   // hard ceiling on px per inch
+    var MARGIN_FACTOR = 0.9;      // leave a little breathing room
+    var MAX_PX_PER_UNIT = 120;    // ceiling on px per unit (inch)
 
     var pxPerUnit = Math.min(
       (maxWidth * MARGIN_FACTOR) / totalWidth,
-      (maxHeight * MARGIN_FACTOR) / totalHeight,
       MAX_PX_PER_UNIT
     );
 
