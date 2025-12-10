@@ -147,97 +147,154 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
   }
 
   function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
-    var box = document.getElementById('format-canvas-box');
-    var noInfoEl = document.getElementById('canvas-noinfo');
-    if (!box) return;
+  var box = document.getElementById('format-canvas-box');
+  var noInfoEl = document.getElementById('canvas-noinfo');
+  if (!box) return;
 
-    var inner = box.querySelector('.artstart-canvas-inner');
-    var bleedEl = box.querySelector('.artstart-canvas-bleed');
+  var inner = box.querySelector('.artstart-canvas-inner');
+  var bleedEl = box.querySelector('.artstart-canvas-bleed');
+  var safeEl = box.querySelector('.artstart-canvas-safe');
 
-    // Re-use dims computed by populateJob when available
-    var dims = dimsOverride || extractCanvasDims(job);
-    var hasDims = !!dims;
+  // Re-use dims computed by populateJob when available
+  var dims = dimsOverride || extractCanvasDims(job);
+  var hasDims = !!dims;
 
-    // Media kind: prefer explicit override from populateJob,
-    // fall back to whatever the dims object says.
-    var mediaKind = mediaKindOverride || (hasDims ? dims.kind : null);
+  // Media kind: prefer explicit override from populateJob,
+  // fall back to whatever the dims object says.
+  var mediaKind = mediaKindOverride || (hasDims ? dims.kind : null);
 
-    box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
-    box.setAttribute('data-media-kind', mediaKind || '');
+  box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
+  box.setAttribute('data-media-kind', mediaKind || '');
 
-    if (!hasDims) {
-      if (inner) {
-        inner.style.width = '';
-        inner.style.height = '';
-      }
-      if (bleedEl) {
-        bleedEl.style.width = '';
-        bleedEl.style.height = '';
-        bleedEl.style.display = '';
-      }
-      if (noInfoEl) {
-        noInfoEl.style.display = 'flex';
-      }
-      return;
+  if (!hasDims) {
+    if (inner) {
+      inner.style.width = '';
+      inner.style.height = '';
+    }
+    if (bleedEl) {
+      bleedEl.style.width = '';
+      bleedEl.style.height = '';
+      bleedEl.style.display = '';
+    }
+    if (safeEl) {
+      safeEl.style.top = '';
+      safeEl.style.right = '';
+      safeEl.style.bottom = '';
+      safeEl.style.left = '';
+    }
+    if (noInfoEl) {
+      noInfoEl.style.display = 'flex';
+    }
+    return;
+  }
+
+  // For print, w/h are TRIM dimensions; for digital, they’re pixel dimensions.
+  var w = dims.width || 1;
+  var h = dims.height || 1;
+  var displayWidth;
+  var displayHeight;
+
+  if (mediaKind === 'digital') {
+    // Digital projects: show at “real” size based on DPI, never larger than 1:1,
+    // and no bleed frame.
+    var baseDpi = 72;
+    var dpi = null;
+
+    if (job) {
+      var dpiRaw = job.dpi || job.DPI;
+      dpi = parseFloat(dpiRaw);
     }
 
-    var w = dims.width || 1;
-    var h = dims.height || 1;
-    var displayWidth;
-    var displayHeight;
-
-    if (mediaKind === 'digital') {
-      // Digital projects: show at “real” size based on DPI, never larger than 1:1,
-      // and no bleed frame.
-      var baseDpi = 72;
-      var dpi = null;
-
-      if (job) {
-        var dpiRaw = job.dpi || job.DPI;
-        dpi = parseFloat(dpiRaw);
+    var factor = 1; // default: 1:1
+    if (isFinite(dpi) && dpi > 0) {
+      var candidate = baseDpi / dpi;
+      // Only shrink for > baseDpi; never upscale.
+      if (candidate < 1) {
+        factor = candidate;
       }
+    }
 
-      var factor = 1; // default: 1:1
-      if (isFinite(dpi) && dpi > 0) {
-        var candidate = baseDpi / dpi;
-        // Only shrink for > baseDpi; never upscale.
-        if (candidate < 1) {
-          factor = candidate;
+    displayWidth = Math.round(w * factor);
+    displayHeight = Math.round(h * factor);
+
+    if (bleedEl) {
+      bleedEl.style.display = 'none';
+      bleedEl.style.width = '';
+      bleedEl.style.height = '';
+    }
+    if (safeEl) {
+      // Let CSS control the inset for digital mode (safe area == full canvas).
+      safeEl.style.top = '';
+      safeEl.style.right = '';
+      safeEl.style.bottom = '';
+      safeEl.style.left = '';
+    }
+  } else {
+    // PRINT MODE
+    // 1) Parse bleed amount from the job (same units as trim).
+    var bleedAmount = 0;
+    if (job) {
+      var bleedRaw = job.bleed || job.Bleed;
+      if (bleedRaw !== undefined && bleedRaw !== null && bleedRaw !== '') {
+        var parsedBleed = parseFloat(bleedRaw);
+        if (isFinite(parsedBleed) && parsedBleed > 0) {
+          bleedAmount = parsedBleed;
         }
       }
-
-      displayWidth = Math.round(w * factor);
-      displayHeight = Math.round(h * factor);
-
-      if (bleedEl) {
-        bleedEl.style.display = 'none';
-      }
-    } else {
-      // Print projects: scale to fit viewport and show bleed box.
-      var maxWidth = box.clientWidth || 520;
-      var maxHeight = box.clientHeight || 260;
-      if (maxHeight < 80) maxHeight = 260;
-
-      var scale = Math.min(maxWidth / w, maxHeight / h);
-      displayWidth = Math.max(100, Math.round(w * scale));
-      displayHeight = Math.max(100, Math.round(h * scale));
-
-      if (bleedEl) {
-        bleedEl.style.display = '';
-        bleedEl.style.width = '100%';
-        bleedEl.style.height = '100%';
-      }
     }
 
-    if (inner) {
-      inner.style.width = displayWidth + 'px';
-      inner.style.height = displayHeight + 'px';
+    // 2) Compute the full artboard including bleed on all four sides.
+    var totalWidth = w + bleedAmount * 2;
+    var totalHeight = h + bleedAmount * 2;
+
+    // Fallback if bleed is missing: behave like the old trim-only view.
+    if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
+    if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
+
+    // 3) Scale that full-bleed artboard into the viewport.
+    var maxWidth = box.clientWidth || 520;
+    var maxHeight = box.clientHeight || 260;
+    if (maxHeight < 80) maxHeight = 260;
+
+    var scale = Math.min(maxWidth / totalWidth, maxHeight / totalHeight);
+    displayWidth = Math.max(100, Math.round(totalWidth * scale));
+    displayHeight = Math.max(100, Math.round(totalHeight * scale));
+
+    if (bleedEl) {
+      bleedEl.style.display = '';
+      bleedEl.style.width = '100%';
+      bleedEl.style.height = '100%';
     }
 
-    if (noInfoEl) {
-      noInfoEl.style.display = 'none';
+    // 4) Place the trim / safe rectangle so bleed is equal on all sides.
+    if (safeEl) {
+      if (bleedAmount > 0) {
+        var bleedX = (bleedAmount / totalWidth) * displayWidth;
+        var bleedY = (bleedAmount / totalHeight) * displayHeight;
+
+        safeEl.style.top = bleedY + 'px';
+        safeEl.style.bottom = bleedY + 'px';
+        safeEl.style.left = bleedX + 'px';
+        safeEl.style.right = bleedX + 'px';
+      } else {
+        // No bleed configured: keep a simple proportional inset.
+        safeEl.style.top = '6%';
+        safeEl.style.bottom = '6%';
+        safeEl.style.left = '6%';
+        safeEl.style.right = '6%';
+      }
     }
   }
+
+  if (inner) {
+    inner.style.width = displayWidth + 'px';
+    inner.style.height = displayHeight + 'px';
+  }
+
+  if (noInfoEl) {
+    noInfoEl.style.display = 'none';
+  }
+}
 
   function syncCanvasTextFromFields() {
     var box = document.getElementById('format-canvas-box');
