@@ -118,8 +118,8 @@ var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/m
 
   function extractCanvasDims(job) {
     // Use pixel dimensions if present (digital)
-    var pixelWidth = parseFloat(job.pixelWidth);
-    var pixelHeight = parseFloat(job.pixelHeight);
+    var pixelWidth = parseFloat(job.PixelWidth || job.pixelWidth);
+    var pixelHeight = parseFloat(job.PixelHeight || job.pixelHeight);
 
     if (isFinite(pixelWidth) && pixelWidth > 0 &&
         isFinite(pixelHeight) && pixelHeight > 0) {
