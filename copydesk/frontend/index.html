@@ -89,6 +89,18 @@ Another paragraph as a third segment.</textarea>
         const statusDiv = document.getElementById('status');
         const responseBox = document.getElementById('responseBox');
 
+        function extractJobIdFromResponse(json) {
+          if (!json || typeof json !== 'object') return '';
+          return (
+            json.jobid ||
+            json.jobId ||
+            json.id ||
+            (json.data && (json.data.jobid || json.data.jobId || json.data.id)) ||
+            (json.result && (json.result.jobid || json.result.jobId || json.result.id)) ||
+            ''
+          );
+        }
+
         function normalizeCutoffToIso(raw) {
           if (!raw) return '';
           const s = raw.trim();
@@ -115,7 +127,6 @@ Another paragraph as a third segment.</textarea>
         async function createEnglishJob() {
           const jobName = jobNameInput.value.trim() || 'Untitled Job';
           const seedText = seedTextInput.value;
-          const cutoffRaw = cutoffInput.value.trim();    // "YYYY-MM-DD" from <input type="date">
 
           const collaboratorsRaw = collaboratorsInput.value.trim();
           const collaborators = collaboratorsRaw
@@ -158,6 +169,20 @@ Another paragraph as a third segment.</textarea>
             if (json.ok) {
               statusDiv.textContent = 'Job created successfully ✅';
               statusDiv.className = 'status-ok';
+
+              // Wire the chain: open the job view with the returned jobid
+              const jobId = extractJobIdFromResponse(json);
+              if (jobId) {
+                // Persist for "resume last job" convenience
+                try { localStorage.setItem('copydesk_last_jobid', jobId); } catch (e) {}
+
+                // Navigate this tab (no popup blockers)
+                window.location.href = `job.html?jobid=${encodeURIComponent(jobId)}`;
+                return;
+              } else {
+                statusDiv.textContent = 'Job created, but no jobId was returned ❌';
+                statusDiv.className = 'status-error';
+              }
             } else {
               statusDiv.textContent = 'API returned an error ❌';
               statusDiv.className = 'status-error';
