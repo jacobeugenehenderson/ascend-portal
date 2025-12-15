@@ -3,35 +3,215 @@
 <head>
   <meta charset="UTF-8">
   <title>Copydesk – Job</title>
+  
   <link rel="stylesheet" href="assets/css/reset.css">
-  <link rel="stylesheet" href="assets/css/layout.css">
-  <link rel="stylesheet" href="assets/css/app.css">
-</head>
-<body>
-  <div id="job-header">
-  <h1 id="job-name"></h1>
-  <div id="job-meta"></div>
-  <div id="job-urgency"></div>
-  <div id="status-bar"></div>
-</div>
 
-  <div id="segments">
-    <table id="segments-table" class="segments-table">
-      <thead>
-        <tr>
-          <th>Committed Text</th>
-          <th>Style</th>
-          <th>Working Text</th>
-        </tr>
-      </thead>
-      <tbody id="segments-body"></tbody>
-    </table>
-    <p id="segments-empty" class="empty-state" style="display:none;">
-      No segments yet for this job.
-    </p>
+<!-- Ascend design system + app shell -->
+<link rel="stylesheet" href="../../../assets/ascend.css">
+<link rel="stylesheet" href="../../../assets/ascend-apps.css">
+
+<!-- Copydesk-only visuals/layout -->
+<link rel="stylesheet" href="assets/css/copydesk.css">
+
+<!-- Copydesk font (scoped; does NOT affect Ascend chrome) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:opsz,wght@8..60,200..900&display=swap" rel="stylesheet">
+
+<style>
+  /* Only the two text surfaces you care about.
+     IMPORTANT: keep this as a *fallback* only.
+     The authoritative style-* rules injected by backend must be allowed to win. */
+  .committed-list .committed-seg,
+  .committed-list .committed-divider-label,
+  .cards-list .card-textarea,
+  .cards-list .card-divider-input {
+    font-family: "Source Sans 3", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+</style>
+
+<!-- Authoritative styles injected by backend (res.stylesCss) -->
+<style id="copydesk-styles-css"></style>
+
+<!-- Bullet style hard-fix (prevents column/break-all weirdness in committed rendering) -->
+<style id="copydesk-bullet-fix">
+  /* Kill any accidental multi-column or aggressive word-breaking rules */
+  /* Committed bullet segments must NOT be flex containers,
+     or <br>-separated lines become flex items and "columnize". */
+  .committed-list .committed-seg.style-bullet {
+    display: block !important;
+  }
+
+  .style-bullet {
+    columns: auto !important;
+    column-count: auto !important;
+    column-width: auto !important;
+
+    writing-mode: horizontal-tb !important;
+
+    white-space: pre-wrap !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    hyphens: manual !important;
+
+    text-align: left !important;
+  }
+
+  /* Bullet glyph should behave like normal inline text */
+  .style-bullet .bullet-glyph {
+    display: inline !important;
+    white-space: pre !important;
+  }
+</style>
+
+  <!-- Load Overlay (Copydesk) -->
+  <style>
+    #load-overlay {
+      position: fixed;
+      inset: 0;
+      display: none; /* toggled by JS */
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(2px);
+      z-index: 9999;
+    }
+    #load-overlay.is-on { display: flex; }
+
+    .load-overlay__panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(0, 0, 0, 0.10);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      max-width: min(520px, calc(100vw - 40px));
+    }
+
+    .load-overlay__spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid rgba(0, 0, 0, 0.18);
+      border-top-color: rgba(0, 0, 0, 0.62);
+      animation: loadspin 0.9s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    .load-overlay__text {
+      font: 500 14px/1.25 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: rgba(0, 0, 0, 0.78);
+      user-select: none;
+      -webkit-user-select: none;
+      word-break: break-word;
+    }
+
+    @keyframes loadspin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="ascend-app-body">
+
+  <!-- Load Overlay (Copydesk) -->
+  <div id="load-overlay" aria-live="polite" aria-busy="true" role="status">
+    <div class="load-overlay__panel">
+      <div class="load-overlay__spinner" aria-hidden="true"></div>
+      <div id="load-overlay-text" class="load-overlay__text">Loading…</div>
+    </div>
   </div>
 
-  <script src="assets/js/api.js"></script>
-  <script src="assets/js/job-editor.js"></script>
+<div class="ascend-app-shell">
+  <div class="ascend-app-panel">
+
+    <header class="ascend-app-header">
+
+      <!-- LEFT: app label + filename -->
+      <div class="ascend-app-title-block" style="display:flex; align-items:baseline; gap:28px;">
+        <div class="ascend-app-title" style="font-weight:200; letter-spacing:0.18em;">COPYDESK</div>
+        <div id="job-name" class="ascend-app-subtitle"></div>
+      </div>
+
+      <!-- RIGHT: vertical stack (date, countdown, collaborators) -->
+      <div class="ascend-app-meta" style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+
+        <!-- Deadline (editable) -->
+        <input
+          id="job-cutoff-input"
+          type="date"
+          style="
+            font-weight:700;
+            border:0;
+            background:transparent;
+            text-align:right;
+            padding:0;
+            margin:0;
+          "
+          aria-label="Deadline"
+        />
+
+        <!-- Days counter -->
+        <div id="job-cutoff-countdown" style="opacity:0.8;"></div>
+
+        <!-- Collaborators (editable) -->
+        <input
+          id="job-collaborators-input"
+          type="text"
+          placeholder="Collaborators (comma-separated)"
+          style="
+            opacity:0.75;
+            border:0;
+            background:transparent;
+            text-align:right;
+            padding:0;
+            margin:0;
+            width:min(520px, 50vw);
+          "
+          aria-label="Collaborators"
+        />
+
+      </div>
+
+      <!-- FAR RIGHT: push -->
+      <div class="ascend-app-actions">
+        <button id="push-btn" type="button" class="ascend-app-primary-btn">Push</button>
+      </div>
+
+    </header>
+
+  <main class="copydesk-content">
+    <div id="copydesk-columns" class="copydesk-columns">
+    <!-- Committed Reality (locked) -->
+    <div class="copydesk-col copydesk-col--committed">
+      <div class="copydesk-col-title">Committed</div>
+
+      <div id="committed-list" class="committed-list"></div>
+      <p id="segments-empty" class="empty-state" style="display:none;">
+        No segments yet for this job.
+      </p>
+    </div>
+
+    <!-- Edit Cards (dirty state = card existence) -->
+    <div class="copydesk-col copydesk-col--cards">
+      <div class="copydesk-col-title">Edits</div>
+      <div id="cards-list" class="cards-list"></div>
+    </div>
+  </div>
+
+  <div id="status-bar" class="status-bar">
+  <span id="copydesk-style-debug" style="display:none; opacity:0.7;"></span>
+</div>
+</main>
+
+<script>
+  window.COPYDESK_API_BASE = window.COPYDESK_API_BASE || 'https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec';
+</script>
+
+  </div>
+</div>
+
+<script defer src="assets/js/copydesk_api_client.js"></script>
+<script defer src="assets/js/copydesk_job_view.js"></script>
+
 </body>
 </html>

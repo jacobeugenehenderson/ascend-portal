@@ -141,6 +141,21 @@
   --ascend-copydesk-accent: var(--ascend-color-accent);
   --ascend-codedesk-accent: var(--ascend-color-accent);
   --ascend-fileroom-accent: var(--ascend-color-accent);
+
+/* ============================
+ * GLOBAL CONTROL DEFAULTS
+ * (portal defaults; light apps override in ascend-apps.css)
+ * ========================== */
+
+--ascend-control-bg: rgba(255, 255, 255, 0.08);
+--ascend-control-bg-hover: rgba(255, 255, 255, 0.12);
+--ascend-control-bg-active: rgba(255, 255, 255, 0.18);
+--ascend-control-text: rgba(255, 255, 255, 0.92);
+--ascend-control-border: rgba(255, 255, 255, 0.16);
+--ascend-control-ring: rgba(129, 230, 217, 0.55);
+--ascend-control-radius: 10px;
+--ascend-control-padding-y: 0.45rem;
+--ascend-control-padding-x: 0.7rem;
 }
 
 /* Global */
@@ -163,6 +178,113 @@ body {
   background: var(--ascend-body-bg);
   color: var(--ascend-color-text-main);
 }
+
+/* =========================================
+ * Base controls (buttons + inputs)
+ * ======================================= */
+
+button,
+.ascend-btn,
+.ascend-btn-base {
+  position: relative;
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.1;
+  color: var(--ascend-control-text);
+  background: var(--ascend-control-bg);
+  border: 1px solid var(--ascend-control-border);
+  border-radius: var(--ascend-control-radius);
+  padding: var(--ascend-control-padding-y) var(--ascend-control-padding-x);
+  cursor: pointer;
+  transition: transform 80ms ease, background 120ms ease, border-color 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+  will-change: transform;
+}
+
+button:hover,
+.ascend-btn:hover,
+.ascend-btn-base:hover {
+  background: var(--ascend-control-bg-hover);
+  border-color: color-mix(in srgb, var(--ascend-control-border) 70%, white 30%);
+}
+
+button:active,
+.ascend-btn:active,
+.ascend-btn-base:active {
+  transform: translateY(1px) scale(0.99);
+  background: var(--ascend-control-bg-active);
+}
+
+button:focus-visible,
+.ascend-btn:focus-visible,
+.ascend-btn-base:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ascend-control-ring);
+}
+
+button[disabled],
+.ascend-btn[disabled],
+.ascend-btn-base[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+select,
+textarea {
+  color: var(--ascend-control-text);
+  background: var(--ascend-control-bg);
+  border: 1px solid var(--ascend-control-border);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  box-sizing: border-box;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--ascend-color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ascend-control-ring) 65%, transparent 35%);
+}
+
+/* Busy state: disables + shows spinner (button utility) */
+.is-busy {
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.is-busy::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--ascend-control-text) 35%, transparent 65%);
+  border-top-color: var(--ascend-control-text);
+  animation: ascend-spin 700ms linear infinite;
+}
+
+@keyframes ascend-spin {
+  to { transform: rotate(360deg); }
+}
+
 
 #ascend-root {
   min-height: 100vh;

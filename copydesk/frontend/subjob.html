@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Copydesk – Translation Subjob</title>
+
+  <link rel="stylesheet" href="assets/css/reset.css">
+
+  <!-- Ascend design system + app shell -->
+  <link rel="stylesheet" href="../../../assets/ascend.css">
+  <link rel="stylesheet" href="../../../assets/ascend-apps.css">
+
+  <!-- Copydesk-only visuals/layout (keep for consistency) -->
+  <link rel="stylesheet" href="assets/css/copydesk.css">
+
+  <!-- Copydesk font (scoped; does NOT affect Ascend chrome) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:opsz,wght@8..60,200..900&display=swap" rel="stylesheet">
+
+  <style>
+    /* Fallback font surface rules (same intent as seed) */
+    .subjob-rows .subjob-english,
+    .subjob-rows textarea {
+      font-family: "Source Sans 3", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+  </style>
+
+  <!-- Authoritative styles injected by backend (res.stylesCss) -->
+  <style id="copydesk-styles-css"></style>
+
+  <!-- Load Overlay (Copydesk) -->
+  <style>
+    #load-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(2px);
+      z-index: 9999;
+    }
+    #load-overlay.is-on { display: flex; }
+
+    .load-overlay__panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(0, 0, 0, 0.10);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      max-width: min(520px, calc(100vw - 40px));
+    }
+    .load-overlay__spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid rgba(0, 0, 0, 0.18);
+      border-top-color: rgba(0, 0, 0, 0.62);
+      animation: loadspin 0.9s linear infinite;
+      flex: 0 0 auto;
+    }
+    .load-overlay__text {
+      font: 500 14px/1.25 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: rgba(0, 0, 0, 0.78);
+      user-select: none;
+      -webkit-user-select: none;
+      word-break: break-word;
+    }
+    @keyframes loadspin { to { transform: rotate(360deg); } }
+  </style>
+
+  <style>
+    /* -----------------------------
+       Subjob layout (80/20, no horiz scroll)
+    ----------------------------- */
+
+    /* Keep within existing Copydesk content area */
+    .copydesk-content { padding-bottom: 20px; }
+
+    .subjob-columns {
+      display: grid;
+      grid-template-columns: 4fr 1fr; /* 80/20 */
+      gap: 16px;
+      align-items: start;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    @media (max-width: 980px) {
+      .subjob-columns { grid-template-columns: 1fr; }
+    }
+
+    .subjob-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* Each row is two “cards”: left translation card + right notes card */
+    .subjob-row {
+      display: grid;
+      grid-template-columns: 4fr 1fr; /* 80/20 */
+      gap: 16px;
+      align-items: start;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    @media (max-width: 980px) {
+      .subjob-row { grid-template-columns: 1fr; }
+    }
+
+    /* Card styling: use Copydesk card feel; don’t invent new language */
+    .subjob-card {
+      background: var(--ascend-app-surface, #fff);
+      border: 1px solid rgba(0,0,0,0.10);
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .subjob-card__label {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.65;
+      margin: 2px 0 10px 2px;
+    }
+
+    /* Left stacked arrangement */
+    .subjob-english {
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 12px;
+      padding: 10px 10px;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      word-break: normal;
+      min-width: 0;
+    }
+
+    .subjob-textarea {
+      width: 100%;
+      display: block;
+      min-height: 84px;
+      resize: vertical;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.14);
+      background: #fff;
+      color: rgba(0,0,0,0.88);
+      line-height: 1.35;
+      outline: none;
+      min-width: 0;
+    }
+
+    .subjob-textarea:focus {
+      border-color: rgba(0,0,0,0.28);
+      box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.22); /* ties to Ascend teal-ish */
+    }
+
+    .subjob-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    /* Small segment index chip */
+    .subjob-segmeta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .subjob-chip {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.08);
+      opacity: 0.85;
+      white-space: nowrap;
+    }
+
+    /* Status bar (reuse existing element/id) */
+    .status-bar {
+      margin-top: 14px;
+      font-size: 13px;
+      opacity: 0.88;
+    }
+
+    .status-ok { color: rgba(0,0,0,0.70); }
+    .status-saving { color: rgba(0,0,0,0.78); }
+    .status-error { color: rgba(180, 0, 0, 0.85); }
+  </style>
+</head>
+
+<body class="ascend-app-body">
+
+  <!-- Load Overlay (Copydesk) -->
+  <div id="load-overlay" aria-live="polite" aria-busy="true" role="status">
+    <div class="load-overlay__panel">
+      <div class="load-overlay__spinner" aria-hidden="true"></div>
+      <div id="load-overlay-text" class="load-overlay__text">Loading…</div>
+    </div>
+  </div>
+
+  <div class="ascend-app-shell">
+    <div class="ascend-app-panel">
+
+      <header class="ascend-app-header">
+
+        <!-- LEFT: app label + filename -->
+        <div class="ascend-app-title-block" style="display:flex; align-items:baseline; gap:28px;">
+          <div class="ascend-app-title" style="font-weight:200; letter-spacing:0.18em;">COPYDESK</div>
+          <div id="job-name" class="ascend-app-subtitle"></div>
+        </div>
+
+        <!-- RIGHT: vertical stack (date, countdown, collaborators) -->
+        <div class="ascend-app-meta" style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+          <div id="job-cutoff-date" style="font-weight:700;"></div>
+          <div id="job-cutoff-countdown" style="opacity:0.8;"></div>
+          <div id="job-collaborators" style="opacity:0.75;"></div>
+        </div>
+
+        <!-- FAR RIGHT: NO PUSH (translation-only tranche) -->
+        <div class="ascend-app-actions">
+          <!-- intentionally empty -->
+        </div>
+
+      </header>
+
+      <main class="copydesk-content">
+        <div class="subjob-columns">
+
+          <!-- Left: rows list -->
+          <div>
+            <div class="copydesk-col-title" style="margin: 0 0 10px 2px;">Translation</div>
+
+            <div id="subjob-rows" class="subjob-rows"></div>
+
+            <p id="segments-empty" class="empty-state" style="display:none;">
+              No segments yet for this job.
+            </p>
+          </div>
+
+          <!-- Right: small helper rail (optional, but 20% lane exists; keep it light) -->
+          <div>
+            <div class="copydesk-col-title" style="margin: 0 0 10px 2px;">Notes</div>
+            <div class="subjob-card" style="opacity:0.92;">
+              <div class="subjob-card__label">Guidance</div>
+              <div style="font-size: 13px; line-height: 1.35; opacity: 0.78;">
+                Your edits autosave as you type.<br>
+                No Push on this page.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div id="status-bar" class="status-bar status-ok">Ready.</div>
+      </main>
+
+      <script>
+        window.COPYDESK_API_BASE = window.COPYDESK_API_BASE || 'https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec';
+      </script>
+
+    </div>
+  </div>
+
+  <!-- API client + Translation-only view -->
+  <script defer src="assets/js/copydesk_api_client.js"></script>
+  <script defer src="assets/js/copydesk_subjob_view.js"></script>
+
+</body>
+</html>
+
+      // ---------------------------
+      // Load overlay
+      // ---------------------------
+      function overlayOn_(text) {
+        var ov = document.getElementById('load-overlay');
+        var t = document.getElementById('load-overlay-text');
+        if (t) t.textContent = text || 'Loading…';
+        if (ov) ov.classList.add('is-on');
+      }
+      function overlayOff_() {
+        var ov = document.getElementById('load-overlay');
+        if (ov) ov.classList.remove('is-on');
+      }
+
+      // ---------------------------
+      // Status bar
+      // ---------------------------
+      function setStatus_(state, msg) {
+        var el = document.getElementById('status-bar');
+        if (!el) return;
+        el.classList.remove('status-ok', 'status-saving', 'status-error');
+        el.classList.add(state || 'status-ok');
+        el.textContent = msg || '';
+      }
+
+      // ---------------------------
+      // Minimal POST helper (compatible with your Apps Script CORS strategy)
+      // ---------------------------
+      function assertBase_() {
+        var base = window.COPYDESK_API_BASE || '';
+        if (!base) throw new Error('Missing window.COPYDESK_API_BASE');
+        return base;
+      }
+
+      async function postJson_(bodyObj) {
+        var base = assertBase_();
+        var res = await fetch(base, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(bodyObj || {})
+        });
+        var raw = await res.text();
+        try { return JSON.parse(raw); } catch (e) { return { ok:false, raw: raw }; }
+      }
+
+      // ---------------------------
+      // Field mapping (NON-BREAKING defaults)
+      // ---------------------------
+      // IMPORTANT:
+      // - If your backend already has dedicated translation fields, change these keys only.
+      // - Defaults are conservative: translation writes to "workingText"; notes writes to "notes".
+      // - Machine translation seed defaults to "machineText" then falls back to translation field then blank.
+      var FIELD_SEGMENT_ID = 'segmentId';
+      var FIELD_COMMITTED_EN = 'committedText';
+      var FIELD_TRANSLATION = 'workingText';
+      var FIELD_MACHINE = 'machineText';
+      var FIELD_NOTES = 'notes';
+
+      // ---------------------------
+      // Autosave (debounced + blur + flush on pagehide/visibilitychange)
+      // ---------------------------
+      var __dirty = new Map();      // segId -> { translation: string|undefined, notes: string|undefined }
+      var __timers = new Map();     // segId -> timeoutId
+      var __inFlight = 0;
+
+      function markDirty_(segId, patch) {
+        if (!segId) return;
+        var cur = __dirty.get(segId) || {};
+        if (patch.hasOwnProperty('translation')) cur.translation = patch.translation;
+        if (patch.hasOwnProperty('notes')) cur.notes = patch.notes;
+        __dirty.set(segId, cur);
+      }
+
+      function scheduleSave_(segId, delayMs) {
+        delayMs = (typeof delayMs === 'number') ? delayMs : 600;
+
+        // clear prior timer for that segment
+        if (__timers.has(segId)) {
+          clearTimeout(__timers.get(segId));
+          __timers.delete(segId);
+        }
+
+        var t = setTimeout(function () {
+          __timers.delete(segId);
+          saveOne_(segId);
+        }, delayMs);
+
+        __timers.set(segId, t);
+      }
+
+      async function saveOne_(segId) {
+        var patch = __dirty.get(segId);
+        if (!patch) return;
+
+        // nothing to save
+        var hasAny = (typeof patch.translation === 'string') || (typeof patch.notes === 'string');
+        if (!hasAny) return;
+
+        __inFlight++;
+        setStatus_('status-saving', 'Saving…');
+
+        // Build payload with the smallest, most compatible surface:
+        // - action: 'updateSegment' (common pattern); fall back patterns supported below
+        // - Pass segmentId + patch fields
+        var payload = {
+          action: 'updateSegment',
+          jobId: getJobIdFromQuery(),
+          segmentId: segId,
+          patch: {}
+        };
+
+        if (typeof patch.translation === 'string') payload.patch[FIELD_TRANSLATION] = patch.translation;
+        if (typeof patch.notes === 'string') payload.patch[FIELD_NOTES] = patch.notes;
+
+        var res = await postJson_(payload);
+
+        // If your backend uses a different verb shape, try a minimal set of fallbacks without changing architecture.
+        if (!res || res.ok === false) {
+          // Fallback #1: { action:'updateSegment', segmentId, ...fields }
+          var payload2 = { action: 'updateSegment', jobId: payload.jobId, segmentId: segId };
+          if (typeof patch.translation === 'string') payload2[FIELD_TRANSLATION] = patch.translation;
+          if (typeof patch.notes === 'string') payload2[FIELD_NOTES] = patch.notes;
+          res = await postJson_(payload2);
+        }
+
+        if (!res || res.ok === false) {
+          // Fallback #2: { fn:'updateSegment', ... } (some scripts use fn)
+          var payload3 = { fn: 'updateSegment', jobId: payload.jobId, segmentId: segId };
+          if (typeof patch.translation === 'string') payload3[FIELD_TRANSLATION] = patch.translation;
+          if (typeof patch.notes === 'string') payload3[FIELD_NOTES] = patch.notes;
+          res = await postJson_(payload3);
+        }
+
+        __inFlight--;
+
+        if (res && res.ok !== false) {
+          // clear dirty only if save succeeded
+          __dirty.delete(segId);
+          setStatus_('status-ok', __inFlight ? 'Saving…' : 'Saved.');
+        } else {
+          setStatus_('status-error', 'Save failed. Check console / API response.');
+          // keep dirty so a later flush can retry
+          console.error('Save failed', { segId: segId, res: res });
+        }
+      }
+
+      async function flushAll_() {
+        // cancel timers, then save everything dirty synchronously
+        __timers.forEach(function (tid) { clearTimeout(tid); });
+        __timers.clear();
+
+        var ids = Array.from(__dirty.keys());
+        for (var i = 0; i < ids.length; i++) {
+          // eslint-disable-next-line no-await-in-loop
+          await saveOne_(ids[i]);
+        }
+      }
+
+      function hookFlushEvents_() {
+        window.addEventListener('pagehide', function () {
+          // pagehide is reliable on Safari; do best-effort flush
+          flushAll_();
+        });
+
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'hidden') flushAll_();
+        });
+
+        // Best-effort: blur handlers already save, but this helps in some cases.
+        window.addEventListener('beforeunload', function () {
+          flushAll_();
+        });
+      }
+
+      // ---------------------------
+      // Render
+      // ---------------------------
+      function escapeHtml_(s) {
+        return String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function setHeaderMeta_(job) {
+        // Keep same header IDs so Ascend/CSS expectations hold.
+        var jobName = document.getElementById('job-name');
+        if (jobName) jobName.textContent = (job && (job.jobName || job.name || job.title)) ? (job.jobName || job.name || job.title) : 'Translation';
+
+        var cutoffDate = document.getElementById('job-cutoff-date');
+        var cutoffCountdown = document.getElementById('job-cutoff-countdown');
+        var collabs = document.getElementById('job-collaborators');
+
+        if (cutoffDate) cutoffDate.textContent = job && job.cutoffDate ? job.cutoffDate : '';
+        if (cutoffCountdown) cutoffCountdown.textContent = job && job.cutoffCountdown ? job.cutoffCountdown : '';
+        if (collabs) collabs.textContent = job && job.collaborators ? job.collaborators : '';
+      }
+
+      function renderRows_(segments) {
+        var rowsEl = document.getElementById('subjob-rows');
+        var emptyEl = document.getElementById('segments-empty');
+        if (!rowsEl) return;
+
+        rowsEl.innerHTML = '';
+
+        if (!segments || !segments.length) {
+          if (emptyEl) emptyEl.style.display = '';
+          return;
+        }
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        for (var i = 0; i < segments.length; i++) {
+          var seg = segments[i] || {};
+          var segId = seg[FIELD_SEGMENT_ID] || seg.segmentId || seg.id || ('seg_' + i);
+
+          var committedEn = seg[FIELD_COMMITTED_EN] || seg.committedEnglish || seg.committed || seg.english || seg.text || '';
+          var machine = seg[FIELD_MACHINE] || seg.machineTranslation || seg.mt || '';
+          var translation = seg[FIELD_TRANSLATION] || seg.translation || '';
+          var notes = seg[FIELD_NOTES] || seg.translatorNotes || '';
+
+          // Seed translation: prefer working translation; else machine; else blank
+          var seededTranslation = (typeof translation === 'string' && translation.length) ? translation : (machine || '');
+
+          var row = document.createElement('div');
+          row.className = 'subjob-row';
+
+          // LEFT: translation card (stacked)
+          var left = document.createElement('div');
+          left.className = 'subjob-card';
+
+          left.innerHTML = ''
+            + '<div class="subjob-segmeta">'
+            +   '<div class="subjob-card__label">Segment</div>'
+            +   '<div class="subjob-chip">' + escapeHtml_(segId) + '</div>'
+            + '</div>'
+            + '<div class="subjob-stack">'
+            +   '<div class="subjob-card__label">Committed English</div>'
+            +   '<div class="subjob-english">' + escapeHtml_(committedEn) + '</div>'
+            +   '<div class="subjob-card__label" style="margin-top: 2px;">Translation</div>'
+            +   '<textarea class="subjob-textarea" data-segid="' + escapeHtml_(segId) + '" data-field="translation" spellcheck="true"></textarea>'
+            + '</div>';
+
+          // RIGHT: notes card
+          var right = document.createElement('div');
+          right.className = 'subjob-card';
+          right.innerHTML = ''
+            + '<div class="subjob-card__label">Translator Notes</div>'
+            + '<textarea class="subjob-textarea" data-segid="' + escapeHtml_(segId) + '" data-field="notes" spellcheck="true" style="min-height: 140px;"></textarea>';
+
+          row.appendChild(left);
+          row.appendChild(right);
+          rowsEl.appendChild(row);
+
+          // Populate textareas
+          var tArea = left.querySelector('textarea[data-field="translation"]');
+          if (tArea) tArea.value = seededTranslation || '';
+
+          var nArea = right.querySelector('textarea[data-field="notes"]');
+          if (nArea) nArea.value = notes || '';
+        }
+
+        // Bind once via event delegation
+        bindInputsOnce_();
+      }
+
+      var __bound = false;
+      function bindInputsOnce_() {
+        if (__bound) return;
+        __bound = true;
+
+        var container = document.getElementById('subjob-rows');
+        if (!container) return;
+
+        // input (debounced)
+        container.addEventListener('input', function (e) {
+          var el = e.target;
+          if (!el || el.tagName !== 'TEXTAREA') return;
+
+          var segId = el.getAttribute('data-segid') || '';
+          var field = el.getAttribute('data-field') || '';
+          var val = el.value;
+
+          if (field === 'translation') {
+            markDirty_(segId, { translation: val });
+            scheduleSave_(segId, 650);
+          } else if (field === 'notes') {
+            markDirty_(segId, { notes: val });
+            scheduleSave_(segId, 650);
+          }
+        });
+
+        // blur (immediate save for that segment)
+        container.addEventListener('blur', function (e) {
+          var el = e.target;
+          if (!el || el.tagName !== 'TEXTAREA') return;
+
+          var segId = el.getAttribute('data-segid') || '';
+          // schedule immediate save (0ms) to coalesce w/ any in-flight typing
+          scheduleSave_(segId, 0);
+        }, true);
+      }
+
+      // ---------------------------
+      // Load job + segments
+      // ---------------------------
+      async function load_() {
+        var jobId = getJobIdFromQuery();
+        if (!jobId) {
+          setStatus_('status-error', 'Missing jobid/jobId in URL.');
+          return;
+        }
+
+        overlayOn_('Loading job…');
+
+        // Preferred payload shape
+        var res = await postJson_({ action: 'getJob', jobId: jobId });
+
+        // Fallback #1
+        if (!res || res.ok === false) res = await postJson_({ fn: 'getJob', jobId: jobId });
+
+        if (!res || res.ok === false) {
+          overlayOff_();
+          setStatus_('status-error', 'Load failed. Check console / API response.');
+          console.error('Load failed', res);
+          return;
+        }
+
+        // Expected shapes:
+        // - res.job / res.data / res
+        // - segments array at res.segments / res.job.segments / res.data.segments
+        var job = res.job || res.data || res;
+        var segments = res.segments || (job && job.segments) || (job && job.data && job.data.segments) || [];
+
+        // stylesCss injection (authoritative)
+        if (res.stylesCss) {
+          var styleEl = document.getElementById('copydesk-styles-css');
+          if (styleEl) styleEl.textContent = res.stylesCss;
+        }
+
+        setHeaderMeta_(job);
+        renderRows_(segments);
+
+        overlayOff_();
+        setStatus_('status-ok', 'Ready (autosave on).');
+      }
+
+      // ---------------------------
+      // Boot
+      // ---------------------------
+      document.addEventListener('DOMContentLoaded', function () {
+        hookFlushEvents_();
+        load_();
+      });
+
+    })();
+  </script>
+</body>
+</html>

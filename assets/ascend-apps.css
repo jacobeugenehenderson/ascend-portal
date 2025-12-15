@@ -26,31 +26,22 @@
 body.ascend-app-body {
   margin: 0;
   font-family: var(--ascend-font-body, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif);
+
+  /* Control defaults for light app pages */
+  --ascend-control-bg: #ffffff;
+  --ascend-control-bg-hover: #f8fafc;
+  --ascend-control-bg-active: #eef2f7;
+  --ascend-control-text: var(--ascend-app-text-main);
+  --ascend-control-border: rgba(148, 163, 184, 0.85);
+  --ascend-control-ring: var(--ascend-app-accent-soft);
+  --ascend-control-radius: 10px;
+
   background-color: #e5edf7;
   background-image:
-    /* Chunky blue grid */
-    linear-gradient(
-      to right,
-      rgba(0, 81, 255, 0.35) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      rgba(0, 81, 255, 0.35) 1px,
-      transparent 1px
-    ),
-    /* Finer teal “graph paper” grid */
-    linear-gradient(
-      to right,
-      rgba(79, 209, 197, 0.22) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      rgba(79, 209, 197, 0.22) 1px,
-      transparent 1px
-    ),
-    /* Soft radial highlight, same DNA as portal */
+    linear-gradient(to right, rgba(0, 81, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 81, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(to right, rgba(79, 209, 197, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(79, 209, 197, 0.22) 1px, transparent 1px),
     radial-gradient(circle at top, rgba(79, 209, 197, 0.20), transparent 55%);
   background-size:
     48px 48px, 48px 48px,
@@ -65,17 +56,17 @@ body.ascend-app-body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 32px 20px 40px;
+  padding: 32px 32px 40px; /* L/R equals top */
 }
 
 .ascend-app-panel {
   width: 100%;
-  max-width: 780px;
+  max-width: none; /* allow 2 lanes; inner cap is handled by .copydesk-content */
   background: var(--ascend-app-surface);
   border-radius: var(--ascend-app-radius-xl);
   border: 1px solid var(--ascend-app-border);
   box-shadow: var(--ascend-app-shadow-soft);
-  padding: 22px 24px 26px;
+  padding: 22px 22px 26px; /* L/R equals top */
   position: relative;
   overflow: hidden;
 }
@@ -101,14 +92,97 @@ body.ascend-app-body {
   z-index: 1;
 }
 
+/* -------------------------------------------------------
+   APP CONTROLS (global)
+   Copydesk is not inside .ascend-app-form, so it needs these.
+   ------------------------------------------------------- */
+
+/* Read-only calendar reference (keeps icon, prevents interaction) */
+.job-cutoff-ref {
+  pointer-events: none;   /* prevents clicks & picker */
+  cursor: default;
+}
+
+.ascend-app-panel button,
+.ascend-app-panel .card-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--ascend-control-border);
+  background: var(--ascend-control-bg);
+  color: var(--ascend-control-text);
+  border-radius: var(--ascend-control-radius);
+  padding: 8px 10px;
+  font: 600 0.84rem/1 var(--ascend-font-body, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif);
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.ascend-app-panel button:hover:not(:disabled),
+.ascend-app-panel .card-btn:hover:not(:disabled) {
+  background: var(--ascend-control-bg-hover);
+}
+
+.ascend-app-panel button:active:not(:disabled),
+.ascend-app-panel .card-btn:active:not(:disabled) {
+  background: var(--ascend-control-bg-active);
+}
+
+.ascend-app-panel button:disabled,
+.ascend-app-panel .card-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+.ascend-app-panel select,
+.ascend-app-panel input[type="text"],
+.ascend-app-panel input[type="date"],
+.ascend-app-panel textarea {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--ascend-control-border);
+  background: var(--ascend-control-bg);
+  color: var(--ascend-control-text);
+  border-radius: var(--ascend-control-radius);
+  padding: 9px 10px;
+  font: 500 0.86rem/1.25 var(--ascend-font-body, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.ascend-app-panel select {
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(2, 6, 23, 0.65) 50%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.65) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.ascend-app-panel select:focus,
+.ascend-app-panel input[type="text"]:focus,
+.ascend-app-panel input[type="date"]:focus,
+.ascend-app-panel textarea:focus,
+.ascend-app-panel button:focus,
+.ascend-app-panel .card-btn:focus {
+  outline: none;
+  border-color: var(--ascend-app-accent);
+  box-shadow:
+    0 0 0 2px var(--ascend-control-ring),
+    0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
 /* Header: same uppercase system as portal, but dark-on-light */
 .ascend-app-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.45);
+  gap: 16px;
+  padding: 18px 18px 14px 18px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
 }
 
 .ascend-app-title-block {
@@ -128,6 +202,13 @@ body.ascend-app-body {
   font-size: 1.24rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+/* Right-side header actions (e.g., Push) */
+.ascend-app-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .ascend-app-meta {
@@ -174,19 +255,14 @@ body.ascend-app-body {
   color: var(--ascend-app-label);
 }
 
-/* Inputs / selects / textareas: stroked white, not pillowy */
+/* Inputs / selects / textareas: scoped spacing + sizing (visuals come from ascend.css control vars) */
 .ascend-app-form input[type="text"],
 .ascend-app-form input[type="date"],
 .ascend-app-form select,
 .ascend-app-form textarea {
   margin-top: 4px;
-  padding: 7px 10px;
+  width: 100%;
   font-size: 0.86rem;
-  border-radius: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.85);
-  background: #ffffff;
-  color: var(--ascend-app-text-main);
-  box-sizing: border-box;
 }
 
 .ascend-app-form textarea {
@@ -194,15 +270,13 @@ body.ascend-app-body {
   resize: vertical;
 }
 
-/* Focus: crisp stroke + subtle teal halo, echoing portal accent */
+/* Focus: crisp stroke + subtle teal halo */
 .ascend-app-form input[type="text"]:focus,
 .ascend-app-form input[type="date"]:focus,
 .ascend-app-form select:focus,
 .ascend-app-form textarea:focus {
-  outline: none;
   border-color: var(--ascend-app-accent);
-  box-shadow: 0 0 0 1px var(--ascend-app-accent-soft);
-  background: #ffffff;
+  box-shadow: 0 0 0 2px var(--ascend-app-accent-soft);
 }
 
 /* Small helper text under a label, if needed */

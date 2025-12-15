@@ -1,7 +1,7 @@
 cd /Volumes/Today
 python3 -m http.server 666
 
-http://localhost:666/ascend/
+http://localhost:666/ascend-portal
 
 http://192.168.1.129:666/ascend/auth.html?token=test
 
