@@ -6,11 +6,11 @@
   <title>Copydesk</title>
 
   <!-- reset (local) -->
-  <link rel="stylesheet" href="assets/css/reset.css" />
+  <link rel="stylesheet" href="./assets/css/reset.css" />
 
   <!-- shared Ascend CSS (from repo root) -->
-  <link rel="stylesheet" href="../../../assets/ascend.css">
-  <link rel="stylesheet" href="../../../assets/ascend-apps.css">
+  <link rel="stylesheet" href="../../assets/ascend.css">
+  <link rel="stylesheet" href="../../assets/ascend-apps.css">
 </head>
 
 <body class="ascend-app-body">
@@ -141,7 +141,8 @@ Another paragraph as a third segment.</textarea>
           try {
             const res = await fetch(API_URL, {
               method: 'POST',
-              // No headers block at all
+              // text/plain avoids CORS preflight; Apps Script often fails OPTIONS.
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
               body: JSON.stringify(payload)
             });
 
