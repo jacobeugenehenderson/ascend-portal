@@ -170,8 +170,8 @@ Another paragraph as a third segment.</textarea>
               statusDiv.textContent = 'Job created successfully ✅';
               statusDiv.className = 'status-ok';
 
-              // Wire the chain: open the job view with the returned jobid
-              const jobId = extractJobIdFromResponse(json);
+              // Wire the chain: open the job view with the returned jobId (authoritative API contract)
+              const jobId = json && json.jobId ? String(json.jobId) : '';
               if (jobId) {
                 // Persist for "resume last job" convenience
                 try { localStorage.setItem('copydesk_last_jobid', jobId); } catch (e) {}

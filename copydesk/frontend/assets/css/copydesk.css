@@ -361,13 +361,6 @@
    Card: Section Divider editor (line only)
 ----------------------------- */
 
-/* Committed Section divider is real em-dash text */
-.committed-seg.is-divider {
-  opacity: 0.9;
-  user-select: none;
-  white-space: nowrap;
-}
-
 .card-divider {
   user-select: none;
   white-space: nowrap;
@@ -444,7 +437,9 @@
 
 /* Empty slot placeholder card */
 .card--empty {
-  min-height: 96px;
+  height: var(--copydesk-unit-h);
+  box-sizing: border-box;
+
   border: 1px dashed color-mix(in srgb, var(--ascend-app-border) 40%, rgba(148, 163, 184, 0.85) 60%);
   border-radius: 16px;
   background:
