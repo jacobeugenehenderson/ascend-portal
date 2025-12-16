@@ -853,6 +853,95 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
   }
 
   // ---------------------------
+  // Countdown clock
+  // ---------------------------
+
+  // ---------------------------
+  // Auto-close helpers (V1)
+  // ---------------------------
+
+  // Authoritative rule: dueDate is treated as LOCAL end-of-day.
+  // Returns true when now > (dueDate 23:59:59 local).
+  function isPastCutoff_(dueISO) {
+    var s = String(dueISO || '').trim();
+    if (!s) return false;
+
+    // Interpret yyyy-MM-dd as local date; compare against local EOD.
+    var due = new Date(s + 'T23:59:59');
+    if (isNaN(due.getTime())) return false;
+
+    return Date.now() > due.getTime();
+  }
+
+  // Minimal POST helper (do NOT depend on api_client internals).
+  async function postToCopydeskApi_(bodyObj) {
+    var base = window.COPYDESK_API_BASE || '';
+    if (!base) throw new Error('Missing window.COPYDESK_API_BASE');
+    if (!/^https?:\/\//i.test(base)) throw new Error('Bad COPYDESK_API_BASE: ' + base);
+
+    var res = await fetch(base, {
+      method: 'POST',
+      // IMPORTANT: text/plain avoids CORS preflight (Apps Script).
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(bodyObj || {})
+    });
+
+    var raw = await res.text();
+    var json = null;
+    try { json = JSON.parse(raw); } catch (e) {}
+    if (!json) throw new Error('Non-JSON response: ' + raw);
+    if (json.ok === false) throw new Error(json.error || 'API error');
+    return json;
+  }
+
+  // Close job + spawn translation sheets (idempotent in backend).
+  async function closeAndSpawn_(jobId) {
+    if (__autoCloseInflight) return;
+    __autoCloseInflight = true;
+
+    try {
+      setStatus('loading', 'Closing job…', false);
+
+      // Prefer a client wrapper if it exists; otherwise POST directly.
+      var res;
+      if (window.copydeskCloseJob) {
+        res = await window.copydeskCloseJob(jobId);
+      } else {
+        res = await postToCopydeskApi_({ action: 'closeJob', jobId: jobId });
+      }
+
+      // Refresh local job cache from response if present.
+      if (res && res.job) window.__copydeskJob = res.job;
+
+      // Force closed-mode UI immediately (no waiting for next minute tick).
+      setClosedMode_(true);
+      setStatus('locked', 'Closed. Editing is disabled.', false);
+
+      // Re-render header (countdown cleared; collaborators disabled).
+      if (window.__copydeskJob) renderHeader(window.__copydeskJob);
+
+    } catch (err) {
+      console.error('closeAndSpawn_ error:', err);
+      __autoCloseFired = false; // allow retry (console / next tick)
+      setStatus('error', 'Auto-close failed: ' + (err && err.message ? err.message : String(err)), true);
+    } finally {
+      __autoCloseInflight = false;
+    }
+  }
+
+  // Console-only triggers (testing philosophy: no risky UI)
+  // Usage:
+  //   window.__copydeskForceClose()
+  //   window.__copydeskIsPastCutoff('2025-12-31')
+  window.__copydeskIsPastCutoff = isPastCutoff_;
+  window.__copydeskForceClose = function () {
+    if (!jobId) jobId = getJobIdFromQuery();
+    if (!jobId) throw new Error('Missing jobId in URL');
+    __autoCloseFired = true;
+    return closeAndSpawn_(jobId);
+  };
+
+  // ---------------------------
   // Lane row height sync (committed <-> cards)
   // ---------------------------
   var __syncHeightsRaf = null;
@@ -1602,6 +1691,42 @@ if (currentVal2 === ZWSP) currentVal2 = '';
         }
   }
 
+          function setClosedMode_(isClosed) {
+            var closed = !!isClosed;
+
+            // CSS toggle (layout collapse lives in job.html CSS below)
+            document.body.classList.toggle('copydesk-is-closed', closed);
+
+            // Push is not allowed once closed
+            var pushBtn = document.getElementById('push-btn');
+            if (pushBtn) pushBtn.disabled = closed;
+
+            // Header inputs
+            var collabInput = document.getElementById('job-collaborators-input');
+            if (collabInput) collabInput.disabled = closed;
+
+            var dueInput = document.getElementById('job-cutoff-input');
+            if (dueInput) {
+              // keep it visually present but inert
+              dueInput.setAttribute('aria-readonly', 'true');
+              if (closed) {
+                // extra-hard block for date picker / edits
+                dueInput.addEventListener('keydown', function (e) { e.preventDefault(); }, true);
+                dueInput.addEventListener('click', function (e) { e.preventDefault(); try { dueInput.blur(); } catch (err) {} }, true);
+              }
+            }
+
+            // Cards lane: disable every interactive control when closed.
+            var cardsList = document.getElementById('cards-list');
+            if (cardsList) {
+              var els = cardsList.querySelectorAll('textarea, input, select, button');
+              for (var i = 0; i < els.length; i++) {
+                try { els[i].disabled = closed; } catch (e) {}
+                try { els[i].setAttribute('aria-disabled', closed ? 'true' : 'false'); } catch (e2) {}
+              }
+            }
+          }
+
   // ---------------------------
   // Boot
   // ---------------------------
@@ -1660,14 +1785,31 @@ cardLastSaved.clear();
       window.__copydeskJob = job;
       renderHeader(job);
 
+setClosedMode_(String((job && job.status) || '').toLowerCase() === 'closed');
+
       // Keep header countdown fresh (1-minute tick).
       if (!window.__copydeskCountdownTimer) {
+
         window.__copydeskCountdownTimer = window.setInterval(function () {
-          if (window.__copydeskJob) renderHeader(window.__copydeskJob);
+          if (!window.__copydeskJob) return;
+
+          renderHeader(window.__copydeskJob);
+
+          // Auto-close regime (V1): when cutoff passes, close + spawn once.
+          var statusLower = String((window.__copydeskJob.status || '')).toLowerCase();
+          if (statusLower !== 'closed' && !__autoCloseFired) {
+            var dueISO = String(window.__copydeskJob.dueDate || '').trim();
+            if (isPastCutoff_(dueISO)) {
+              __autoCloseFired = true;
+              closeAndSpawn_(jobId);
+            }
+          }
         }, 60000);
       }
 
-      var locked = job && job.status === 'Locked';
+      // Treat Closed as locked (editing disabled) in addition to legacy Locked.
+var statusLower = String((job && job.status) || '').toLowerCase();
+var locked = (statusLower === 'locked' || statusLower === 'closed');
       if (locked) {
         setStatus('locked', 'Locked. Editing is disabled.', false);
       } else {

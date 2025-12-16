@@ -20,6 +20,7 @@
     "https://jacobeugenehenderson.github.io/ascend-portal/artstart/assets/artstart.html"; // Existing job view
 const COPYDESK_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/index.html";
+    
   const CODEDESK_URL = "https://okqral.com";
   
   // ArtStart API base – same as art_start.js

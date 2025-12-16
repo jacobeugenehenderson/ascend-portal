@@ -31,6 +31,30 @@
 <!-- Authoritative styles injected by backend (res.stylesCss) -->
 <style id="copydesk-styles-css"></style>
 
+<!-- Closed-mode collapse (DOM stays intact; CSS-only layout regime) -->
+<style id="copydesk-closed-mode">
+  body.copydesk-is-closed #copydesk-columns {
+    grid-template-columns: 1fr 0fr !important;
+  }
+
+  body.copydesk-is-closed .copydesk-col--cards {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.copydesk-is-closed .copydesk-col--cards * {
+    display: none !important;
+  }
+
+  body.copydesk-is-closed .copydesk-col--committed {
+    grid-column: 1 / -1 !important;
+  }
+</style>
+
 <!-- Bullet style hard-fix (prevents column/break-all weirdness in committed rendering) -->
 <style id="copydesk-bullet-fix">
   /* Kill any accidental multi-column or aggressive word-breaking rules */
