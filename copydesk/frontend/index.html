@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="../../assets/ascend.css">
   <link rel="stylesheet" href="../../assets/ascend-apps.css">
   <link rel="stylesheet" href="frontend/assets/css/copydesk.css">
-  
+
 </head>
 
 <body class="ascend-app-body">
@@ -36,7 +36,7 @@
       <form class="ascend-app-form ascend-app-form--two-column" onsubmit="return false;">
         <label>
           Job Name
-          <input type="text" id="jobName" value="Test VT Controller EN" />
+          <input type="text" id="jobName" value="" required placeholder="Job name" />
         </label>
 
         <label>
@@ -55,11 +55,7 @@
 
         <label style="grid-column: 1 / -1;">
           Seed Text
-          <textarea id="seedText">Headline paragraph for VT Controller.
-
-Body copy paragraph two, with more detailed explanation.
-
-Another paragraph as a third segment.</textarea>
+          <textarea id="seedText" placeholder="Paste seed text here…"></textarea>
         </label>
 
         <div style="grid-column: 1 / -1;">
@@ -124,7 +120,13 @@ Another paragraph as a third segment.</textarea>
         }
 
         async function createEnglishJob() {
-          const jobName = jobNameInput.value.trim() || 'Untitled Job';
+          const jobName = jobNameInput.value.trim();
+          if (!jobName) {
+            statusDiv.textContent = 'Job name is required.';
+            statusDiv.className = 'status-error';
+            jobNameInput.focus();
+            return;
+          }
           const seedText = seedTextInput.value;
 
           const collaboratorsRaw = collaboratorsInput.value.trim();
