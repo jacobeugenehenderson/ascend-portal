@@ -178,7 +178,7 @@
                 try { localStorage.setItem('copydesk_last_jobid', jobId); } catch (e) {}
 
                 // Navigate this tab (no popup blockers)
-                window.location.href = `job.html?jobid=${encodeURIComponent(jobId)}`;
+                window.location.href = `../job.html?jobid=${encodeURIComponent(jobId)}`;
                 return;
               } else {
                 statusDiv.textContent = 'Job created, but no jobId was returned ❌';
