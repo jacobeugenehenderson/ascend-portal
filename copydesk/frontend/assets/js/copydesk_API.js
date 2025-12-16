@@ -62,6 +62,57 @@ function listKnownJobIds_() {
   return out;
 }
 
+// -----------------------------
+// Translation subjobs payload (frontend pills)
+// -----------------------------
+function buildTranslationSubjobsPayload_(ss, jobId) {
+  var langs = [
+    { code: 'ES', name: 'Spanish' },
+    { code: 'FR', name: 'French' },
+    { code: 'DE', name: 'German' },
+    { code: 'IT', name: 'Italian' },
+    { code: 'PT', name: 'Portuguese' },
+    { code: 'ZH', name: 'Chinese' },
+    { code: 'JA', name: 'Japanese' },
+    { code: 'KO', name: 'Korean' }
+  ];
+
+  function hasHumanEdits_(sh) {
+    if (!sh) return false;
+    var startRow = 11;
+    var lastRow = sh.getLastRow();
+    if (lastRow < startRow) return false;
+
+    // Human working surface is Column C (3)
+    var vals = sh.getRange(startRow, 3, lastRow - startRow + 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      var v = String(vals[i][0] == null ? '' : vals[i][0]).trim();
+      if (v) return true;
+    }
+    return false;
+  }
+
+  var out = [];
+  for (var i = 0; i < langs.length; i++) {
+    var code = langs[i].code;
+    var shName = 'JOB_' + code;
+    var sh = ss.getSheetByName(shName);
+    if (!sh) continue;
+
+    var status = hasHumanEdits_(sh) ? 'human' : 'seed';
+
+    out.push({
+      lang: code,
+      language: langs[i].name,
+      sheetName: shName,
+      status: status,
+      href: 'subjob.html?jobid=' + encodeURIComponent(String(jobId || '')) + '&lang=' + encodeURIComponent(code)
+    });
+  }
+
+  return out;
+}
+
 // Create language sheets inside the same job spreadsheet (simple v0 closeout).
 // Each sheet is a copy of JOB_EN with a language suffix and cleared working cols.
 // You can refine later; this is deterministic and “no libraries”.
@@ -1089,6 +1140,7 @@ if (lastRow >= startRow) {
       // New shape
       job: (function () {
         var st = getJobStatus_(header.jobId);
+        var translations = buildTranslationSubjobsPayload_(ss, header.jobId) || [];
         return {
           jobId: header.jobId,
           jobName: header.jobName,
@@ -1096,7 +1148,12 @@ if (lastRow >= startRow) {
           timezone: header.timezone,
           status: st.status || 'Active',
           closedAt: st.closedAt || '',
-          collaborators: header.collaborators
+          collaborators: header.collaborators,
+
+          // Translation pills payload (aliases for frontend robustness)
+          translations: translations,
+          translationSubjobs: translations,
+          translationJobs: translations
         };
       })(),
       segments: segments.map(function (s) {
@@ -1130,6 +1187,10 @@ if (lastRow >= startRow) {
 
       ghostSlots: (function () {
         return readGhostSlots_(ss) || [];
+      })(),
+
+      translations: (function () {
+        return buildTranslationSubjobsPayload_(ss, header.jobId) || [];
       })(),
 
       cardSlots: (function () {

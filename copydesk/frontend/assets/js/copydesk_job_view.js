@@ -939,10 +939,12 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
       setClosedMode_(true);
       setStatus('locked', 'Closed. Editing is disabled.', false);
 
-      // Re-render header (countdown cleared; collaborators disabled).
+      // Re-fetch authoritative state so translation subjobs + URLs arrive before pill render.
+      try { await boot(); } catch (e0) {}
+
+      // Best-effort (boot() already does these, but harmless to keep)
       if (window.__copydeskJob) renderHeader(window.__copydeskJob);
-      if (window.__copydeskJob) renderTranslationPills_(window.__copydeskJob);
-      if (typeof renderTranslationPills_ === 'function') { renderTranslationPills_(window.__copydeskJob); }
+      if (typeof renderTranslationPills_ === 'function') renderTranslationPills_(window.__copydeskJob);
 
     } catch (err) {
       console.error('closeAndSpawn_ error:', err);
@@ -963,6 +965,14 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
     if (!jobId) throw new Error('Missing jobId in URL');
     __autoCloseFired = true;
     return closeAndSpawn_(jobId);
+  };
+
+  // Console helper: inspect the *raw* job payload (including translations arrays/urls)
+  window.__copydeskFetchJob = function () {
+    var id = jobId || getJobIdFromQuery();
+    if (!id) throw new Error('Missing jobId in URL');
+    if (!window.copydeskGetJob) throw new Error('Missing copydeskGetJob()');
+    return window.copydeskGetJob(id);
   };
 
   // ---------------------------
