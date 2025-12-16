@@ -1941,6 +1941,11 @@ cardLastSaved.clear();
   });
 });
 
+      // Normalize translation subjobs (so pills can render even if backend returns them outside res.job)
+      if (res && Array.isArray(res.translationSubjobs) && !job.translationSubjobs) job.translationSubjobs = res.translationSubjobs;
+      if (res && Array.isArray(res.translationJobs) && !job.translationJobs) job.translationJobs = res.translationJobs;
+      if (res && Array.isArray(res.translations) && !job.translations) job.translations = res.translations;
+
       window.__copydeskJob = job;
       renderHeader(job);
       setClosedMode_(String((job && job.status) || '').toLowerCase() === 'closed');
