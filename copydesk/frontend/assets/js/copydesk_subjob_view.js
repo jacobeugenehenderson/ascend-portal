@@ -131,7 +131,9 @@
       nameEl.textContent = (job && job.jobName) ? job.jobName : '';
     }
 
-    var locked = !!(job && job.status === 'Locked');
+    // English is frozen after close, but translation remains editable.
+    // Translation lock (if you ever add it) should be a separate flag.
+    var locked = false;
 
     if (dueEl) {
       if (locked) dueEl.textContent = 'Locked';
