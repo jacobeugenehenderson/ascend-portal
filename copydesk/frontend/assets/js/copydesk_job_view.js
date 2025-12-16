@@ -1,5 +1,21 @@
 // copydesk_job_view.js
-// Pure editor client: URL jobid/jobId, render segments, autosave (debounce+blur+beforeunload), status bar.
+// Copydesk “Job” view (two-lane editorial):
+// - Left lane = Committed (final English artifact)
+// - Right lane = Edits (cards; autosave)
+//
+// Close regime (V1, clock-driven):
+// - When now > cutoff (local end-of-day), job MUST auto-close (no user-facing “Close” button).
+// - On close: lock editing UI + collapse layout (Committed 100% / Edits 0%; DOM stays intact).
+// - On close: spawn translation subjobs for ALL supported languages (idempotent).
+//
+// Pills (read-only header, V1):
+// - Only visible when job is Closed.
+// - One pill per language; derived from backend translation/subjob data (not guessed).
+// - Pill states map to: Seeded (createdAt), Human touched (touchedAt), Archived (archivedAt/status).
+// - Clicking a pill navigates to the translation subjob view.
+//
+// Testing philosophy:
+// - Prefer console triggers + spreadsheet cutoff edits. Avoid risky user UI.
 
 (function () {
   'use strict';
@@ -925,6 +941,7 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
 
       // Re-render header (countdown cleared; collaborators disabled).
       if (window.__copydeskJob) renderHeader(window.__copydeskJob);
+      renderTranslationPills_(window.__copydeskJob);
 
     } catch (err) {
       console.error('closeAndSpawn_ error:', err);
@@ -1791,7 +1808,131 @@ cardLastSaved.clear();
       window.__copydeskJob = job;
       renderHeader(job);
 
+// ---------------------------
+// Translation pills (Closed-only, read-only)
+// ---------------------------
+
+function extractTranslationSubjobs_(job) {
+  if (!job) return [];
+
+  // Accept a few possible shapes without breaking if backend changes field names.
+  var list =
+    job.translationSubjobs ||
+    job.translationJobs ||
+    job.translations ||
+    job.subjobs ||
+    [];
+
+  if (!Array.isArray(list)) return [];
+  return list;
+}
+
+function pillState_(t) {
+  if (!t) return 'seeded';
+
+  // Prefer explicit status if present.
+  var s = (t.status != null) ? String(t.status).toLowerCase() : '';
+
+  // Heuristics (safe + backward compatible):
+  // - archived if archivedAt / isArchived / status says archived
+  // - human if touchedAt / editedAt / humanEdited / status says touched/edited
+  if (t.archivedAt || t.isArchived || s.indexOf('archiv') >= 0) return 'archived';
+  if (t.touchedAt || t.editedAt || t.humanEdited || s.indexOf('touch') >= 0 || s.indexOf('edit') >= 0) return 'human';
+
+  return 'seeded';
+}
+
+function getSubjobUrl_(t) {
+  if (!t) return '';
+
+  // If backend already provides a URL, use it.
+  var direct = t.url || t.subjobUrl || t.href;
+  if (direct && /^https?:\/\//i.test(String(direct))) return String(direct);
+
+  // Otherwise build a relative link to subjob.html (same folder as job.html).
+  var subId =
+    t.subjobId ||
+    t.subJobId ||
+    t.translationJobId ||
+    t.jobId ||
+    t.id ||
+    '';
+
+  if (!subId) return '';
+
+  try {
+    var u = new URL('subjob.html', window.location.href);
+    u.searchParams.set('jobid', String(subId));
+    return u.toString();
+  } catch (e) {
+    return 'subjob.html?jobid=' + encodeURIComponent(String(subId));
+  }
+}
+
+function renderTranslationPills_(job) {
+  var host = document.getElementById('translation-pills');
+  if (!host) return;
+
+  var isClosed = !!(job && String(job.status || '').toLowerCase() === 'closed');
+  if (!isClosed) {
+    host.style.display = 'none';
+    host.innerHTML = '';
+    return;
+  }
+
+  var subs = extractTranslationSubjobs_(job);
+
+  // If closed but no translations metadata exists yet, still hide (no junk UI).
+  if (!subs.length) {
+    host.style.display = 'none';
+    host.innerHTML = '';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < subs.length; i++) {
+    var t = subs[i] || {};
+    var code = (t.lang || t.languageCode || t.code || t.locale || '').toString();
+    var label = code ? code.toUpperCase() : ('T' + (i + 1));
+
+    var state = pillState_(t);
+    var url = getSubjobUrl_(t);
+
+    // If no URL, render as disabled pill.
+    var disabled = !url;
+
+    html +=
+      '<span class="translation-pill state-' + state + '" ' +
+        (disabled ? 'aria-disabled="true"' : 'data-url="' + String(url).replace(/"/g, '&quot;') + '"') +
+      '>' +
+        '<span class="translation-pill__dot" aria-hidden="true"></span>' +
+        '<span class="translation-pill__label">' + label.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>' +
+      '</span>';
+  }
+
+  host.innerHTML = html;
+  host.style.display = 'flex';
+
+  // Click handler (delegated)
+  if (!host.dataset.wired) {
+    host.dataset.wired = '1';
+    host.addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el !== host && !el.classList.contains('translation-pill')) el = el.parentNode;
+      if (!el || el === host) return;
+
+      if (el.getAttribute('aria-disabled') === 'true') return;
+
+      var url = el.getAttribute('data-url') || '';
+      if (!url) return;
+
+      window.location.href = url;
+    });
+  }
+}
+
 setClosedMode_(String((job && job.status) || '').toLowerCase() === 'closed');
+renderTranslationPills_(job);
 
       // Keep header countdown fresh (1-minute tick).
       if (!window.__copydeskCountdownTimer) {

@@ -93,6 +93,50 @@
   color: var(--ascend-app-text-muted, rgba(0,0,0,0.62));
 }
 
+/* -----------------------------
+   Translation pills (Closed-only)
+----------------------------- */
+.translation-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  max-width: min(520px, 50vw);
+}
+
+.translation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.70);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.translation-pill[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.translation-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.18);
+}
+
+/* seeded / human / archived “dot” states */
+.translation-pill.state-seeded .translation-pill__dot { background: rgba(0,0,0,0.20); }
+.translation-pill.state-human  .translation-pill__dot { background: rgba(0,0,0,0.55); }
+.translation-pill.state-archived .translation-pill__dot { background: rgba(0,0,0,0.12); }
+
 /* Keep Push pinned visually to far right */
 .ascend-app-actions {
   display: flex;

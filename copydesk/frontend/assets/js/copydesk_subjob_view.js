@@ -1,12 +1,20 @@
 // copydesk_subjob_view.js
-// Translation-only client: URL jobid/jobId, render translation rows, autosave translation+notes.
+// Copydesk “Translation Subjob” view (single-language):
+// - URL carries jobid/jobId (and whatever backend uses to resolve language/subjob)
+// - Renders rows seeded from final Committed English + style metadata
+// - Autosaves translator edits (and optional notes) frequently
+//
+// Key contract (V1):
+// - English is frozen after parent job closes.
+// - Translation remains editable (no Push; no cards lane; no ghost slots).
 //
 // Depends on:
 // - window.COPYDESK_API_BASE (or it can call window.copydeskGetJob if present)
 // - subjob.html DOM IDs: load-overlay(+text), job-name, job-cutoff-date, job-cutoff-countdown,
 //   job-collaborators, subjob-rows, segments-empty, status-bar
 //
-// Intentionally NO push, NO add/move/delete, NO ghost slots, NO cards lane.
+// Explicit non-goals:
+// - NO push, NO add/move/delete, NO ghost slots, NO two-lane layout on this page.
 
 (function () {
   'use strict';
