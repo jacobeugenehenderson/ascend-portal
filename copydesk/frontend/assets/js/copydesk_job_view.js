@@ -4,6 +4,12 @@
 (function () {
   'use strict';
 
+  // ---------------------------
+  // Auto-close state (V1)
+  // ---------------------------
+  var __autoCloseFired = false;
+  var __autoCloseInflight = false;
+
   // Hot caches / state (must be declared in strict mode)
   var __latestSegments = [];
   var __latestCards = [];
