@@ -941,7 +941,8 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
 
       // Re-render header (countdown cleared; collaborators disabled).
       if (window.__copydeskJob) renderHeader(window.__copydeskJob);
-      renderTranslationPills_(window.__copydeskJob);
+      if (window.__copydeskJob) renderTranslationPills_(window.__copydeskJob);
+      if (typeof renderTranslationPills_ === 'function') { renderTranslationPills_(window.__copydeskJob); }
 
     } catch (err) {
       console.error('closeAndSpawn_ error:', err);
@@ -1750,6 +1751,117 @@ if (currentVal2 === ZWSP) currentVal2 = '';
             }
           }
 
+function extractTranslationSubjobs_(job) {
+  if (!job) return [];
+  var list = [];
+
+  // Supported shapes:
+  // - job.translations: [{ lang, subjobId, status, createdAt, touchedAt, archivedAt }, ...]
+  // - job.translationSubjobs: [...]
+  // - job.translationJobs: [...]
+  var arr =
+    (job && job.translations) ||
+    (job && job.translationSubjobs) ||
+    (job && job.translationJobs) ||
+    [];
+
+  if (!Array.isArray(arr)) return [];
+
+  for (var i = 0; i < arr.length; i++) {
+    var t = arr[i];
+    if (!t) continue;
+    list.push(t);
+  }
+
+  return list;
+}
+
+function pillState_(t) {
+  if (!t) return 'seeded';
+
+  // Prefer explicit status if present.
+  var st = (t.status || t.state || '').toString().toLowerCase();
+
+  // Archived overrides everything.
+  if (st === 'archived' || st === 'final' || st === 'done' || t.archivedAt) return 'archived';
+
+  // Human-touched if touchedAt exists (or explicit).
+  if (st === 'touched' || st === 'human' || st === 'inprogress' || t.touchedAt) return 'touched';
+
+  return 'seeded';
+}
+
+function getSubjobUrl_(t, job) {
+  var subId = (t && (t.subjobId || t.jobId || t.id || t.subId)) ? (t.subjobId || t.jobId || t.id || t.subId) : '';
+  if (!subId) return '';
+
+  // Allow an explicit URL field if backend provides it.
+  var direct = (t && (t.url || t.href || t.link)) ? (t.url || t.href || t.link) : '';
+  if (direct && /^https?:\/\//i.test(String(direct))) return String(direct);
+
+  // Otherwise build from local subjob.html (same folder as job.html).
+  return 'subjob.html?jobid=' + encodeURIComponent(String(subId));
+}
+
+function renderTranslationPills_(job) {
+  var host = document.getElementById('translation-pills');
+  if (!host) return;
+
+  var statusLower = String((job && job.status) || '').toLowerCase();
+  if (statusLower !== 'closed') {
+    host.style.display = 'none';
+    host.innerHTML = '';
+    return;
+  }
+
+  var subs = extractTranslationSubjobs_(job);
+
+  // If closed but no translations metadata exists yet, still hide (no junk UI).
+  if (!subs.length) {
+    host.style.display = 'none';
+    host.innerHTML = '';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < subs.length; i++) {
+    var t = subs[i] || {};
+    var code = (t.lang || t.languageCode || t.code || t.locale || '').toString();
+    var label = code ? code.toUpperCase() : ('T' + (i + 1));
+
+    var state = pillState_(t);
+    var url = getSubjobUrl_(t, job);
+
+    var cls = 'translation-pill pill-' + state;
+    var ariaDisabled = url ? 'false' : 'true';
+
+    html +=
+      '<button type="button" class="' + cls + '" data-url="' + (url || '') + '" aria-disabled="' + ariaDisabled + '">' +
+        '<span class="pill-label">' + label + '</span>' +
+      '</button>';
+  }
+
+  host.innerHTML = html;
+  host.style.display = 'flex';
+
+  // Click handler (delegated)
+  if (!host.dataset.wired) {
+    host.dataset.wired = '1';
+    host.addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el !== host && !el.classList.contains('translation-pill')) el = el.parentNode;
+      if (!el || el === host) return;
+
+      if (el.getAttribute('aria-disabled') === 'true') return;
+
+      var url = el.getAttribute('data-url') || '';
+      if (!url) return;
+
+      window.location.href = url;
+    });
+  }
+}
+
   // ---------------------------
   // Boot
   // ---------------------------
@@ -1933,6 +2045,7 @@ function renderTranslationPills_(job) {
 
 setClosedMode_(String((job && job.status) || '').toLowerCase() === 'closed');
 renderTranslationPills_(job);
+if (typeof renderTranslationPills_ === 'function') { renderTranslationPills_(job); }
 
       // Keep header countdown fresh (1-minute tick).
       if (!window.__copydeskCountdownTimer) {

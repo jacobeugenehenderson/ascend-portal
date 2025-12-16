@@ -87,12 +87,29 @@ function createLanguageSheetsOnClose_(ss) {
 
     var copy = base.copyTo(ss).setName(shName);
 
-    // Clear working column C (rows 11+), keep committed A and styles.
+    // Clear human working column C (rows 11+) and ensure a Machine Translation column H exists + is cleared.
     try {
+      var headerRow = 10;
       var startRow = 11;
       var lastRow = copy.getLastRow();
+
+      // Clear Column C (human working surface for this language)
       if (lastRow >= startRow) {
         copy.getRange(startRow, 3, lastRow - startRow + 1, 1).clearContent();
+      }
+
+      // Ensure Column H exists (8). If the sheet is only A–G, add one column.
+      // (copy of JOB_EN may already have >7 cols; this is safe either way.)
+      if (copy.getMaxColumns() < 8) {
+        copy.insertColumnAfter(7);
+      }
+
+      // Header label for MT column
+      copy.getRange(headerRow, 8).setValue('Machine Translation');
+
+      // Clear Column H (machine translation surface)
+      if (lastRow >= startRow) {
+        copy.getRange(startRow, 8, lastRow - startRow + 1, 1).clearContent();
       }
     } catch (e) {}
 
@@ -1641,7 +1658,7 @@ function handleRunNightly_(body) {
   return runNightlyCommitAll_();
 }
 
-// Machine-translate JOB_EN committed column A into each JOB_XX working column C.
+// Machine-translate JOB_EN committed column A into each JOB_XX working column H.
 function machineTranslateLanguageSheetsOnClose_(ss) {
   var langs = [
     { code: 'ES', name: 'Spanish' },
@@ -1682,20 +1699,20 @@ function machineTranslateLanguageSheetsOnClose_(ss) {
     var sh = ss.getSheetByName(shName);
     if (!sh) continue;
 
-    // Build a translation output column (C) for this sheet
-    var outColC = [];
+    // Build a machine translation output column (H) for this sheet
+    var outColH = [];
     for (var r = 0; r < baseValues.length; r++) {
       var row = baseValues[r];
 
       var committedText = String(row[0] == null ? '' : row[0]); // A
       if (!committedText.trim()) {
-        outColC.push(['']);
+        outColH.push(['']);
         continue;
       }
 
       if (isDividerRow_(row)) {
         // Keep divider glyph line as-is (never translate)
-        outColC.push([committedText]);
+        outColH.push([committedText]);
         continue;
       }
 
@@ -1709,12 +1726,20 @@ function machineTranslateLanguageSheetsOnClose_(ss) {
         tr = '';
       }
 
-      outColC.push([tr]);
+      outColH.push([tr]);
       translatedRowsTotal++;
     }
 
-    // Write translated working text into Column C of JOB_XX
-    sh.getRange(startRow, 3, outColC.length, 1).setValues(outColC);
+    // Ensure Column H exists (8). If the sheet is only A–G, add one column.
+    if (sh.getMaxColumns() < 8) {
+      sh.insertColumnAfter(7);
+    }
+
+    // Header label for MT column
+    sh.getRange(10, 8).setValue('Machine Translation');
+
+    // Write machine translation into Column H of JOB_XX
+    sh.getRange(startRow, 8, outColH.length, 1).setValues(outColH);
     translatedSheets++;
   }
 
