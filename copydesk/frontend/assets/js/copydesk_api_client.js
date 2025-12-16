@@ -232,6 +232,17 @@
     return postJson_({ action: 'deleteGhostSlot', jobId: jobId, slotIndex: Number(slotIndex) });
   };
 
+  // closeJob(jobId)
+  // Authoritative close + spawn entrypoint (idempotent server-side).
+  // Used by auto-close regime (clock-based), NOT user UI.
+  window.copydeskCloseJob = async function (jobId) {
+    if (!jobId) throw new Error('Missing jobId');
+    return postJson_({
+      action: 'closeJob',
+      jobId: jobId
+    });
+  };
+
   // Optional admin-only test harness hooks (safe to include; server enforces role)
   window.copydeskCommitJob = async function (jobId) {
     if (!jobId) throw new Error('Missing jobId');
