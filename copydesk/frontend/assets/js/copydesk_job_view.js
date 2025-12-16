@@ -1913,13 +1913,20 @@ function renderTranslationPills_(job) {
 
       var job = (res && res.job) ? res.job : {};
 
-      // Normalize collaborators onto job from any supported response shape.
-      if (res && typeof res.collaborators === 'string') {
-        job.collaborators = res.collaborators;
-      } else if (res && res.header && typeof res.header.collaborators === 'string') {
-        job.collaborators = res.header.collaborators;
-      } else if (res && res.job && typeof res.job.collaborators === 'string') {
-        job.collaborators = res.job.collaborators;
+    // Normalize translation subjobs payload onto job (pills renderer reads job.* only).
+    if (res && Array.isArray(res.translationSubjobs) && !Array.isArray(job.translationSubjobs)) {
+      job.translationSubjobs = res.translationSubjobs;
+    }
+    if (res && Array.isArray(res.translations) && !Array.isArray(job.translations)) {
+      job.translations = res.translations;
+    }
+
+      // Normalize translation subjobs payload onto job (pills renderer reads job.* only).
+      if (res && Array.isArray(res.translationSubjobs) && !Array.isArray(job.translationSubjobs)) {
+        job.translationSubjobs = res.translationSubjobs;
+      }
+      if (res && Array.isArray(res.translations) && !Array.isArray(job.translations)) {
+        job.translations = res.translations;
       }
 
       var segments = (res && res.segments) ? res.segments : [];
