@@ -1530,14 +1530,19 @@ if (currentVal2 === ZWSP) currentVal2 = '';
 
             // Create structure first: ghost slot in committed lane
             if (!window.copydeskInsertGhostSlot) throw new Error('Missing copydeskInsertGhostSlot()');
+
+            function isOk_(r) {
+              return !!(r && (r.ok === true || r.ok === 'true' || r.success === true || r.success === 'true'));
+            }
+
             var r1 = await window.copydeskInsertGhostSlot(jobId, insertAt);
-            if (!r1 || r1.ok !== true) {
+            if (!isOk_(r1)) {
               throw new Error('insertGhostSlot failed: ' + JSON.stringify(r1));
             }
 
             // Then create the welded edit card for that new row
             var r2 = await window.copydeskCreateCard(jobId, { segmentId: 'new:' + uuid_(), insertAt: insertAt });
-            if (!r2 || r2.ok !== true) {
+            if (!isOk_(r2)) {
               throw new Error('createCard failed: ' + JSON.stringify(r2));
             }
 
