@@ -1520,21 +1520,25 @@ if (currentVal2 === ZWSP) currentVal2 = '';
             await flushAllCardSaves_();
             window.__copydeskRestore = { activeCardId: activeCardId, activeRole: activeRole, scrollY: scrollY };
 
-            var baseIndex = Array.prototype.indexOf.call(cardsList.children, cardEl);
-            var insertAt = (role === 'add-below') ? (baseIndex + 1) : baseIndex;
+                        // Use the slot index (authoritative) — NOT DOM child index.
+            var baseSlot = Number(cardEl.dataset.slotIndex);
+            if (isNaN(baseSlot) || baseSlot < 0) {
+              throw new Error('Bad slotIndex on cardEl: ' + String(cardEl.dataset.slotIndex || ''));
+            }
+
+            var insertAt = (role === 'add-below') ? (baseSlot + 1) : baseSlot;
 
             // Create structure first: ghost slot in committed lane
             if (!window.copydeskInsertGhostSlot) throw new Error('Missing copydeskInsertGhostSlot()');
             var r1 = await window.copydeskInsertGhostSlot(jobId, insertAt);
-            if (r1 && r1.ok === false) {
-              throw new Error(r1.error || r1.message || 'copydeskInsertGhostSlot failed');
+            if (!r1 || r1.ok !== true) {
+              throw new Error('insertGhostSlot failed: ' + JSON.stringify(r1));
             }
 
             // Then create the welded edit card for that new row
-            if (!window.copydeskCreateCard) throw new Error('Missing copydeskCreateCard()');
             var r2 = await window.copydeskCreateCard(jobId, { segmentId: 'new:' + uuid_(), insertAt: insertAt });
-            if (r2 && r2.ok === false) {
-              throw new Error(r2.error || r2.message || 'copydeskCreateCard failed');
+            if (!r2 || r2.ok !== true) {
+              throw new Error('createCard failed: ' + JSON.stringify(r2));
             }
 
             // Source-of-truth reload
