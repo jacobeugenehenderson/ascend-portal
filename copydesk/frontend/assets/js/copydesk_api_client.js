@@ -79,17 +79,6 @@
   };
 
   // updateJobMeta(jobId, patch)
-  // Header/meta updates (cutoff date, collaborators, status, etc).
-  window.copydeskUpdateJobMeta = async function (jobId, patch) {
-    if (!jobId) throw new Error('Missing jobId');
-    return postJson_({
-      action: 'updateJobMeta',
-      jobId: jobId,
-      patch: patch || {}
-    });
-  };
-
-  // updateJobMeta(jobId, patch)
   // patch: { cutoff: "yyyy-MM-dd" | "", collaborators: "a@b.com, c@d.com" | "" }
   window.copydeskUpdateJobMeta = async function (jobId, patch) {
     if (!jobId) throw new Error('Missing jobId');
