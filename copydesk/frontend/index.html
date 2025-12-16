@@ -172,13 +172,13 @@
               statusDiv.className = 'status-ok';
 
               // Wire the chain: open the job view with the returned jobId (authoritative API contract)
-              const jobId = json && json.jobId ? String(json.jobId) : '';
+              const jobId = extractJobIdFromResponse(json);
               if (jobId) {
                 // Persist for "resume last job" convenience
                 try { localStorage.setItem('copydesk_last_jobid', jobId); } catch (e) {}
 
                 // Navigate this tab (no popup blockers)
-                window.location.href = `job.html?jobid=${encodeURIComponent(jobId)}`;
+                window.location.href = `frontend/job.html?jobid=${encodeURIComponent(jobId)}`;
                 return;
               } else {
                 statusDiv.textContent = 'Job created, but no jobId was returned ❌';
