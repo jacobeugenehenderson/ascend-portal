@@ -1813,6 +1813,18 @@ setClosedMode_(String((job && job.status) || '').toLowerCase() === 'closed');
         }, 60000);
       }
 
+      // Immediate auto-close check on load (do not wait for the first tick)
+      (function () {
+        var statusLower = String((job && job.status) || '').toLowerCase();
+        if (statusLower !== 'closed' && !__autoCloseFired) {
+          var dueISO = String(job.dueDate || '').trim();
+          if (isPastCutoff_(dueISO)) {
+            __autoCloseFired = true;
+            closeAndSpawn_(jobId);
+          }
+        }
+      })();
+
       // Treat Closed as locked (editing disabled) in addition to legacy Locked.
 var statusLower = String((job && job.status) || '').toLowerCase();
 var locked = (statusLower === 'locked' || statusLower === 'closed');
