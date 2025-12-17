@@ -258,6 +258,9 @@
       var segId = getSegId_(seg, i);
 
       var committedEn = getCommittedEn_(seg);
+
+      // Heuristic: treat style-only / divider segments as visual dividers
+      var isDivider = !committedEn && seg && (seg.isDivider || seg.style === 'divider' || seg.type === 'divider');
       var machine = getMachine_(seg);
       var translation = getTranslation_(seg);
       var notes = getNotes_(seg);
@@ -266,7 +269,7 @@
       var seededTranslation = (typeof translation === 'string' && translation.length) ? translation : (machine || '');
 
       var row = document.createElement('div');
-      row.className = 'subjob-row';
+      row.className = 'subjob-row' + (isDivider ? ' is-divider' : '');
       row.dataset.segmentId = String(segId);
 
       // LEFT: stacked card
@@ -275,23 +278,50 @@
 
       left.innerHTML = ''
         + '<div class="subjob-segmeta">'
-        +   '<div class="subjob-card__label">SEGMENT ' + escapeHtml_(segId) + '</div>'
+        +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
         + '</div>'
         + '<div class="subjob-stack">'
         +   '<div class="subjob-card__label">Committed English</div>'
         +   '<div class="subjob-english">' + escapeHtml_(committedEn) + '</div>'
         +   '<div class="subjob-card__label" style="margin-top:2px;">Translation</div>'
-        +   '<textarea class="subjob-textarea" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
+        +   '<div class="subjob-english subjob-translation-wrap">'
+        +     '<textarea class="subjob-textarea subjob-translation" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
+        +   '</div>'
         + '</div>';
 
       row.appendChild(left);
+      // RIGHT: per-segment translator notes
+      if (!isDivider) {
+        var right = document.createElement('div');
+        right.className = 'subjob-card';
+
+        right.innerHTML = ''
+          + '<div class="subjob-card__label">Translator Notes</div>'
+          + '<textarea class="subjob-textarea" '
+          +   'data-role="notes" '
+          +   'data-segid="' + escapeHtml_(segId) + '" '
+          +   'spellcheck="true"></textarea>';
+
+        row.appendChild(right);
+      }
+
       rowsEl.appendChild(row);
+
+      if (isDivider) {
+        continue;
+      }
 
       var taT = row.querySelector('textarea[data-role="translation"]');
 
       if (taT) {
         taT.value = seededTranslation || '';
         taT.disabled = !!locked;
+      }
+
+      var taN = row.querySelector('textarea[data-role="notes"]');
+      if (taN) {
+        taN.value = notes || '';
+        taN.disabled = !!locked;
       }
     }
 
@@ -571,6 +601,11 @@
         }
 
         var job = (res && res.job) ? res.job : (res && res.data ? res.data : {});
+
+        // If backend resolved language, trust it over URL
+        if (!__lang && res && res.lang) {
+          __lang = String(res.lang).toUpperCase();
+        }
         // Normalize collaborators (same idea as main view)
         if (res && typeof res.collaborators === 'string') job.collaborators = res.collaborators;
         else if (res && res.header && typeof res.header.collaborators === 'string') job.collaborators = res.header.collaborators;
