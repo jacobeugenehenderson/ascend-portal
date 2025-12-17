@@ -64,9 +64,9 @@
     display: block !important;
   }
 
-  .style-bullet {
+    .committed-list .committed-seg.style-bullet {
     columns: auto !important;
-    column-count: 1 !important;
+    column-count: auto !important;
     column-width: auto !important;
 
     writing-mode: horizontal-tb !important;
@@ -79,8 +79,8 @@
     text-align: left !important;
   }
 
-  /* Bullet glyph should behave like normal inline text */
-  .style-bullet .bullet-glyph {
+  /* Bullet glyph should behave like normal inline text (Committed only) */
+  .committed-list .committed-seg.style-bullet .bullet-glyph {
     display: inline !important;
     white-space: pre !important;
   }
