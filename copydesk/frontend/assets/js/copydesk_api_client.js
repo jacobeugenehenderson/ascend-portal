@@ -73,9 +73,10 @@
   // --- Public API ---
 
   // getJob(jobId)
-  window.copydeskGetJob = async function (jobId) {
-    if (!jobId) throw new Error('Missing jobId');
-    return postJson_({ action: 'getJob', jobId: jobId });
+  window.copydeskGetJob = async function (jobId, lang) {
+    var body = { action: 'getJob', jobId: jobId };
+    if (lang) body.lang = lang;
+    return postJson_(body);
   };
 
   // updateJobMeta(jobId, patch)

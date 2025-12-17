@@ -30,6 +30,8 @@
   // Field mapping (adjust only if backend uses different keys)
   // ---------------------------
   var FIELD_SEGMENT_ID = 'segmentId';
+
+  // Canonical segment fields (match copydesk_job_view.js payload)
   var FIELD_COMMITTED_EN = 'committedText';
 
   // Translation field (editable)
@@ -38,8 +40,8 @@
   // Machine translation seed field (optional)
   var FIELD_MACHINE = 'machineText';
 
-  // Notes field (optional; if backend doesn’t support it yet, save will try anyway)
-  var FIELD_NOTES = 'notes';
+  // Notes field (optional)
+  var FIELD_NOTES = 'translatorNotes';
 
   // ---------------------------
   // URL
@@ -162,10 +164,6 @@
       if (typeof c === 'string') txt = c.trim();
       else if (Array.isArray(c) && c.length) txt = String(c[0] || '').trim();
 
-      if (__lang) {
-        txt = txt ? (txt + ' · ' + __lang) : __lang;
-      }
-
       collabEl.textContent = txt ? txt : '';
       collabEl.classList.toggle('is-muted', !txt);
     }
@@ -247,13 +245,24 @@
   // ---------------------------
   // Style class (authoritative style-* hooks from backend/spreadsheet)
   // ---------------------------
+  function styleLabelToCssClass_(label) {
+    var v = String(label || '').toLowerCase().trim();
+    if (v === 'headline') return 'style-headline';
+    if (v === 'subheadline') return 'style-subheadline';
+    if (v === 'cta') return 'style-cta';
+    if (v === 'bullet') return 'style-bullet';
+    if (v === 'section divider') return 'style-divider';
+    return 'style-body';
+  }
+
   function getStyleClass_(seg) {
-    var v = (seg && (seg.styleClass || seg.style_class || seg.style || seg.textStyle || seg.className || seg.class)) || '';
+    // Match job view: style is a LABEL (committedStyle / workingStyle), not a CSS class.
+    var v =
+      (seg && (seg.committedStyle || seg.workingStyle || seg.styleLabel || seg.style)) ||
+      '';
     v = String(v || '').trim();
     if (!v) return '';
-    // Allow backend to send either "style-foo" or just "foo"
-    if (!/^style-/.test(v)) v = 'style-' + v;
-    return v;
+    return styleLabelToCssClass_(v);
   }
 
   function renderRows_(segments, locked) {
@@ -276,8 +285,8 @@
       var committedEn = getCommittedEn_(seg);
       var styleClass = getStyleClass_(seg);
 
-      // Heuristic: treat style-only / divider segments as visual dividers
-      var isDivider = (!committedEn) && seg && (seg.isDivider || seg.style === 'divider' || seg.type === 'divider' || styleClass === 'style-divider');
+      // Divider is style-driven (matches spreadsheet style label → css class)
+      var isDivider = (styleClass === 'style-divider');
       var machine = getMachine_(seg);
       var translation = getTranslation_(seg);
       var notes = getNotes_(seg);
@@ -309,10 +318,10 @@
           + '</div>'
           + '<div class="subjob-stack">'
           +   '<div class="subjob-card__label">Committed English</div>'
-          +   '<div class="subjob-english ' + escapeHtml_(styleClass) + '">' + escapeHtml_(committedEn) + '</div>'
+          +   '<div class="subjob-english ' + styleClass + '">' + escapeHtml_(committedEn) + '</div>'
           +   '<div class="subjob-card__label" style="margin-top:2px;">Translation</div>'
-          +   '<div class="subjob-english subjob-translation-wrap ' + escapeHtml_(styleClass) + '">'
-          +     '<textarea class="subjob-textarea subjob-translation ' + escapeHtml_(styleClass) + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
+          +   '<div class="subjob-english subjob-translation-wrap ' + styleClass + '">'
+          +     '<textarea class="subjob-textarea subjob-translation ' + styleClass + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
           +   '</div>'
           + '</div>';
       }
@@ -650,7 +659,8 @@
 
         window.__copydeskSubjobJob = job;
 
-        var locked = job && job.status === 'Locked';
+        var statusLower = String((job && job.status) || '').toLowerCase();
+        var locked = (statusLower === 'locked' || statusLower === 'archived' || statusLower === 'final');
         if (locked) setStatus_('ok', 'Locked. Editing is disabled.', false);
         else setStatus_('ok', 'Ready (autosave on).', false);
 

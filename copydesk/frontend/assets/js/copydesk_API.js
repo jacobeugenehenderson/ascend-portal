@@ -155,12 +155,23 @@ function createLanguageSheetsOnClose_(ss) {
         copy.insertColumnAfter(7);
       }
 
-      // Header label for MT column
+      // Ensure Column I exists (9) for per-segment translator notes.
+      if (copy.getMaxColumns() < 9) {
+        copy.insertColumnAfter(8);
+      }
+
+      // Header labels
       copy.getRange(headerRow, 8).setValue('Machine Translation');
+      copy.getRange(headerRow, 9).setValue('Translator Notes');
 
       // Clear Column H (machine translation surface)
       if (lastRow >= startRow) {
         copy.getRange(startRow, 8, lastRow - startRow + 1, 1).clearContent();
+      }
+
+      // Clear Column I (translator notes surface)
+      if (lastRow >= startRow) {
+        copy.getRange(startRow, 9, lastRow - startRow + 1, 1).clearContent();
       }
     } catch (e) {}
 
@@ -556,7 +567,11 @@ function doPost(e) {
     } else if (action === 'saveDraft' || action === 'updateSegment') {
       // Card-regime hard rule:
       // clients must never write JOB_EN working columns directly.
-      // Intentionally blocked even though legacy handlers exist below.
+      // HOWEVER: translation subjobs (JOB_XX) are segment-based and MUST be writable.
+      var lang = (body && body.lang != null) ? String(body.lang).trim().toUpperCase() : '';
+      if (lang) {
+        return jsonResponse_(handleUpdateSegment_(body));
+      }
       return jsonResponse_({ ok: false, error: 'Direct segment edits are disabled in card regime. Use createCard/saveCard.' });
     } else if (action === 'getJob') {
       return jsonResponse_(handleGetJob_(body));
@@ -608,12 +623,20 @@ function handleSaveDraft_(body) {
 }
 function handleUpdateSegment_(body) {
 
-  const { spreadsheetId, segmentId, workingText, styleLabel } = body;
+  const { spreadsheetId, segmentId, workingText, styleLabel, notes } = body;
 
   const ss = SpreadsheetApp.openById(spreadsheetId);
-  const sheet = ss.getSheetByName(JOB_EN_SHEET_NAME);
 
-  // Read rows 11+ (A–F)
+  // If a lang is provided (e.g., "FR"), read from JOB_FR.
+  // Fallback to JOB_EN for safety.
+  var lang = (body && body.lang != null) ? String(body.lang).trim().toUpperCase() : '';
+  var sheetName = lang ? ('JOB_' + lang) : JOB_EN_SHEET_NAME;
+
+  const sheet =
+    ss.getSheetByName(sheetName) ||
+    ss.getSheetByName(JOB_EN_SHEET_NAME);
+
+  // Read rows 11+ (A–I for lang sheets, A–F for JOB_EN but we still search by SegmentID in D)
   const startRow = 11;
   const lastRow = sheet.getLastRow();
   if (lastRow < startRow) {
@@ -621,7 +644,8 @@ function handleUpdateSegment_(body) {
   }
   const numRows = lastRow - startRow + 1;
 
-  const data = sheet.getRange(startRow, 1, numRows, 6).getValues();
+  var width = lang ? 9 : 6;
+  const data = sheet.getRange(startRow, 1, numRows, width).getValues();
 
   // Locate the matching segmentId in Column D and capture existing style
   let targetRow = null;
@@ -692,6 +716,11 @@ function handleUpdateSegment_(body) {
 
   // Update Working English (Column C)
   sheet.getRange(targetRow, 3).setValue(finalWorking);
+
+  // Update Translator Notes (Column I) for language sheets only
+  if (lang) {
+    sheet.getRange(targetRow, 9).setValue(notes == null ? '' : String(notes));
+  }
 
   // Update LastEditor / LastEditTime (Columns E and F)
   const user = Session.getActiveUser().getEmail() || "SYSTEM";
@@ -1061,7 +1090,14 @@ function handleGetJob_(body) {
     }
 
     const ss = SpreadsheetApp.openById(spreadsheetId);
-    const sheet = ss.getSheetByName(JOB_EN_SHEET_NAME);
+
+    // Lang-aware sheet selection (subjobs pass body.lang, e.g. "FR")
+    var lang = (body && body.lang != null) ? String(body.lang).trim().toUpperCase() : '';
+    var sheetName = lang ? ('JOB_' + lang) : JOB_EN_SHEET_NAME;
+
+    const sheet =
+      ss.getSheetByName(sheetName) ||
+      ss.getSheetByName(JOB_EN_SHEET_NAME);
 
     if (!sheet) {
       return {
@@ -1098,29 +1134,62 @@ function handleGetJob_(body) {
     };
 
 // ----- SEGMENTS -----
-// Read segment table rows 11+ as fixed width A–G (prevents missing col G).
+// JOB_EN uses A–G.
+// JOB_XX uses A–H (H = Machine Translation).
 const startRow = 11;
 const lastRow = sheet.getLastRow();
 const segments = [];
 
+var width = lang ? 9 : 7;
+
 if (lastRow >= startRow) {
-  const values = sheet.getRange(startRow, 1, lastRow - startRow + 1, 7).getValues();
+  var values = sheet.getRange(startRow, 1, lastRow - startRow + 1, width).getValues();
+
+  // If this is a language sheet and MT is missing, generate it now (idempotent),
+  // then re-read the table so machineText comes back populated.
+  if (lang) {
+    var needsMt = false;
+
+    for (var _i = 0; _i < values.length; _i++) {
+      var _row = values[_i];
+      var _committed = String(_row[0] == null ? '' : _row[0]).trim();
+      var _ws = normalizeStyleLabel_(_row[1] || '');
+      var _cs = normalizeStyleLabel_(_row[6] || '');
+      var _isDivider = (_ws === 'section divider') || (_cs === 'section divider');
+      var _machine = String(_row[7] == null ? '' : _row[7]).trim();
+
+      if (_committed && !_isDivider && !_machine) {
+        needsMt = true;
+        break;
+      }
+    }
+
+    if (needsMt) {
+      machineTranslateLanguageSheetsOnClose_(ss);
+      values = sheet.getRange(startRow, 1, lastRow - startRow + 1, width).getValues();
+    }
+  }
 
   for (let i = 0; i < values.length; i++) {
     const row = values[i];
 
-    // A=0, B=1, C=2, D=3, E=4, F=5, G=6
+    // A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7
     const segmentId = row[3];
     if (!segmentId) continue;
 
-    const workingStyle = row[1];                 // Col B
-    const committedStyle = row[6] || workingStyle; // Col G (fallback to B)
+    const workingStyle = row[1];                  // Col B
+    const committedStyle = row[6] || workingStyle;// Col G (fallback to B)
+    
+    const machineText = lang ? row[7] : '';       // Col H (only on language sheets)
+    const translatorNotes = lang ? row[8] : '';   // Col I (only on language sheets)
 
     segments.push({
       committed: row[0],              // Col A
-      style: workingStyle,            // working style (dropdown, textarea)
-      styleCommitted: committedStyle, // frozen committed style
-      working: row[2],                // Col C
+      style: workingStyle,            // Col B
+      styleCommitted: committedStyle, // Col G (fallback to B)
+      working: row[2],                // Col C (human working surface)
+      machine: machineText,           // Col H (machine translation surface)
+      notes: translatorNotes,         // Col I (translator notes surface)
       segmentId: segmentId,           // Col D
       lastEditor: row[4],             // Col E
       lastEditTime: row[5]            // Col F
@@ -1161,6 +1230,8 @@ if (lastRow >= startRow) {
           segmentId: s.segmentId,
           committedText: s.committed,
           workingText: s.working,
+          machineText: s.machine || '',
+          notesText: s.notes || '',
           workingStyle: s.style,
           committedStyle: s.styleCommitted || s.style || '',
           lastEditedBy: s.lastEditor,
@@ -1812,7 +1883,31 @@ function handleCloseJob_(body) {
   if (!jobId) return { ok: false, error: 'Missing jobId' };
 
   if (isJobClosed_(jobId)) {
-    return { ok: true, alreadyClosed: true, status: getJobStatus_(jobId) };
+    // Idempotent close: if someone marked the job closed earlier (force-close),
+    // we STILL ensure language sheets + machine translations exist so pills can render.
+    var spreadsheetId0 = getSpreadsheetIdForJobId_(jobId);
+    if (!spreadsheetId0) return { ok: false, error: 'Job not found for jobId: ' + jobId };
+
+    var ss0 = SpreadsheetApp.openById(spreadsheetId0);
+
+    // Ensure language sheets exist (safe if already present)
+    var lang0 = createLanguageSheetsOnClose_(ss0);
+
+    // Ensure machine translations exist (safe to re-run)
+    var mt0 = machineTranslateLanguageSheetsOnClose_(ss0);
+
+    // Return fresh state (includes translation pills payload)
+    var state0 = handleGetJob_({ jobId: jobId });
+    if (!state0 || state0.ok === false) state0 = { ok: true };
+
+    state0.close = {
+      alreadyClosed: true,
+      languagesCreated: lang0 && lang0.created ? lang0.created : 0,
+      languagesTranslated: mt0 && mt0.translated ? mt0.translated : 0,
+      translatedRows: mt0 && mt0.rows ? mt0.rows : 0
+    };
+
+    return state0;
   }
 
   // 1) Final commit first (canonical path)
@@ -1948,23 +2043,26 @@ function buildStylesCss_(styles) {
   if (!styles || !styles.length) return '';
 
   // Fallback map from StyleLabel -> class name, mirroring the frontend
+  // NOTE: keys are normalized (trim + lowercase) for robustness.
   var LABEL_TO_CLASS_MAP = {
-    'Headline': 'style-headline',
-    'Subheadline': 'style-subheadline',
-    'Body': 'style-body',
-    'CTA': 'style-cta',
-    'Bullet': 'style-bullet',
-    'Section divider': 'style-divider'
+    'headline': 'style-headline',
+    'subheadline': 'style-subheadline',
+    'body': 'style-body',
+    'cta': 'style-cta',
+    'bullet': 'style-bullet',
+    'section divider': 'style-divider'
   };
 
   var lines = [];
 
   styles.forEach(function(style) {
     var label = style.StyleLabel || style.styleLabel;
+    var normLabel = normalizeStyleLabel_(label);
+
     var cssClass =
-      style.AdditionalCSSClass ||
-      style.additionalCssClass ||
-      (label ? LABEL_TO_CLASS_MAP[label] : '');
+      (style.AdditionalCSSClass ? String(style.AdditionalCSSClass).trim() : '') ||
+      (style.additionalCssClass ? String(style.additionalCssClass).trim() : '') ||
+      (normLabel ? LABEL_TO_CLASS_MAP[normLabel] : '');
 
     // If we still don't have a class name, skip this row
     if (!cssClass) {
