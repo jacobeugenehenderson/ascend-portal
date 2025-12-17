@@ -51,7 +51,10 @@
 
   function getLangFromQuery() {
     var params = new URLSearchParams(window.location.search || '');
-    return (params.get('lang') || '').trim().toUpperCase();
+    var v = params.get('lang') || params.get('language') || params.get('locale') || '';
+    v = String(v || '').trim();
+    if (!v) return '';
+    return v.toLowerCase(); // "FR" -> "fr"
   }
 
   // ---------------------------
@@ -375,6 +378,7 @@
       spreadsheetId: getSpreadsheetId_(),
       jobId: __jobId,
       segmentId: segId,
+      lang: __lang,
       patch: {}
     };
 
@@ -417,7 +421,7 @@
 
       if (!res || res.ok === false) {
         // Fallback #1: flattened
-        var payload2 = { action: 'updateSegment', spreadsheetId: getSpreadsheetId_(), jobId: __jobId, segmentId: segId };
+        var payload2 = { action: 'updateSegment', spreadsheetId: getSpreadsheetId_(), jobId: __jobId, segmentId: segId, lang: __lang };
         if (typeof patch.translation === 'string') payload2[FIELD_TRANSLATION] = patch.translation;
         if (typeof patch.notes === 'string') payload2[FIELD_NOTES] = patch.notes;
         res = await postJson_(payload2);
@@ -425,7 +429,7 @@
 
       if (!res || res.ok === false) {
         // Fallback #2: fn
-        var payload3 = { fn: 'updateSegment', spreadsheetId: getSpreadsheetId_(), jobId: __jobId, segmentId: segId };
+        var payload3 = { fn: 'updateSegment', spreadsheetId: getSpreadsheetId_(), jobId: __jobId, segmentId: segId, lang: __lang };
         if (typeof patch.translation === 'string') payload3[FIELD_TRANSLATION] = patch.translation;
         if (typeof patch.notes === 'string') payload3[FIELD_NOTES] = patch.notes;
         res = await postJson_(payload3);
