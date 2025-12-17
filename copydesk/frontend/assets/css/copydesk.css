@@ -253,7 +253,8 @@
   row-gap: var(--copydesk-unit-gap);
 }
 
-.committed-seg {
+.committed-seg,
+.subjob-english {
   height: auto; /* translation subjob rows size to content */
   box-sizing: border-box;
   border: 1px solid var(--ascend-app-border);
@@ -277,7 +278,8 @@
     0 14px 42px rgba(15, 23, 42, 0.08);
 }
 
-.committed-list .committed-seg.style-bullet {
+.committed-list .committed-seg.style-bullet,
+.subjob-english.style-bullet {
   display: block !important;
   columns: auto !important;
   column-count: 1 !important;
