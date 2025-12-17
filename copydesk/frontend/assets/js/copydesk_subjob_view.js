@@ -148,29 +148,21 @@
       nameEl.textContent = (job && job.jobName) ? job.jobName : '';
     }
 
-    // English is frozen after close, but translation remains editable.
-    // Translation lock (if you ever add it) should be a separate flag.
-    var locked = false;
-
-    if (dueEl) {
-      if (locked) dueEl.textContent = 'Locked';
-      else if (job && job.dueDate) dueEl.textContent = 'Cutoff ' + job.dueDate;
-      else dueEl.textContent = '';
-    }
-
-    if (countdownEl) {
-      if (!locked && job && job.dueDate) countdownEl.textContent = formatCountdown_(job.dueDate);
-      else countdownEl.textContent = '';
-    }
+    // Subjob header rules:
+    // - No cutoff, no countdown.
+    // - Only show the translator identity (email).
+    if (dueEl) dueEl.textContent = '';
+    if (countdownEl) countdownEl.textContent = '';
 
     if (collabEl) {
       var c = job && job.collaborators;
       var txt = '';
 
-      if (Array.isArray(c)) txt = c.join(', ');
-      else if (typeof c === 'string') txt = c.trim();
+      // Prefer single-string identity if present; otherwise first entry.
+      if (typeof c === 'string') txt = c.trim();
+      else if (Array.isArray(c) && c.length) txt = String(c[0] || '').trim();
 
-      collabEl.textContent = txt ? txt : 'No collaborators';
+      collabEl.textContent = txt ? txt : '';
       collabEl.classList.toggle('is-muted', !txt);
     }
   }
@@ -283,8 +275,7 @@
 
       left.innerHTML = ''
         + '<div class="subjob-segmeta">'
-        +   '<div class="subjob-card__label">Segment</div>'
-        +   '<div class="subjob-chip">' + escapeHtml_(segId) + '</div>'
+        +   '<div class="subjob-card__label">SEGMENT ' + escapeHtml_(segId) + '</div>'
         + '</div>'
         + '<div class="subjob-stack">'
         +   '<div class="subjob-card__label">Committed English</div>'
@@ -293,28 +284,14 @@
         +   '<textarea class="subjob-textarea" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
         + '</div>';
 
-      // RIGHT: notes card
-      var right = document.createElement('div');
-      right.className = 'subjob-card';
-
-      right.innerHTML = ''
-        + '<div class="subjob-card__label">Translator Notes</div>'
-        + '<textarea class="subjob-textarea" data-role="notes" data-segid="' + escapeHtml_(segId) + '" spellcheck="true" style="min-height:140px;"></textarea>';
-
       row.appendChild(left);
-      row.appendChild(right);
       rowsEl.appendChild(row);
 
       var taT = row.querySelector('textarea[data-role="translation"]');
-      var taN = row.querySelector('textarea[data-role="notes"]');
 
       if (taT) {
         taT.value = seededTranslation || '';
         taT.disabled = !!locked;
-      }
-      if (taN) {
-        taN.value = notes || '';
-        taN.disabled = !!locked;
       }
     }
 
@@ -608,12 +585,6 @@
 
         renderHeader_(job);
 
-        // Keep header countdown fresh (1-minute tick)
-        if (!window.__copydeskSubjobCountdownTimer) {
-          window.__copydeskSubjobCountdownTimer = window.setInterval(function () {
-            if (window.__copydeskSubjobJob) renderHeader_(window.__copydeskSubjobJob);
-          }, 60000);
-        }
         window.__copydeskSubjobJob = job;
 
         var locked = job && job.status === 'Locked';

@@ -88,9 +88,10 @@
 }
 
 #job-collaborators {
-  font-size: 0.92rem;
-  opacity: 0.72;
-  color: var(--ascend-app-text-muted, rgba(0,0,0,0.62));
+  font-size: 0.95rem;
+  opacity: 0.9;
+  font-weight: 500;
+  color: var(--ascend-app-text, rgba(0,0,0,0.82));
 }
 
 /* -----------------------------
