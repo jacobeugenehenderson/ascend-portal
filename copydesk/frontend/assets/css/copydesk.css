@@ -262,9 +262,7 @@
   background: rgba(255,255,255,0.92);
   cursor: pointer;
 
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  display: block;
 
   /* HARD STOP: committed text is ALWAYS single-column */
   columns: auto !important;
