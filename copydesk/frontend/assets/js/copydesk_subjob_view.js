@@ -24,6 +24,7 @@
   // ---------------------------
   var __latestSegments = [];
   var __jobId = '';
+  var __lang = '';
 
   // ---------------------------
   // Field mapping (adjust only if backend uses different keys)
@@ -46,6 +47,11 @@
   function getJobIdFromQuery() {
     var params = new URLSearchParams(window.location.search || '');
     return params.get('jobid') || params.get('jobId') || '';
+  }
+
+  function getLangFromQuery() {
+    var params = new URLSearchParams(window.location.search || '');
+    return (params.get('lang') || '').trim().toUpperCase();
   }
 
   // ---------------------------
@@ -530,19 +536,23 @@
   // Load job + segments
   // ---------------------------
   async function getJob_(jobId) {
+    var payload = { jobId: jobId };
+    if (__lang) payload.lang = __lang;
+
     // Prefer API client if available (same as main view)
     if (window.copydeskGetJob) {
-      return await window.copydeskGetJob(jobId);
+      return await window.copydeskGetJob(payload);
     }
 
     // Fallback to direct POST
-    var res = await postJson_({ action: 'getJob', jobId: jobId });
-    if (!res || res.ok === false) res = await postJson_({ fn: 'getJob', jobId: jobId });
+    var res = await postJson_({ action: 'getJob', jobId: jobId, lang: __lang });
+    if (!res || res.ok === false) res = await postJson_({ fn: 'getJob', jobId: jobId, lang: __lang });
     return res;
   }
 
   async function boot_() {
     __jobId = getJobIdFromQuery();
+    __lang = getLangFromQuery();
     if (!__jobId) {
       setStatus_('error', 'Missing job id. Add ?jobid=...', true);
       return;
