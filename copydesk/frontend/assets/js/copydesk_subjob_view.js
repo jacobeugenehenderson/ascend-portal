@@ -246,12 +246,24 @@
   // Style class (authoritative style-* hooks from backend/spreadsheet)
   // ---------------------------
   function styleLabelToCssClass_(label) {
-    var v = String(label || '').toLowerCase().trim();
+    var raw = String(label || '').trim();
+    if (!raw) return '';
+
+    // If backend already sent a CSS classname, preserve it.
+    // e.g. "style-headline", "style-bullet", "style-divider"
+    if (/^style-/i.test(raw)) return raw;
+
+    var v = raw.toLowerCase().trim();
     if (v === 'headline') return 'style-headline';
     if (v === 'subheadline') return 'style-subheadline';
     if (v === 'cta') return 'style-cta';
     if (v === 'bullet') return 'style-bullet';
+
+    // Divider variants
     if (v === 'section divider') return 'style-divider';
+    if (v === 'divider') return 'style-divider';
+    if (v === 'segment divider') return 'style-divider';
+
     return 'style-body';
   }
 
@@ -649,7 +661,13 @@
         else if (res && res.job && typeof res.job.collaborators === 'string') job.collaborators = res.job.collaborators;
 
         var segments = (res && res.segments) ? res.segments : (job && job.segments ? job.segments : []);
-        var stylesCss = (res && res.stylesCss) ? res.stylesCss : '';
+        var stylesCss =
+          (res && res.stylesCss) ? res.stylesCss :
+          (res && res.styles_css) ? res.styles_css :
+          (res && res.stylesCSS) ? res.stylesCSS :
+          (res && res.css) ? res.css :
+          (res && res.job && res.job.stylesCss) ? res.job.stylesCss :
+          '';
 
         injectStylesCss_(stylesCss);
 
