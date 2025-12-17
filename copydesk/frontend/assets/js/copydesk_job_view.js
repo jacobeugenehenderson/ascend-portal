@@ -1891,7 +1891,8 @@ function renderTranslationPills_(job) {
       var url = el.getAttribute('data-url') || '';
       if (!url) return;
 
-      window.location.href = url;
+      var w = window.open(url, '_blank', 'noopener');
+      if (w) w.opener = null;
     });
   }
 }
