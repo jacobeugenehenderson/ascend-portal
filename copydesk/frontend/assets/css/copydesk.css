@@ -266,12 +266,30 @@
   align-items: flex-start;
   justify-content: flex-start;
 
+  /* HARD STOP: committed text is ALWAYS single-column */
+  columns: auto !important;
+  column-count: 1 !important;
+  column-width: auto !important;
+
   overflow: auto;
   word-break: break-word;
 
   box-shadow:
     0 1px 0 rgba(15, 23, 42, 0.04),
     0 14px 42px rgba(15, 23, 42, 0.08);
+}
+
+.committed-list .committed-seg.style-bullet {
+  display: block !important;
+  columns: auto !important;
+  column-count: 1 !important;
+  column-width: auto !important;
+
+  writing-mode: horizontal-tb !important;
+
+  white-space: pre-wrap !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
 }
 
 .committed-seg:not(.is-divider):hover {
