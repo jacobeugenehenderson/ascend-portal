@@ -330,8 +330,8 @@
   display: none !important; /* No label per spec */
 }
 
-/* Translation subjob: alternating segment rows for readability */
-.subjob-row:nth-child(even) {
+/* Translation subjob row alternation (authoritative) */
+.subjob-row.is-alt {
   background: rgba(2, 6, 23, 0.025);
 }
 

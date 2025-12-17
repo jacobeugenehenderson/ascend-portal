@@ -162,6 +162,10 @@
       if (typeof c === 'string') txt = c.trim();
       else if (Array.isArray(c) && c.length) txt = String(c[0] || '').trim();
 
+      if (__lang) {
+        txt = txt ? (txt + ' · ' + __lang) : __lang;
+      }
+
       collabEl.textContent = txt ? txt : '';
       collabEl.classList.toggle('is-muted', !txt);
     }
@@ -240,6 +244,18 @@
     return (seg && (seg[FIELD_NOTES] || seg.translatorNotes)) || '';
   }
 
+  // ---------------------------
+  // Style class (authoritative style-* hooks from backend/spreadsheet)
+  // ---------------------------
+  function getStyleClass_(seg) {
+    var v = (seg && (seg.styleClass || seg.style_class || seg.style || seg.textStyle || seg.className || seg.class)) || '';
+    v = String(v || '').trim();
+    if (!v) return '';
+    // Allow backend to send either "style-foo" or just "foo"
+    if (!/^style-/.test(v)) v = 'style-' + v;
+    return v;
+  }
+
   function renderRows_(segments, locked) {
     var rowsEl = document.getElementById('subjob-rows');
     var emptyEl = document.getElementById('segments-empty');
@@ -258,9 +274,10 @@
       var segId = getSegId_(seg, i);
 
       var committedEn = getCommittedEn_(seg);
+      var styleClass = getStyleClass_(seg);
 
       // Heuristic: treat style-only / divider segments as visual dividers
-      var isDivider = !committedEn && seg && (seg.isDivider || seg.style === 'divider' || seg.type === 'divider');
+      var isDivider = (!committedEn) && seg && (seg.isDivider || seg.style === 'divider' || seg.type === 'divider' || styleClass === 'style-divider');
       var machine = getMachine_(seg);
       var translation = getTranslation_(seg);
       var notes = getNotes_(seg);
@@ -269,35 +286,45 @@
       var seededTranslation = (typeof translation === 'string' && translation.length) ? translation : (machine || '');
 
       var row = document.createElement('div');
-      row.className = 'subjob-row' + (isDivider ? ' is-divider' : '');
+      row.className =
+        'subjob-row' +
+        (isDivider ? ' is-divider' : '') +
+        ((i % 2) ? ' is-alt' : '');
       row.dataset.segmentId = String(segId);
 
-      // LEFT: stacked card
+      if (styleClass) row.classList.add(styleClass);
+
+      // LEFT: stacked card (or divider)
       var left = document.createElement('div');
       left.className = 'subjob-card';
 
-      left.innerHTML = ''
-        + '<div class="subjob-segmeta">'
-        +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
-        + '</div>'
-        + '<div class="subjob-stack">'
-        +   '<div class="subjob-card__label">Committed English</div>'
-        +   '<div class="subjob-english">' + escapeHtml_(committedEn) + '</div>'
-        +   '<div class="subjob-card__label" style="margin-top:2px;">Translation</div>'
-        +   '<div class="subjob-english subjob-translation-wrap">'
-        +     '<textarea class="subjob-textarea subjob-translation" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
-        +   '</div>'
-        + '</div>';
+      if (isDivider) {
+        // Divider = static graphical element only (no committed label, no translation field)
+        left.innerHTML = ''
+          + '<div class="subjob-divider" aria-hidden="true"></div>';
+      } else {
+        left.innerHTML = ''
+          + '<div class="subjob-segmeta">'
+          +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
+          + '</div>'
+          + '<div class="subjob-stack">'
+          +   '<div class="subjob-card__label">Committed English</div>'
+          +   '<div class="subjob-english ' + escapeHtml_(styleClass) + '">' + escapeHtml_(committedEn) + '</div>'
+          +   '<div class="subjob-card__label" style="margin-top:2px;">Translation</div>'
+          +   '<div class="subjob-english subjob-translation-wrap ' + escapeHtml_(styleClass) + '">'
+          +     '<textarea class="subjob-textarea subjob-translation ' + escapeHtml_(styleClass) + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
+          +   '</div>'
+          + '</div>';
+      }
 
       row.appendChild(left);
-      // RIGHT: per-segment translator notes
+      // RIGHT: per-segment translator notes (NO per-segment label)
       if (!isDivider) {
         var right = document.createElement('div');
-        right.className = 'subjob-card';
+        right.className = 'subjob-card subjob-notes-col';
 
         right.innerHTML = ''
-          + '<div class="subjob-card__label">Translator Notes</div>'
-          + '<textarea class="subjob-textarea" '
+          + '<textarea class="subjob-textarea subjob-notes" '
           +   'data-role="notes" '
           +   'data-segid="' + escapeHtml_(segId) + '" '
           +   'spellcheck="true"></textarea>';
@@ -308,6 +335,7 @@
       rowsEl.appendChild(row);
 
       if (isDivider) {
+        // Divider has no editable fields.
         continue;
       }
 
