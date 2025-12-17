@@ -633,7 +633,7 @@
   // Some backends omit stylesCss when lang is provided, so we fetch the base job
   // (no lang) as a fallback to obtain stylesCss for injection.
   async function getJobNoLang_(jobId) {
-    var spreadsheetId = getSpreadsheetIdFromQuery_();
+    var spreadsheetId = getSpreadsheetId_();
 
     // Prefer API client if available
     if (window.copydeskGetJob) {
