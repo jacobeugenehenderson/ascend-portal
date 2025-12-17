@@ -629,6 +629,29 @@
     return res;
   }
 
+  // Styles for translation subjobs are identical to the base job (STYLE tab).
+  // Some backends omit stylesCss when lang is provided, so we fetch the base job
+  // (no lang) as a fallback to obtain stylesCss for injection.
+  async function getJobNoLang_(jobId) {
+    var spreadsheetId = getSpreadsheetIdFromQuery_();
+
+    // Prefer API client if available
+    if (window.copydeskGetJob) {
+      return await window.copydeskGetJob(jobId);
+    }
+
+    // Fallback to direct POST (NO lang)
+    var payload1 = { action: 'getJob', spreadsheetId: spreadsheetId, jobId: jobId };
+    var res = await postJson_(payload1);
+
+    if (!res || res.ok === false) {
+      var payload2 = { fn: 'getJob', spreadsheetId: spreadsheetId, jobId: jobId };
+      res = await postJson_(payload2);
+    }
+
+    return res;
+  }
+
   async function boot_() {
     __jobId = getJobIdFromQuery();
     __lang = getLangFromQuery();
@@ -668,6 +691,22 @@
           (res && res.css) ? res.css :
           (res && res.job && res.job.stylesCss) ? res.job.stylesCss :
           '';
+
+        // Fallback: if lang call omitted stylesCss, fetch base job once to get stylesCss
+        if (!stylesCss && __lang) {
+          try {
+            var baseRes = await getJobNoLang_(__jobId);
+            stylesCss =
+              (baseRes && baseRes.stylesCss) ? baseRes.stylesCss :
+              (baseRes && baseRes.styles_css) ? baseRes.styles_css :
+              (baseRes && baseRes.stylesCSS) ? baseRes.stylesCSS :
+              (baseRes && baseRes.css) ? baseRes.css :
+              (baseRes && baseRes.job && baseRes.job.stylesCss) ? baseRes.job.stylesCss :
+              '';
+          } catch (e) {
+            // Ignore; page still renders—just without injected typography
+          }
+        }
 
         injectStylesCss_(stylesCss);
 
