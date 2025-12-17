@@ -190,6 +190,11 @@
   // ---------------------------
   // Minimal POST helper (compatible with Apps Script CORS strategy)
   // ---------------------------
+  function getSpreadsheetId_() {
+    // Use whatever the rest of your app already sets (do not invent new knobs elsewhere)
+    return window.COPYDESK_SPREADSHEET_ID || window.TEMPLATE_SPREADSHEET_ID || '';
+  }
+
   function assertBase_() {
     var base = window.COPYDESK_API_BASE || '';
     if (!base) throw new Error('Missing window.COPYDESK_API_BASE');
@@ -367,6 +372,7 @@
   function buildSavePayload_(segId, patch) {
     var p = {
       action: 'updateSegment',
+      spreadsheetId: getSpreadsheetId_(),
       jobId: __jobId,
       segmentId: segId,
       patch: {}
@@ -411,7 +417,7 @@
 
       if (!res || res.ok === false) {
         // Fallback #1: flattened
-        var payload2 = { action: 'updateSegment', jobId: __jobId, segmentId: segId };
+        var payload2 = { action: 'updateSegment', spreadsheetId: getSpreadsheetId_(), jobId: __jobId, segmentId: segId };
         if (typeof patch.translation === 'string') payload2[FIELD_TRANSLATION] = patch.translation;
         if (typeof patch.notes === 'string') payload2[FIELD_NOTES] = patch.notes;
         res = await postJson_(payload2);
@@ -419,7 +425,7 @@
 
       if (!res || res.ok === false) {
         // Fallback #2: fn
-        var payload3 = { fn: 'updateSegment', jobId: __jobId, segmentId: segId };
+        var payload3 = { fn: 'updateSegment', spreadsheetId: getSpreadsheetId_(), jobId: __jobId, segmentId: segId };
         if (typeof patch.translation === 'string') payload3[FIELD_TRANSLATION] = patch.translation;
         if (typeof patch.notes === 'string') payload3[FIELD_NOTES] = patch.notes;
         res = await postJson_(payload3);
@@ -536,17 +542,30 @@
   // Load job + segments
   // ---------------------------
   async function getJob_(jobId) {
-    var payload = { jobId: jobId };
-    if (__lang) payload.lang = __lang;
+    var spreadsheetId = getSpreadsheetId_();
 
     // Prefer API client if available (same as main view)
+    // IMPORTANT: most versions of copydeskGetJob expect a STRING jobId, not an object.
     if (window.copydeskGetJob) {
-      return await window.copydeskGetJob(payload);
+      try {
+        return await window.copydeskGetJob(jobId, __lang);
+      } catch (e) {
+        return await window.copydeskGetJob(jobId);
+      }
     }
 
     // Fallback to direct POST
-    var res = await postJson_({ action: 'getJob', jobId: jobId, lang: __lang });
-    if (!res || res.ok === false) res = await postJson_({ fn: 'getJob', jobId: jobId, lang: __lang });
+    var payload1 = { action: 'getJob', spreadsheetId: spreadsheetId, jobId: jobId };
+    if (__lang) payload1.lang = __lang;
+
+    var res = await postJson_(payload1);
+
+    if (!res || res.ok === false) {
+      var payload2 = { fn: 'getJob', spreadsheetId: spreadsheetId, jobId: jobId };
+      if (__lang) payload2.lang = __lang;
+      res = await postJson_(payload2);
+    }
+
     return res;
   }
 

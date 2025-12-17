@@ -14,4 +14,5 @@ cd "/Volumes/Today/ascend-portal"
 ./publish.sh
 
 
-window.__copydeskForceClose()
+await window.__copydeskForceClose()
+await window.__copydeskFetchJob()
