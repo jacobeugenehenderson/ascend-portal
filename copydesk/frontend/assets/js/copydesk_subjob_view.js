@@ -54,7 +54,7 @@
     var v = params.get('lang') || params.get('language') || params.get('locale') || '';
     v = String(v || '').trim();
     if (!v) return '';
-    return v.toLowerCase(); // "FR" -> "fr"
+    return v.toUpperCase(); // "fr" -> "FR"
   }
 
   // ---------------------------
