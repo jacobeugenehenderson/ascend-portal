@@ -589,7 +589,7 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
         (String(committedText || '').indexOf('\u2022') >= 0);
 
       if (isBulletStyle_(style) || looksLikeBullets) {
-        wrapper.innerHTML = renderBulletDisplayHtml_(committedText);
+        wrapper.innerHTML = '<div class="committed-bullets">' + renderBulletDisplayHtml_(committedText) + '</div>';
       } else {
         wrapper.textContent = committedText;
       }

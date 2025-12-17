@@ -55,37 +55,6 @@
   }
 </style>
 
-<!-- Bullet style hard-fix (prevents column/break-all weirdness in committed rendering) -->
-<style id="copydesk-bullet-fix">
-  /* Kill any accidental multi-column or aggressive word-breaking rules */
-  /* Committed bullet segments must NOT be flex containers,
-     or <br>-separated lines become flex items and "columnize". */
-  .committed-list .committed-seg.style-bullet {
-    display: block !important;
-  }
-
-    .committed-list .committed-seg.style-bullet {
-    columns: auto !important;
-    column-count: auto !important;
-    column-width: auto !important;
-
-    writing-mode: horizontal-tb !important;
-
-    white-space: pre-wrap !important;
-    word-break: normal !important;
-    overflow-wrap: break-word !important;
-    hyphens: manual !important;
-
-    text-align: left !important;
-  }
-
-  /* Bullet glyph should behave like normal inline text (Committed only) */
-  .committed-list .committed-seg.style-bullet .bullet-glyph {
-    display: inline !important;
-    white-space: pre !important;
-  }
-</style>
-
   <!-- Load Overlay (Copydesk) -->
   <style>
     #load-overlay {

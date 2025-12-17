@@ -294,6 +294,12 @@
   border-color: color-mix(in srgb, var(--ascend-app-accent) 55%, var(--ascend-app-border) 45%);
 }
 
+/* Bullet committed rendering: keep ONE flex child so <br> doesn't become "columns" */
+.committed-bullets {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .committed-seg.is-divider {
   /* keep the slot height, but center the divider inside it */
   cursor: default;
