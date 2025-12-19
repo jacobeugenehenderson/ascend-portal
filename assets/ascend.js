@@ -135,6 +135,12 @@
         session.keepLoggedIn ? "On" : "Off"
       }.`
     );
+
+    // Immediately paint empty-states so lanes never appear "blank" while JSONP loads/fails.
+    renderArtStartHopper([]);
+    renderCopydeskHopper([]);
+    renderFileRoomHopper([]);
+
     // Refresh hopper lanes for this user
     requestArtStartJobs();
     requestCopydeskJobs();
@@ -750,6 +756,12 @@
     script.async = true;
     document.body.appendChild(script);
   }
+
+  // ---- debug hooks (devtools) ----
+  window.AscendDebug = window.AscendDebug || {};
+  window.AscendDebug.requestCopydeskJobs = requestCopydeskJobs;
+  window.AscendDebug.requestArtStartJobs = requestArtStartJobs;
+  window.AscendDebug.requestFileRoomOutput = requestFileRoomOutput;
 
   // ---- bootstrap ----
 
