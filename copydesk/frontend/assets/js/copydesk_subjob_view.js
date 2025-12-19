@@ -620,6 +620,62 @@
     });
   }
 
+  function bindFinishButton_(locked) {
+    var btn = document.getElementById('subjob-finish-btn');
+    if (!btn) return;
+
+    btn.disabled = !!locked;
+
+    if (btn.__bound) return;
+    btn.__bound = true;
+
+    btn.addEventListener('click', async function () {
+      if (btn.disabled) return;
+
+      var ok = window.confirm('Mark this translation as finished?\n\nYour work is already saved. You can only finish the job once.');
+      if (!ok) return;
+
+      try {
+        await withOverlay_('Finishing…', async function () {
+          setStatus_('loading', 'Finishing…', false);
+
+          // Best-effort flush of any pending autosaves before finalizing
+          flushAll_();
+
+          var spreadsheetId = getSpreadsheetId_();
+
+          var payload1 = { action: 'finishSubjob', spreadsheetId: spreadsheetId, jobId: __jobId };
+          if (__lang) payload1.lang = __lang;
+
+          var res = await postJson_(payload1);
+
+          if (!res || res.ok === false) {
+            var payload2 = { fn: 'finishSubjob', spreadsheetId: spreadsheetId, jobId: __jobId };
+            if (__lang) payload2.lang = __lang;
+            res = await postJson_(payload2);
+          }
+
+          if (!res || res.ok === false) {
+            throw new Error((res && res.error) ? res.error : 'finishSubjob failed');
+          }
+
+          // Lock UI locally
+          var container = document.getElementById('subjob-rows');
+          if (container) {
+            var tas = container.querySelectorAll('textarea');
+            tas.forEach(function (ta) { ta.disabled = true; });
+          }
+
+          btn.disabled = true;
+          setStatus_('ok', 'Finished. Editing is disabled.', false);
+        });
+      } catch (e) {
+        console.error('finishSubjob error', e);
+        setStatus_('error', 'Finish failed: ' + (e && e.message ? e.message : String(e)), true);
+      }
+    });
+  }
+
   // ---------------------------
   // Load job + segments
   // ---------------------------
@@ -742,6 +798,8 @@
         var locked = (statusLower === 'locked' || statusLower === 'archived' || statusLower === 'final');
         if (locked) setStatus_('ok', 'Locked. Editing is disabled.', false);
         else setStatus_('ok', 'Ready (autosave on).', false);
+
+        bindFinishButton_(locked);
 
         // Prime last-saved snapshots so first blur doesn’t re-save unchanged values
         segLastSaved.clear();

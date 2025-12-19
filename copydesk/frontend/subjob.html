@@ -200,18 +200,27 @@
     .status-error { color: rgba(180, 0, 0, 0.85); }
 
     /* Segment Divider rows (JS should add .is-divider on the .subjob-row) */
-    .subjob-row.is-divider {
-      background: transparent !important;
-      padding: 0 !important;
-    }
-    .subjob-row.is-divider .subjob-card__label,
-    .subjob-row.is-divider .subjob-textarea {
-      display: none !important;
-    }
-    .subjob-row.is-divider .subjob-english {
+        .subjob-row.is-divider {
       background: transparent;
-      border: 0;
       padding: 0;
+    }
+    .subjob-row.is-divider .seg-label {
+      display: none;
+    }
+    .subjob-row.is-divider textarea {
+      display: none;
+    }
+    .subjob-row.is-divider .committed-seg {
+      display: block;
+      margin: 6px 0;
+    }
+    .subjob-divider {
+      display: block;
+      height: 2px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.16);
+      margin: 10px 0;
     }
   </style>
 </head>
@@ -244,7 +253,9 @@
 
         <!-- FAR RIGHT: NO PUSH (translation-only tranche) -->
         <div class="ascend-app-actions">
-          <!-- intentionally empty -->
+          <button id="subjob-finish-btn" type="button" style="padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.92); cursor:pointer;">
+            Finish
+          </button>
         </div>
 
       </header>
