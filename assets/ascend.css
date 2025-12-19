@@ -720,7 +720,10 @@ textarea:focus {
 .ascend-row-secondary {
   background: rgba(5, 9, 23, 0.9);
   border-radius: var(--ascend-radius-lg);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
+
+  /* Editorial drawer frame (no dashed "placeholder" vibe) */
+  border: 1px solid rgba(255, 255, 255, 0.14);
+
   padding: 0.7rem 0.9rem;
   display: flex;
   flex-direction: column;
@@ -863,7 +866,13 @@ textarea:focus {
 .ascend-job-list-empty {
   font-size: 0.74rem;
   color: var(--ascend-color-text-muted);
-  padding: 0.25rem 0.3rem;
+
+  /* Make empties feel like a real "drawer" state */
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 
 .ascend-row-secondary strong {
