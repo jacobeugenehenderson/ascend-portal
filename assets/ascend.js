@@ -22,6 +22,12 @@ const COPYDESK_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/index.html";
     
   const CODEDESK_URL = "https://okqral.com";
+
+  // FileRoom (output / delivery layer)
+  const FILEROOM_URL =
+    "https://jacobeugenehenderson.github.io/ascend-portal/fileroom/frontend/index.html";
+  const FILEROOM_API_BASE =
+    "https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec";
   
   // ArtStart API base – same as art_start.js
   const ARTSTART_API_BASE =
@@ -86,7 +92,7 @@ const COPYDESK_URL =
     }
 
     if (chipLabel) chipLabel.textContent = label;
-    if (accountLabel) accountLabel.textContent = `Signed in as ${label}`;
+    if (accountLabel) accountLabel.textContent = "";
   }
 
   function updateKeepLoggedInToggle(session) {
@@ -124,8 +130,9 @@ const COPYDESK_URL =
         session.keepLoggedIn ? "On" : "Off"
       }.`
     );
-    // Refresh the ArtStart hopper lane for this user
+    // Refresh hopper lanes for this user
     requestArtStartJobs();
+    requestFileRoomOutput();
   }
 
   function startPollingForLogin() {
@@ -337,10 +344,14 @@ const COPYDESK_URL =
 
     const fileroomBtn = document.getElementById("ascend-fileroom-open");
     if (fileroomBtn) {
-      // For now: disabled. We’ll grey it out in CSS and no-op the click.
       fileroomBtn.addEventListener("click", (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
+        if (!FILEROOM_URL || FILEROOM_URL.indexOf("http") !== 0) {
+          alert("[FileRoom] Destination URL not configured yet.");
+          return;
+        }
+        window.open(FILEROOM_URL, "_blank", "noopener");
       });
     }
   }
@@ -360,6 +371,81 @@ const COPYDESK_URL =
     } catch (e) {
       return "";
     }
+  }
+
+  // ---- Hopper: FileRoom output rows ----
+
+  function renderFileRoomHopper(items) {
+    const lane = document.getElementById("ascend-fileroom-list");
+    if (!lane) return;
+
+    lane.innerHTML = "";
+
+    if (!items || !items.length) {
+      const empty = document.createElement("div");
+      empty.className = "ascend-job-list-empty";
+      empty.textContent = "No output yet.";
+      lane.appendChild(empty);
+      return;
+    }
+
+    items.forEach((item) => {
+      const title =
+        item.Title ||
+        item.Name ||
+        item.FileName ||
+        item.Filename ||
+        item.AssetName ||
+        item.AssetId ||
+        item.JobId ||
+        "Untitled";
+
+      const metaParts = [];
+      if (item.App) metaParts.push(String(item.App));
+      if (item.JobId) metaParts.push(String(item.JobId));
+      if (item.CreatedAt) metaParts.push(String(item.CreatedAt));
+      const meta = metaParts.join(" • ");
+
+      const card = document.createElement("div");
+      card.className = "ascend-job-card";
+
+      const mainBtn = document.createElement("button");
+      mainBtn.type = "button";
+      mainBtn.className = "ascend-job-card-main";
+
+      const stack = document.createElement("div");
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "ascend-job-card-title";
+      titleEl.textContent = title;
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "ascend-job-card-meta";
+      metaEl.textContent = meta;
+
+      stack.appendChild(titleEl);
+      stack.appendChild(metaEl);
+      mainBtn.appendChild(stack);
+
+      // Endcap present (we’ll refine color mapping later)
+      const statusEl = document.createElement("div");
+      statusEl.className = "ascend-job-card-status";
+      statusEl.textContent = (item.Status || "output").toString();
+      mainBtn.appendChild(statusEl);
+
+      // If a URL exists, open it; otherwise no-op for now.
+      mainBtn.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        const url = item.OpenUrl || item.Url || item.URL || item.FileUrl || item.PreviewUrl || "";
+        if (url && String(url).indexOf("http") === 0) {
+          window.open(String(url), "_blank", "noopener");
+        }
+      });
+
+      card.appendChild(mainBtn);
+      lane.appendChild(card);
+    });
   }
 
   function renderArtStartHopper(jobs) {
@@ -458,6 +544,43 @@ const COPYDESK_URL =
     url.searchParams.set("action", "listArtStartJobsForUser");
     url.searchParams.set("user_email", session.userEmail);
     url.searchParams.set("limit", "50");
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
+  function requestFileRoomOutput() {
+    const session = loadSession();
+    if (!session || !session.userEmail) {
+      // NOTE: Do NOT clear hopper lanes when logged out / session missing.
+      return;
+    }
+
+    const callbackName = "ascendFileRoomOutputCallback";
+
+    window[callbackName] = function (payload) {
+      try {
+        // Accept either {items:[...]} or {assets:[...]} or {deliverables:[...]} or {jobs:[...]}
+        const items =
+          (payload && payload.items) ||
+          (payload && payload.assets) ||
+          (payload && payload.deliverables) ||
+          (payload && payload.jobs) ||
+          [];
+        renderFileRoomHopper(items);
+      } catch (e) {
+        console.warn("Ascend: error in FileRoom output callback", e);
+      }
+    };
+
+    const url = new URL(FILEROOM_API_BASE);
+    // Try a sensible default action name; your FileRoom API can alias this.
+    url.searchParams.set("action", "listDeliverablesForUser");
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("limit", "5000");
     url.searchParams.set("callback", callbackName);
 
     const script = document.createElement("script");
