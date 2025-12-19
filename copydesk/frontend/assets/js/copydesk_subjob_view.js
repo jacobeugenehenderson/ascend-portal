@@ -269,9 +269,31 @@
 
   function getStyleClass_(seg) {
     // Match job view: style is a LABEL (committedStyle / workingStyle), not a CSS class.
+    // Nuclear option: tolerate “spreadsheet-shaped” keys and backend variations.
     var v =
-      (seg && (seg.committedStyle || seg.workingStyle || seg.styleLabel || seg.style)) ||
+      (seg && (
+        seg.committedStyle ||
+        seg.workingStyle ||
+        seg.styleLabel ||
+        seg.style ||
+        seg.committedStyleLabel ||
+        seg.committed_style ||
+        seg.style_label ||
+        seg.committedStyleName
+      )) ||
       '';
+
+    // If still empty, scan for ANY key that looks like "style" (case-insensitive).
+    if (!v && seg) {
+      for (var k in seg) {
+        if (!Object.prototype.hasOwnProperty.call(seg, k)) continue;
+        if (/style/i.test(k)) {
+          v = seg[k];
+          if (v) break;
+        }
+      }
+    }
+
     v = String(v || '').trim();
     if (!v) return '';
     return styleLabelToCssClass_(v);
