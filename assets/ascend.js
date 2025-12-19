@@ -112,7 +112,8 @@ const COPYDESK_URL =
   function applyLoggedOutUI() {
     setAppState("logged-out");
     renderSessionStatus("Waiting for login via QR…");
-    clearArtStartHopper();
+    // NOTE: Do NOT clear hopper lanes on logout.
+    // Keep the last-rendered rows in place so the dashboard doesn't "wipe" visually.
   }
 
   function applyLoggedInUI(session) {
@@ -437,7 +438,7 @@ const COPYDESK_URL =
   function requestArtStartJobs() {
     const session = loadSession();
     if (!session || !session.userEmail) {
-      renderArtStartHopper([]);
+      // NOTE: Do NOT clear hopper lanes when logged out / session missing.
       return;
     }
 

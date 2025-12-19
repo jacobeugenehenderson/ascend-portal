@@ -739,21 +739,27 @@ textarea:focus {
     rgba(15, 27, 54, 0.7),
     rgba(4, 7, 20, 0.9)
   );
-  padding: 0.45rem;
+
+  /* Spreadsheet drawer: no gaps, rows provide the separation */
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0;
   overflow-y: auto;
+
+  /* crisp perimeter so the drawer reads as a container */
+  border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
-/* Hopper job cards */
+/* Hopper job rows (spreadsheet style) */
 
 .ascend-job-card {
   display: flex;
   align-items: stretch;
-  gap: 0.4rem;
+  gap: 0;
 }
 
+/* Full-width clickable row */
 .ascend-job-card-main {
   /* reset native button look */
   border: none;
@@ -765,63 +771,83 @@ textarea:focus {
   text-align: left;
   cursor: pointer;
 
-  /* pill/card styling */
   flex: 1;
-  border-radius: 9px;
-  background: linear-gradient(
-      135deg,
-      rgba(79, 209, 197, 0.18),
-      rgba(10, 19, 43, 0.96)
-    );
-  border: 1px solid rgba(79, 209, 197, 0.45);
-  padding: 0.55rem 0.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  font-size: 0.78rem;
-  line-height: 1.35;
-  transition: transform var(--ascend-transition-fast),
-    box-shadow var(--ascend-transition-fast),
-    border-color var(--ascend-transition-fast),
-    background-color var(--ascend-transition-fast);
+  position: relative;
+
+  /* row geometry */
+  border-radius: 0;
+  padding: 0.55rem 0.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+
+  /* rule between rows */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+
+  /* hover */
+  transition: background-color var(--ascend-transition-fast);
+}
+
+/* Zebra striping (rows are siblings inside the lane list) */
+.ascend-job-card:nth-child(odd) .ascend-job-card-main {
+  background: rgba(255, 255, 255, 0.03);
+}
+.ascend-job-card:nth-child(even) .ascend-job-card-main {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .ascend-job-card-main:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.55);
-  border-color: rgba(129, 230, 217, 0.9);
+  background: rgba(79, 209, 197, 0.10);
 }
 
+/* Title + meta stack inside the left cell */
 .ascend-job-card-title {
   font-weight: var(--ascend-weight-medium);
   letter-spacing: 0.01em;
 }
 
 .ascend-job-card-meta {
+  margin-top: 0.1rem;
   font-size: 0.72rem;
   color: var(--ascend-color-text-muted);
 }
 
+/* Status becomes a right-side endcap (v1: same tint for now) */
 .ascend-job-card-status {
-  align-self: flex-start;
-  margin-top: 0.2rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid rgba(129, 230, 217, 0.8);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--ascend-color-text-main);
-  background: rgba(79, 209, 197, 0.16);
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+
+  /* hide the label text but keep element present */
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+
+  background: rgba(79, 209, 197, 0.55);
 }
 
+/* Row radius only at the very top/bottom of the drawer */
+.ascend-row-secondary > div[id$="-list"] .ascend-job-card:first-child .ascend-job-card-main {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+.ascend-row-secondary > div[id$="-list"] .ascend-job-card:last-child .ascend-job-card-main {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border-bottom: none;
+}
+
+/* Delete stays as a compact icon hit-area aligned with the row */
 .ascend-job-card-delete {
   border: none;
   background: transparent;
   color: var(--ascend-color-text-muted);
   font-size: 0.8rem;
-  padding: 0.2rem 0.45rem;
-  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  border-radius: 10px;
   align-self: center;
   cursor: pointer;
   transition: background-color var(--ascend-transition-fast),
@@ -829,7 +855,7 @@ textarea:focus {
 }
 
 .ascend-job-card-delete:hover {
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(255, 255, 255, 0.08);
   color: var(--ascend-color-text-main);
 }
 
