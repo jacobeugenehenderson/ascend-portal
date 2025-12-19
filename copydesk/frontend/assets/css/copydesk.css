@@ -106,67 +106,115 @@
   max-width: min(520px, 50vw);
 }
 
+/* Strong, editorial pill styling (seeded → touched/human → finished)
+   Supports both older/newer state class names:
+   - pill-seeded / pill-human / pill-touched / pill-finished / pill-archived
+   - state-seeded / state-human / state-touched / state-finished / state-archived
+*/
+.translation-pills {
+  --pill-accent: var(--ascend-app-accent, #4fd1c5);
+  --pill-ink: rgba(11, 16, 37, 0.94);
+  --pill-muted: rgba(11, 16, 37, 0.48);
+  --pill-border: rgba(11, 16, 37, 0.16);
+}
+
 .translation-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 8px;
+  padding: 7px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(0,0,0,0.12);
-  background: rgba(255,255,255,0.70);
-  font-size: 12px;
+  border: 1.5px solid var(--pill-border);
+  background: rgba(255,255,255,0.92);
+
+  font-size: 13px;
   line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  color: var(--pill-ink);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 
+.translation-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.12);
+}
+
+/* Disabled = clearly inert */
 .translation-pill[aria-disabled="true"] {
   cursor: default;
-  opacity: 0.55;
+  opacity: 0.40;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
-/* Progress states (JS emits: .pill-seeded / .pill-human / .pill-finished) */
-.translation-pill.pill-seeded  { opacity: 0.35; }
-.translation-pill.pill-human   { opacity: 0.60; }
-.translation-pill.pill-finished { opacity: 1; }
+/* --- SEEDED (quiet) --- */
+.translation-pill.pill-seeded,
+.translation-pill.state-seeded,
+.translation-pill.pill-archived,
+.translation-pill.state-archived {
+  background: rgba(255,255,255,0.68);
+  border-color: rgba(11, 16, 37, 0.10);
+  color: var(--pill-muted);
+}
 
-/* Finished: label flips to white (pill background is dark in this state) */
+/* --- TOUCHED / HUMAN (half-strength accent) --- */
+.translation-pill.pill-human,
+.translation-pill.state-human,
+.translation-pill.pill-touched,
+.translation-pill.state-touched {
+  background: rgba(79, 209, 197, 0.22);
+  border-color: rgba(79, 209, 197, 0.55);
+  color: var(--pill-ink);
+  box-shadow: 0 10px 24px rgba(79, 209, 197, 0.16);
+}
+
+/* --- FINISHED (full-strength, dark pill + white label) --- */
 .translation-pill.pill-finished,
-.translation-pill.pill-finished .pill-label {
+.translation-pill.state-finished {
+  background: rgba(11, 16, 37, 0.96);
+  border-color: rgba(79, 209, 197, 0.85);
+  color: rgba(255,255,255,0.96);
+  box-shadow: 0 12px 28px rgba(11, 16, 37, 0.22);
+}
+
+.translation-pill.pill-finished .pill-label,
+.translation-pill.state-finished .pill-label {
   color: rgba(255,255,255,0.96);
 }
 
-/* Keep disabled pills visually disabled even if state classes are present */
-.translation-pill[aria-disabled="true"].pill-seeded,
-.translation-pill[aria-disabled="true"].pill-human,
-.translation-pill[aria-disabled="true"].pill-finished {
-  opacity: 0.55;
-}
-
-/* Progress states (JS emits: .pill-seeded / .pill-human / .pill-finished) */
-.translation-pill.pill-seeded  { opacity: 0.35; }
-.translation-pill.pill-human   { opacity: 0.60; }
-.translation-pill.pill-finished { opacity: 1; }
-
-/* Keep disabled pills visually disabled even if state classes are present */
-.translation-pill[aria-disabled="true"].pill-seeded,
-.translation-pill[aria-disabled="true"].pill-human,
-.translation-pill[aria-disabled="true"].pill-finished {
-  opacity: 0.55;
-}
-
+/* Dot = an extra “read” channel */
 .translation-pill__dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
   background: rgba(0,0,0,0.18);
 }
 
-/* seeded / human / finished “dot” states (JS emits .pill-*) */
-.translation-pill.pill-seeded .translation-pill__dot { background: rgba(0,0,0,0.20); }
-.translation-pill.pill-human  .translation-pill__dot { background: rgba(0,0,0,0.55); }
-.translation-pill.pill-finished .translation-pill__dot { background: rgba(255,255,255,0.92); }
+.translation-pill.pill-seeded .translation-pill__dot,
+.translation-pill.state-seeded .translation-pill__dot,
+.translation-pill.pill-archived .translation-pill__dot,
+.translation-pill.state-archived .translation-pill__dot {
+  background: rgba(11, 16, 37, 0.22);
+}
+
+.translation-pill.pill-human .translation-pill__dot,
+.translation-pill.state-human .translation-pill__dot,
+.translation-pill.pill-touched .translation-pill__dot,
+.translation-pill.state-touched .translation-pill__dot {
+  background: rgba(11, 16, 37, 0.78);
+}
+
+.translation-pill.pill-finished .translation-pill__dot,
+.translation-pill.state-finished .translation-pill__dot {
+  background: rgba(255,255,255,0.96);
+}
 
 /* Keep Push pinned visually to far right */
 .ascend-app-actions {
