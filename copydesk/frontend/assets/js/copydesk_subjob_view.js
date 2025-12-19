@@ -320,7 +320,11 @@
       var styleClass = getStyleClass_(seg);
 
       // Divider is style-driven (matches spreadsheet style label → css class)
-      var isDivider = (styleClass === 'style-divider');
+      // Tolerate backend variants: explicit divider flags/kinds.
+      var isDivider =
+        (styleClass === 'style-divider') ||
+        (seg && (seg.isDivider === true || seg.divider === true)) ||
+        (String(seg && (seg.kind || seg.type || '')).toLowerCase() === 'divider');
       var machine = getMachine_(seg);
       var translation = getTranslation_(seg);
       var notes = getNotes_(seg);
@@ -538,7 +542,7 @@
 
     } catch (err) {
       console.error('Subjob save error', err);
-      setStatus_('error', 'Save failed.', true);
+      setStatus_('error', 'Save failed: ' + (err && err.message ? err.message : String(err)), true);
     } finally {
       segInflight.set(segId, false);
     }
@@ -735,6 +739,14 @@
     __lang = getLangFromQuery();
     if (!__jobId) {
       setStatus_('error', 'Missing job id. Add ?jobid=...', true);
+      return;
+    }
+
+    // Fail fast if API base is missing; without it autosave + finish cannot work.
+    try { assertBase_(); }
+    catch (e) {
+      console.error(e);
+      setStatus_('error', (e && e.message) ? e.message : String(e), true);
       return;
     }
 
