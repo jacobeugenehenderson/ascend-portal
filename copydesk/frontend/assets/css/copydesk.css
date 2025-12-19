@@ -658,6 +658,12 @@
   font: inherit;
   color: inherit;
   line-height: inherit;
+
+  /* Allow subjob rows to collapse to content (override subjob.html min-height) */
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+
   resize: none;
   outline: none;
 }
