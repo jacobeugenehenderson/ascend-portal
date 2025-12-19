@@ -126,6 +126,36 @@
   opacity: 0.55;
 }
 
+/* Progress states (JS emits: .pill-seeded / .pill-human / .pill-finished) */
+.translation-pill.pill-seeded  { opacity: 0.35; }
+.translation-pill.pill-human   { opacity: 0.60; }
+.translation-pill.pill-finished { opacity: 1; }
+
+/* Finished: label flips to white (pill background is dark in this state) */
+.translation-pill.pill-finished,
+.translation-pill.pill-finished .pill-label {
+  color: rgba(255,255,255,0.96);
+}
+
+/* Keep disabled pills visually disabled even if state classes are present */
+.translation-pill[aria-disabled="true"].pill-seeded,
+.translation-pill[aria-disabled="true"].pill-human,
+.translation-pill[aria-disabled="true"].pill-finished {
+  opacity: 0.55;
+}
+
+/* Progress states (JS emits: .pill-seeded / .pill-human / .pill-finished) */
+.translation-pill.pill-seeded  { opacity: 0.35; }
+.translation-pill.pill-human   { opacity: 0.60; }
+.translation-pill.pill-finished { opacity: 1; }
+
+/* Keep disabled pills visually disabled even if state classes are present */
+.translation-pill[aria-disabled="true"].pill-seeded,
+.translation-pill[aria-disabled="true"].pill-human,
+.translation-pill[aria-disabled="true"].pill-finished {
+  opacity: 0.55;
+}
+
 .translation-pill__dot {
   width: 8px;
   height: 8px;
@@ -133,10 +163,10 @@
   background: rgba(0,0,0,0.18);
 }
 
-/* seeded / human / archived “dot” states */
-.translation-pill.state-seeded .translation-pill__dot { background: rgba(0,0,0,0.20); }
-.translation-pill.state-human  .translation-pill__dot { background: rgba(0,0,0,0.55); }
-.translation-pill.state-archived .translation-pill__dot { background: rgba(0,0,0,0.12); }
+/* seeded / human / finished “dot” states (JS emits .pill-*) */
+.translation-pill.pill-seeded .translation-pill__dot { background: rgba(0,0,0,0.20); }
+.translation-pill.pill-human  .translation-pill__dot { background: rgba(0,0,0,0.55); }
+.translation-pill.pill-finished .translation-pill__dot { background: rgba(255,255,255,0.92); }
 
 /* Keep Push pinned visually to far right */
 .ascend-app-actions {

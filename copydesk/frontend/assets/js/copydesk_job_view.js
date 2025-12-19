@@ -1821,7 +1821,7 @@ function pillState_(t) {
   // Prefer explicit status if present.
   var st = (t.status || t.state || '').toString().toLowerCase();
 
-  // Finished overrides everything (final state in this product).
+  // Final state in this product.
   if (st === 'finished' || st === 'final' || st === 'done' || t.finishedAt || t.completedAt) return 'finished';
 
   // Human-touched if touchedAt exists (or explicit).
