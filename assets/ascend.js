@@ -18,8 +18,10 @@
     "https://jacobeugenehenderson.github.io/ascend-portal/artstart/job_intake.html"; // "New job" intake
   const ARTSTART_JOB_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/artstart/assets/artstart.html"; // Existing job view
-const COPYDESK_URL =
+  const COPYDESK_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/index.html";
+  const COPYDESK_JOB_URL =
+    "https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/job.html";
     
   const CODEDESK_URL = "https://okqral.com";
 
@@ -493,8 +495,8 @@ const COPYDESK_URL =
 
       mainBtn.addEventListener("click", () => {
         const url =
-          COPYDESK_URL +
-          "job.html?jobid=" +
+          COPYDESK_JOB_URL +
+          "?jobid=" +
           encodeURIComponent(job.JobId || "");
         const target = buildUrlWithUser(url);
         window.open(target, "_blank", "noopener");
