@@ -84,6 +84,10 @@
         const statusDiv = document.getElementById('status');
         const responseBox = document.getElementById('responseBox');
 
+        // Pull logged-in user from URL (Ascend passes this through)
+        const qs = new URLSearchParams(window.location.search || '');
+        const userEmailFromUrl = (qs.get('user_email') || '').trim();
+
         function extractJobIdFromResponse(json) {
           if (!json || typeof json !== 'object') return '';
           return (
@@ -130,9 +134,14 @@
           const seedText = seedTextInput.value;
 
           const collaboratorsRaw = collaboratorsInput.value.trim();
-          const collaborators = collaboratorsRaw
+          let collaborators = collaboratorsRaw
             ? collaboratorsRaw.split(',').map(s => s.trim()).filter(Boolean)
             : [];
+
+          // Always include the logged-in Ascend user as a collaborator (hopper identity)
+          if (userEmailFromUrl && collaborators.indexOf(userEmailFromUrl) === -1) {
+            collaborators.unshift(userEmailFromUrl);
+          }
 
           // Send the date exactly as chosen (e.g. "2025-12-02")
           const cutoff = normalizeCutoffToIso(cutoffInput.value);
@@ -186,7 +195,12 @@
                 try { localStorage.setItem('copydesk_last_jobid', jobId); } catch (e) {}
 
                 // Navigate this tab (no popup blockers)
-                window.location.href = `job.html?jobid=${encodeURIComponent(jobId)}`;
+                const next = new URL(
+                  `job.html?jobid=${encodeURIComponent(jobId)}`,
+                  window.location.href
+                );
+                if (userEmailFromUrl) next.searchParams.set('user_email', userEmailFromUrl);
+                window.location.href = next.toString();
                 return;
               } else {
                 statusDiv.textContent = 'Job created, but no jobId was returned ❌';

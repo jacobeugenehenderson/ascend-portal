@@ -757,13 +757,14 @@
     document.body.appendChild(script);
   }
 
-  // ---- debug hooks (devtools) ----
+    // ---- Debug hooks (safe, read-only) ----
   window.AscendDebug = window.AscendDebug || {};
-  window.AscendDebug.requestCopydeskJobs = requestCopydeskJobs;
   window.AscendDebug.requestArtStartJobs = requestArtStartJobs;
+  window.AscendDebug.requestCopydeskJobs = requestCopydeskJobs;
   window.AscendDebug.requestFileRoomOutput = requestFileRoomOutput;
+  window.AscendDebug.loadSession = loadSession;
 
-  // ---- bootstrap ----
+    // ---- bootstrap ----
 
   function bootstrap() {
     initKeepLoggedInToggle();
