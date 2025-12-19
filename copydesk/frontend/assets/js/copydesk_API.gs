@@ -49,6 +49,39 @@ function isJobClosed_(jobId) {
   return String(st.status || '').toLowerCase() === 'closed';
 }
 
+// -----------------------------
+// Subjob status (ScriptProperties)
+// -----------------------------
+function subjobStatusKey_(jobId, lang) {
+  return 'SUBJOB_STATUS::' + String(jobId || '').trim() + '::' + String(lang || '').trim().toUpperCase();
+}
+function getSubjobStatus_(jobId, lang) {
+  if (!jobId || !lang) return { status: '', finishedAt: '' };
+  var raw = PropertiesService.getScriptProperties().getProperty(subjobStatusKey_(jobId, lang));
+  if (!raw) return { status: '', finishedAt: '' };
+  try {
+    var o = JSON.parse(raw);
+    return {
+      status: o && o.status ? String(o.status) : '',
+      finishedAt: o && o.finishedAt ? String(o.finishedAt) : ''
+    };
+  } catch (e) {
+    return { status: String(raw), finishedAt: '' };
+  }
+}
+function setSubjobStatus_(jobId, lang, status, finishedAtIso) {
+  if (!jobId || !lang) return;
+  var payload = {
+    status: String(status || ''),
+    finishedAt: finishedAtIso ? String(finishedAtIso) : ''
+  };
+  PropertiesService.getScriptProperties().setProperty(subjobStatusKey_(jobId, lang), JSON.stringify(payload));
+}
+function isSubjobFinished_(jobId, lang) {
+  var st = getSubjobStatus_(jobId, lang);
+  return String(st.status || '').toLowerCase() === 'finished';
+}
+
 // Utility: list all known jobIds from the JOB_INDEX:: cache
 function listKnownJobIds_() {
   var props = PropertiesService.getScriptProperties().getProperties();
@@ -100,6 +133,11 @@ function buildTranslationSubjobsPayload_(ss, jobId) {
     if (!sh) continue;
 
     var status = hasHumanEdits_(sh) ? 'human' : 'seed';
+
+    var st = getSubjobStatus_(jobId, code);
+    if (st && String(st.status || '').toLowerCase() === 'finished') {
+      status = 'finished';
+    }
 
     out.push({
       lang: code,
@@ -560,7 +598,7 @@ function doPost(e) {
     const body = e.postData && e.postData.contents
       ? JSON.parse(e.postData.contents)
       : {};
-    const action = body.action;
+    const action = body.action || body.fn;
 
     if (action === 'createEnglishJob') {
       return jsonResponse_(handleCreateEnglishJob_(body));
@@ -595,6 +633,8 @@ function doPost(e) {
       return jsonResponse_(handleCloseJob_(body));
     } else if (action === 'runNightly') {
       return jsonResponse_(handleRunNightly_(body));
+    } else if (action === 'finishSubjob') {
+      return jsonResponse_(handleFinishSubjob_(body));
     } else {
       return jsonResponse_({ ok: false, error: 'Unknown action: ' + action });
     }
@@ -1788,6 +1828,36 @@ if (workingStyle && workingStyle !== committedStyle) {
 function handleRunNightly_(body) {
   // Canonical “nightly now” path (same as trigger would do)
   return runNightlyCommitAll_();
+}
+
+function handleFinishSubjob_(body) {
+  var jobId = (body && body.jobId != null) ? String(body.jobId).trim() : '';
+  var lang = (body && body.lang != null) ? String(body.lang).trim().toUpperCase() : '';
+  var spreadsheetId =
+    (body && body.spreadsheetId) ? String(body.spreadsheetId) :
+    (jobId ? getSpreadsheetIdForJobId_(jobId) : '');
+
+  if (!jobId) return { ok: false, error: 'Missing jobId' };
+  if (!lang) return { ok: false, error: 'Missing lang' };
+  if (!spreadsheetId) return { ok: false, error: 'Missing spreadsheetId (or job not found for jobId)' };
+
+  // Ensure the sheet exists (sanity check; also makes failures obvious)
+  var ss = SpreadsheetApp.openById(spreadsheetId);
+  var shName = 'JOB_' + lang;
+  var sh = ss.getSheetByName(shName);
+  if (!sh) return { ok: false, error: 'Language sheet not found: ' + shName };
+
+  // Idempotent "finish once"
+  if (isSubjobFinished_(jobId, lang)) {
+    var prev = getSubjobStatus_(jobId, lang);
+    return { ok: true, alreadyFinished: true, finishedAt: prev.finishedAt || '' };
+  }
+
+  var now = new Date();
+  var iso = Utilities.formatDate(now, 'Etc/UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'");
+  setSubjobStatus_(jobId, lang, 'Finished', iso);
+
+  return { ok: true, finishedAt: iso };
 }
 
 // Machine-translate JOB_EN committed column A into each JOB_XX working column H.
