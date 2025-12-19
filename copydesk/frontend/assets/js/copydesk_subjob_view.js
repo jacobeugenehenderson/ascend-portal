@@ -239,7 +239,7 @@
   }
 
   function getNotes_(seg) {
-    return (seg && (seg[FIELD_NOTES] || seg.translatorNotes)) || '';
+    return (seg && (seg[FIELD_NOTES] || seg.notes || seg.translatorNotes)) || '';
   }
 
   // ---------------------------
@@ -460,12 +460,11 @@
       spreadsheetId: getSpreadsheetId_(),
       jobId: __jobId,
       segmentId: segId,
-      lang: __lang,
-      patch: {}
+      lang: __lang
     };
 
-    if (patch && typeof patch.translation === 'string') p.patch[FIELD_TRANSLATION] = patch.translation;
-    if (patch && typeof patch.notes === 'string') p.patch[FIELD_NOTES] = patch.notes;
+    if (patch && typeof patch.translation === 'string') p[FIELD_TRANSLATION] = patch.translation;
+    if (patch && typeof patch.notes === 'string') p[FIELD_NOTES] = patch.notes;
 
     return p;
   }
@@ -761,6 +760,8 @@
           setStatus_('error', 'Error loading job.', true);
           return;
         }
+
+        if (res && res.spreadsheetId) window.COPYDESK_SPREADSHEET_ID = res.spreadsheetId;
 
         var job = (res && res.job) ? res.job : (res && res.data ? res.data : {});
 
