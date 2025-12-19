@@ -530,27 +530,24 @@
     const session = loadSession();
     if (!session || !session.userEmail) return;
 
-    const callbackName = "ascendCopydeskJobsCallback";
-
-    window[callbackName] = function (payload) {
-      try {
+    fetch(COPYDESK_API_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "listCopydeskJobsForUser",
+        user_email: session.userEmail,
+        limit: 50
+      })
+    })
+      .then((r) => r.json())
+      .then((payload) => {
         const jobs = payload && payload.jobs ? payload.jobs : [];
         renderCopydeskHopper(jobs);
-      } catch (e) {
-        console.warn("Ascend: error in Copydesk jobs callback", e);
-      }
-    };
-
-    const url = new URL(COPYDESK_API_BASE);
-    url.searchParams.set("action", "listCopydeskJobsForUser");
-    url.searchParams.set("user_email", session.userEmail);
-    url.searchParams.set("limit", "50");
-    url.searchParams.set("callback", callbackName);
-
-    const script = document.createElement("script");
-    script.src = url.toString();
-    script.async = true;
-    document.body.appendChild(script);
+      })
+      .catch((e) => {
+        console.warn("Ascend: Copydesk jobs fetch failed", e);
+        renderCopydeskHopper([]);
+      });
   }
 
   function dismissCopydeskJob(jobId) {
@@ -563,22 +560,23 @@
     );
     if (!confirmed) return;
 
-    const callbackName = "ascendDismissCopydeskJobCallback";
-
-    window[callbackName] = function () {
-      requestCopydeskJobs();
-    };
-
-    const url = new URL(COPYDESK_API_BASE);
-    url.searchParams.set("action", "dismissCopydeskJob");
-    url.searchParams.set("jobId", jobId);
-    url.searchParams.set("user_email", session.userEmail);
-    url.searchParams.set("callback", callbackName);
-
-    const script = document.createElement("script");
-    script.src = url.toString();
-    script.async = true;
-    document.body.appendChild(script);
+    fetch(COPYDESK_API_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "dismissCopydeskJob",
+        jobId: jobId,
+        user_email: session.userEmail
+      })
+    })
+      .then((r) => r.json())
+      .then(() => {
+        requestCopydeskJobs();
+      })
+      .catch((e) => {
+        console.warn("Ascend: dismissCopydeskJob failed", e);
+        requestCopydeskJobs();
+      });
   }
 
   function renderArtStartHopper(jobs) {
