@@ -33,6 +33,9 @@ const COPYDESK_URL =
   const ARTSTART_API_BASE =
     "https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec";
 
+  // Copydesk API (hopper parity)
+  const COPYDESK_API_BASE =
+    "https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec";
   let pollingTimer = null;
 
   function nowTs() {
@@ -132,6 +135,7 @@ const COPYDESK_URL =
     );
     // Refresh hopper lanes for this user
     requestArtStartJobs();
+    requestCopydeskJobs();
     requestFileRoomOutput();
   }
 
@@ -446,6 +450,127 @@ const COPYDESK_URL =
       card.appendChild(mainBtn);
       lane.appendChild(card);
     });
+  }
+
+  // ---- Hopper: Copydesk docs ----
+
+  function renderCopydeskHopper(jobs) {
+    const lane = document.getElementById("ascend-copydesk-list");
+    if (!lane) return;
+
+    lane.innerHTML = "";
+
+    if (!jobs || !jobs.length) {
+      const empty = document.createElement("div");
+      empty.className = "ascend-job-list-empty";
+      empty.textContent = "No Copydesk docs yet.";
+      lane.appendChild(empty);
+      return;
+    }
+
+    jobs.forEach((job) => {
+      const card = document.createElement("div");
+      card.className = "ascend-job-card";
+
+      const mainBtn = document.createElement("button");
+      mainBtn.type = "button";
+      mainBtn.className = "ascend-job-card-main";
+
+      const title = document.createElement("div");
+      title.className = "ascend-job-card-title";
+      title.textContent = job.JobName || job.JobId || "Untitled doc";
+
+      const meta = document.createElement("div");
+      meta.className = "ascend-job-card-meta";
+
+      const metaParts = [];
+      if (job.Status) metaParts.push(job.Status);
+      if (job.Cutoff) metaParts.push("Cutoff " + job.Cutoff);
+      meta.textContent = metaParts.join(" • ");
+
+      mainBtn.appendChild(title);
+      mainBtn.appendChild(meta);
+
+      mainBtn.addEventListener("click", () => {
+        const url =
+          COPYDESK_URL +
+          "job.html?jobid=" +
+          encodeURIComponent(job.JobId || "");
+        const target = buildUrlWithUser(url);
+        window.open(target, "_blank", "noopener");
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "ascend-job-card-delete";
+      deleteBtn.setAttribute("aria-label", "Remove doc from dashboard");
+      deleteBtn.textContent = "×";
+
+      deleteBtn.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        dismissCopydeskJob(job.JobId);
+      });
+
+      card.appendChild(mainBtn);
+      card.appendChild(deleteBtn);
+      lane.appendChild(card);
+    });
+  }
+
+  function requestCopydeskJobs() {
+    const session = loadSession();
+    if (!session || !session.userEmail) return;
+
+    const callbackName = "ascendCopydeskJobsCallback";
+
+    window[callbackName] = function (payload) {
+      try {
+        const jobs = payload && payload.jobs ? payload.jobs : [];
+        renderCopydeskHopper(jobs);
+      } catch (e) {
+        console.warn("Ascend: error in Copydesk jobs callback", e);
+      }
+    };
+
+    const url = new URL(COPYDESK_API_BASE);
+    url.searchParams.set("action", "listCopydeskJobsForUser");
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("limit", "50");
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
+  function dismissCopydeskJob(jobId) {
+    const session = loadSession();
+    if (!session || !session.userEmail) return;
+    if (!jobId) return;
+
+    const confirmed = window.confirm(
+      "Remove this document from your dashboard?"
+    );
+    if (!confirmed) return;
+
+    const callbackName = "ascendDismissCopydeskJobCallback";
+
+    window[callbackName] = function () {
+      requestCopydeskJobs();
+    };
+
+    const url = new URL(COPYDESK_API_BASE);
+    url.searchParams.set("action", "dismissCopydeskJob");
+    url.searchParams.set("jobId", jobId);
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
   }
 
   function renderArtStartHopper(jobs) {
