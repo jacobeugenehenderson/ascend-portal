@@ -137,12 +137,20 @@
           // Send the date exactly as chosen (e.g. "2025-12-02")
           const cutoff = normalizeCutoffToIso(cutoffInput.value);
 
+          const params = new URLSearchParams(window.location.search);
+          const user_email = params.get('user_email') || '';
+          const user_name_first = params.get('user_name_first') || '';
+          const user_name = params.get('user_name') || '';
+
           const payload = {
             action: 'createEnglishJob',
             jobName,
             seedText,
             cutoff,
-            collaborators
+            collaborators,
+            user_email,
+            user_name_first,
+            user_name
           };
 
           statusDiv.textContent = 'Sending request…';
