@@ -175,18 +175,19 @@
   box-shadow: 0 10px 24px rgba(79, 209, 197, 0.16);
 }
 
-/* --- FINISHED (full-strength, dark pill + white label) --- */
+/* --- FINISHED (full-strength teal + white label) --- */
 .translation-pill.pill-finished,
 .translation-pill.state-finished {
-  background: rgba(11, 16, 37, 0.96);
-  border-color: rgba(79, 209, 197, 0.85);
-  color: rgba(255,255,255,0.96);
-  box-shadow: 0 12px 28px rgba(11, 16, 37, 0.22);
+  /* Deep, confident teal — not terminal black */
+  background: rgba(12, 120, 110, 0.96);
+  border-color: rgba(79, 209, 197, 0.95);
+  color: rgba(255,255,255,0.98);
+  box-shadow: 0 14px 30px rgba(12, 120, 110, 0.28);
 }
 
 .translation-pill.pill-finished .pill-label,
 .translation-pill.state-finished .pill-label {
-  color: rgba(255,255,255,0.96);
+  color: rgba(255,255,255,0.98);
 }
 
 /* Dot = an extra “read” channel */
