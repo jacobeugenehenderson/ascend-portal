@@ -1821,11 +1821,11 @@ function pillState_(t) {
   // Prefer explicit status if present.
   var st = (t.status || t.state || '').toString().toLowerCase();
 
-  // Archived overrides everything.
-  if (st === 'archived' || st === 'final' || st === 'done' || t.archivedAt) return 'archived';
+  // Finished overrides everything (final state in this product).
+  if (st === 'finished' || st === 'final' || st === 'done' || t.finishedAt || t.completedAt) return 'finished';
 
   // Human-touched if touchedAt exists (or explicit).
-  if (st === 'touched' || st === 'human' || st === 'inprogress' || t.touchedAt) return 'touched';
+  if (st === 'touched' || st === 'human' || st === 'inprogress' || t.touchedAt) return 'human';
 
   return 'seeded';
 }
