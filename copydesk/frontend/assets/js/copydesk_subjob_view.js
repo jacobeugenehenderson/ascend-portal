@@ -355,7 +355,7 @@
           +   '<div class="committed-seg subjob-english ' + styleClass + '">' + escapeHtml_(committedEn) + '</div>'
           +   '<div class="subjob-card__label" style="margin-top:2px;">Translation</div>'
           +   '<div class="committed-seg subjob-english subjob-translation-wrap ' + styleClass + '">'
-          +     '<textarea class="subjob-textarea subjob-translation ' + styleClass + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
+          +   '<textarea class="subjob-textarea subjob-translation committed-seg ' + styleClass + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
           +   '</div>'
           + '</div>';
       }
