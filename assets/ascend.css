@@ -79,21 +79,27 @@
    * SURFACE & BACKGROUND PATTERNS
    * ========================== */
 
-  /* Body backdrop */
+  /* Header must live on the shell, not the body */
+.ascend-header {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8, 12, 28, 0.55),
+      rgba(8, 12, 28, 0.15)
+    );
+  border-radius: 18px;
+  padding: 1rem 1.25rem;
+}
+
+   /* Body backdrop */
   --ascend-body-bg: radial-gradient(circle at top, #1a2144, #050814 60%, #02030a);
 
   /* Shell – dawn / ascension */
   --ascend-shell-bg:
-    linear-gradient(
-      180deg,
-      rgba(18, 22, 40, 0.85) 0%,
-      rgba(28, 32, 56, 0.82) 28%,
-      rgba(58, 52, 92, 0.55) 48%,
-      rgba(140, 112, 146, 0.42) 62%,
-      rgba(196, 158, 146, 0.38) 70%,
-      rgba(236, 198, 166, 0.32) 78%,
-      rgba(79, 209, 197, 0.07) 100%
-    );
+    radial-gradient(1200px 700px at 18% 88%, rgba(236, 198, 166, 0.32), transparent 62%),
+    radial-gradient(900px 650px at 44% 40%, rgba(196, 158, 146, 0.26), transparent 66%),
+    radial-gradient(900px 650px at 78% 22%, rgba(140, 112, 146, 0.22), transparent 62%),
+    linear-gradient(180deg, rgba(18, 22, 40, 0.86) 0%, rgba(28, 32, 56, 0.82) 42%, rgba(8, 12, 28, 0.90) 100%);
 
   /* Cards / panels */
   --ascend-card-surface: var(--ascend-color-surface);
@@ -104,9 +110,9 @@
    * GRID MOTIF (BACKGROUND ONLY)
    * ========================== */
 
-  --ascend-grid-visible: 0; /* 0 or 1 (toggle in future) */
+  --ascend-grid-visible: 1; /* 0 or 1 (toggle in future) */
   --ascend-grid-size: 16px;
-  --ascend-grid-color: rgba(255, 255, 255, 0.04);
+  --ascend-grid-color: rgba(255, 245, 235, 0.055);
   --ascend-grid-thickness: 1px;
   --ascend-grid-opacity: 0.2;
   --ascend-grid-emphasis-interval: 4;
@@ -339,7 +345,7 @@ textarea:focus {
     );
   background-size: var(--ascend-grid-size) var(--ascend-grid-size);
 
-  opacity: var(--ascend-grid-opacity);
+  opacity: calc(var(--ascend-grid-visible) * var(--ascend-grid-opacity));
 }
 
 /* keep actual content above the grid */
