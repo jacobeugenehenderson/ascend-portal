@@ -862,18 +862,6 @@ textarea:focus {
   min-width: 0;
 }
 
-/* Force a consistent reading order inside hopper rows */
-.ascend-job-card-title { order: 1; }
-.ascend-job-card-meta  { order: 2; }
-.ascend-job-card-context { order: 3; }
-.ascend-job-card-time    { order: 4; }
-
-.ascend-job-card-context,
-.ascend-job-card-time {
-  font-size: 0.72rem;
-  color: var(--ascend-color-text-muted);
-}
-
 /* Zebra striping (rows are siblings inside the lane list) */
 .ascend-job-card:nth-child(odd) .ascend-job-card-main {
   background: rgba(255, 255, 255, 0.03);

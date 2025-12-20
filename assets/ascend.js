@@ -586,7 +586,8 @@
 
       const time = document.createElement("div");
       time.className = "ascend-job-card-time";
-      time.textContent = job.Cutoff ? "Cutoff " + job.Cutoff : "";
+      const cutoffPretty = formatShortDate(job.Cutoff);
+      time.textContent = cutoffPretty || "";
 
       textStack.appendChild(title);
       if (context.textContent) textStack.appendChild(context);
@@ -724,7 +725,8 @@
 
       const contextParts = [];
       if (job.PublicationName) contextParts.push(job.PublicationName);
-      context.textContent = contextParts.join(" • ");
+      if (job.SoldAs) contextParts.push(job.SoldAs);
+      context.textContent = contextParts.join(", ");
 
       const time = document.createElement("div");
       time.className = "ascend-job-card-time";
