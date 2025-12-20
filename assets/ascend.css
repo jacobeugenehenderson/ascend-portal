@@ -855,7 +855,7 @@ textarea:focus {
 
 .ascend-job-card-stack {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 0.18rem;
   min-width: 0;
 }
