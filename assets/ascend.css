@@ -837,22 +837,30 @@ textarea:focus {
 }
 
 .ascend-hopper-progress-dot[data-step="2"] {
-  background: var(--ascend-hopper-stage-2);
+  border-color: var(--ascend-hopper-stage-2);
 }
 
 .ascend-hopper-progress-dot[data-step="3"] {
-  background: var(--ascend-hopper-stage-3);
+  border-color: var(--ascend-hopper-stage-3);
 }
 
 /* Light the first N steps based on data-stage */
 .ascend-hopper-progress[data-stage="1"] .ascend-hopper-progress-dot[data-step="1"],
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="1"],
+.ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="1"] {
+  opacity: 1;
+  background: var(--ascend-hopper-stage-1);
+}
+
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="2"],
-.ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="1"],
-.ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="2"],
+.ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="2"] {
+  opacity: 1;
+  background: var(--ascend-hopper-stage-2);
+}
+
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="3"] {
   opacity: 1;
-  background: currentColor;
+  background: var(--ascend-hopper-stage-3);
 }
 
 .ascend-job-card-stack {
