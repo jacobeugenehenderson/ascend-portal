@@ -94,22 +94,16 @@
    /* Body backdrop */
   --ascend-body-bg: radial-gradient(circle at top, #1a2144, #050814 60%, #02030a);
 
-  /* Shell – dawn / ascension */
+  /* Shell – dawn / ascension (single linear gradient, no competing bands) */
   --ascend-shell-bg:
-  /* Horizon glow (very thin, warm, grounded) */
   linear-gradient(
     180deg,
-    rgba(10, 12, 24, 0.92) 0%,
-    rgba(10, 12, 24, 0.92) 58%,
-
-    /* dawn band */
-    rgba(248, 214, 170, 0.42) 66%,
-    rgba(236, 180, 120, 0.38) 69%,
-    rgba(210, 120, 80, 0.28) 72%,
-
-    /* ground falls back to dark */
-    rgba(8, 10, 20, 0.92) 82%,
-    rgba(5, 8, 18, 0.96) 100%
+    #050814 0%,
+    #0b1230 28%,
+    #153a6b 52%,
+    #4fa3b8 70%,
+    #f1c27d 84%,
+    #d85a3a 100%
   );
 
   /* Cards / panels */
@@ -197,17 +191,7 @@ body {
 
 body {
   font-family: var(--ascend-font-body);
-  background:
-    /* Ground / horizon bar (site-level, behind everything) */
-    linear-gradient(
-      to bottom,
-      transparent 0%,
-      transparent 78%,
-      rgba(0, 0, 0, 0.55) 92%,
-      rgba(0, 0, 0, 0.75) 100%
-    ),
-    /* Body backdrop (black→navy, your “true background”) */
-    var(--ascend-body-bg);
+  background: #02030a;
   color: var(--ascend-color-text-main);
 }
 
