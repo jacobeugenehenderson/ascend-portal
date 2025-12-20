@@ -408,8 +408,8 @@ textarea:focus {
 }
 
 /* When logged in, collapse the login column entirely */
-html[data-ascend-state="logged-in"] .ascend-main {
-  grid-template-columns: 1fr;
+[data-ascend-state="logged-in"] .ascend-main {
+  grid-template-columns: 1fr !important;
 }
 
 @media (max-width: 900px) {
@@ -899,8 +899,8 @@ html[data-ascend-state="logged-in"] .ascend-main {
   display: block;
 }
 
-html[data-ascend-state="logged-in"] #ascend-login-panel {
-  display: none;
+[data-ascend-state="logged-in"] #ascend-login-panel {
+  display: none !important;
 }
 
 [data-ascend-state="logged-out"] #ascend-dashboard {
