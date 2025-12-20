@@ -290,7 +290,7 @@ textarea:focus {
   min-height: 100vh;
   display: flex;
   align-items: stretch;
-  justify-content: center;
+  justify-content: flex-start;
   padding: var(--ascend-shell-padding-y) var(--ascend-shell-padding-x);
 }
 
@@ -341,6 +341,11 @@ textarea:focus {
 .ascend-shell > * {
   position: relative;
   z-index: 1;
+}
+
+.ascend-shell {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Header */
