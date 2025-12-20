@@ -386,6 +386,73 @@
     }
   }
 
+  function normalizeStatus_(value) {
+    if (value == null) return "";
+    return String(value).trim().toLowerCase();
+  }
+
+  function buildHopperProgress_(stage) {
+    const el = document.createElement("div");
+    el.className = "ascend-hopper-progress";
+    el.dataset.stage = String(stage || 1);
+
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.createElement("span");
+      dot.className = "ascend-hopper-progress-dot";
+      dot.dataset.step = String(i);
+      el.appendChild(dot);
+    }
+    return el;
+  }
+
+  function artStartStageForJob_(job) {
+    // Stage 1: job created (default)
+    // Stage 2: meeting scheduled (any meeting/touchpoint date present)
+    // Stage 3: delivered (exit hopper)
+    const status = normalizeStatus_(job && job.Status);
+
+    // Exit condition (delivered) must be hard and immediate.
+    if (status === "delivered") return 3;
+
+    const meeting =
+      (job && (job.TouchpointMeetingDate || job.MeetingDate || job.MeetingAt)) ||
+      "";
+    if (meeting) return 2;
+
+    return 1;
+  }
+
+  function copydeskItemKind_(job) {
+    // Attempt to detect subjobs without inventing schemas.
+    const hasLang =
+      !!(job && (job.Language || job.Lang || job.LanguageCode || job.Locale));
+    const hasParent =
+      !!(job && (job.ParentJobId || job.ParentJobID || job.ParentId || job.Parent));
+    return hasLang || hasParent ? "subjob" : "job";
+  }
+
+  function copydeskStageForJob_(job) {
+    const kind = copydeskItemKind_(job);
+    const status = normalizeStatus_(job && job.Status);
+
+    if (kind === "subjob") {
+      // Stage 1: seeded
+      // Stage 2: touched
+      // Stage 3: finished (exit hopper)
+      if (status === "finished") return 3;
+      if (status === "touched") return 2;
+      return 1;
+    }
+
+    // Copydesk job
+    // Stage 1: open
+    // Stage 2: within closing window
+    // Stage 3: closed (exit hopper)
+    if (status === "closed") return 3;
+    if (status.indexOf("closing") !== -1) return 2;
+    return 1;
+  }
+
   // ---- Hopper: FileRoom output rows ----
 
   function renderFileRoomHopper(items) {
@@ -469,7 +536,9 @@
 
     lane.innerHTML = "";
 
-    if (!jobs || !jobs.length) {
+    const visible = (jobs || []).filter((job) => copydeskStageForJob_(job) !== 3);
+
+    if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "ascend-job-list-empty";
       empty.textContent = "No Copydesk docs yet.";
@@ -477,7 +546,10 @@
       return;
     }
 
-    jobs.forEach((job) => {
+    visible.forEach((job) => {
+      const stage = copydeskStageForJob_(job);
+      const kind = copydeskItemKind_(job);
+
       const card = document.createElement("div");
       card.className = "ascend-job-card";
 
@@ -485,20 +557,43 @@
       mainBtn.type = "button";
       mainBtn.className = "ascend-job-card-main";
 
+      const progress = buildHopperProgress_(stage);
+
+      const textStack = document.createElement("div");
+      textStack.className = "ascend-job-card-stack";
+
       const title = document.createElement("div");
       title.className = "ascend-job-card-title";
       title.textContent = job.JobName || job.JobId || "Untitled doc";
 
-      const meta = document.createElement("div");
-      meta.className = "ascend-job-card-meta";
+      const context = document.createElement("div");
+      context.className = "ascend-job-card-context";
 
-      const metaParts = [];
-      if (job.Status) metaParts.push(job.Status);
-      if (job.Cutoff) metaParts.push("Cutoff " + job.Cutoff);
-      meta.textContent = metaParts.join(" • ");
+      const contextParts = [];
+      if (kind === "subjob") {
+        const lang = job.Language || job.Lang || job.LanguageCode || job.Locale || "";
+        if (lang) contextParts.push(lang);
+        const parent =
+          job.ParentJobName ||
+          job.ParentJobId ||
+          job.ParentJobID ||
+          job.ParentId ||
+          job.Parent ||
+          "";
+        if (parent) contextParts.push(parent);
+      }
+      context.textContent = contextParts.join(" • ");
 
-      mainBtn.appendChild(title);
-      mainBtn.appendChild(meta);
+      const time = document.createElement("div");
+      time.className = "ascend-job-card-time";
+      time.textContent = job.Cutoff ? "Cutoff " + job.Cutoff : "";
+
+      textStack.appendChild(title);
+      if (context.textContent) textStack.appendChild(context);
+      if (time.textContent) textStack.appendChild(time);
+
+      mainBtn.appendChild(progress);
+      mainBtn.appendChild(textStack);
 
       mainBtn.addEventListener("click", () => {
         const url =
@@ -589,13 +684,15 @@
     document.body.appendChild(script);
   }
 
-  function renderArtStartHopper(jobs) {
+    function renderArtStartHopper(jobs) {
     const lane = document.getElementById("ascend-artstart-list");
     if (!lane) return;
 
     lane.innerHTML = "";
 
-    if (!jobs || !jobs.length) {
+    const visible = (jobs || []).filter((job) => artStartStageForJob_(job) !== 3);
+
+    if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "ascend-job-list-empty";
       empty.textContent = "No ArtStart jobs yet.";
@@ -603,7 +700,9 @@
       return;
     }
 
-    jobs.forEach((job) => {
+    visible.forEach((job) => {
+      const stage = artStartStageForJob_(job);
+
       const card = document.createElement("div");
       card.className = "ascend-job-card";
 
@@ -611,36 +710,39 @@
       mainBtn.type = "button";
       mainBtn.className = "ascend-job-card-main";
 
+      const progress = buildHopperProgress_(stage);
+
+      const textStack = document.createElement("div");
+      textStack.className = "ascend-job-card-stack";
+
       const title = document.createElement("div");
       title.className = "ascend-job-card-title";
       title.textContent = job.NordsonJobId || job.AscendJobId || "Untitled job";
 
-      const meta = document.createElement("div");
-      meta.className = "ascend-job-card-meta";
+      const context = document.createElement("div");
+      context.className = "ascend-job-card-context";
 
-      const metaParts = [];
-      if (job.PublicationName) {
-        metaParts.push(job.PublicationName);
-      }
-      const runDatePretty = formatShortDate(
-        job.PublicationDate || job.MaterialsDueDate
-      );
-      if (runDatePretty) {
-        metaParts.push("Runs " + runDatePretty);
-      }
+      const contextParts = [];
+      if (job.PublicationName) contextParts.push(job.PublicationName);
+      context.textContent = contextParts.join(" • ");
 
-      meta.textContent = metaParts.join(" • ");
+      const time = document.createElement("div");
+      time.className = "ascend-job-card-time";
 
-      mainBtn.appendChild(title);
-      mainBtn.appendChild(meta);
+      const duePretty = formatShortDate(job.MaterialsDueDate || job.PublicationDate);
+      time.textContent = duePretty ? "Due " + duePretty : "";
+
+      textStack.appendChild(title);
+      if (context.textContent) textStack.appendChild(context);
+      if (time.textContent) textStack.appendChild(time);
+
+      mainBtn.appendChild(progress);
+      mainBtn.appendChild(textStack);
 
       mainBtn.addEventListener("click", () => {
-        const base =
-          ARTSTART_JOB_URL +
-          "?jobId=" +
-          encodeURIComponent(job.AscendJobId || "");
-        const target = buildUrlWithUser(base);
-        console.log("[Ascend] Opening ArtStart job URL:", target);
+        const url =
+          ARTSTART_JOB_URL + "?jobid=" + encodeURIComponent(job.AscendJobId || "");
+        const target = buildUrlWithUser(url);
         window.open(target, "_blank", "noopener");
       });
 
