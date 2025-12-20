@@ -25,11 +25,10 @@
   --ascend-color-success: #48bb78;
   --ascend-color-info: #63b3ed;
 
-  /* Hopper progress indicator */
-  --ascend-color-royal: #0051ff;
-  --ascend-hopper-stage-1: var(--ascend-color-warning);
-  --ascend-hopper-stage-2: var(--ascend-color-accent-soft);
-  --ascend-hopper-stage-3: var(--ascend-color-royal);
+  /* Hopper progress indicator (shell-derived, desaturated) */
+  --ascend-hopper-stage-1: #e6956a; /* warm amber / sunrise clay */
+  --ascend-hopper-stage-2: #6fb9ad; /* desaturated teal / mid-sky */
+  --ascend-hopper-stage-3: #4e86df; /* desaturated blue / horizon */
   --ascend-hopper-stage-off-opacity: 0.22;
 
   /* ============================
