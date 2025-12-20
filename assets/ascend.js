@@ -28,7 +28,7 @@
   // FileRoom (output / delivery layer)
   const FILEROOM_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/fileroom/frontend/index.html";
-    
+
   const FILEROOM_API_BASE =
     "https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec";
   
@@ -531,24 +531,28 @@
     const session = loadSession();
     if (!session || !session.userEmail) return;
 
-    fetch(COPYDESK_API_BASE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "listCopydeskJobsForUser",
-        user_email: session.userEmail,
-        limit: 50
-      })
-    })
-      .then((r) => r.json())
-      .then((payload) => {
+    const callbackName = "ascendCopydeskJobsCallback";
+
+    window[callbackName] = function (payload) {
+      try {
         const jobs = payload && payload.jobs ? payload.jobs : [];
         renderCopydeskHopper(jobs);
-      })
-      .catch((e) => {
-        console.warn("Ascend: Copydesk jobs fetch failed", e);
+      } catch (e) {
+        console.warn("Ascend: error in Copydesk jobs callback", e);
         renderCopydeskHopper([]);
-      });
+      }
+    };
+
+    const url = new URL(COPYDESK_API_BASE);
+    url.searchParams.set("action", "listCopydeskJobsForUser");
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("limit", "50");
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
   }
 
   function dismissCopydeskJob(jobId) {
@@ -561,23 +565,28 @@
     );
     if (!confirmed) return;
 
-    fetch(COPYDESK_API_BASE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "dismissCopydeskJob",
-        jobId: jobId,
-        user_email: session.userEmail
-      })
-    })
-      .then((r) => r.json())
-      .then(() => {
+    const callbackName = "ascendDismissCopydeskJobCallback";
+
+    window[callbackName] = function (payload) {
+      try {
+        // Regardless of success/failure, re-sync hopper state
         requestCopydeskJobs();
-      })
-      .catch((e) => {
-        console.warn("Ascend: dismissCopydeskJob failed", e);
+      } catch (e) {
+        console.warn("Ascend: error in dismissCopydeskJob callback", e);
         requestCopydeskJobs();
-      });
+      }
+    };
+
+    const url = new URL(COPYDESK_API_BASE);
+    url.searchParams.set("action", "dismissCopydeskJob");
+    url.searchParams.set("jobId", jobId);
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
   }
 
   function renderArtStartHopper(jobs) {
