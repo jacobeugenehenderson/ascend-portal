@@ -903,11 +903,6 @@ html[data-ascend-state="logged-in"] .ascend-main {
   display: block;
 }
 
-[data-ascend-state="logged-in"] #ascend-login-panel {
-  visibility: hidden;
-  pointer-events: none;
-}
-
 html[data-ascend-state="logged-in"] #ascend-login-panel {
   display: none;
 }
