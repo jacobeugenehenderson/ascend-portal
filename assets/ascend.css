@@ -895,15 +895,15 @@ html[data-ascend-state="logged-in"] .ascend-main {
 
 /* Visibility states */
 
-[data-ascend-state="logged-out"] #ascend-dashboard {
-  display: none;
-}
-
 [data-ascend-state="logged-out"] #ascend-login-panel {
   display: block;
 }
 
 html[data-ascend-state="logged-in"] #ascend-login-panel {
+  display: none;
+}
+
+[data-ascend-state="logged-out"] #ascend-dashboard {
   display: none;
 }
 
