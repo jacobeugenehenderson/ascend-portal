@@ -115,7 +115,7 @@
   --ascend-grid-color: rgba(255, 245, 235, 0.09);
   --ascend-grid-thickness: 1.25px;
   --ascend-grid-opacity: 0.44;
-  --ascend-grid-emphasis-interval: 4;
+  --ascend-grid-emphasis-interval: 0;
   --ascend-grid-mode: light;
 
   /* ============================
