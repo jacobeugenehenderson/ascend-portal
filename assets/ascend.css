@@ -96,10 +96,21 @@
 
   /* Shell – dawn / ascension */
   --ascend-shell-bg:
-    radial-gradient(1200px 700px at 18% 88%, rgba(236, 198, 166, 0.32), transparent 62%),
-    radial-gradient(900px 650px at 44% 40%, rgba(196, 158, 146, 0.26), transparent 66%),
-    radial-gradient(900px 650px at 78% 22%, rgba(140, 112, 146, 0.22), transparent 62%),
-    linear-gradient(180deg, rgba(18, 22, 40, 0.86) 0%, rgba(28, 32, 56, 0.82) 42%, rgba(8, 12, 28, 0.90) 100%);
+  /* Horizon glow (very thin, warm, grounded) */
+  linear-gradient(
+    180deg,
+    rgba(10, 12, 24, 0.92) 0%,
+    rgba(10, 12, 24, 0.92) 58%,
+
+    /* dawn band */
+    rgba(248, 214, 170, 0.42) 66%,
+    rgba(236, 180, 120, 0.38) 69%,
+    rgba(210, 120, 80, 0.28) 72%,
+
+    /* ground falls back to dark */
+    rgba(8, 10, 20, 0.92) 82%,
+    rgba(5, 8, 18, 0.96) 100%
+  );
 
   /* Cards / panels */
   --ascend-card-surface: var(--ascend-color-surface);
