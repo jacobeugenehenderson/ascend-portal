@@ -126,7 +126,7 @@
   --ascend-grid-color: rgba(255, 245, 235, 0.09);
   --ascend-grid-thickness: 1.25px;
   --ascend-grid-opacity: 0.44;
-  --ascend-grid-emphasis-interval: 0;
+  --ascend-grid-emphasis-interval: 4;
   --ascend-grid-mode: light;
 
   /* ============================
@@ -198,16 +198,16 @@ body {
 body {
   font-family: var(--ascend-font-body);
   background:
-  /* Ground / horizon bar */
-  linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent 78%,
-    rgba(0, 0, 0, 0.55) 92%,
-    rgba(0, 0, 0, 0.75) 100%
-  ),
-  /* Dawn sky */
-  var(--ascend-shell-bg);
+    /* Ground / horizon bar (site-level, behind everything) */
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 78%,
+      rgba(0, 0, 0, 0.55) 92%,
+      rgba(0, 0, 0, 0.75) 100%
+    ),
+    /* Body backdrop (black→navy, your “true background”) */
+    var(--ascend-body-bg);
   color: var(--ascend-color-text-main);
 }
 
@@ -354,7 +354,7 @@ textarea:focus {
   z-index: 0;
 
   background-image:
-    /* fine grid */
+    /* fine grid only */
     linear-gradient(
       to right,
       var(--ascend-grid-color) var(--ascend-grid-thickness),
@@ -364,24 +364,8 @@ textarea:focus {
       to bottom,
       var(--ascend-grid-color) var(--ascend-grid-thickness),
       transparent var(--ascend-grid-thickness)
-    ),
-
-    /* major grid (every N cells) */
-    linear-gradient(
-      to right,
-      color-mix(in srgb, var(--ascend-grid-color) 55%, white 45%) calc(var(--ascend-grid-thickness) * 1.6),
-      transparent calc(var(--ascend-grid-thickness) * 1.6)
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--ascend-grid-color) 55%, white 45%) calc(var(--ascend-grid-thickness) * 1.6),
-      transparent calc(var(--ascend-grid-thickness) * 1.6)
     );
-  background-size:
-    var(--ascend-grid-size) var(--ascend-grid-size),
-    var(--ascend-grid-size) var(--ascend-grid-size),
-    calc(var(--ascend-grid-size) * var(--ascend-grid-emphasis-interval)) calc(var(--ascend-grid-size) * var(--ascend-grid-emphasis-interval)),
-    calc(var(--ascend-grid-size) * var(--ascend-grid-emphasis-interval)) calc(var(--ascend-grid-size) * var(--ascend-grid-emphasis-interval));
+  background-size: var(--ascend-grid-size) var(--ascend-grid-size);
 
   opacity: calc(var(--ascend-grid-visible) * var(--ascend-grid-opacity));
 }
