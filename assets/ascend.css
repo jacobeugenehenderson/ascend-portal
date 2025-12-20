@@ -848,19 +848,19 @@ textarea:focus {
 .ascend-hopper-progress[data-stage="1"] .ascend-hopper-progress-dot[data-step="1"],
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="1"],
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="1"] {
-  opacity: 1;
   background: var(--ascend-hopper-stage-1);
+  border-color: transparent;
 }
 
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="2"],
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="2"] {
-  opacity: 1;
   background: var(--ascend-hopper-stage-2);
+  border-color: transparent;
 }
 
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="3"] {
-  opacity: 1;
   background: var(--ascend-hopper-stage-3);
+  border-color: transparent;
 }
 
 .ascend-job-card-stack {
@@ -891,9 +891,12 @@ textarea:focus {
 }
 
 .ascend-job-card-meta {
-  margin-top: 0.1rem;
-  font-size: 0.72rem;
-  color: var(--ascend-color-text-muted);
+  margin-top: 0.12rem;
+  font-size: 0.68rem;
+  color: color-mix(in srgb, var(--ascend-color-text-muted) 80%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: var(--ascend-weight-regular);
 }
 
 /* Status becomes a right-side endcap (v1: same tint for now) */
