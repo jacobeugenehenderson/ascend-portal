@@ -833,15 +833,24 @@ textarea:focus {
   border-radius: 2px;
   opacity: 1;
   background: transparent;
-  border: 1px solid var(--ascend-hopper-stage-1);
+  border: 1px solid
+    color-mix(in srgb, var(--ascend-hopper-stage-1) 70%, transparent);
 }
 
 .ascend-hopper-progress-dot[data-step="2"] {
-  border-color: var(--ascend-hopper-stage-2);
+  border-color: color-mix(
+    in srgb,
+    var(--ascend-hopper-stage-2) 70%,
+    transparent
+  );
 }
 
 .ascend-hopper-progress-dot[data-step="3"] {
-  border-color: var(--ascend-hopper-stage-3);
+  border-color: color-mix(
+    in srgb,
+    var(--ascend-hopper-stage-3) 70%,
+    transparent
+  );
 }
 
 /* Light the first N steps based on data-stage */
