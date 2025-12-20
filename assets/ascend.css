@@ -862,6 +862,12 @@ textarea:focus {
   min-width: 0;
 }
 
+/* Force a consistent reading order inside hopper rows */
+.ascend-job-card-title { order: 1; }
+.ascend-job-card-meta  { order: 2; }
+.ascend-job-card-context { order: 3; }
+.ascend-job-card-time    { order: 4; }
+
 .ascend-job-card-context,
 .ascend-job-card-time {
   font-size: 0.72rem;
@@ -882,8 +888,10 @@ textarea:focus {
 
 /* Title + meta stack inside the left cell */
 .ascend-job-card-title {
-  font-weight: var(--ascend-weight-medium);
+  font-weight: var(--ascend-weight-bold);
   letter-spacing: 0.01em;
+  font-size: 0.86rem;
+  line-height: 1.15;
 }
 
 .ascend-job-card-meta {
