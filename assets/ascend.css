@@ -831,8 +831,9 @@ textarea:focus {
   width: 7px;
   height: 7px;
   border-radius: 2px;
-  opacity: var(--ascend-hopper-stage-off-opacity);
-  background: var(--ascend-hopper-stage-1);
+  opacity: 1;
+  background: transparent;
+  border: 1px solid var(--ascend-hopper-stage-1);
 }
 
 .ascend-hopper-progress-dot[data-step="2"] {
@@ -851,6 +852,7 @@ textarea:focus {
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="2"],
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="3"] {
   opacity: 1;
+  background: currentColor;
 }
 
 .ascend-job-card-stack {
