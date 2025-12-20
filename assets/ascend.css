@@ -908,6 +908,10 @@ html[data-ascend-state="logged-in"] .ascend-main {
   pointer-events: none;
 }
 
+html[data-ascend-state="logged-in"] #ascend-login-panel {
+  display: none;
+}
+
 [data-ascend-state="logged-in"] #ascend-dashboard {
   display: block;
 }
