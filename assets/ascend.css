@@ -79,18 +79,6 @@
    * SURFACE & BACKGROUND PATTERNS
    * ========================== */
 
-  /* Header must live on the shell, not the body */
-.ascend-header {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(8, 12, 28, 0.55),
-      rgba(8, 12, 28, 0.15)
-    );
-  border-radius: 18px;
-  padding: 1rem 1.25rem;
-}
-
    /* Body backdrop */
   --ascend-body-bg: radial-gradient(circle at top, #1a2144, #050814 60%, #02030a);
 
@@ -98,15 +86,15 @@
     --ascend-shell-bg:
   linear-gradient(
     180deg,
-    rgba(5, 8, 20, 0.7) 0%,
-    rgba(10, 16, 38, 0.7) 32%,
-    rgba(23, 63, 110, 0.7) 50%,
-    rgba(47, 134, 173, 0.7) 64%,
-    rgba(107, 188, 183, 0.7) 72%,
-    rgba(221, 176, 122, 0.7) 80%,
-    rgba(159, 76, 50, 0.7) 84%,
-    rgba(2, 3, 10, 0.85) 86%,
-    rgba(2, 3, 10, 0.85) 100%
+    rgba(5, 8, 20, 0.55) 0%,
+    rgba(10, 16, 38, 0.55) 32%,
+    rgba(23, 63, 110, 0.55) 50%,
+    rgba(47, 134, 173, 0.55) 64%,
+    rgba(107, 188, 183, 0.55) 72%,
+    rgba(221, 176, 122, 0.55) 80%,
+    rgba(159, 76, 50, 0.55) 84%,
+    rgba(2, 3, 10, 0.75) 86%,
+    rgba(2, 3, 10, 0.75) 100%
   );
 
   /* Cards / panels */
@@ -194,13 +182,7 @@ body {
 
 body {
   font-family: var(--ascend-font-body);
-  background:
-    radial-gradient(
-      circle at top,
-      #0b1230 0%,
-      #050814 55%,
-      #02030a 100%
-    );
+  background: var(--ascend-body-bg);
   color: var(--ascend-color-text-main);
 }
 
