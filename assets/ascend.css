@@ -901,6 +901,11 @@ textarea:focus {
   display: block;
 }
 
+/* When the login panel is hidden, collapse the grid so we don’t leave an empty column */
+[data-ascend-state="logged-in"] .ascend-main {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 
 /* "fileroom" disabled */
 .ascend-row--disabled {
