@@ -95,18 +95,18 @@
   --ascend-body-bg: radial-gradient(circle at top, #1a2144, #050814 60%, #02030a);
 
       /* Shell – dawn / ascension*/
-  --ascend-shell-bg:
+    --ascend-shell-bg:
   linear-gradient(
     180deg,
-    #050814 0%,
-    #0a1026 32%,
-    #173f6e 50%,
-    #2f86ad 64%,
-    #6bbcb7 72%,
-    #ddb07a 80%,
-    #9f4c32 84%,
-    #02030a 86%,
-    #02030a 100%
+    rgba(5, 8, 20, 0.7) 0%,
+    rgba(10, 16, 38, 0.7) 32%,
+    rgba(23, 63, 110, 0.7) 50%,
+    rgba(47, 134, 173, 0.7) 64%,
+    rgba(107, 188, 183, 0.7) 72%,
+    rgba(221, 176, 122, 0.7) 80%,
+    rgba(159, 76, 50, 0.7) 84%,
+    rgba(2, 3, 10, 0.85) 86%,
+    rgba(2, 3, 10, 0.85) 100%
   );
 
   /* Cards / panels */
@@ -194,7 +194,13 @@ body {
 
 body {
   font-family: var(--ascend-font-body);
-  background: #02030a;
+  background:
+    radial-gradient(
+      circle at top,
+      #0b1230 0%,
+      #050814 55%,
+      #02030a 100%
+    );
   color: var(--ascend-color-text-main);
 }
 
