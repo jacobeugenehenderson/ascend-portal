@@ -407,6 +407,11 @@ textarea:focus {
   gap: 1.5rem;
 }
 
+/* When logged in, collapse the login column entirely */
+html[data-ascend-state="logged-in"] .ascend-main {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 900px) {
   .ascend-main {
     grid-template-columns: minmax(0, 1fr);
