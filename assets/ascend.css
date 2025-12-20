@@ -748,7 +748,7 @@ textarea:focus {
   background: rgba(5, 9, 23, 0.9);
   border-radius: var(--ascend-radius-lg);
 
-  /* Editorial drawer frame (no dashed "placeholder" vibe) */
+  /* Drawer frame */
   border: 1px solid rgba(255, 255, 255, 0.14);
 
   padding: 0.9rem 1.1rem;
@@ -821,7 +821,7 @@ textarea:focus {
 
 .ascend-hopper-progress {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 4px;
   align-items: flex-start;
   justify-content: center;
