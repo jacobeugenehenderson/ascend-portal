@@ -307,6 +307,8 @@ textarea:focus {
   width: 100%;
   max-width: var(--ascend-max-width);
   background: var(--ascend-shell-bg);
+  background-repeat: no-repeat;
+  background-size: cover;
   border-radius: 32px; /* shell keeps its special radius */
   box-shadow: var(--ascend-shadow-soft);
   border: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
