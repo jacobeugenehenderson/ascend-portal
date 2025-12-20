@@ -197,7 +197,17 @@ body {
 
 body {
   font-family: var(--ascend-font-body);
-  background: var(--ascend-body-bg);
+  background:
+  /* Ground / horizon bar */
+  linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 78%,
+    rgba(0, 0, 0, 0.55) 92%,
+    rgba(0, 0, 0, 0.75) 100%
+  ),
+  /* Dawn sky */
+  var(--ascend-shell-bg);
   color: var(--ascend-color-text-main);
 }
 
