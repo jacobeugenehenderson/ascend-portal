@@ -398,7 +398,7 @@ textarea:focus {
 
 .ascend-main {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   gap: 1.5rem;
 }
 
@@ -894,18 +894,13 @@ textarea:focus {
 }
 
 [data-ascend-state="logged-in"] #ascend-login-panel {
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 [data-ascend-state="logged-in"] #ascend-dashboard {
   display: block;
 }
-
-/* When the login panel is hidden, collapse the grid so we don’t leave an empty column */
-[data-ascend-state="logged-in"] .ascend-main {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 
 /* "fileroom" disabled */
 .ascend-row--disabled {
