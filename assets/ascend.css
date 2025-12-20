@@ -94,16 +94,19 @@
    /* Body backdrop */
   --ascend-body-bg: radial-gradient(circle at top, #1a2144, #050814 60%, #02030a);
 
-  /* Shell – dawn / ascension (single linear gradient, no competing bands) */
+    /* Shell – dawn / ascension (single linear gradient, luminous blue, hard horizon edge) */
   --ascend-shell-bg:
   linear-gradient(
     180deg,
     #050814 0%,
-    #0b1230 28%,
-    #153a6b 52%,
-    #4fa3b8 70%,
-    #f1c27d 84%,
-    #d85a3a 100%
+    #0b1230 32%,
+    #1b4d86 50%,
+    #3aa7d8 64%,
+    #7fd6d1 72%,
+    #f2c892 80%,
+    #b85a3a 84%,
+    #02030a 86%,
+    #02030a 100%
   );
 
   /* Cards / panels */
