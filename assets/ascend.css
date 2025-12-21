@@ -308,6 +308,8 @@ textarea:focus {
   align-items: stretch;
   justify-content: flex-start;
   padding: var(--ascend-shell-padding-y) var(--ascend-shell-padding-x);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Shell */
@@ -428,6 +430,7 @@ textarea:focus {
   gap: 1.5rem;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* When logged in, collapse the login column entirely */
@@ -678,6 +681,7 @@ textarea:focus {
   grid-template-columns: 320px minmax(0, 1fr);
   gap: 0.75rem;
   align-items: stretch;
+  min-height: 0;
 }
 
 @media (max-width: 700px) {
@@ -772,6 +776,7 @@ textarea:focus {
   color: var(--ascend-color-text-muted);
   
   min-height: 0;
+  overflow: hidden;
 }
 
 /* Hopper lists (ArtStart / Copydesk / Codedesk) */
