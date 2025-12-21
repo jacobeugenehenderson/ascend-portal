@@ -45,6 +45,111 @@
     return Date.now();
   }
 
+  // --- Time helpers (EOFD Eastern) ---
+  // Rule: A due/cutoff DATE remains "in play" through End Of Day Eastern,
+  // then rolls to "past due" immediately after.
+  const EASTERN_TZ = "America/New_York";
+
+  function easternYmdFromValue_(value) {
+    if (!value) return null;
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return null;
+
+      const dtf = new Intl.DateTimeFormat("en-US", {
+        timeZone: EASTERN_TZ,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+
+      const parts = dtf.formatToParts(d);
+      const out = {};
+      parts.forEach((p) => {
+        if (p.type !== "literal") out[p.type] = p.value;
+      });
+
+      const y = Number(out.year);
+      const m = Number(out.month);
+      const day = Number(out.day);
+      if (!y || !m || !day) return null;
+
+      return { y, m, d: day };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function tzOffsetMinutesAt_(date, timeZone) {
+    // Returns minutes to add to local "wall time" in the zone to reach UTC.
+    // Positive means zone is behind UTC (e.g., -0500 => +300 minutes).
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    const parts = dtf.formatToParts(date);
+    const out = {};
+    parts.forEach((p) => {
+      if (p.type !== "literal") out[p.type] = p.value;
+    });
+
+    const asUtc =
+      Date.UTC(
+        Number(out.year),
+        Number(out.month) - 1,
+        Number(out.day),
+        Number(out.hour),
+        Number(out.minute),
+        Number(out.second),
+        0
+      );
+
+    // If the formatter says the zoned wall time is "asUtc",
+    // compare to the actual instant to infer the offset.
+    return Math.round((asUtc - date.getTime()) / 60000);
+  }
+
+  function zonedWallTimeToUtcMs_(y, m, d, hh, mm, ss, ms, timeZone) {
+    // Two-pass conversion to handle DST boundaries without dependencies.
+    let guess = Date.UTC(y, m - 1, d, hh, mm, ss, ms);
+    let offset = tzOffsetMinutesAt_(new Date(guess), timeZone);
+    guess = guess - offset * 60000;
+    offset = tzOffsetMinutesAt_(new Date(guess), timeZone);
+    return Date.UTC(y, m - 1, d, hh, mm, ss, ms) - offset * 60000;
+  }
+
+  function endOfDayEasternMs_(value) {
+    const ymd = easternYmdFromValue_(value);
+    if (!ymd) return null;
+
+    // Compute start of next day (00:00:00.000 ET), then minus 1 ms.
+    const nextDayUtc = zonedWallTimeToUtcMs_(
+      ymd.y,
+      ymd.m,
+      ymd.d + 1,
+      0,
+      0,
+      0,
+      0,
+      EASTERN_TZ
+    );
+
+    return nextDayUtc - 1;
+  }
+
+  function isPastEofdEastern_(value, nowMs) {
+    const endMs = endOfDayEasternMs_(value);
+    if (endMs == null) return false;
+    return (nowMs != null ? nowMs : Date.now()) > endMs;
+  }
+
   function loadSession() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -366,10 +471,16 @@
   function artStartStageForJob_(job) {
     // Stage 1: job created (default)
     // Stage 2: meeting scheduled (any meeting/touchpoint date present)
-    // Stage 3: delivered (exit hopper)
+    // Stage 3: delivered OR past Materials Due (EOFD Eastern) (exit hopper)
     const status = normalizeStatus_(job && job.Status);
 
-    // Exit condition (delivered) must be hard and immediate.
+    // Date-driven exit (EOFD Eastern): once Materials Due day has passed,
+    // the work window is over and the item must leave the Hopper.
+    if (job && job.MaterialsDueDate && isPastEofdEastern_(job.MaterialsDueDate)) {
+      return 3;
+    }
+
+    // Status-driven exit remains valid.
     if (status === "delivered") return 3;
 
     const meeting =
@@ -394,18 +505,21 @@
     const status = normalizeStatus_(job && job.Status);
 
     if (kind === "subjob") {
-      // Stage 1: seeded
-      // Stage 2: touched
-      // Stage 3: finished (exit hopper)
+      // Subjobs enter the Hopper already "in progress":
+      // Stage 2 by default, Stage 3 only when finished.
       if (status === "finished") return 3;
-      if (status === "touched") return 2;
-      return 1;
+      return 2;
     }
 
     // Copydesk job
     // Stage 1: open
     // Stage 2: within closing window
-    // Stage 3: closed (exit hopper)
+    // Stage 3: closed OR past Cutoff (EOFD Eastern) (exit hopper)
+
+    // Date-driven exit (EOFD Eastern): once Cutoff day has passed,
+    // the committed artifact belongs in FileRoom, not the Hopper.
+    if (job && job.Cutoff && isPastEofdEastern_(job.Cutoff)) return 3;
+
     if (status === "closed") return 3;
     if (status.indexOf("closing") !== -1) return 2;
     return 1;
