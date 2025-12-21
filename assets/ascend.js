@@ -636,7 +636,6 @@
         origin === "copydesk" || origin === "copy desk" || origin === "copy";
 
       const title =
-        item.NordsonJobId ||
         item.title ||
         item.Title ||
         item.name ||
@@ -647,6 +646,7 @@
         item.filename ||
         item.AssetName ||
         item.asset_name ||
+        item.NordsonJobId ||
         item.AssetId ||
         item.asset_id ||
         item.JobId ||
