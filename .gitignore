@@ -1,7 +1,3 @@
-codedesk/
 # macOS junk
 .DS_Store
 ._*
-
-# Local tools / nested repos
-codedesk/

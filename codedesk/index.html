@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- <head>  -->
+<link rel="icon" type="image/png" href="favicon.png">
+<title>okQRal — Free QR Codes for Free People</title>
+<meta name="description" content="No accounts or tracking. QR creation in your browser.">
+
+<link rel="canonical" href="https://okqral.com/">
+<meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff"  media="(prefers-color-scheme: light)">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="1200">
+<meta name="twitter:image:alt" content="A crisp QR with okQRal caption — Free QR Codes for Free People.">
+
+<meta property="og:title" content="okQRal — Free QR Codes for Free People">
+<meta property="og:description" content="Generate beautiful, private QR codes instantly. No logins, no tracking, no surveillance.">
+<meta property="og:image" content="https://okqral.com/assets/sms_preview.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://okqral.com/">
+
+<script>
+(function () {
+  const ls = localStorage.getItem('theme');                 // 'dark' | 'light' | null
+  const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = ls ? (ls === 'dark') : sysDark;              // default: follow system
+
+  const root = document.documentElement;
+  root.classList.toggle('dark',  dark);                     // Tailwind dark: variants
+  root.classList.toggle('light', !dark);                    // your theme.css :root.light
+})();
+</script>
+
+<!-- Fonts & Tailwind -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- === Google Fonts for all preview options === -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2
+?family=Bebas+Neue
+&family=IBM+Plex+Sans:wght@400;600
+&family=IBM+Plex+Serif:wght@400;600
+&family=Public+Sans:wght@400;600
+&family=Playfair+Display:wght@600
+&family=Space+Grotesk:wght@400;600
+&family=Manrope:wght@400;600
+&family=Inter:wght@400;600
+&family=JetBrains+Mono:wght@400;600
+&family=Work+Sans:wght@400;600
+&display=swap">
+
+ <script>
+  // Use class strategy so toggling `.dark` works
+  window.tailwind = window.tailwind || {};
+  tailwind.config = { darkMode: 'class' };
+</script>
+ 
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Your stylesheet -->
+  <link rel="stylesheet" href="./styles/theme.css">
+</head>
+
+<body class="theme-grid min-h-screen text-neutral-900 dark:text-neutral-100">
+
+  <!-- HEADER (full-width, sticky) -->
+  <header class="header-bar sticky top-0 z-30 bg-white/90 dark:bg-neutral-900/90 backdrop-blur border-b border-neutral-200 dark:border-neutral-800">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex items-center gap-8">
+      <h1 class="text-lg font-semibold tracking-tight">
+        <a href="./index.html" class="hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    🤠 okQRal
+  </a>
+</h1>
+
+      <!-- Controls (right-aligned) -->
+      <div class="ml-auto flex items-center gap-3" id="topControls">
+        <!-- Type -->
+        <label class="text-sm">
+          <span class="sr-only">Type</span>
+          <select id="qrType" class="topctl topctl--chev text-sm start-here" aria-label="Type">
+            <option value="" disabled selected hidden>💖</option>
+            <option>URL</option>
+            <option>Payment</option>
+            <option>WiFi</option>
+            <option>Contact</option>
+            <option>Message</option>
+            <option>Event</option>
+            <option>Map</option>
+          </select>
+        </label>
+
+        <!-- Theme toggle -->
+        <button type="button" id="themeToggle" aria-pressed="false" title="Toggle dark mode">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main
+  class="mx-auto max-w-7xl px-6 py-8 grid
+         grid-cols-1
+         xl:grid-cols-2
+         justify-items-center xl:justify-items-start
+         items-start gap-10">
+
+<!-- LEFT: Preview Stage -->
+<section class="stage-stick justify-self-center w-full flex justify-center">
+  <!-- Own the iPhone aspect ratio here -->
+<div class="preview-stage relative mx-auto overflow-visible">
+    <div class="absolute inset-0 p-0" style="overflow:visible">
+      <!-- Single card: stroke/fill live here; SVG stays transparent -->
+      <div id="qrPreview" class="card--fill w-full h-full overflow-visible flex flex-col">
+        <!-- live SVG mounts here -->
+        <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
+      </div>
+
+      <!-- Previous and Next Arrows -->
+    <button id="prevSubtype" class="nav-arrow absolute w-10 h-10 grid place-items-center"></button>
+
+    <button id="nextSubtype" class="nav-arrow absolute w-10 h-10 grid place-items-center"></button>
+    </div>
+  </div>
+</section>
+
+<!-- RIGHT: Stepper (controls) -->
+<section id="stepper"
+  class="stage-stick space-y-4 w-full max-w-[560px] mx-auto justify-self-center">
+
+  <!-- Caption -->
+  <div class="step-card rounded-2xl border border-neutral-200 bg...ite overflow-hidden dark:bg-neutral-900 dark:border-neutral-800"
+       data-step="caption">
+    <button class="w-full step-header px-4 py-3 text-left font-medium" data-step-toggle>
+      Caption
+    </button>
+    <div class="px-4 pb-4 space-y-3" data-step-panel>
+      <!-- Headline -->
+      <label class="block text-sm">
+        <span class="sr-only">Headline</span>
+        <textarea id="campaign"
+          rows="1"
+          maxlength="20"
+          class="w-full rounded-md border px-3 py-2"
+          placeholder="Headline"></textarea>
+      </label>
+
+      <!-- Body -->
+      <label class="block text-sm">
+        <span class="sr-only">Body (optional)</span>
+        <textarea id="captionBody"
+          rows="1"
+          maxlength="60"
+          class="w-full rounded-md border px-3 py-2"
+          placeholder="Body (optional)"></textarea>
+      </label>
+
+      <!-- Toggle -->
+      <label class="inline-flex items-center gap-2">
+        <input id="showCaption" type="checkbox" class="rounded border" checked />
+        <span class="text-sm">Show caption under preview</span>
+      </label>
+    </div>
+  </div>
+
+<!-- Design -->
+<div class="step-card rounded-2xl border border-neutral-200 bg-white dark:bg-neutral-900 dark:border-neutral-800"
+     data-step="design">
+
+    <!-- Header wrapper (font pill lives here, matching ECC structure) -->
+    <div class="step-header-wrap">
+      <button class="w-full step-header px-4 py-3 text-left font-medium" data-step-toggle>
+        Design
+      </button>
+
+    <!-- Font pill -->
+    <div id="fontPill" class="ecc-pill" role="group" aria-label="Preview font">
+      <label class="text-sm sr-only" for="fontFamily">Preview font</label>
+      <select id="fontFamily" class="topctl topctl--chev text-sm" aria-label="Preview font">
+        <option value="IBM Plex Sans">IBM Plex Sans</option>
+        <option value="IBM Plex Serif">IBM Plex Serif</option>
+        <option value="Bebas Neue">Bebas Neue</option>
+        <option value="Public Sans">Public Sans</option>
+        <option value="Playfair Display">Playfair Display</option>
+        <option value="Space Grotesk">Space Grotesk</option>
+        <option value="Manrope">Manrope</option>
+        <option value="Inter">Inter</option>
+        <option value="JetBrains Mono">JetBrains Mono</option>
+        <option value="Work Sans">Work Sans</option>
+      </select>
+    </div>
+  </div>
+  <!-- Closed by default -->
+  <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
+    <!-- Color quadrant -->
+    <div class="grid gap-3 sm:grid-cols-2">
+      <!-- Caption Text Color -->
+      <label class="text-sm">
+        <span class="block mb-1">Caption Text Color</span>
+        <div class="flex items-center gap-2">
+          <input id="captionColor" type="color" class="h-9 w-10 rounded-md border" value="#000000" />
+          <input id="captionColorHex" type="text" class="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="#RRGGBB" />
+        </div>
+      </label>
+
+      <!-- Body -->
+      <label class="text-sm">
+        <span class="block mb-1">Body</span>
+        <div class="flex items-center gap-2">
+          <input id="bodyColor" type="color" class="h-9 w-10 rounded-md border" value="#000000" />
+          <input id="bodyColorHex" type="text" class="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="#RRGGBB" />
+        </div>
+      </label>
+
+      <!-- Eye Ring -->
+      <label class="text-sm">
+        <span class="block mb-1">Eye Ring</span>
+        <div class="flex items-center gap-2">
+          <input id="eyeRingColor" type="color" class="h-9 w-10 rounded-md border" value="#9CA3AF" />
+          <input id="eyeRingColorHex" type="text" class="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="#RRGGBB" />
+        </div>
+      </label>
+
+      <!-- Eye Center -->
+      <label class="text-sm">
+        <span class="block mb-1">Eye Center</span>
+        <div class="flex items-center gap-2">
+          <input id="eyeCenterColor" type="color" class="h-9 w-10 rounded-md border" value="#6B7280" />
+          <input id="eyeCenterColorHex" type="text" class="flex-1 rounded-md border px-3 py-2 text-sm" placeholder="#RRGGBB" />
+        </div>
+      </label>
+    </div>
+
+    <!-- Shapes -->
+    <div class="grid gap-3 sm:grid-cols-3">
+      <label class="text-sm">
+        <span class="block mb-1">Modules</span>
+        <select id="moduleShape" class="w-full rounded-md border px-3 py-2">
+          <option>Square</option><option>Rounded</option><option>Circle</option>
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="block mb-1">Eye Ring</span>
+        <select id="eyeRingShape" class="w-full rounded-md border px-3 py-2">
+          <option>Square</option><option>Rounded</option><option>Circle</option>
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="block mb-1">Eye Center</span>
+        <select id="eyeCenterShape" class="w-full rounded-md border px-3 py-2">
+          <option>Square</option><option>Rounded</option><option>Circle</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Module fill -->
+    <div class="grid gap-3 sm:grid-cols-3">
+      <label class="text-sm">
+        <span class="block mb-1">Module Fill</span>
+        <select id="modulesMode" class="w-full rounded-md border px-3 py-2">
+          <option>Shape</option><option>Emoji</option>
+        </select>
+      </label>
+      <label class="text-sm" id="modulesEmojiWrap">
+        <span class="block mb-1">Emoji</span>
+        <div class="flex gap-2">
+          <input id="modulesEmoji" type="text" class="w-full rounded-md border px-3 py-2" value="😀" />
+          <button type="button" data-emoji-target="modulesEmoji" class="px-3 py-2 text-sm rounded-md border hover:bg-neutral-50">Pick…</button>
+        </div>
+      </label>
+      <label class="text-sm" id="modulesScaleWrap">
+        <span class="block mb-1">Scale</span>
+        <div class="flex items-center gap-2">
+          <input id="modulesScale" type="number" step="0.05" min="0.1" max="1" class="w-full rounded-md border px-3 py-2" value="0.9" />
+        </div>
+      </label>
+    </div>
+
+    <!-- Center content -->
+    <div class="grid gap-3 sm:grid-cols-3 items-start">
+      <label class="text-sm">
+        <span class="block mb-1">Center content</span>
+        <select id="centerMode" class="w-full rounded-md border px-3 py-2">
+          <option>None</option>
+          <option>Blank</option>
+          <option>Emoji</option>
+        </select>
+      </label>
+      <label class="text-sm" id="centerEmojiWrap">
+        <span class="block mb-1">Emoji</span>
+        <div class="flex gap-2">
+          <input id="centerEmoji" type="text" class="w-full rounded-md border px-3 py-2" value="😊" />
+          <button type="button" data-emoji-target="centerEmoji" class="px-3 py-2 text-sm rounded-md border hover:bg-neutral-50">Pick…</button>
+        </div>
+      </label>
+      <label class="text-sm" id="centerScaleWrap">
+        <span class="block mb-1">Scale</span>
+        <div class="flex items-center gap-2">
+          <input id="centerScale" type="number" step="0.05" min="0.1" max="1.5" class="w-full rounded-md border px-3 py-2" value="2" />
+        </div>
+      </label>
+    </div>
+
+    <!-- Background (gradient) -->
+    <div class="grid grid-cols-[auto,auto,1fr] items-start gap-3">
+      <label class="inline-flex items-center gap-2 leading-9">
+        <input id="bgTransparent" type="checkbox" class="rounded border" onchange="refreshBackground()" />
+        <span class="text-sm">Background</span>
+      </label>
+
+      <div class="flex flex-col gap-2 col-span-2">
+        <!-- Top color + hex + opacity -->
+        <div class="flex items-center gap-2">
+          <input id="bgTopColor" type="color" class="h-9 w-10 rounded-md border" value="#FFFFFF" />
+          <input id="bgTopHex"   type="text"  class="w-28 rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+          <input id="bgTopAlpha" type="range" min="0" max="100" step="1" class="w-36 h-6" oninput="this.nextElementSibling.value=this.value" value="100" />
+          <input type="number" min="0" max="100" step="1" value="100" class="w-16 rounded-md border px-2 py-2 text-sm" oninput="this.previousElementSibling.value=this.value" aria-label="Top opacity (%)" />
+        </div>
+
+        <!-- Bottom color + hex + opacity -->
+        <div class="flex items-center gap-2">
+          <input id="bgBottomColor" type="color" class="h-9 w-10 rounded-md border" value="#FFFFFF" />
+          <input id="bgBottomHex"   type="text"  class="w-28 rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+          <input id="bgBottomAlpha" type="range" min="0" max="100" step="1" class="w-36 h-6" oninput="this.nextElementSibling.value=this.value" value="100" />
+          <input type="number" min="0" max="100" step="1" value="100" class="w-16 rounded-md border px-2 py-2 text-sm" oninput="this.previousElementSibling.value=this.value" aria-label="Bottom opacity (%)" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mechanicals -->
+<div class="step-card rounded-2xl border border-neutral-200 bg-white dark:bg-neutral-900 dark:border-neutral-800"
+     data-step="mechanicals">
+
+  <!-- Header wrapper (pill lives here) -->
+  <div class="step-header-wrap">
+    <button class="w-full step-header px-4 py-3 text-left font-medium" data-step-toggle>
+      Mechanicals
+    </button>
+
+    <!-- ECC pill (inside header) -->
+    <div id="eccPill" class="ecc-pill" role="group" aria-label="Error correction">
+      <button type="button" class="ecc-btn" data-ecc="L">L</button>
+      <button type="button" class="ecc-btn" data-ecc="M">M</button>
+      <button type="button" class="ecc-btn" data-ecc="Q">Q</button>
+      <button type="button" class="ecc-btn" data-ecc="H">H</button>
+    </div>
+  </div>
+
+  <!-- Closed by default -->
+  <div class="px-4 pb-4 space-y-4" data-step-panel style="display:none">
+    <div id="detailsPanel" class="space-y-4"></div>
+  </div>
+</div>
+
+<!-- Finish -->
+<div id="finishCard"
+     class="step-card rounded-2xl border border-neutral-200 bg-white dark:bg-neutral-900 dark:border-neutral-800"
+     data-step="finish">
+  <button type="button"
+          class="w-full step-header px-4 py-3 text-left font-medium"
+          data-step-toggle>
+    Finish
+  </button>
+
+  <div class="px-4 pb-4 space-y-3" data-step-panel>
+    <div class="flex flex-wrap items-center gap-3">
+      <label class="inline-flex items-center gap-2">
+        <input id="wantPng" type="checkbox" class="rounded border" checked>
+        <span class="text-sm">PNG</span>
+      </label>
+
+      <label class="inline-flex items-center gap-2">
+        <input id="wantSvg" type="checkbox" class="rounded border" checked>
+        <span class="text-sm">SVG</span>
+      </label>
+
+      <button id="exportBtn" type="button"
+              class="ml-auto px-4 py-2 rounded-lg bg-black text-white text-sm">
+        ✨
+      </button>
+    </div>
+  </div>
+</div>
+
+  <!-- Emoji Modal -->
+  <div id="emojiModal" class="hidden fixed inset-0 z-50 modal-bg grid place-items-center p-4">
+    <div class="w-full max-w-3xl rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-lg">
+      <div class="flex items-center gap-3 px-4 py-3 border-b dark:border-neutral-800">
+        <div class="text-sm font-medium"></div>
+        <input id="emojiSearch" type="text" placeholder="Search…" class="ml-auto w-64 rounded-md border px-3 py-2 text-sm" />
+        <button
+        id="emojiClose"
+        class="ml-auto px-3 py-2 rounded-md border bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-100 text-sm hover:bg-neutral-300 dark:hover:bg-neutral-600 transition"
+      >
+      x
+      </button>
+      </div>
+      <div class="max-h-[60vh] overflow-auto p-4">
+        <div id="emojiGrid" class="grid emoji-grid gap-2"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+  <footer class="app-footer text-sm text-center py-6 border-t border-neutral-200 dark:border-neutral-800">
+  <div class="app-footer__rule mb-2"></div>
+  <p class="app-footer__text mb-2">
+    © <span id="year"></span>
+    🤠 okQRal by
+    <a href="mailto:jacobhenderson@gmail.com"
+       class="hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      Jacob Henderson, LLC
+    </a>.
+    All rights reserved.
+  </p>
+  <nav class="flex justify-center flex-wrap gap-4 text-sm">   
+    <a href="./about-qr.html" class="hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500">About QR Codes</a>
+    <a href="./privacy.html" class="hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500">Privacy</a>
+    <a href="./legal.html" class="hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500">Legal / Disclaimer</a>
+  </nav>
+</footer>
+
+<script>
+  // Set current year automatically
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+<script>
+(function () {
+  const root = document.documentElement;
+
+  function apply(isDark, persist=true){
+    root.classList.remove('dark','light');
+    root.classList.add(isDark ? 'dark' : 'light');
+    if (persist) localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  }
+
+  // initial: saved choice → system preference
+  const saved   = localStorage.getItem('theme');                  // 'dark' | 'light' | null
+  const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  apply(saved ? saved === 'dark' : sysDark, /*persist=*/false);
+
+  // click handler on the menu item
+  document.getElementById('themeToggle')?.addEventListener('click', () => {
+    const nextDark = !root.classList.contains('dark');
+    apply(nextDark);
+  }, { passive:true });
+
+  // follow OS changes only if user hasn't chosen
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  mq.addEventListener?.('change', (e) => {
+    if (!localStorage.getItem('theme')) apply(e.matches, /*persist=*/false);
+  });
+})();
+</script>
+
+<!-- Emoji Modal -->
+<!-- (optional) tiny helper for the dim bg -->
+<style>
+  .modal-bg { background: rgba(0,0,0,.5); backdrop-filter: blur(6px); }
+</style>
+
+<!-- Your app code (keep this if you already have it) -->
+<script src="./vendor/qrcode.min.js"></script>
+<script src="./qr_app.js" defer></script>
+
+<!-- Boot once both QRCode & render() are ready -->
+<script>
+  (function boot() {
+    let tries = 0, max = 80;
+    (function tick(){
+      if (window.QRCode && QRCode.CorrectLevel && typeof window.render === "function") { render(); return; }
+      if (++tries >= max) { console.error("QR library never loaded; check vendor/qrcode.min.js"); return; }
+      setTimeout(tick, 50);
+    })();
+  })();
+</script>
+
+<!-- Emoji picker wiring -->
+<script type="module">
+  import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js';
+
+  const emojiModal  = document.getElementById('emojiModal');
+  const emojiClose  = document.getElementById('emojiClose');
+  let   emojiTarget = null;
+
+  function openEmoji(targetId) {
+    emojiTarget = document.getElementById(targetId) || null;
+    emojiModal.classList.remove('hidden');
+    queueMicrotask(() => document.querySelector('emoji-picker')?.focus());
+  }
+  function closeEmoji() {
+    emojiModal.classList.add('hidden');
+    emojiTarget = null;
+    if (typeof window.render === 'function') window.render();
+  }
+  window.openEmoji  = openEmoji;
+  window.closeEmoji = closeEmoji;
+
+  document.querySelectorAll('[data-emoji-target]')
+    .forEach(btn => btn.addEventListener('click', () => openEmoji(btn.getAttribute('data-emoji-target'))));
+  emojiClose?.addEventListener('click', closeEmoji);
+  emojiModal?.addEventListener('click', (e) => { if (e.target === emojiModal) closeEmoji(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !emojiModal.classList.contains('hidden')) closeEmoji(); });
+
+  // Insert picker and connect selection
+  const grid   = document.getElementById('emojiGrid');
+  const picker = document.createElement('emoji-picker');
+  picker.setAttribute('emojis-per-row', '10');
+  picker.setAttribute('skin-tone-emoji', '👍');
+  picker.style.width = '100%';
+  picker.style.maxHeight = '60vh';
+  picker.style.border = '0';
+
+  const applyPickerTheme = () => {
+    picker.setAttribute('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  };
+  applyPickerTheme();
+  document.getElementById('themeToggle')?.addEventListener('click', applyPickerTheme);
+  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', applyPickerTheme);
+
+  // Keep picker in sync whenever <html> toggles dark/light
+new MutationObserver(() => applyPickerTheme())
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+  grid.replaceWith(picker);
+
+  picker.addEventListener('emoji-click', (e) => {
+    const char = e.detail.unicode;
+    if (emojiTarget) {
+      emojiTarget.value = char;
+      emojiTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    closeEmoji();
+  });
+</script>
+
+
+<script>
+(() => {
+  const cards   = Array.from(document.querySelectorAll('.step-card'));
+  const toggles = Array.from(document.querySelectorAll('[data-step-toggle]'));
+  const finish  = document.querySelector('.step-card[data-step="finish"]');
+
+  function setFooterVar(){
+    // Keep a live CSS var with the Finish bar height for max-height math
+    const h = finish ? finish.offsetHeight : 0;
+    document.documentElement.style.setProperty('--footer-h', (h || 72) + 'px');
+  }
+
+  function openCard(card){
+  cards.forEach(c => {
+    const open  = (c === card);
+    const panel = c.querySelector('[data-step-panel]');
+    const btn   = c.querySelector('[data-step-toggle]');
+    c.classList.toggle('is-open', open);
+    if (panel) panel.style.display = open ? '' : 'none';      // <-- show/hide
+    if (btn)   btn.setAttribute('aria-expanded', String(open));
+  });
+  setFooterVar();
+}
+
+  // Wire up open-state marker (no cascade changes, just a class)
+  toggles.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.step-card');
+      if (card) openCard(card);
+    });
+  });
+
+  // On first paint: Caption should be open (per your current default)
+  // If your markup already opens it, the next line is harmless:
+  const caption = cards.find(c => c.dataset.step === 'caption') || cards[0];
+  if (caption) openCard(caption);
+
+  // Keep the var current if the user resizes
+  window.addEventListener('resize', setFooterVar, { passive: true });
+})();
+</script>
+
+<script>
+(() => {
+  const root       = document.documentElement;
+  const stepper    = document.getElementById('stepper');
+  const designCard = document.querySelector('.step-card[data-step="design"]');
+  const finishCard = document.querySelector('.step-card[data-step="finish"]');
+  const headerBar  = document.querySelector('.header-bar');
+  const panel = (card) => card?.querySelector('[data-step-panel]');
+
+  function measureDesignPanelHeight() {
+    const p = panel(designCard);
+    if (!p) return 0;
+    const wasHidden = getComputedStyle(p).display === 'none';
+    const restore = wasHidden ? {display:p.style.display,position:p.style.position,visibility:p.style.visibility} : null;
+    if (wasHidden) { p.style.display=''; p.style.position='absolute'; p.style.visibility='hidden'; }
+    const h = Math.round(p.getBoundingClientRect().height);
+    if (wasHidden && restore){ p.style.display=restore.display; p.style.position=restore.position; p.style.visibility=restore.visibility; }
+    return h;
+  }
+
+  function setParkVars(){
+    const headerH = headerBar?.offsetHeight || 56;
+    const designH = measureDesignPanelHeight() || 520;
+    const maxInViewport = Math.max(240, Math.min(designH, window.innerHeight - headerH - 16));
+    root.style.setProperty('--header-h', headerH + 'px');
+    root.style.setProperty('--park-h',   maxInViewport + 'px');   // 👈 distance from top we “park” at
+  }
+
+  // keep it updated
+  window.addEventListener('resize', setParkVars, { passive: true });
+  const ro = new ResizeObserver(setParkVars);
+  const dp = panel(designCard); if (dp) ro.observe(dp);
+  stepper?.addEventListener('click',  () => setTimeout(setParkVars, 0));
+  stepper?.addEventListener('input',  () => setTimeout(setParkVars, 0));
+  stepper?.addEventListener('change', () => setTimeout(setParkVars, 0));
+
+  // expose so your accordion script can nudge it after toggling
+  window._setParkVars = setParkVars;
+
+  setParkVars();
+})();
+</script>
+
+<script> 
+  // Make toggle match controls in case CSS didn't load early enough
+  document.getElementById('themeToggle')?.classList.add('control');
+
+  // When you already compute transparency in render(), also toggle card classes:
+  (function hookPreviewFrame(){
+  const origRender = window.render;
+  if (!origRender) return;
+
+  function hexToRgb(hex){
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
+    if (!m) return {r:255,g:255,b:255};
+    return { r: parseInt(m[1],16), g: parseInt(m[2],16), b: parseInt(m[3],16) };
+  }
+  function rgba(hex, a){
+    const {r,g,b} = hexToRgb(hex);
+    return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, a))})`;
+  }
+
+  window.render = function(){
+    origRender();
+
+    const preview = document.getElementById('qrPreview');
+    if (!preview) return;
+
+    const wantTransparent = !document.getElementById('bgTransparent')?.checked;
+
+    const topHex   = document.getElementById('bgTopHex')?.value?.trim()   || document.getElementById('bgTopColor')?.value || '#FFFFFF';
+    const botHex   = document.getElementById('bgBottomHex')?.value?.trim()|| document.getElementById('bgBottomColor')?.value || topHex;
+
+    const topA     = (parseFloat(document.getElementById('bgTopAlpha')?.value)    || 100) / 100;
+    const botA     = (parseFloat(document.getElementById('bgBottomAlpha')?.value) || 100) / 100;
+
+    // keep a single “frame color” token for any places that still use it
+    preview.style.setProperty('--frame-color', topHex);
+    preview.style.setProperty('--frame-w', '2px');
+
+    // Build the paint: solid if both colors match, otherwise a vertical gradient
+    let paint;
+    if (topHex.toLowerCase() === botHex.toLowerCase() && Math.abs(topA - botA) < 0.001){
+      paint = rgba(topHex, topA);
+    } else {
+      paint = `linear-gradient(180deg, ${rgba(topHex, topA)} 0%, ${rgba(botHex, botA)} 100%)`;
+    }
+    preview.style.setProperty('--bg-paint', paint);
+
+    // Stroke vs Fill occupy the EXACT same box
+    preview.classList.toggle('card--stroke', wantTransparent);
+    preview.classList.toggle('card--fill', !wantTransparent);
+  };
+
+  // run once to apply immediately
+  window.render();
+})();
+
+  // Ensure arrows are wired (safe no-ops if you have logic already)
+  document.getElementById('prevSubtype')?.addEventListener('click', () => {
+    if (window.cyclePreset) return window.cyclePreset(-1);
+  });
+  document.getElementById('nextSubtype')?.addEventListener('click', () => {
+    if (window.cyclePreset) return window.cyclePreset(1);
+  });
+</script>
+
+<script>
+(function () {
+  const onTab = e => { if (e.key === 'Tab') document.body.classList.add('kbd'); };
+  const onMouse = () => document.body.classList.remove('kbd');
+  window.addEventListener('keydown', onTab, { once: true });
+  window.addEventListener('mousedown', onMouse);
+})();
+</script>
+
+<script>
+(function(){
+  const sel = document.getElementById('qrType');
+  if (!sel) return;
+  const sync = () => sel.classList.toggle('start-here', !sel.value);
+  sel.addEventListener('change', sync);
+  sync(); // on load
+})();
+</script>
+
+<script>
+(function () {
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+
+  function paintIcon() {
+    const dark = document.documentElement.classList.contains('dark');
+    btn.textContent = dark ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.setAttribute('title',      dark ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+  }
+
+  // Paint on load
+  paintIcon();
+
+  // Repaint whenever <html> class flips (your existing scripts do this)
+  new MutationObserver(paintIcon)
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+})();
+</script>
+
+<script>
+(function () {
+  const qs = new URLSearchParams(location.search);
+  const hashEgg = (location.hash.startsWith('#egg=') && location.hash.slice(5)) || '';
+  const egg = qs.get('egg') || hashEgg;
+
+  if (egg === 'love') {
+    showEasterEgg('https://okqral.com/assets/love.png');
+    // remove the flag from the URL so refresh returns to normal
+    history.replaceState({}, '', location.pathname);
+  }
+
+  function showEasterEgg(src){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,.6);
+      display:flex; align-items:center; justify-content:center;
+      z-index:9999; padding:24px;
+    `;
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background: var(--md-sys-color-surface, #fff);
+      color: var(--md-sys-color-on-surface, #111);
+      border-radius: 16px; max-width: 92vw; max-height: 90vh;
+      box-shadow: 0 10px 40px rgba(0,0,0,.35); overflow:hidden;
+    `;
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = 'Love.jpg';
+    img.style.cssText = 'display:block; max-width:90vw; max-height:72vh; object-fit:contain; background:#fff';
+
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex; gap:12px; align-items:center; justify-content:space-between; padding:12px 16px;';
+    bar.innerHTML = `
+      <span style="font:600 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto">Easter egg: Love.jpg</span>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <a href="/" style="text-decoration:none; font:600 13px system-ui">okQRal</a>
+        <button type="button" aria-label="Close" style="border:0; background:#000; color:#fff; border-radius:10px; padding:8px 12px; cursor:pointer;">Close</button>
+      </div>
+    `;
+    bar.querySelector('button').onclick = () => document.body.removeChild(overlay);
+
+    card.appendChild(img);
+    card.appendChild(bar);
+    overlay.appendChild(card);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) bar.querySelector('button').click(); });
+    document.body.appendChild(overlay);
+  }
+})();
+</script>
+
+</body>
+</html>

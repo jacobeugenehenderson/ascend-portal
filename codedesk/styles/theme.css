@@ -1,0 +1,1711 @@
+/* =======================================================================
+   okQRal — THEME.CSS
+   Master style sheet controlling UI variables, theming, and component look.
+   Author: Jacob Eugene Henderson
+   -----------------------------------------------------------------------
+   STRUCTURE OVERVIEW
+   -----------------------------------------------------------------------
+   1.  CONTROL PANEL — BASE (dark mode default)
+         • Global design tokens and CSS variables (color, radii, density, motion)
+         • Defines reusable Material-inspired system values (md-sys-color-* etc.)
+   2.  GLOBAL SCAFFOLD
+         • Body background gradients, theme grid overlay, layout padding
+   3.  CARDS / SURFACES
+         • Card containers, elevation shadows, stepper highlights
+   4.  CONTROLS
+         • Inputs, selects, buttons, and top-bar menu items
+         • Includes hover/focus, emoji picker, and color-chip definitions
+   5.  PREVIEW LAYOUT
+         • QR preview area, SVG mount, transparent-frame styling
+   6.  ARROWS
+         • Navigation arrows for QR subtype switching
+   7.  FOOTER
+         • Fixed footer gradient bar and copyright text
+   8.  THEME MODES
+         • :root.light, :root.hc, and reduced-motion overrides
+   9.  UTILITIES / OVERRIDES (sandbox)
+         • Temporary tweaks, experimental features, or future controls
+   -----------------------------------------------------------------------
+   NOTES
+   -----------------------------------------------------------------------
+   • Variables follow Material Design token conventions where possible.
+   • All custom properties begin with `--md-sys-`, `--ui-`, or `--qr-` prefixes.
+   • JS can read certain variables via `getComputedStyle()` (e.g., --export-*).
+   • To add new features, prefer creating new tokens at the top-level :root.
+   • For experiments or nonstandard styling, append at the bottom section (9).
+   ======================================================================= */
+
+/* =========================
+   1. CONTROL PANEL — BASE (dark by default)
+========================= */
+/* Ensure both selector styles respond to the same classes */
+html.dark { color-scheme: dark; }
+html.light { color-scheme: light; }
+
+/* Mirror tokens whether the class is on <html> (html.light) or :root.light */
+/* LIGHT MODE */
+html.light, :root.light {
+  /* Light overrides — keep in sync with your existing values */
+  --md-sys-color-background:      #fafafa;
+  --md-sys-color-on-background:   #0b0b0b;
+  --md-sys-color-surface:         #ffffff;
+  --md-sys-color-on-surface:      #111;
+  --md-sys-color-surface-variant: #f1f1f6;
+  --md-sys-color-outline:         rgba(110,90,210,.35);
+  --md-sys-color-outline-variant: rgba(110,90,210,.55);
+
+  --ui-surface:         var(--md-sys-color-surface);
+  --ui-surface-variant: var(--md-sys-color-surface-variant);
+  --ui-stroke:          var(--md-sys-color-outline);
+  --ui-stroke-hover:    var(--md-sys-color-outline-variant);
+  --ui-focus-ring:      var(--md-sys-color-primary);
+  --ui-glow-color:      var(--md-sys-color-primary);
+
+  --md-sys-color-on-primary: #0B0715;  /* single authoritative light-mode ink */
+}
+
+:root{
+
+  /* ----- Header ----- */
+  --header-h: 56px;
+
+  /* ----- Brand / Accent (HSL-based) ----- */
+  --brand-h: 266;
+  --brand-s: 92%;
+  --brand-l: 66%;
+  --md-sys-color-primary: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+  --md-sys-color-primary-hover: color-mix(in oklab, var(--md-sys-color-primary) 86%, white);
+  --md-sys-color-primary-pressed: color-mix(in oklab, var(--md-sys-color-primary) 80%, black);
+  --md-sys-color-on-primary: #ffffff;
+  
+  /* Stage Frame */
+  --stage-frame: #1ff0ff; /* staging stroke color */
+  --stage-frame-w: 1px;   /* stroke width */
+
+  /* Typography */
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+
+  /* Display (section buttons: Caption, Design, Mechanicals, Finish) */
+  --typo-display-size: 1rem;         /* 16px */
+  --typo-display-weight: 600;        /* semibold */
+  --typo-display-track: .012em;
+
+  /* Labels (field names like “Module Fill”, “Background”) */
+  --typo-label-size: .9375rem;       /* 15px */
+  --typo-label-weight: 300;          /* medium */
+  --typo-label-track: .01em;
+  --typo-label-color: color-mix(in oklab, var(--md-sys-color-on-surface) 82%, transparent);
+
+  /* Inputs text (inside fields) */
+  --typo-input-size: .9375rem;       /* 15px */
+  --typo-input-weight: 200;
+
+  /* Placeholder text (“dummy” text) */
+  --typo-ph-color: color-mix(in oklab, var(--md-sys-color-on-surface) 55%, transparent);
+  --typo-ph-weight: 200;
+  --typo-ph-opacity: .65;
+
+  /* Surfaces & text */
+  --md-sys-color-background:      #050505;
+  --md-sys-color-on-background:   #EAEAEA;
+  --md-sys-color-surface:         #0E0A12;   /* cards, panels */
+  --md-sys-color-on-surface:      #EAEAEA;
+  --md-sys-color-surface-variant: #171421;   /* inputs, chips */
+  --md-sys-color-muted:           #a1a1aa;
+
+      /* Strokes — fixed lilac so global chrome stays brand-colored */
+  --md-sys-color-outline:         rgba(160,140,255,.35);
+  --md-sys-color-outline-variant: rgba(160,140,255,.55);
+
+  /* Elevation (shadows) */
+  --elevation-1: 0 4px 12px rgba(0,0,0,.35);
+  --elevation-2: 0 8px 24px rgba(0,0,0,.40);
+  --elevation-3: 0 12px 32px rgba(0,0,0,.45);
+
+  /* ----- Shape / Corner scale ----- */
+  --shape-corner-scale: 1;
+  --shape-corner-sm-base: 8px;
+  --shape-corner-md-base: 14px;
+  --shape-corner-lg-base: 20px;
+  --shape-corner-sm: calc(var(--shape-corner-sm-base) * var(--shape-corner-scale));
+  --shape-corner-md: calc(var(--shape-corner-md-base) * var(--shape-corner-scale));
+  --shape-corner-lg: calc(var(--shape-corner-lg-base) * var(--shape-corner-scale));
+  --shape-corner-full: 9999px;
+
+  /* Interaction */
+  --state-hover-opacity:   .08;
+  --state-focus-opacity:   .12;
+  --state-pressed-opacity: .12;
+  --focus-ring:            rgba(56,189,248,.7);
+
+  /* Component aliases (single source of truth) */
+  --ui-surface:        rgba(14,14,20,.92);
+  --ui-surface-variant:var(--md-sys-color-surface-variant);
+  --ui-stroke:         var(--md-sys-color-outline);
+  --ui-stroke-hover:   var(--md-sys-color-outline-variant);
+
+  /* QR frame (Transparent mode) */
+  --qr-stroke-color:   rgba(139,92,246,.70);
+  --qr-stroke-width:   1;
+  --qr-stroke-glow:    0 0 18px rgba(139,92,246,.28);
+
+  /* ----- Density / Compact scale ----- */
+  --density-scale: 1;
+  --density-control-h-base: 2.25rem;
+  --density-gap-base: .75rem;
+  --density-control-h: calc(var(--density-control-h-base) * var(--density-scale));
+  --density-gap:       calc(var(--density-gap-base) * var(--density-scale));
+
+  /* ----- Focus ring (consistent keyboard focus) ----- */
+  --focus-ring-width: 2px;
+  --focus-ring-color: color-mix(in oklab, var(--md-sys-color-primary) 35%, transparent);
+
+  /* ----- Motion scale (global speed) ----- */
+  --motion-scale: 1;
+  --motion-duration-1-base: 120ms;
+  --motion-duration-2-base: 180ms;
+  --motion-duration-1: calc(var(--motion-duration-1-base) * var(--motion-scale));
+  --motion-duration-2: calc(var(--motion-duration-2-base) * var(--motion-scale));
+  --motion-ease: cubic-bezier(.2,.6,.2,1);
+
+  /* ----- Export defaults (read by JS) ----- */
+  --export-png-scale: 3;
+  --export-filename: "okQRal";
+
+  /* ----- Grid overlay knobs (for theme scaffold) ----- */
+  --grid-size: 40px;
+  --grid-opacity: .85;
+  --grid-line-color: hsl(275 100% 70%); /* hard neon violet */
+  --grid-glow-color: hsl(175 100% 62%);
+  --grid-glow-opacity: .55;         /* ↓ a touch less global glow */
+  --grid-glow-blur: 4px;            /* ↓ was effectively ~8px */
+  --grid-vignette-strength: .14;    /* ↓ weaker white “bloom” */
+  --grid-vignette-size: 94%;        /* ↑ larger = gentler center spot */
+  --grid-vignette-y: 42%;           /* center height bias */
+
+  /* Hover / focus glow knobs */
+  --hover-glow-color: color-mix(in oklab, var(--md-sys-color-primary) 30%, transparent);
+  --hover-glow-blur:  8px;   /* glow softness */
+  --focus-glow-blur:  10px;  /* slightly stronger for focus */
+
+  /* Shared chevron for top controls */
+  --chev-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'><path d='M5.23 7.21a.75.75 0 011.06.02L10 10.17l3.71-2.94a.75.75 0 111.04 1.08l-4.23 3.35a.75.75 0 01-.96 0L5.21 8.31a.75.75 0 01.02-1.1z'/></svg>");
+  
+  /* Phone radius... */
+  --phone-radius: 22px;
+
+  /* Arrows placement... */
+  --edge-gutter: clamp(24px, 2vw, 24px);
+
+  /* Footer height token */
+    --footer-h: 72px;
+
+  /* … existing vars … */
+  --stack-gap: 0rem;        /* unify spacing rhythm */
+
+  /* ----- BG CARD STROKE (filled mode) ----- */
+    --bg-card-stroke-color:  hsl(179, 100%, 38%);   /* sharp turquoise */
+    --bg-card-stroke-width:  1px;                /* tweak for subtlety */
+    --bg-card-stroke-glow:   0 0 10px rgba(0,240,200,.35);  /* optional soft halo */
+
+    /* Featured / open card accent (default = global lilac story) */
+  --featured-stroke-width: 1px;
+  --step-color-primary: var(--md-sys-color-primary);
+  --featured-stroke-color: color-mix(in oklab, var(--step-color-primary) 45%, transparent);
+  --featured-stroke-glow: 0 0 12px color-mix(in oklab, var(--step-color-primary) 30%, transparent);
+
+  /* Open step fills (used only inside cards) */
+  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 85%, var(--step-color-primary) 15%);
+  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
+
+  --stepper-stroke-closed: hsl(221, 100%, 7%);
+ 
+}
+
+  /* ==========================================================
+   SECTION COLOR THEMES
+   Uses existing brand knobs: --brand-h / --brand-s / --brand-l
+   ========================================================== */
+
+/* Default / Caption — violet */
+body.theme--caption {
+  --step-color-primary: hsl(266 92% 66%);
+  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 85%, var(--step-color-primary) 15%);
+  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
+}
+
+/* Design — bright yellow */
+body.theme--design {
+  --step-color-primary: #FFD200;
+  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 80%, var(--step-color-primary) 20%);
+  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
+}
+
+/* Mechanicals — dense blue */
+body.theme--mechanical {
+  --step-color-primary: #00208F;
+  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 82%, var(--step-color-primary) 18%);
+  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
+}
+
+/* Finish — pastel peach */
+body.theme--finish {
+  --step-color-primary: #FFC8A2;
+  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 82%, var(--step-color-primary) 18%);
+  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
+}
+
+/* shared sticky offset */
+.stage-stick {
+  position: sticky;
+  top: var(--header-h);
+}
+
+/* =========================
+   2. GLOBAL SCAFFOLD
+========================= */
+
+main {
+  margin-top: 2rem; /* or 24px */
+}
+
+body{
+  background: linear-gradient(
+    135deg,
+    var(--md-sys-color-background),
+    color-mix(in oklab, var(--md-sys-color-background) 85%, black)
+  );
+  color: var(--md-sys-color-on-background);
+}
+
+.theme-grid{ position:relative; }
+/* LAYER 1 — lines + primary glow (screen blend) */
+.theme-grid::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity: var(--grid-opacity);
+
+  /* hard violet lines */
+  background:
+    linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line-color) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
+
+  /* aqua bloom riding over the lines */
+  box-shadow:
+    0 0 24px 6px color-mix(in oklab, var(--grid-glow-color) 70%, transparent);
+
+  mix-blend-mode: screen;
+  /* ↑ more neon, less fog */
+  filter: saturate(1.6) contrast(1.12) blur(.15px);
+  z-index:0;
+}
+
+/* LAYER 2 — soft overlay + true backdrop blur */
+.theme-grid::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+
+  /* vivid bloom halo behind the grid */
+  opacity:var(--grid-glow-opacity, .55);
+  background:
+    radial-gradient(110% 85% at 50% 36%,
+  color-mix(in oklab, var(--grid-glow-color) 46%, transparent) 0%,
+  transparent 72%)
+    ,
+    linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line-color) 1px, transparent 1px);
+
+  background-size:
+    100% 100%,
+    var(--grid-size) var(--grid-size),
+    var(--grid-size) var(--grid-size);
+
+  background-blend-mode: screen, screen, normal;
+
+  /* radiant but tight — not foggy */
+  filter: blur(4px) brightness(1.18) saturate(1.75);
+  -webkit-backdrop-filter: blur(2px) saturate(1.05);
+          backdrop-filter: blur(2px) saturate(1.05);
+
+  /* keeps light focused near center, fades at edges */
+  mask-image: radial-gradient(95% 75% at 50% 45%, #000 70%, transparent 100%);
+}
+
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .theme-grid::after{
+    background-blend-mode:overlay,normal;
+    -webkit-backdrop-filter:none;
+            backdrop-filter:none;
+  }
+}
+
+@media (prefers-reduced-transparency:reduce){
+  .theme-grid::after{
+    -webkit-backdrop-filter:none;
+            backdrop-filter:none;
+  }
+}
+
+.theme-grid>*{ position:relative; z-index:1; }
+
+/* Make room for the fixed footer + a little air */
+main { padding-bottom: calc(var(--footer-h) + var(--stack-gap));
+}
+
+@media (max-width: 1279px) {
+  main {
+    /* make room for footer height */
+    padding-bottom: var(--footer-h, 6rem);
+  }
+
+  /* optional: ensure cards scroll naturally */
+  #stepper {
+    position: static;
+  }
+}
+
+/* =========================
+   3. CARDS / SURFACES
+========================= */
+.card{
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-lg);
+  box-shadow: var(--elevation-2);
+}
+.step-card{ overflow:hidden; } /* remove square border artifact on rounded cards */
+
+/* Open card highlight */
+#stepper>div{ transition:background-color .15s,border-color .15s; }
+#stepper .step-header{ transition:background-color .15s,border-color .15s,color .15s; }
+
+/* Collapsed header: subtle tint + crisp edge (reuses existing knobs) */
+#stepper > .step-card:not(.is-open) .step-header{
+  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
+  border-bottom: 1px solid var(--stepper-stroke-closed);
+  box-shadow:
+    0 0 0 1px var(--stepper-stroke-closed) inset,
+    0 1px 0 rgba(0,0,0,.06);
+}
+#stepper > .step-card:not(.is-open) .step-header:hover{
+  background: color-mix(in oklab, var(--ui-surface) 88%, var(--step-color-primary) 12%);
+}
+
+#stepper>div.is-open .step-header {
+  border-bottom: var(--featured-stroke-width) solid var(--featured-stroke-color);
+  background: var(--step-header-open-bg);
+  backdrop-filter: saturate(1.1) blur(6px);
+}
+
+/* When a step is open, its outer shell adopts the local step color story */
+.step-card.is-open{
+  --ui-stroke: color-mix(in oklab, var(--step-color-primary) 40%, transparent);
+  --ui-stroke-hover: color-mix(in oklab, var(--step-color-primary) 60%, transparent);
+
+  background: var(--step-card-open-bg);
+  border-color: var(--featured-stroke-color);
+  box-shadow: var(--featured-stroke-glow);
+}
+
+/* Inputs & labels inside the active step pick up the section accent */
+#stepper > div.is-open input:not([type="range"]),
+#stepper > div.is-open select,
+#stepper > div.is-open textarea,
+#stepper > div.is-open .control,
+#stepper > div.is-open .topctl {
+  border-color: color-mix(in oklab, var(--step-color-primary) 40%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--step-color-primary) 40%, transparent) inset;
+}
+
+#stepper > div.is-open label,
+#stepper > div.is-open .field-label {
+  color: color-mix(in oklab, var(--md-sys-color-on-surface) 86%, var(--step-color-primary) 14%);
+}
+
+/* Mechanicals (open): unified stripe and no duplicate borders */
+.step-card[data-step="mechanicals"].is-open .step-header-wrap {
+  background: color-mix(in oklab, var(--step-color-primary) 12%, transparent);
+  border-bottom: 0 !important;
+  position: relative;
+}
+
+.step-card[data-step="mechanicals"].is-open .step-header {
+  background: transparent !important;
+  border-bottom: 0 !important;
+}
+
+/* Single thin rule painted behind ECC pill (visual match with Caption) */
+.step-card[data-step="mechanicals"].is-open .step-header-wrap::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--ui-stroke);
+  pointer-events: none;
+}
+
+/* Mechanicals body should match other panels’ surface */
+.step-card[data-step="mechanicals"] [data-step-panel]{
+  background: var(--ui-surface-variant);
+}
+
+/* Nudge the panel up 1px so it tucks under the header line (no step) */
+.step-card[data-step="mechanicals"].is-open [data-step-panel]{
+  margin-top: -1px;
+}
+
+/* The stepper is the scroll container + the gap owner */
+#stepper{
+  display:flex;
+  flex-direction:column;
+  height:100dvh;
+  overflow:auto;
+  gap: var(--stack-gap);
+  min-width:0; width:100%; max-width:720px; margin-inline:auto;
+  scroll-padding-top: calc(var(--header-h,56px) + var(--preview-overlap, 200px));
+  padding-bottom: calc(var(--footer-h,72px) + 8px); /* reserve for fixed footer */
+}
+
+#captionEl{
+  white-space: pre-wrap;        /* 🔑 preserves \n + collapses extra spaces */
+  overflow-wrap: anywhere;      /* allow breaking long words/URLs */
+  word-break: break-word;       /* legacy safety */
+  hyphens: auto;                /* prettier wrapping for long words */
+  text-wrap: balance;           /* nicer line breaks when multi-line */
+}
+
+#captionBox{
+  max-width: 90%;
+  margin: .5rem auto 0;
+   max-height: clamp(3rem, 16vh, 220px);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+#captionBox::-webkit-scrollbar{ width: 8px; }
+#captionBox::-webkit-scrollbar-thumb{ border-radius: 999px; background: var(--ui-stroke-hover); }
+
+#captionEl{
+  font-size: clamp(.9rem, 2.2vw, 1.5rem);
+  line-height: 1.15;
+}
+
+.step-card[data-step="caption"] .caption-toggle-row { justify-self: start; }
+
+.step-card[data-step="caption"] label:has(#campaign),
+.step-card[data-step="caption"] label:has(#captionBody){
+  display: block;
+  width: 100%;
+}
+
+.step-card[data-step="caption"] label:has(#showCaption){
+  justify-self: start;
+}
+
+/* Ensure the caption text field spans the whole card */
+.step-card[data-step="caption"] label:has(#campaign){
+  display: grid;                /* keep label as a block wrapper */
+  grid-template-columns: 1fr;   /* kill any leftover two-column form rules */
+}
+.step-card[data-step="caption"] #campaign{
+  width: 100%;
+}
+
+/* Put the toggle on its own row under the input, left-aligned */
+.step-card[data-step="caption"] #showCaption,
+.step-card[data-step="caption"] [for="showCaption"]{
+  justify-self: start;
+}
+
+/* (Optional) tighten the vertical rhythm of the toggle row */
+.step-card[data-step="caption"] [for="showCaption"]{
+  line-height: 1.2;
+}
+
+/* If the input is inside a <label>, collapse it to a single column */
+label:has(#campaign),
+label:has(#captionBody){
+  display:grid;
+  grid-template-columns: 1fr !important;
+}
+label:has(#campaign) > *,
+label:has(#captionBody) > *{
+  min-width:0;
+}
+
+/* Caption text input: single row, full width */
+#campaign{
+  display:block;
+  width: 100%;
+  height: var(--density-control-h);
+  line-height: var(--density-control-h);
+  padding: 0 .75rem;
+  resize: none;
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: none;       /* Focus Ring */
+}
+
+/* Caption body input: multi-line, matching shell */
+#captionBody{
+  display:block;
+  width: 100%;
+  min-height: calc(var(--density-control-h) * 1.5);
+  padding: 0.5rem .75rem;
+  line-height: 1.3;
+  resize: vertical;
+  overflow: auto;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+/* Nudge the text down inside each step-card */
+.step-card .step-header {
+  padding-top: 1.0rem;   /* was py-3 (~0.75rem) from the HTML */
+}
+
+.step-card [data-step-panel]{
+  padding-top: 0.75rem;  /* panels had no top padding */
+}
+
+/* Optional: give the very first control inside a panel a bit of air */
+.step-card [data-step-panel] > :first-child {
+  margin-top: 0.25rem;
+}
+
+/* Base step card + header use token surfaces (theme-aware) */
+.step-card{
+  background: var(--ui-surface);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-lg);
+  box-shadow: var(--elevation-2);
+}
+
+/* When a step is open, its outer shell adopts the local step color story */
+#stepper .step-card.is-open{
+  --ui-stroke: color-mix(in oklab, var(--step-color-primary) 40%, transparent);
+  --ui-stroke-hover: color-mix(in oklab, var(--step-color-primary) 60%, transparent);
+
+  background: var(--step-card-open-bg);
+  border-color: var(--featured-stroke-color);
+  box-shadow: var(--featured-stroke-glow);
+}
+
+.step-card:not(.is-open) .step-header{
+  /* no background here; collapsed is handled above already */
+  color: var(--md-sys-color-on-surface);
+  border-bottom: 1px solid var(--ui-stroke);
+}
+
+/* Panel body (the content region) */
+.step-card [data-step-panel]{
+  background: var(--ui-surface-variant);
+  color: var(--md-sys-color-on-surface);
+}
+
+/* Hover/focus feedback (matches your global glow) */
+.step-card .step-header:hover{
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+.step-card .step-header:focus-visible{
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* Tinted placeholder text*/
+.card--fill text.placeholder {
+  fill: rgb(3, 162, 171);
+}
+
+/* Closed accordion buttons: navy stroke */
+#stepper > div:not(.is-open),
+#stepper > div:not(.is-open) .step-header{
+  border-color: var(--stepper-stroke-closed);
+}
+
+/* Buttons — CANONICAL */
+.ecc-btn {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+
+  /* shape + sizing */
+  border-radius: 50% !important;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+
+  /* layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  /* visuals (use the nicer color-mix set you had below) */
+  background: color-mix(in srgb, var(--md-sys-color-surface-variant) 85%, white 15%);
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 40%, transparent);
+  color: var(--md-sys-color-on-surface);
+  text-decoration: none !important;
+
+  /* type + motion */
+  font: 600 0.85rem/1 var(--font-family, system-ui);
+  transition: box-shadow var(--motion-duration-1) var(--motion-ease);
+}
+
+/* Buttons — pressed (canonical, token-based) */
+.ecc-btn[aria-pressed="true"] {
+  outline: none; /* avoid default rectangular outline */
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+  /* thin, token-based ring so it matches the “control panel” focus visuals */
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+}
+
+/* Optional: keyboard-only ring, consistent with your body.kbd focus policy */
+body.kbd .ecc-btn[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--focus-ring-color);
+}
+
+/* Remove any inherited text underline on the label */
+.ecc-btn,
+.ecc-btn:focus,
+.ecc-btn:hover {
+  text-decoration: none;
+}
+
+.ecc-btn:hover, .ecc-btn:focus-visible { background: rgba(255,255,255,.08); outline: none; }
+.ecc-btn:hover { transform: translateY(-1px); }
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  .step-card[data-step="mechanicals"]:not(.is-open) .step-header { padding-bottom: 1rem; }
+}
+
+/* Make the header a flex row so the pill can live on the right */
+.step-card[data-step="mechanicals"] .step-header-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* Let the title take the left, pill pushes to the right */
+.step-card[data-step="mechanicals"] .step-header-wrap [data-step-toggle] {
+  flex: 1 1 auto;
+  padding-right: 0; /* overrides earlier padding-right safely */
+}
+
+/* Place the pill inline at the right (no absolute positioning) */
+.step-card[data-step="mechanicals"] .step-header-wrap #eccPill.ecc-pill {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;                /* keep buttons on one line */
+  gap: var(--density-gap);          /* consistent inter-button spacing */
+  margin-left: auto;                /* push to the right */
+  padding-right: var(--edge-gutter);/* use your existing layout knob */
+}
+
+/* Remove underline and focus outline in all states */
+.ecc-btn:hover,
+.ecc-btn:focus,
+.ecc-btn:active {
+  text-decoration: none !important;
+  outline: none;
+}
+
+/* Design (open): unified stripe and no duplicate borders (mirror of Mechanicals) */
+.step-card[data-step="design"].is-open .step-header-wrap{
+  background: color-mix(in oklab, var(--step-color-primary) 12%, transparent);
+  border-bottom: 0 !important;
+  position: relative;
+}
+
+.step-card[data-step="design"].is-open .step-header{ background: transparent !important; border-bottom: 0 !important; }
+.step-card[data-step="design"].is-open .step-header-wrap::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ui-stroke); pointer-events:none;
+}
+.step-card[data-step="design"]:not(.is-open) #fontPill{ display:none !important; }
+.step-card[data-step="design"].is-open       #fontPill{ display:flex !important; }
+.step-card[data-step="design"] .step-header-wrap #fontPill.ecc-pill{
+  align-items:center; flex-wrap:nowrap; gap:var(--density-gap); margin-left:auto; padding-right:var(--edge-gutter);
+}
+
+/* Font pill alignment */
+.step-card[data-step="design"] .step-header-wrap{
+  display:flex;                    /* mirror Mechanicals */
+  align-items:center;              /* vertical centering */
+  gap:.5rem;
+}
+
+/* Let the title take the left; pill pushes right (mirrors [data-step-toggle] rule) */
+.step-card[data-step="design"] .step-header-wrap [data-step-toggle]{
+  flex:1 1 auto;
+  padding-right:0;
+}
+
+/* Theme-tinted section headers — translucent, per-section color */
+body.theme--caption  .step-card[data-step="caption"] .step-header,
+body.theme--design   .step-card[data-step="design"] .step-header,
+body.theme--mechanical .step-card[data-step="mechanicals"] .step-header,
+body.theme--finish   .step-card[data-step="finish"] .step-header {
+  background: color-mix(in oklab,
+    var(--step-color-primary) 18%,
+    rgba(5,5,8,0.60)
+  );
+  backdrop-filter: saturate(1.1) blur(6px);
+  border-bottom-color: var(--md-sys-color-outline-variant);
+}
+
+/* STEP CARD STROKES — DECOUPLE FROM GLOBAL LILAC
+   --------------------------------------------- */
+
+/* All stepper cards use the neutral closed stroke by default,
+   not the global --ui-stroke (lilac). */
+#stepper > .step-card {
+  border-color: var(--stepper-stroke-closed) !important;
+}
+
+/* Open step: outer stroke follows the section accent color,
+   never the global lilac outline. */
+#stepper .step-card.is-open {
+  border-color: var(--step-color-primary) !important;
+  box-shadow: var(--featured-stroke-glow);
+  background: var(--step-card-open-bg);
+}
+
+/* =========================
+   4. CONTROLS (inputs/selects/Menu)
+========================= */
+
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="search"],
+input[type="password"],
+input[type="color"],
+select{
+  background: var(--ui-surface-variant);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+  height: var(--density-control-h);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;  /* thin baseline */
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease),
+    color var(--motion-duration-1) var(--motion-ease),
+    background-color var(--motion-duration-1) var(--motion-ease);
+}
+
+input:hover,
+textarea:hover,
+select:hover{
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+
+/* Muted/disabled helper */
+.field-muted,
+.field-muted *{
+  opacity:.55;
+  pointer-events:none;
+}
+
+/* === TOP BAR — text styling (only) =================================== */
+/* Restore heavier label for the pills and keep baselines consistent */
+#qrType,
+#appMenuBtn{
+  font: 600 var(--typo-input-size)/1 var(--font-family);
+  letter-spacing: .01em;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* === TOP BAR — pill layout =========================================== */
+#qrType,
+#appMenuBtn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  line-height: 1;             /* prevent extra vertical space from fonts */
+  padding-inline: 1rem;       /* horizontal padding stays constant */
+}
+
+/* Safari/WebKit quirk: ensure the selected option uses the same weight */
+#qrType option { font-weight: 600; }
+
+/* Unified top-bar controls (selects + Menu) */
+.control,
+#appMenuBtn,
+#qrType,
+select.rounded-md,
+.topctl{
+  background: var(--ui-surface);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+  /* BASELINE: thin inset stroke only */
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+  height: var(--density-control-h);
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease);
+}
+
+#fontPill select {
+  display: inline-flex;
+  align-items: center;          /* vertical centering */
+  justify-content: center;      /* horizontal centering */
+  text-align: center;
+  line-height: 1;               /* eliminate font baseline drift */
+  height: var(--density-control-h);
+  padding-inline: 1rem;
+}
+
+/* Make top-bar controls feel like .ecc-btn on hover/focus/active */
+.topctl:hover,
+#qrType:hover,
+#appMenuBtn:hover,
+.topctl:focus-visible,
+#qrType:focus-visible,
+#appMenuBtn:focus-visible{
+  background: rgba(255,255,255,.08); /* mirrors .ecc-btn hover */
+  transform: translateY(-1px);
+  outline: none;
+}
+
+/* Active/click state parity with your focus ring tokens */
+.topctl:active,
+#qrType:active,
+#appMenuBtn:active{
+  transform: translateY(0);
+  box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+  border-color: var(--md-sys-color-primary);
+}
+
+/* Emoji picker buttons */
+#emojiGrid button{
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-sm);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+  height: calc(var(--density-control-h) * .9);
+}
+
+#emojiGrid button:hover{
+  box-shadow: 0 0 0 1px var(--ui-stroke-hover) inset;
+}
+
+/* HOVER: keep thin inset + add faint outer glow */
+.control:hover,
+#appMenuBtn:hover,
+select.rounded-md:hover,
+.topctl:hover{
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+/* Hide all focus by default (mouse/touch or scripted focus) */
+:focus { outline: none; }
+
+/* Show the ring only when the user is tabbing (keyboard) */
+body.kbd .control:focus-visible,
+body.kbd #appMenuBtn:focus-visible,
+body.kbd select.rounded-md:focus-visible,
+body.kbd .topctl:focus-visible,
+body.kbd button[data-emoji-target]:focus-visible,
+body.kbd input:focus-visible,
+body.kbd textarea:focus-visible,
+body.kbd select:focus-visible{
+  outline: none;
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* Remove native arrow so our chevron matches */
+select.rounded-md,
+select.topctl{
+  -webkit-appearance:none;
+  appearance:none;
+  padding-right:2rem;
+}
+button.topctl{ padding-right:2rem; }
+
+/* Optional: ensure consistent min-width so short labels (like “M”) don’t look cramped */
+#ecc{ min-width: 3.25rem; justify-content:center; }
+
+/* Chevron for top controls */
+.topctl--chev::after{
+  content:"";
+  pointer-events:none;
+  position:absolute;
+  right:.6rem;
+  top:50%;
+  width:.75rem;
+  height:.75rem;
+  transform:translateY(-50%);
+  opacity:.85;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:100% 100%;
+  background-image: var(--chev-icon);
+}
+
+/* Emoji picker trigger = match other controls */
+button[data-emoji-target]{
+  /* visuals */
+  background: var(--ui-surface);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+    box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+
+  /* sizing / type */
+  height: var(--density-control-h);
+  padding: 0 .875rem;
+  line-height: 1;
+  font-size: .875rem;
+  font-weight: 600;
+
+  /* behavior */
+  cursor: pointer;
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease);
+}
+
+button[data-emoji-target]:hover{
+  box-shadow: 0 0 0 1px var(--ui-stroke-hover) inset, var(--elevation-2);
+}
+
+#emojiGrid button:focus{
+  outline: none;
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* If it was getting a white default button style anywhere, neutralize it */
+button[data-emoji-target]::-moz-focus-inner{ border: 0; }
+
+/* DISPLAY: section headers (Caption / Design / Mechanicals / Finish) */
+.step-header,
+.step-header button,
+.step-header .title{
+  font-family: var(--font-family);
+  font-size: var(--typo-display-size);
+  font-weight: var(--typo-display-weight);
+  letter-spacing: var(--typo-display-track);
+  color: var(--md-sys-color-on-surface);
+}
+
+/* LABELS: field labels like “Module Fill”, “Background” */
+label,
+.field-label{
+  font-family: var(--font-family);
+  font-size: var(--typo-label-size);
+  font-weight: var(--typo-label-weight);
+  letter-spacing: var(--typo-label-track);
+  color: var(--typo-label-color);
+}
+
+/* INPUT TEXT: value text inside inputs/selects/buttons */
+input, textarea, select,
+.control, .topctl, button[data-emoji-target]{
+  font-family: var(--font-family);
+  font-size: var(--typo-input-size);
+  font-weight: var(--typo-input-weight);
+}
+
+/* PLACEHOLDERS: “dummy” text in fields */
+input::placeholder,
+textarea::placeholder{
+  color: var(--typo-ph-color);
+  font-weight: var(--typo-ph-weight);
+  opacity: var(--typo-ph-opacity);
+}
+
+/* Utility: “temp” or dummy inline text outside inputs */
+.text-temp {
+  color: var(--typo-ph-color);
+  font-weight: var(--typo-ph-weight);
+  opacity: var(--typo-ph-opacity);
+  font-style: italic;
+}
+
+/* default: no transitions before JS marks ready */
+:not(.ui-ready) #stepper .step-header,
+:not(.ui-ready) #stepper > .step-card{
+  transition: none !important;
+  box-shadow: none !important;
+}
+
+/* Design & Mechanicals: scroll inside a viewport-based cap that clears the footer */
+.step-card[data-step="design"].is-open [data-step-panel],
+.step-card[data-step="mechanicals"].is-open [data-step-panel]{
+  overflow: auto;
+  max-height: calc(
+    100dvh
+    - var(--header-h,56px)   /* top controls if present */
+    - var(--footer-h,72px)   /* fixed footer */
+    - 24px                   /* card margins/breathing */
+  );
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-stroke-hover) transparent;
+}
+
+/* Mechanicals: no internal scroller; let #stepper scroll instead */
+.step-card[data-step="mechanicals"].is-open [data-step-panel]{
+  overflow: visible !important;
+  max-height: none !important;
+  overscroll-behavior: auto;       /* release containment */
+  scrollbar-gutter: auto;
+  scrollbar-width: none;           /* hide any vestigial bar in Firefox */
+}
+.step-card[data-step="mechanicals"].is-open [data-step-panel]::-webkit-scrollbar { display: none; }
+
+/* Base pill styles (no display here) */
+.step-card[data-step="mechanicals"] .step-header-wrap #eccPill.ecc-pill {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--density-gap);
+  margin-left: auto;
+  padding-right: var(--edge-gutter);
+}
+
+/* Hide when stowed */
+.step-card[data-step="mechanicals"]:not(.is-open) #eccPill {
+  display: none !important;
+}
+
+/* Show when open */
+.step-card[data-step="mechanicals"].is-open #eccPill {
+  display: flex !important;
+}
+
+/* Kill any competing header paint so the wrap shows through */
+.step-card[data-step="mechanicals"].is-open .step-header {
+  background: transparent !important;  /* beats #stepper>div.is-open .step-header */
+  border-bottom: 0;
+}
+
+#emojiSearch { display: none !important; }
+
+/* =========================
+   5. PREVIEW LAYOUT
+========================= */
+
+/* -----------------------------------------------------------------------
+   QR PREVIEW CARD — single geometry; stroke (OFF) vs gradient fill (ON)
+   ----------------------------------------------------------------------- */
+#qrPreview{
+  position: relative;
+  border-radius: var(--phone-radius);
+  overflow: clip;                      /* clip to the rounded card */
+  background: transparent !important;  /* no card fill here */
+  border: 0 !important; 
+  box-shadow: none !important; 
+  isolation: isolate;                  /* local stacking; ::before stays behind */
+}
+
+/* One pseudo-element draws BOTH modes so size/shape never drift */
+#qrPreview::before{
+  content:"";
+  position:absolute;
+  z-index: 0;
+  inset:0;                  /* exact same box in both modes */
+  border-radius:inherit;
+  pointer-events:none;
+}
+
+/* Background ON = gradient fill (set via --bg-fill) */
+#qrPreview.card--fill::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background: var(--bg-paint, #fff);   /* solid or gradient from JS */
+  opacity: var(--bg-alpha, 1);         /* 🔑 hook your slider sets */
+  box-shadow:none;
+  pointer-events:none;
+  z-index:0;                           /* behind QR + caption */
+}
+
+/* Background OFF = empty bright turquoise stroke */
+#qrPreview.card--stroke::before{
+  inset:0;
+  border-radius:inherit;
+  background: transparent;
+  box-shadow:none;
+  border: var(--stage-frame-w, 3px) solid var(--stage-frame, #1ff0ff);
+}
+
+/* Portrait stage wrapper (outer container) */
+.preview-stage{
+  position: relative;
+  background: transparent !important;
+  width: clamp(250px, 26vw, 330px);
+  aspect-ratio: .63 / 1;   /* wallet portrait */
+  margin-inline: auto;
+  border-radius: var(--shape-corner-lg);
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  overflow: visible;
+  padding: 0;
+}
+
+/* Square state when there is no caption */
+.preview-stage.preview--square{
+  width: clamp(250px, 26vw, 330px);
+  aspect-ratio: 1 / 1;        /* true square shell */
+  align-items: start;          /* top-anchor like wallet mode */
+}
+
+/* QR mount = container for the SVG */
+#qrMount{
+  position: relative;
+  z-index: 1;                         /* above the ::before paint plate */
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important; /* never add a host fill */
+}
+
+#qrMount > svg{
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important; /* no bg rects from generators */
+}
+
+  .preview-stage,
+  #qrPreview,
+  #prevSubtype,
+  #nextSubtype { z-index: 1; }
+
+  /* Let the stepper slide under the preview */
+  #stepper {
+    position: relative;
+    z-index: 1;                       /* below the raised preview section */
+  }
+
+/* Stop pinning/parallax on Finish; let it flow like others */
+.step-card[data-step="finish"]{
+  position: static !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  backdrop-filter: none !important;
+  border-top: 1px solid var(--ui-stroke);
+}
+
+/* …but keep the on-phone UI (arrows) interactive */
+.preview-stage .nav-arrow {
+  pointer-events: auto;
+  z-index: 50;            /* ↑ ensure above sticky + stepper */
+  position: absolute;
+}
+
+/* Make the WHOLE sticky preview block "glass" on mobile/stacked */
+@media (max-width: 1279px){
+  /* the sticky section that holds the phone */
+  main > section.stage-stick:first-of-type { pointer-events: none !important; }
+
+  /* everything inside the preview stack also glass */
+  .preview-stage,
+  .preview-stage > .absolute,
+  #qrPreview,
+  #qrMount,
+  #qrMount > svg { pointer-events: none !important; }
+
+  /* …but keep the L/R arrows on the phone clickable */
+  .preview-stage .nav-arrow,
+  main > section.stage-stick:first-of-type .nav-arrow {
+    pointer-events: auto !important;
+  }
+}
+
+/* ===== Welcome mode (no type chosen) ===== */
+/* Works for the old .start-here and the new .is-placeholder class */
+body:has(#qrType.start-here) #stepper,
+body:has(#qrType.is-placeholder) #stepper {
+  display: none !important;
+}
+body:has(#qrType.start-here) main,
+body:has(#qrType.is-placeholder) main {
+  padding-bottom: var(--footer-h);
+}
+body:has(#qrType.start-here) .preview-stage,
+body:has(#qrType.is-placeholder) .preview-stage {
+  margin-bottom: min(8vh, 96px);
+}
+
+/* =========================
+   6. ARROWS
+========================= */
+.nav-arrow{
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-full);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset; /* thin baseline */
+}
+.nav-arrow:hover{
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+.nav-arrow:focus{
+  outline: none;
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* Triangle glyphs */
+#prevSubtype::after,
+#nextSubtype::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+}
+#prevSubtype::after{
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 10px solid var(--md-sys-color-on-surface);
+}
+#nextSubtype::after{
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 10px solid var(--md-sys-color-on-surface);
+}  
+
+/* Put each arrow just outside the card edges */
+#prevSubtype{
+  top:50%;
+  left: calc(-2 * var(--edge-gutter));        /* or: calc(-1 * var(--edge-gutter)) */
+  right: auto;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+#nextSubtype{
+  top:50%;
+  right: calc(-2 * var(--edge-gutter));       /* or: calc(-1 * var(--edge-gutter)) */
+  left:  auto;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+
+/* =========================
+  7. FOOTER
+========================= */
+/* ===== Footer ===== */
+.app-footer{
+  position: fixed;      /* keep it pinned */
+  left: 0; right: 0; bottom: 0;
+  z-index: 20;
+  padding: 14px 0 16px; /* content padding; the rule will ignore this */
+  background: #02272a;  /* deep turquoise */
+  color: #e0f9f8;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  border-top: 1px solid rgba(0,0,0,.25); /* subtle edge */
+  overflow: hidden;     /* clip the rule if it glows */
+   z-index: 20;
+}
+
+.app-footer__rule{
+  /* put the line AT THE TOP BORDER, full width */
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  width: 100%;
+  margin: 0;            /* kill the old auto-centering */
+  border-radius: 0;     /* no pill rounding */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0,240,200,.25) 15%,
+    rgba(0,240,200,.70) 50%,
+    rgba(0,240,200,.25) 85%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 .5px rgba(0,240,200,.5),
+    0 0 10px rgba(0,240,200,.25);
+  pointer-events: none;
+}
+
+.app-footer__text{
+  text-align: center;
+  font-size: .8125rem;
+  color: rgba(224,249,248,.85);
+  margin-top: 8px;      /* space under the rule */
+}
+
+/* High-contrast toggle (add .hc on <html>) */
+
+
+:root.hc{
+  --md-sys-color-on-surface: #fff;
+  --md-sys-color-outline: rgba(255,255,255,.65);
+  --md-sys-color-outline-variant: rgba(255,255,255,.9);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+  :root{ --motion-scale: .01; }
+}
+
+/* Optional hover/focus feedback (subtle glow) */
+input[type="color"]:hover{
+  filter: drop-shadow(0 0 4px var(--ui-stroke-hover));
+}
+input[type="color"]:focus{
+  outline: none;
+  filter: drop-shadow(0 0 6px var(--focus-ring-color));
+}
+
+/* Group color pickers + hex fields neatly */
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: var(--density-gap);
+}
+
+/* Make hex field visually tied to its picker */
+.color-field input[type="text"] {
+  flex: 1;
+  text-align: center;
+  font-family: monospace;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  background: var(--ui-surface-variant);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+  height: var(--density-control-h);
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    border-color var(--motion-duration-1) var(--motion-ease);
+}
+
+.color-field input[type="text"]:hover {
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+.color-field input[type="text"]:focus {
+  outline: none;
+  border-color: var(--ui-stroke-hover);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--focus-glow-blur) var(--focus-ring-color);
+}
+
+/* Color chip: fixed, perfect circle — never stretch */
+input[type="color"]{
+  width: 1.75rem;
+  height: 1.75rem;
+  min-width: 1.75rem;       /* prevent flex/grid shrinking */
+  min-height: 1.75rem;
+  aspect-ratio: 1 / 1;      /* stay square even if a parent tries to stretch */
+  flex: 0 0 1.75rem;        /* don’t grow or shrink */
+  align-self: center;       /* keeps it centered in tall rows */
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+          appearance: none;
+  box-sizing: content-box;
+}
+
+/* Make the actual swatch inherit shape and remove its inner border */
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 50% }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50% }
+input[type="color"]::-moz-color-swatch { border: none; border-radius: 50% }
+
+/* ---- Color rows: keep chip circular and let the hex input take the width ---- */
+
+/* Generic label rows: title + control */
+label.text-sm.block{
+  display: grid;
+  grid-template-columns: auto 1fr;   /* title, then a flexible control */
+  align-items: center;
+  gap: .75rem;
+}
+
+/* Rows that include a color swatch: title · swatch · hex */
+label:has(input[type="color"]){
+  grid-template-columns: auto auto 1fr; /* title, chip, hex input */
+}
+
+/* Make the hex field actually flex and not collapse */
+label:has(input[type="color"]) input[type="text"]{
+  width: 100%;
+  min-width: 16ch;     /* keep it readable on tight layouts */
+}
+
+/* Optional: keep the chip from crowding the field */
+label:has(input[type="color"]) input[type="color"]{
+  margin-inline-start: .25rem;
+}
+
+/* === Modal & legacy dropdown overrides (safe, CSS-only) ================== */
+
+/* 2) Bulletproof centering of the dialog card (ignores any old absolute rules) */
+#appModal > div,
+#emojiModal > div {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
+/* === Modal overlays (final, consolidated) =============================== */
+
+/* Hide any legacy dropdown if it still exists */
+#appMenu { display: none !important; }
+
+/* Prevent locked state when hidden */
+#appModal.hidden,
+#emojiModal.hidden {
+  display: none !important;
+}
+
+/* Neutralize legacy popover positioning inside overlays */
+#appModal [role="menu"],
+#emojiModal [role="menu"] {
+  position: static !important;
+}
+
+/* Backdrop polish + allow dismissal clicks */
+.modal-bg {
+  background: rgba(0,0,0,.25);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+}
+
+/* When hidden, backdrop ignores all input */
+#appModal.hidden .modal-bg,
+#emojiModal.hidden .modal-bg {
+  pointer-events: none;
+}
+
+/* === Circular Theme Toggle Button === */
+#themeToggle {
+  width: 2.25rem;              /* equal width/height keeps it round */
+  height: 2.25rem;
+  display: inline-grid;
+  place-items: center;         /* centers the emoji perfectly */
+  border-radius: 50%;          /* makes it a circle */
+  border: 1px solid var(--ui-stroke, #4b5563);
+  background: var(--md-sys-color-surface, transparent);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+#themeToggle:hover {
+  background: color-mix(in oklab, var(--md-sys-color-primary) 15%, transparent);
+}
+
+#themeToggle:active {
+  transform: scale(0.95);
+}
+
+/* === QR Types: show the custom chevron === */
+#qrType {
+  -webkit-appearance: none;
+          appearance: none;
+  padding-right: 2rem;                       /* room for chevron */
+  background-image: var(--chev-icon);        /* your SVG variable */
+  background-repeat: no-repeat;
+  background-position: right .65rem center;  /* nudge as before */
+  background-size: .75rem .75rem;
+}
+
+/* Types Hover for Pills (shared) */
+#qrType:hover,
+#appMenuBtn:hover {
+  box-shadow:
+    0 0 0 1px var(--ui-stroke-hover) inset,
+    0 0 var(--hover-glow-blur) var(--hover-glow-color);
+}
+
+/* === Hamburger: no chevron; keep icon centered ======================== */
+#appMenuBtn::after { content: none !important; }
+#appMenuBtn {
+  padding-inline: 1rem;               /* same side padding as QR Types */
+}
+
+/* ==========================================================
+   START-HERE HIGHLIGHT  (active until a QR Type is chosen)
+   ========================================================== */
+#qrType.start-here {
+  outline: 1px solid #ff5bde;            /* vivid red ring */
+  outline-offset: 3px;
+  box-shadow:
+    0 0 1px rgba(255, 85, 85, 0.7),
+    0 0 1px rgba(255, 85, 85, 0.4);
+  border-color: #ff5555 !important;      /* keep visible even in dark mode */
+}
+
+/* Center the heart emoji in the QR Types button when it's acting as a circular icon */
+#qrType {
+  display: inline-grid;
+  place-items: center;     /* centers emoji both horizontally and vertically */
+  text-align: center;
+  line-height: 1;          /* remove baseline drift */
+  vertical-align: middle;  /* ensure inline alignment with neighbors */
+}
+
+/* Temporarily hide the SVG export toggle in the Finish step */
+.step-card[data-step="finish"] label:has(#wantSvg) {
+  display: none !important;
+}
+/* =========================
+  MOBILE OVERRIDES
+========================= */
+
+/* --- Single-column / stacked behavior (< 1280px) -------------------- */
+@media (max-width: 1279px) {
+  /* Only the *first* stage-stick (the preview section) is sticky */
+  main > section.stage-stick:first-of-type {
+    position: sticky;
+    top: calc(var(--header-h, 56px) + 8px);
+    z-index: 30;
+  }
+
+  /* Let the stepper flow and meet the footer cleanly */
+  #stepper{
+  position: static;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  /* reserve space so the last tab can scroll above the fixed footer */
+  padding-bottom: calc(var(--footer-h, 72px) + 96px);
+  margin-bottom: 16px; /* a touch of breathing room */
+}
+
+  /* Reserve space for fixed footer */
+  main{
+    padding-bottom: var(--footer-h, 72px);
+  }
+
+  /* Ensure the stepper is not sticky in stacked mode */
+  #stepper.stage-stick {
+    position: static;
+    top: auto;
+  }
+}
+
+  /* Park the stepper up under the phone */
+@media (max-width: 1279px){
+  :root{
+  /* how far the stepper is allowed to slide under the phone */
+  --preview-overlap: clamp(180px, 52vh, 320px);
+  --preview-gap: 12px;
+  --park-nudge: 16px;
+}
+
+  #stepper{
+    margin-top: calc(var(--preview-overlap) * -1);
+    padding-top: calc(var(--preview-overlap) + var(--preview-gap));
+    scroll-padding-top: calc(var(--header-h, 56px) + var(--park-offset, 180px));
+    scroll-behavior: smooth;
+  }
+
+   #stepper .step-header{
+    scroll-margin-top: calc(var(--header-h, 56px) + var(--park-offset, 180px));
+  }
+}
+
+ /* Desktop align fix */
+@media (min-width: 1280px){
+  .stage-stick { position: static; top: auto; }
+
+  #stepper{
+    height: auto;
+    overflow: visible;
+    margin-top: 0;
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 1279px){
+  html { scroll-padding-top: calc(var(--header-h,56px) + var(--park-offset,180px)); }
+}
+
+ /* === Emoji modal: always on top, full-viewport ======================= */
+ #emojiModal {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;           /* win against any local stacking ctx */
+    display: grid;                 /* center its panel if you have one */
+    place-items: center;
+}
+#emojiModal.hidden { display: none; }
+
+/* While the emoji modal is open, make everything under the phone ignore taps */
+:root.emoji-open .preview-stage,
+:root.emoji-open #qrPreview {
+  pointer-events: none !important;
+}
+:root.emoji-open #emojiModal {
+  pointer-events: auto !important; /* but keep the modal interactive */
+}
+
+/* Step parking: every step header parks under the phone cleanly */
+.step-card .step-header {
+  scroll-margin-top: calc(var(--header-h, 56px) + var(--park-offset, 180px));
+}
+
+/* Stack the "Show caption" toggle below the text field */
+.step-card[data-step="caption"] .step-body {
+  display: flex;
+  flex-direction: column;   /* stack instead of row */
+  align-items: flex-start;  /* left-align the checkbox label */
+  gap: 0.5rem;              /* small vertical space */
+}
+
+/* --- Global Modal Priority Layer --- */
+.modal-bg,
+[id$="Modal"],
+[id*="modal"] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important; /* ensure it's above all sticky and preview layers */
+  pointer-events: auto !important;
+}
