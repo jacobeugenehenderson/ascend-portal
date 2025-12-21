@@ -860,7 +860,7 @@ textarea:focus {
   opacity: 0.95;
 }
 
-/* Fixed-height, vertically centered bar: same footprint concept as the 3-square stack */
+/* Fixed-height, vertically centered bar: matches the outer 4 corners of the 3-square stack */
 .ascend-fileroom-card .ascend-job-card-provenance::before {
   content: "";
   position: absolute;
@@ -869,9 +869,12 @@ textarea:focus {
   top: 50%;
   transform: translateY(-50%);
 
-  height: 34px;
-  width: 8px;
-  border-radius: 6px;
+  /* 3 stacked 7px squares + 4px gaps => 29px tall */
+  height: 29px;
+  width: 7px;
+
+  /* Match the stacked squares' corner language */
+  border-radius: 2px;
 
   background: linear-gradient(
     180deg,
