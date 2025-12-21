@@ -825,14 +825,15 @@ textarea:focus {
 
 /* =========================================================
  * FileRoom hopper provenance field
+ * (matches the old 3-stacked-squares real estate)
  * ======================================================= */
 
 .ascend-fileroom-card .ascend-job-card-main {
   grid-template-columns: 48px minmax(0, 1fr);
 }
 
-/* One full-height rectangle replacing the former 3-square cluster */
-.ascend-job-card-provenance {
+/* Provenance cell: invisible container (no pill), holds icon + letter */
+.ascend-fileroom-card .ascend-job-card-provenance {
   align-self: stretch;
   width: 48px;
 
@@ -842,8 +843,8 @@ textarea:focus {
   align-items: center;
   justify-content: flex-start;
 
-  /* Space for the vertical bar + a clean gap before the letter */
-  padding-left: 22px;
+  /* Space for the icon footprint + a clean gap before the letter */
+  padding-left: 26px;
 
   font-weight: var(--ascend-weight-bold);
   letter-spacing: 0.08em;
@@ -853,50 +854,20 @@ textarea:focus {
 
   background: none;
   box-shadow: none;
+  border-radius: 0;
   opacity: 0.95;
 }
 
-/* FileRoom-only: make the provenance lettermark feel like a true monogram */
-.ascend-fileroom-card .ascend-job-card-provenance span {
-  font-size: 1.25rem;
-  line-height: 1;
-  letter-spacing: 0.06em;
-}
-
-.ascend-job-card-provenance::before {
-  content: "";
-  position: absolute;
-  left: 8px;
-  top: 10px;
-  bottom: 10px;
-  width: 8px;
-
-  border-radius: 6px;
-
-  background: linear-gradient(
-    180deg,
-    var(--ascend-hopper-stage-3) 0%,
-    var(--ascend-hopper-stage-2) 50%,
-    var(--ascend-hopper-stage-1) 100%
-  );
-}
-
-/* FileRoom-only: provenance is a slim vertical bar + big lettermark (no pill container) */
-.ascend-fileroom-card .ascend-job-card-provenance {
-  width: 48px;
-  padding-left: 22px;
-  background: none;
-  box-shadow: none;
-  border-radius: 0;
-}
-
-/* Force the gradient bar to exist and sit “where the stacked squares used to read” */
+/* Fixed-height, vertically centered bar: same footprint concept as the 3-square stack */
 .ascend-fileroom-card .ascend-job-card-provenance::before {
   content: "";
   position: absolute;
   left: 8px;
-  top: 10px;
-  bottom: 10px;
+
+  top: 50%;
+  transform: translateY(-50%);
+
+  height: 34px;
   width: 8px;
   border-radius: 6px;
 
@@ -907,21 +878,15 @@ textarea:focus {
     var(--ascend-hopper-stage-1) 100%
   );
 
-  opacity: 1;
-  z-index: 0;
   pointer-events: none;
+  z-index: 0;
 }
 
-/* Make sure the letter sits above the bar */
+/* Big monogram sits “in the same lane” as the old squares */
 .ascend-fileroom-card .ascend-job-card-provenance span {
   position: relative;
   z-index: 1;
-  font-size: 1.25rem;
-  line-height: 1;
-  letter-spacing: 0.06em;
-}
 
-.ascend-fileroom-card .ascend-job-card-provenance span {
   font-size: 1.25rem;
   line-height: 1;
   letter-spacing: 0.06em;
