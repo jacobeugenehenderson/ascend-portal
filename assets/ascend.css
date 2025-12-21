@@ -859,6 +859,13 @@ textarea:focus {
   opacity: 0.95;
 }
 
+/* FileRoom-only: make the provenance lettermark feel like a true monogram */
+.ascend-fileroom-card .ascend-job-card-provenance span {
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
 .ascend-job-card-provenance::before {
   content: "";
   position: absolute;

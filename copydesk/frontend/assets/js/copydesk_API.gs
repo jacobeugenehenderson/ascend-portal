@@ -8,7 +8,12 @@ const CARDS_SHEET_NAME = 'CARDS';
 const GHOST_SLOTS_SHEET_NAME = 'GHOST_SLOTS';
 
 // Bump this any time you want to be SURE the frontend is hitting new code
-const COPYDESK_API_VERSION = 'copydesk_API-2025-12-16-vGHOSTS-1';
+const COPYDESK_API_VERSION = 'copydesk_API-2025-12-16-vGHOSTS-19';
+
+// Hopper DB (across jobs/users) + FileRoom-style deliverables list (small contained DB)
+const HOPPER_DB_PROP_KEY = 'COPYDESK_HOPPER_DB_ID';
+const HOPPER_SHEET_NAME = 'HOPPER';
+const DELIVERABLES_SHEET_NAME = 'DELIVERABLES';
 
 // Normalize style labels for robust comparison
 function normalizeStyleLabel_(label) {
@@ -585,12 +590,111 @@ function writeCards_(ss, cards) {
 }
 
 function doGet(e) {
-  return jsonResponse_({
+  // Default "info" payload (also used when JSONP has no action)
+  var payload = {
     ok: true,
     apiVersion: COPYDESK_API_VERSION,
     hasInsertGhostSlot: true,
-    note: 'CopyDesk API is POST-only. The frontend should call this endpoint via fetch(doPost).'
-  });
+    note: 'CopyDesk API supports JSONP via doGet when callback is provided. Use ?callback=CB&action=...&payload=... (payload is JSON).'
+  };
+
+  var p = (e && e.parameter) ? e.parameter : {};
+  var cb = p && p.callback ? String(p.callback) : '';
+
+  // JSONP action path:
+  // <script src=".../exec?callback=CB&action=getJob&payload={...}">
+  if (cb && p && p.action) {
+    try {
+      var body = {};
+      if (p.payload) {
+        body = JSON.parse(String(p.payload));
+      } else {
+        // Allow simple key/value calls without payload JSON (best-effort)
+        body = {};
+      }
+
+      // Ensure action is set (payload may omit it)
+      body.action = body.action || body.fn || String(p.action);
+
+      var out = routeCopydeskAction_(body);
+
+      return ContentService
+        .createTextOutput(cb + '(' + JSON.stringify(out) + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+
+    } catch (err) {
+      var fail = { ok: false, error: String(err), stack: err && err.stack ? err.stack : '' };
+      return ContentService
+        .createTextOutput(cb + '(' + JSON.stringify(fail) + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+  }
+
+  // JSONP info path (no action)
+  if (cb) {
+    return ContentService
+      .createTextOutput(cb + '(' + JSON.stringify(payload) + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  // Plain GET (debug/info)
+  return jsonResponse_(payload);
+}
+
+// Shared action router (used by BOTH doPost JSON and doGet JSONP)
+// Returns a plain object (NOT a ContentService output).
+function routeCopydeskAction_(body) {
+  const action = (body && (body.action || body.fn)) ? String(body.action || body.fn) : '';
+
+  if (action === 'createEnglishJob') {
+    return handleCreateEnglishJob_(body);
+  } else if (action === 'saveDraft' || action === 'updateSegment') {
+    // Card-regime hard rule:
+    // clients must never write JOB_EN working columns directly.
+    // HOWEVER: translation subjobs (JOB_XX) are segment-based and MUST be writable.
+    var lang = (body && body.lang != null) ? String(body.lang).trim().toUpperCase() : '';
+    if (lang) {
+      return handleUpdateSegment_(body);
+    }
+    return { ok: false, error: 'Direct segment edits are disabled in card regime. Use createCard/saveCard.' };
+  } else if (action === 'getJob') {
+    return handleGetJob_(body);
+  } else if (action === 'createCard') {
+    return handleCreateCard_(body);
+  } else if (action === 'saveCard') {
+    return handleSaveCard_(body);
+  } else if (action === 'deleteCard') {
+    return handleDeleteCard_(body);
+  } else if (action === 'moveCard') {
+    return handleMoveCard_(body);
+  } else if (action === 'mutateCard') {
+    return handleMutateCard_(body);
+  } else if (action === 'insertGhostSlot') {
+    return handleInsertGhostSlot_(body);
+  } else if (action === 'deleteGhostSlot') {
+    return handleDeleteGhostSlot_(body);
+  } else if (action === 'commitJob') {
+    return handleCommitJob_(body);
+  } else if (action === 'closeJob') {
+    return handleCloseJob_(body);
+  } else if (action === 'runNightly') {
+    return handleRunNightly_(body);
+  } else if (action === 'finishSubjob') {
+    return handleFinishSubjob_(body);
+
+  // ---- Hopper parity (Copydesk jobs list + dismiss) ----
+  } else if (action === 'listCopydeskJobsForUser') {
+    return handleListCopydeskJobsForUser_(body);
+  } else if (action === 'dismissCopydeskJob') {
+    return handleDismissCopydeskJob_(body);
+
+  // ---- FileRoom-style outputs (served here until FileRoom API is wired) ----
+  } else if (action === 'listDeliverablesForUser') {
+    return handleListDeliverablesForUser_(body);
+
+  } else {
+    return { ok: false, error: 'Unknown action: ' + action };
+  }
 }
 
 function doPost(e) {
@@ -598,46 +702,10 @@ function doPost(e) {
     const body = e.postData && e.postData.contents
       ? JSON.parse(e.postData.contents)
       : {};
-    const action = body.action || body.fn;
 
-    if (action === 'createEnglishJob') {
-      return jsonResponse_(handleCreateEnglishJob_(body));
-    } else if (action === 'saveDraft' || action === 'updateSegment') {
-      // Card-regime hard rule:
-      // clients must never write JOB_EN working columns directly.
-      // HOWEVER: translation subjobs (JOB_XX) are segment-based and MUST be writable.
-      var lang = (body && body.lang != null) ? String(body.lang).trim().toUpperCase() : '';
-      if (lang) {
-        return jsonResponse_(handleUpdateSegment_(body));
-      }
-      return jsonResponse_({ ok: false, error: 'Direct segment edits are disabled in card regime. Use createCard/saveCard.' });
-    } else if (action === 'getJob') {
-      return jsonResponse_(handleGetJob_(body));
-    } else if (action === 'createCard') {
-      return jsonResponse_(handleCreateCard_(body));
-    } else if (action === 'saveCard') {
-      return jsonResponse_(handleSaveCard_(body));
-    } else if (action === 'deleteCard') {
-      return jsonResponse_(handleDeleteCard_(body));
-    } else if (action === 'moveCard') {
-      return jsonResponse_(handleMoveCard_(body));
-    } else if (action === 'mutateCard') {
-      return jsonResponse_(handleMutateCard_(body));
-    } else if (action === 'insertGhostSlot') {
-      return jsonResponse_(handleInsertGhostSlot_(body));
-    } else if (action === 'deleteGhostSlot') {
-      return jsonResponse_(handleDeleteGhostSlot_(body));
-    } else if (action === 'commitJob') {
-      return jsonResponse_(handleCommitJob_(body));
-    } else if (action === 'closeJob') {
-      return jsonResponse_(handleCloseJob_(body));
-    } else if (action === 'runNightly') {
-      return jsonResponse_(handleRunNightly_(body));
-    } else if (action === 'finishSubjob') {
-      return jsonResponse_(handleFinishSubjob_(body));
-    } else {
-      return jsonResponse_({ ok: false, error: 'Unknown action: ' + action });
-    }
+    var out = routeCopydeskAction_(body);
+    return jsonResponse_(out);
+
   } catch (err) {
     return jsonResponse_({ ok: false, error: err.toString(), stack: err.stack });
   }
@@ -1960,6 +2028,9 @@ function handleCloseJob_(body) {
 
     var ss0 = SpreadsheetApp.openById(spreadsheetId0);
 
+    // Hopper + deliverables (best-effort; never blocks close)
+    try { updateHopperAndDeliverablesOnClose_(jobId, ss0, ''); } catch (e) {}
+
     // Ensure language sheets exist (safe if already present)
     var lang0 = createLanguageSheetsOnClose_(ss0);
 
@@ -1996,6 +2067,10 @@ function handleCloseJob_(body) {
   if (!spreadsheetId) return { ok: false, error: 'Job not found for jobId: ' + jobId };
 
   var ss = SpreadsheetApp.openById(spreadsheetId);
+
+  // Hopper + deliverables (best-effort; never blocks close)
+  try { updateHopperAndDeliverablesOnClose_(jobId, ss, iso); } catch (e) {}
+
   var lang = createLanguageSheetsOnClose_(ss);
 var mt = machineTranslateLanguageSheetsOnClose_(ss);
 
@@ -2019,6 +2094,10 @@ function handleCreateEnglishJob_(body) {
   const cutoff = body.cutoff || '';        // ISO string or empty
   const nightly = body.nightly || '';      // "HH:MM" or empty
   const collaborators = body.collaborators || []; // array of emails
+  const reqUserEmail = (body && body.user_email) ? String(body.user_email).trim() : '';
+  if (reqUserEmail && collaborators.indexOf(reqUserEmail) < 0) {
+    collaborators.push(reqUserEmail);
+  }
 
   const templateFile = DriveApp.getFileById(TEMPLATE_SPREADSHEET_ID);
   const jobsFolder = getJobsFolder_();
@@ -2085,6 +2164,31 @@ function handleCreateEnglishJob_(body) {
   });
 
   setJobIndex_(jobId, ss.getId());
+
+  // Hopper DB (across jobs/users): register this job (best-effort; never blocks job creation)
+  try {
+    var createdAtIso = Utilities.formatDate(new Date(), 'Etc/UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+    var ownerEmail0 = (body && body.user_email) ? String(body.user_email) : '';
+    ownerEmail0 = String(ownerEmail0 || '').trim();
+    if (!ownerEmail0) {
+      try { ownerEmail0 = String(Session.getActiveUser().getEmail() || '').trim(); } catch (e0) {}
+    }
+
+    var ownerEmail0 =
+      (body && body.user_email) ? String(body.user_email).trim() :
+      (Session.getActiveUser().getEmail() || '');
+
+    recordCopydeskJobInHopper_({
+      jobId: jobId,
+      jobName: jobName,
+      spreadsheetId: ss.getId(),
+      createdAt: createdAtIso,
+      cutoff: cutoff,
+      collaborators: collaborators,
+      userEmail: ownerEmail0
+    });
+  } catch (e) {}
 
   return {
     ok: true,
@@ -2501,4 +2605,424 @@ function backfillJobIndexFromJobsFolder_() {
 // Public runner (so it appears in the Run dropdown)
 function backfillJobIndexFromJobsFolder() {
   return backfillJobIndexFromJobsFolder_();
+}
+
+// ---------------------------
+// Hopper DB (across jobs/users)
+// + Deliverables (FileRoom-style list)
+// ---------------------------
+
+function getOrCreateHopperDbId_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty(HOPPER_DB_PROP_KEY);
+  if (id) return id;
+
+  var ss = SpreadsheetApp.create('Copydesk Hopper DB');
+  id = ss.getId();
+
+  props.setProperty(HOPPER_DB_PROP_KEY, id);
+
+  // Initialize sheets + headers
+  ensureHopperSheet_(ss);
+  ensureDeliverablesSheet_(ss);
+
+  return id;
+}
+
+function openHopperDb_() {
+  var id = getOrCreateHopperDbId_();
+  return SpreadsheetApp.openById(id);
+}
+
+function ensureSheetWithHeader_(ss, sheetName, headerRow) {
+  var sh = ss.getSheetByName(sheetName);
+  if (!sh) sh = ss.insertSheet(sheetName);
+
+  var existing = sh.getRange(1, 1, 1, Math.max(1, sh.getLastColumn())).getValues()[0];
+  var needsHeader = true;
+
+  // If any cell in row 1 has content, assume header exists.
+  for (var i = 0; i < existing.length; i++) {
+    if (String(existing[i] || '').trim()) { needsHeader = false; break; }
+  }
+
+  if (needsHeader) {
+    sh.clear();
+    sh.getRange(1, 1, 1, headerRow.length).setValues([headerRow]);
+    sh.setFrozenRows(1);
+  }
+
+  return sh;
+}
+
+function ensureHopperSheet_(ss) {
+  return ensureSheetWithHeader_(ss, HOPPER_SHEET_NAME, [
+    'JobId',
+    'JobName',
+    'SpreadsheetId',
+    'CreatedAt',
+    'Cutoff',
+    'Status',
+    'OwnerEmail',
+    'CollaboratorsCsv',
+    'DismissedByCsv',
+    'ClosedAt'
+  ]);
+}
+
+function ensureDeliverablesSheet_(ss) {
+  return ensureSheetWithHeader_(ss, DELIVERABLES_SHEET_NAME, [
+    'DeliverableId',
+    'App',
+    'JobId',
+    'Title',
+    'Status',
+    'CreatedAt',
+    'OpenUrl',
+    'OwnerEmail'
+  ]);
+}
+
+function csvFromArray_(arr) {
+  if (!arr || !arr.length) return '';
+  return arr.map(function (x) { return String(x || '').trim(); }).filter(function (x) { return !!x; }).join(', ');
+}
+
+function arrayFromCsv_(csv) {
+  var s = String(csv || '').trim();
+  if (!s) return [];
+  return s.split(',').map(function (x) { return String(x || '').trim(); }).filter(function (x) { return !!x; });
+}
+
+// Robust last-row detector (avoids getLastRow() being inflated by formatting/empty rows)
+function lastDataRowInCol_(sh, colIndex, cap) {
+  cap = cap || 5000; // safety cap to prevent massive reads
+  var lr = sh.getLastRow();
+  if (lr < 2) return lr;
+
+  var max = Math.min(lr, cap);
+  // read only the ID column (JobId / DeliverableId), rows 2..max
+  var vals = sh.getRange(2, colIndex, max - 1, 1).getValues();
+  for (var i = vals.length - 1; i >= 0; i--) {
+    if (String(vals[i][0] || '').trim()) {
+      return 2 + i;
+    }
+  }
+  return 1; // header only
+}
+
+function findRowByJobId_(sh, jobId) {
+  var last = lastDataRowInCol_(sh, 1, 20000); // Col A = JobId
+  if (last < 2) return 0;
+
+  var vals = sh.getRange(2, 1, last - 1, 10).getValues();
+  for (var i = 0; i < vals.length; i++) {
+    if (String(vals[i][0] || '').trim() === String(jobId || '').trim()) {
+      return 2 + i;
+    }
+  }
+  return 0;
+}
+
+function recordCopydeskJobInHopper_(o) {
+  if (!o || !o.jobId) return;
+
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var jobId = String(o.jobId || '').trim();
+  var row = findRowByJobId_(sh, jobId);
+
+  var collaboratorsCsv = csvFromArray_(o.collaborators || []);
+  var ownerEmail = String(o.userEmail || '').trim();
+
+  // If the client didn't pass user_email, fall back to the script user.
+  // This is critical because listCopydeskJobsForUser filters by OwnerEmail.
+  if (!ownerEmail) {
+    try { ownerEmail = String(Session.getActiveUser().getEmail() || '').trim(); } catch (e) {}
+  }
+
+  var payload = [
+    jobId,
+    String(o.jobName || '').trim(),
+    String(o.spreadsheetId || '').trim(),
+    String(o.createdAt || '').trim(),
+    String(o.cutoff || '').trim(),
+    'Open',
+    ownerEmail,
+    collaboratorsCsv,
+    '',
+    ''
+  ];
+
+  if (row) {
+    // Update mutable fields only (keep dismissed list)
+    sh.getRange(row, 1, 1, payload.length).setValues([payload]);
+  } else {
+    sh.appendRow(payload);
+  }
+}
+
+function updateHopperOnClose_(jobId, closedAtIso) {
+  if (!jobId) return;
+
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var row = findRowByJobId_(sh, jobId);
+  if (!row) return;
+
+  // Status (F) + ClosedAt (J)
+  sh.getRange(row, 6).setValue('Closed');
+  if (closedAtIso) sh.getRange(row, 10).setValue(String(closedAtIso));
+}
+
+function upsertDeliverableForClose_(jobId, ss, ownerEmail) {
+  if (!jobId || !ss) return;
+
+  var db = openHopperDb_();
+  var sh = ensureDeliverablesSheet_(db);
+
+  var deliverableId = 'deliv_' + String(jobId).trim(); // deterministic per job
+  var last = sh.getLastRow();
+  var row = 0;
+
+  if (last >= 2) {
+    var vals = sh.getRange(2, 1, last - 1, 1).getValues(); // Col A: DeliverableId
+    for (var i = 0; i < vals.length; i++) {
+      if (String(vals[i][0] || '').trim() === deliverableId) { row = 2 + i; break; }
+    }
+  }
+
+  var createdAtIso = Utilities.formatDate(new Date(), 'Etc/UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'");
+  var openUrl = '';
+  try { openUrl = ss.getUrl(); } catch (e) {}
+
+  // Ensure deliverables are attributable for listDeliverablesForUser filtering
+  if (!ownerEmail) {
+    try { ownerEmail = String(Session.getActiveUser().getEmail() || '').trim(); } catch (e0) {}
+  }
+
+  var title = 'Copydesk Output • ' + String(jobId).trim();
+
+  var payload = [
+    deliverableId,
+    'Copydesk',
+    String(jobId).trim(),
+    title,
+    'output',
+    createdAtIso,
+    openUrl,
+    String(ownerEmail || '').trim()
+  ];
+
+  if (row) {
+    sh.getRange(row, 1, 1, payload.length).setValues([payload]);
+  } else {
+    sh.appendRow(payload);
+  }
+}
+
+function updateHopperAndDeliverablesOnClose_(jobId, ss, closedAtIso) {
+  try { updateHopperOnClose_(jobId, closedAtIso); } catch (e0) {}
+
+  // Attempt to infer an owner email from hopper row, otherwise leave blank.
+  var ownerEmail = '';
+  try {
+    var db = openHopperDb_();
+    var hs = ensureHopperSheet_(db);
+    var r = findRowByJobId_(hs, jobId);
+    if (r) ownerEmail = String(hs.getRange(r, 7).getValue() || '').trim(); // OwnerEmail col
+  } catch (e1) {}
+
+  try { upsertDeliverableForClose_(jobId, ss, ownerEmail); } catch (e2) {}
+}
+
+function handleListCopydeskJobsForUser_(body) {
+  var userEmail = (body && body.user_email) ? String(body.user_email).trim().toLowerCase() : '';
+  var limit = (body && body.limit) ? Number(body.limit) : 5000;
+
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var last = sh.getLastRow();
+  if (last < 2) {
+    // Fallback: Hopper DB not populated yet.
+    // Build a list from JOB_INDEX:: ScriptProperties so the UI still shows jobs.
+    var jobIds0 = listKnownJobIds_() || [];
+    var out0 = [];
+
+    for (var i0 = 0; i0 < jobIds0.length; i0++) {
+      var jid0 = String(jobIds0[i0] || '').trim();
+      if (!jid0) continue;
+
+      var sid0 = getSpreadsheetIdForJobId_(jid0);
+      if (!sid0) continue;
+
+      var jobName0 = '';
+      var createdAt0 = '';
+      var cutoff0 = '';
+      var status0 = 'Open';
+      var closedAt0 = '';
+
+      try {
+        var ss0 = SpreadsheetApp.openById(sid0);
+        var sh0 = ss0.getSheetByName(JOB_EN_SHEET_NAME);
+        if (sh0) {
+          jobName0 = String(sh0.getRange('B2').getValue() || '').trim();
+          createdAt0 = String(sh0.getRange('B3').getValue() || '').trim();
+          cutoff0 = String(formatCutoffForClient_(sh0.getRange('B4').getValue()) || '').trim();
+        }
+        var st0 = getJobStatus_(jid0);
+        status0 = (st0 && st0.status) ? String(st0.status) : status0;
+        closedAt0 = (st0 && st0.closedAt) ? String(st0.closedAt) : '';
+      } catch (e0) {}
+
+      out0.push({
+        App: 'Copydesk',
+        JobId: jid0,
+        JobName: jobName0,
+        SpreadsheetId: sid0,
+        CreatedAt: createdAt0,
+        Cutoff: cutoff0,
+        Status: status0,
+        ClosedAt: closedAt0
+      });
+    }
+
+    // Newest first (CreatedAt may not be ISO here, but this keeps stable ordering when it is)
+    out0.sort(function (a, b) {
+      return String(b.CreatedAt || '').localeCompare(String(a.CreatedAt || ''));
+    });
+
+    if (limit && out0.length > limit) out0 = out0.slice(0, limit);
+
+    return { ok: true, jobs: out0, items: out0 };
+  }
+
+  var rows = sh.getRange(2, 1, last - 1, 10).getValues();
+  var out = [];
+
+  rows.forEach(function (r) {
+    var jobId = String(r[0] || '').trim();
+    if (!jobId) return;
+
+    var jobName = String(r[1] || '').trim();
+    var spreadsheetId = String(r[2] || '').trim();
+    var createdAt = String(r[3] || '').trim();
+    var cutoff = String(r[4] || '').trim();
+    var status = String(r[5] || '').trim();
+    var ownerEmail = String(r[6] || '').trim();
+    var collaboratorsCsv = String(r[7] || '').trim();
+    var dismissedCsv = String(r[8] || '').trim();
+    var closedAt = String(r[9] || '').trim();
+
+    // If userEmail provided, enforce visibility and dismissal
+    // IMPORTANT: OwnerEmail may be blank in web-app contexts (Session.getActiveUser() can be empty).
+    // In that legacy/blank-owner case, we allow visibility so jobs don't vanish.
+    if (userEmail) {
+      var ownerBlank = !ownerEmail;
+      var ownerOk = ownerBlank ? true : (ownerEmail.toLowerCase() === userEmail);
+
+      var collabs = arrayFromCsv_(collaboratorsCsv).map(function (x) { return x.toLowerCase(); });
+      var collabOk = collabs.indexOf(userEmail) >= 0;
+
+      if (!ownerOk && !collabOk) return;
+
+      var dismissed = arrayFromCsv_(dismissedCsv).map(function (x) { return x.toLowerCase(); });
+      if (dismissed.indexOf(userEmail) >= 0) return;
+    }
+
+    out.push({
+      App: 'Copydesk',
+      JobId: jobId,
+      JobName: jobName,
+      SpreadsheetId: spreadsheetId,
+      CreatedAt: createdAt,
+      Cutoff: cutoff,
+      Status: status || 'Open',
+      ClosedAt: closedAt
+    });
+  });
+
+  // Newest first (CreatedAt ISO sorts lexicographically when consistent)
+  out.sort(function (a, b) {
+    return String(b.CreatedAt || '').localeCompare(String(a.CreatedAt || ''));
+  });
+
+  if (limit && out.length > limit) out = out.slice(0, limit);
+
+  // Return both keys for UI compatibility (some hoppers expect items[], others expect jobs[])
+  return { ok: true, jobs: out, items: out };
+}
+
+function handleDismissCopydeskJob_(body) {
+  var userEmail = (body && body.user_email) ? String(body.user_email).trim().toLowerCase() : '';
+  var jobId = (body && body.jobId) ? String(body.jobId).trim() : '';
+  if (!userEmail) return { ok: false, error: 'Missing user_email' };
+  if (!jobId) return { ok: false, error: 'Missing jobId' };
+
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var row = findRowByJobId_(sh, jobId);
+  if (!row) return { ok: false, error: 'Job not found in hopper: ' + jobId };
+
+  var dismissedCsv = String(sh.getRange(row, 9).getValue() || '').trim(); // I: DismissedByCsv
+  var dismissed = arrayFromCsv_(dismissedCsv).map(function (x) { return x.toLowerCase(); });
+
+  if (dismissed.indexOf(userEmail) < 0) dismissed.push(userEmail);
+
+  sh.getRange(row, 9).setValue(dismissed.join(', '));
+
+  return { ok: true, jobId: jobId, dismissedBy: userEmail };
+}
+
+function handleListDeliverablesForUser_(body) {
+  var userEmail = (body && body.user_email) ? String(body.user_email).trim().toLowerCase() : '';
+  var limit = (body && body.limit) ? Number(body.limit) : 5000;
+
+  var db = openHopperDb_();
+  var sh = ensureDeliverablesSheet_(db);
+
+  var last = lastDataRowInCol_(sh, 1, 20000); // Col A = DeliverableId
+  if (last < 2) return { ok: true, items: [] };
+
+  var rows = sh.getRange(2, 1, last - 1, 8).getValues();
+  var out = [];
+
+  rows.forEach(function (r) {
+    var deliverableId = String(r[0] || '').trim();
+    if (!deliverableId) return;
+
+    var app = String(r[1] || '').trim();
+    var jobId = String(r[2] || '').trim();
+    var title = String(r[3] || '').trim();
+    var status = String(r[4] || '').trim();
+    var createdAt = String(r[5] || '').trim();
+    var openUrl = String(r[6] || '').trim();
+    var ownerEmail = String(r[7] || '').trim();
+
+    if (userEmail) {
+      if (!ownerEmail || ownerEmail.toLowerCase() !== userEmail) return;
+    }
+
+    out.push({
+      App: app || 'Copydesk',
+      JobId: jobId,
+      Title: title,
+      Status: status || 'output',
+      CreatedAt: createdAt,
+      OpenUrl: openUrl
+    });
+  });
+
+  out.sort(function (a, b) {
+    return String(b.CreatedAt || '').localeCompare(String(a.CreatedAt || ''));
+  });
+
+  if (limit && out.length > limit) out = out.slice(0, limit);
+
+  // Return shape matches Ascend’s FileRoom hopper expectations: {items:[...]}
+  return { ok: true, items: out };
 }
