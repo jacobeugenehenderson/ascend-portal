@@ -321,7 +321,7 @@
   "presets": {
     "WELCOME": [
       {
-        "name": "CodeDesk",
+        "name": "Ascend",
         "fontFamily": "Manrope",
         "captionHeadline": "jacobhenderson.studio for Nordson",
         "captionBody": "Choose a type to get started",
@@ -330,8 +330,8 @@
         "eyeRingColor": "#007ac9",
         "eyeCenterColor": "#0039ac",
         "bgTopColor": "#EDEDED",
-        "bgTopAlpha": 15,
-        "bgBottomColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#BFBFBF",
         "bgBottomAlpha": 100,
         "bgTransparent": false,
         "moduleShape": "Rounded",
