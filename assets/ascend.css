@@ -830,12 +830,14 @@ textarea:focus {
 
 .ascend-fileroom-card .ascend-job-card-main {
   grid-template-columns: 48px minmax(0, 1fr);
+  align-items: stretch;
 }
 
 /* Provenance cell: invisible container (no pill), holds icon + letter */
 .ascend-fileroom-card .ascend-job-card-provenance {
   align-self: stretch;
   width: 48px;
+  height: 100%;
 
   position: relative;
 
