@@ -686,6 +686,10 @@ textarea:focus {
   min-height: 0;
 }
 
+.ascend-row > * {
+  min-height: 0;
+}
+
 @media (max-width: 700px) {
   .ascend-row {
     grid-template-columns: minmax(0, 1fr);
@@ -767,17 +771,16 @@ textarea:focus {
 .ascend-row-secondary {
   background: rgba(5, 9, 23, 0.9);
   border-radius: var(--ascend-radius-lg);
-  /* Drawer frame */
   border: 1px solid rgba(255, 255, 255, 0.14);
-
   padding: 0.9rem 1.1rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   font-size: 0.78rem;
   color: var(--ascend-color-text-muted);
-  
+
   min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
