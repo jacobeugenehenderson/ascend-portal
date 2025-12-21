@@ -184,6 +184,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -776,6 +777,7 @@ textarea:focus {
 /* Hopper lists (ArtStart / Copydesk / Codedesk) */
 .ascend-row-secondary > div[id$="-list"] {
   flex: 1;
+  min-height: 0;
   border-radius: 10px;
   background: radial-gradient(
     circle at top,
