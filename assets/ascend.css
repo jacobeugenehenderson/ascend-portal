@@ -669,13 +669,14 @@ textarea:focus {
 /* Dashboard rows */
 
 .ascend-row-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr 2fr;
   gap: 0.75rem;
   margin-top: 0.4rem;
 
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .ascend-row {
@@ -708,6 +709,8 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+
+  min-height: 0;
 
   /* control-panel accent */
   border-left: 3px solid rgba(129, 230, 217, 0.9);
