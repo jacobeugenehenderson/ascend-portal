@@ -325,12 +325,12 @@
         "fontFamily": "Inter",
         "captionHeadline": "jacobhenderson.studio for Nordson",
         "captionBody": "Choose a type to get started",
-        "captionColor": "#496039",
+        "captionColor": "#0039ac",
         "bodyColor": "#444B55",
-        "eyeRingColor": "#283F19",
-        "eyeCenterColor": "#A06B22",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
         "bgTopColor": "#EDEDED",
-        "bgTopAlpha": 100,
+        "bgTopAlpha": 0,
         "bgBottomColor": "#EDEDED",
         "bgBottomAlpha": 100,
         "bgTransparent": false,
@@ -342,7 +342,7 @@
         "modulesScale": 0.9,
         "centerMode": "Emoji",
         "centerEmoji": "🔵",
-        "centerScale": 1.5
+        "centerScale": 1
       }
     ],
     "URL": [
