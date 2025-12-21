@@ -609,7 +609,7 @@
     if (!items || !items.length) {
       const empty = document.createElement("div");
       empty.className = "ascend-job-list-empty";
-      empty.textContent = "No output yet.";
+      empty.textContent = "";
       lane.appendChild(empty);
       return;
     }
@@ -783,7 +783,7 @@
     if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "ascend-job-list-empty";
-      empty.textContent = "No Copydesk docs yet.";
+      empty.textContent = "";
       lane.appendChild(empty);
       return;
     }
@@ -984,7 +984,7 @@
     if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "ascend-job-list-empty";
-      empty.textContent = "No ArtStart jobs yet.";
+      empty.textContent = "";
       lane.appendChild(empty);
       return;
     }
