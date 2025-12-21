@@ -1102,7 +1102,7 @@ textarea:focus {
 }
 
 [data-ascend-state="logged-in"] #ascend-dashboard {
-  display: block;
+  display: flex;
 }
 
 /* "fileroom" disabled */
