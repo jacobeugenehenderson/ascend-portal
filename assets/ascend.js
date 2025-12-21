@@ -23,7 +23,8 @@
   const COPYDESK_JOB_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/job.html";
     
-  const CODEDESK_URL = "https://okqral.com";
+  const CODEDESK_URL =
+    "https://jacobeugenehenderson.github.io/ascend-portal/codedesk/index.html";
 
   // FileRoom (output / delivery layer)
   const FILEROOM_URL =
@@ -483,11 +484,12 @@
     const codedeskBtn = document.getElementById("ascend-codedesk-open");
     if (codedeskBtn) {
       codedeskBtn.addEventListener("click", () => {
+        const target = buildUrlWithUser(CODEDESK_URL);
         if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
           alert("[Codedesk] Destination URL not configured yet.");
           return;
         }
-        window.open(CODEDESK_URL, "_blank", "noopener");
+        window.open(target, "_blank", "noopener");
       });
     }
 
