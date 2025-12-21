@@ -888,11 +888,13 @@
     window[callbackName] = function (payload) {
       try {
         // Accept either {items:[...]} or {assets:[...]} or {deliverables:[...]} or {jobs:[...]}
+        // OR FileRoom Registry v0 shape: { data: { jobs:[...] } }
         const items =
           (payload && payload.items) ||
           (payload && payload.assets) ||
           (payload && payload.deliverables) ||
           (payload && payload.jobs) ||
+          (payload && payload.data && payload.data.jobs) ||
           [];
         renderFileRoomHopper(items);
       } catch (e) {
@@ -901,8 +903,8 @@
     };
 
     const url = new URL(FILEROOM_API_BASE);
-    // Try a sensible default action name; your FileRoom API can alias this.
-    url.searchParams.set("action", "listDeliverablesForUser");
+    // FileRoom Registry v0
+    url.searchParams.set("action", "listJobsForUser");
     url.searchParams.set("user_email", session.userEmail);
     url.searchParams.set("limit", "5000");
     url.searchParams.set("callback", callbackName);
