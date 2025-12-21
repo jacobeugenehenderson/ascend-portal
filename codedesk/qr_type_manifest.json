@@ -321,7 +321,7 @@
   "presets": {
     "WELCOME": [
       {
-        "name": "Ascend",
+        "name": "ASCEND",
         "fontFamily": "Manrope",
         "captionHeadline": "jacobhenderson.studio for Nordson",
         "captionBody": "Choose a type to get started",
@@ -331,7 +331,7 @@
         "eyeCenterColor": "#0039ac",
         "bgTopColor": "#EDEDED",
         "bgTopAlpha": 100,
-        "bgBottomColor": "#BFBFBF",
+        "bgBottomColor": "#EDEDED",
         "bgBottomAlpha": 100,
         "bgTransparent": false,
         "moduleShape": "Rounded",
