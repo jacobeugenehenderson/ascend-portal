@@ -68,11 +68,7 @@
   function isSessionValid(session) {
     if (!session) return false;
     if (!session.userEmail) return false;
-    if (session.keepLoggedIn) return true;
-
-    const expiresAt = session.expiresAt;
-    if (!expiresAt) return false;
-    return nowTs() < expiresAt;
+    return true;
   }
 
   function setAppState(state) {
@@ -101,14 +97,6 @@
     if (accountLabel) accountLabel.textContent = "";
   }
 
-  function updateKeepLoggedInToggle(session) {
-    const toggle = document.getElementById("ascend-keep-logged-in");
-    if (!toggle) return;
-    const keep = !!(session && session.keepLoggedIn !== false);
-    toggle.dataset.on = keep ? "true" : "false";
-    toggle.setAttribute("aria-pressed", keep ? "true" : "false");
-  }
-
   function renderSessionStatus(message) {
     const el = document.getElementById("ascend-session-status");
     if (!el) return;
@@ -131,11 +119,7 @@
   function applyLoggedInUI(session) {
     setAppState("logged-in");
     updateUserChip(session);
-    renderSessionStatus(
-      `Logged in as ${session.userEmail}. Keep me logged in: ${
-        session.keepLoggedIn ? "On" : "Off"
-      }.`
-    );
+    renderSessionStatus(`Logged in as ${session.userEmail}.`);
 
     // Immediately paint empty-states so lanes never appear "blank" while JSONP loads/fails.
     renderArtStartHopper([]);
@@ -218,19 +202,13 @@
 
         // Completed
         if (data.status === "complete" && userEmail) {
-          const keepToggle = document.getElementById("ascend-keep-logged-in");
-          const keepOn =
-            keepToggle && keepToggle.dataset.on === "true" ? true : false;
-
           const session = {
             userEmail: userEmail,
             userNameFirst: userNameFirst,
             userNameFull: userNameFull,
-            keepLoggedIn: keepOn,
+            keepLoggedIn: true,
             createdAt: nowTs(),
-            expiresAt: keepOn
-              ? null
-              : nowTs() + SESSION_DEFAULT_DURATION_MINUTES * 60 * 1000,
+            expiresAt: null,
           };
 
           saveSession(session);
@@ -265,42 +243,25 @@
     const toggle = document.getElementById("ascend-keep-logged-in");
     if (!toggle) return;
 
-    toggle.addEventListener("click", () => {
-      const current = toggle.dataset.on === "true";
-      const next = !current;
-      toggle.dataset.on = next ? "true" : "false";
-      toggle.setAttribute("aria-pressed", next ? "true" : "false");
-
-      const session = loadSession();
-      if (session) {
-        session.keepLoggedIn = next;
-        if (!next) {
-          session.expiresAt =
-            nowTs() + SESSION_DEFAULT_DURATION_MINUTES * 60 * 1000;
-        } else {
-          session.expiresAt = null;
-        }
-        saveSession(session);
-        applyLoggedInUI(session);
-      }
-    });
+    toggle.dataset.on = "true";
+    toggle.setAttribute("aria-pressed", "true");
   }
 
-  function initLogoutButton() {
-    const btn = document.getElementById("ascend-logout-btn");
-    if (!btn) return;
-    btn.addEventListener("click", () => {
-      // Clear any existing session
-      saveSession(null);
+    function initLogoutButton() {
+      const btn = document.getElementById("ascend-logout-btn");
+      if (!btn) return;
+      btn.addEventListener("click", () => {
+        // Clear any existing session
+        saveSession(null);
 
-      // Put the UI back into logged-out mode
-      applyLoggedOutUI();
-      updateUserChip(null);
+        // Put the UI back into logged-out mode
+        applyLoggedOutUI();
+        updateUserChip(null);
 
-      // IMPORTANT: start listening again for a new QR login
-      startPollingForLogin();
-    });
-  }
+        // IMPORTANT: start listening again for a new QR login
+        startPollingForLogin();
+      });
+    }
 
   function buildUrlWithUser(baseUrl) {
     const session = loadSession();
@@ -480,11 +441,12 @@
         item.JobId ||
         "Untitled";
 
-      const metaParts = [];
-      if (item.App) metaParts.push(String(item.App));
-      if (item.JobId) metaParts.push(String(item.JobId));
-      if (item.CreatedAt) metaParts.push(String(item.CreatedAt));
-      const meta = metaParts.join(" • ");
+      const revisedDate =
+        formatShortDate(item.RevisedAt || item.UpdatedAt || item.CreatedAt);
+
+      const meta = revisedDate
+        ? "REVISED " + revisedDate.toUpperCase()
+        : "";
 
       const card = document.createElement("div");
       card.className = "ascend-job-card";
@@ -587,7 +549,7 @@
       const time = document.createElement("div");
       time.className = "ascend-job-card-time";
       const cutoffPretty = formatShortDate(job.Cutoff);
-      time.textContent = cutoffPretty || "";
+      time.textContent = cutoffPretty ? "CUTOFF: " + cutoffPretty.toUpperCase() : "";
 
       textStack.appendChild(title);
       if (context.textContent) textStack.appendChild(context);
@@ -731,8 +693,14 @@
       const time = document.createElement("div");
       time.className = "ascend-job-card-time";
 
-      const duePretty = formatShortDate(job.MaterialsDueDate || job.PublicationDate);
-      time.textContent = duePretty ? "Due " + duePretty : "";
+      const parts = [];
+      const materialsDue = formatShortDate(job.MaterialsDueDate);
+      const publishDate = formatShortDate(job.PublicationDate);
+
+      if (materialsDue) parts.push("Materials Due " + materialsDue);
+      if (publishDate) parts.push("Publish " + publishDate);
+
+      time.textContent = parts.join(" · ");
 
       textStack.appendChild(title);
       if (context.textContent) textStack.appendChild(context);
@@ -879,7 +847,6 @@
     // ---- bootstrap ----
 
   function bootstrap() {
-    initKeepLoggedInToggle();
     initLogoutButton();
     initPrimaryButtons();
 

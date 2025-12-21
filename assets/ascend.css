@@ -833,13 +833,13 @@ textarea:focus {
   opacity: 1;
   background: transparent;
   border: 1px solid
-    color-mix(in srgb, var(--ascend-hopper-stage-1) 70%, transparent);
+    color-mix(in srgb, var(--ascend-hopper-stage-1) 55%, transparent);
 }
 
 .ascend-hopper-progress-dot[data-step="2"] {
   border-color: color-mix(
     in srgb,
-    var(--ascend-hopper-stage-2) 70%,
+    var(--ascend-hopper-stage-2) 55%,
     transparent
   );
 }
@@ -847,7 +847,7 @@ textarea:focus {
 .ascend-hopper-progress-dot[data-step="3"] {
   border-color: color-mix(
     in srgb,
-    var(--ascend-hopper-stage-3) 70%,
+    var(--ascend-hopper-stage-3) 55%,
     transparent
   );
 }
@@ -858,6 +858,7 @@ textarea:focus {
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="1"] {
   background: var(--ascend-hopper-stage-1);
   border-color: transparent;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.35);
 }
 
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="2"],
@@ -899,11 +900,11 @@ textarea:focus {
 }
 
 .ascend-job-card-meta {
-  margin-top: 0.12rem;
-  font-size: 0.68rem;
-  color: color-mix(in srgb, var(--ascend-color-text-muted) 80%, transparent);
+  margin-top: 0.18rem;
+  font-size: 0.66rem;
+  color: color-mix(in srgb, var(--ascend-color-text-muted) 65%, transparent);
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
   font-weight: var(--ascend-weight-regular);
 }
 
