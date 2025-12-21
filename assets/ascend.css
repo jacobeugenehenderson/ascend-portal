@@ -895,14 +895,24 @@ textarea:focus {
 .ascend-job-card-title {
   font-weight: var(--ascend-weight-bold);
   letter-spacing: 0.01em;
-  font-size: 0.86rem;
+  font-size: 0.90rem;
   line-height: 1.15;
+  color: color-mix(in srgb, var(--ascend-color-text-main) 94%, white 6%);
 }
 
 .ascend-job-card-meta {
   margin-top: 0.18rem;
   font-size: 0.66rem;
   color: color-mix(in srgb, var(--ascend-color-text-muted) 65%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: var(--ascend-weight-regular);
+}
+
+.ascend-job-card-context,
+.ascend-job-card-time {
+  font-size: 0.66rem;
+  color: color-mix(in srgb, var(--ascend-color-text-muted) 72%, transparent);
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-weight: var(--ascend-weight-regular);
