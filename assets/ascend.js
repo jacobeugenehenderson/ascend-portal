@@ -887,6 +887,9 @@
             const sourceId = job.JobId || "";
             const title =
               job.JobName ||
+              job.Name ||
+              job.Title ||
+              job.DocumentName ||
               job.NordsonJobId ||
               job.AscendJobId ||
               job.JobId ||
