@@ -594,7 +594,8 @@ textarea:focus {
 
 /* Right side: Dashboard */
 
-.ascend-dashboard {
+.ascend-dashboard,
+#ascend-dashboard {
   background: var(--ascend-card-surface-soft);
   border-radius: var(--ascend-radius-xl);
   border: var(--ascend-border-width) solid var(--ascend-card-border);
@@ -604,6 +605,7 @@ textarea:focus {
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .ascend-dashboard-header {
@@ -1102,7 +1104,7 @@ textarea:focus {
 }
 
 [data-ascend-state="logged-in"] #ascend-dashboard {
-  display: flex;
+  display: flex !important;
 }
 
 /* "fileroom" disabled */
