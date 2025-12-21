@@ -616,7 +616,18 @@
 
     items.forEach((item) => {
       const originRaw =
-        (item && (item.Origin || item.Source || item.App || item.Type || item.Kind)) || "";
+        (item &&
+          (item.Origin ||
+            item.origin ||
+            item.Source ||
+            item.source ||
+            item.App ||
+            item.app ||
+            item.Type ||
+            item.type ||
+            item.Kind ||
+            item.kind)) ||
+        "";
       const origin = String(originRaw).trim().toLowerCase();
 
       const isArtStart =
@@ -626,13 +637,20 @@
 
       const title =
         item.NordsonJobId ||
+        item.title ||
         item.Title ||
+        item.name ||
         item.Name ||
         item.FileName ||
+        item.file_name ||
         item.Filename ||
+        item.filename ||
         item.AssetName ||
+        item.asset_name ||
         item.AssetId ||
+        item.asset_id ||
         item.JobId ||
+        item.job_id ||
         "Untitled";
 
       // Display rules (per your spec):
@@ -704,10 +722,14 @@
         evt.stopPropagation();
         const url =
           item.OpenUrl ||
+          item.open_url ||
           item.Url ||
+          item.url ||
           item.URL ||
           item.FileUrl ||
+          item.file_url ||
           item.PreviewUrl ||
+          item.preview_url ||
           "";
         if (url && String(url).indexOf("http") === 0) {
           window.open(String(url), "_blank", "noopener");
