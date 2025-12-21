@@ -1324,55 +1324,7 @@ body:has(#qrType.is-placeholder) .preview-stage {
   z-index: 20;
 }
 
-/* =========================
-  7. FOOTER
-========================= */
-/* ===== Footer ===== */
-.app-footer{
-  position: fixed;      /* keep it pinned */
-  left: 0; right: 0; bottom: 0;
-  z-index: 20;
-  padding: 14px 0 16px; /* content padding; the rule will ignore this */
-  background: #02272a;  /* deep turquoise */
-  color: #e0f9f8;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  border-top: 1px solid rgba(0,0,0,.25); /* subtle edge */
-  overflow: hidden;     /* clip the rule if it glows */
-   z-index: 20;
-}
-
-.app-footer__rule{
-  /* put the line AT THE TOP BORDER, full width */
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  width: 100%;
-  margin: 0;            /* kill the old auto-centering */
-  border-radius: 0;     /* no pill rounding */
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(0,240,200,.25) 15%,
-    rgba(0,240,200,.70) 50%,
-    rgba(0,240,200,.25) 85%,
-    transparent 100%
-  );
-  box-shadow:
-    0 0 .5px rgba(0,240,200,.5),
-    0 0 10px rgba(0,240,200,.25);
-  pointer-events: none;
-}
-
-.app-footer__text{
-  text-align: center;
-  font-size: .8125rem;
-  color: rgba(224,249,248,.85);
-  margin-top: 8px;      /* space under the rule */
-}
-
 /* High-contrast toggle (add .hc on <html>) */
-
 
 :root.hc{
   --md-sys-color-on-surface: #fff;
@@ -1608,22 +1560,21 @@ label:has(input[type="color"]) input[type="color"]{
     z-index: 30;
   }
 
-  /* Let the stepper flow and meet the footer cleanly */
+  /* Let the stepper flow normally (no fixed footer) */
   #stepper{
   position: static;
   height: auto;
   min-height: 0;
   overflow: visible;
-  /* reserve space so the last tab can scroll above the fixed footer */
-  padding-bottom: calc(var(--footer-h, 72px) + 96px);
-  margin-bottom: 16px; /* a touch of breathing room */
+  padding-bottom: 96px; /* keep a little breathing room */
+  margin-bottom: 16px;
 }
 
-  /* Reserve space for fixed footer */
+  /* No fixed footer spacing needed */
   main{
-    padding-bottom: var(--footer-h, 72px);
+    padding-bottom: 0;
   }
-
+  
   /* Ensure the stepper is not sticky in stacked mode */
   #stepper.stage-stick {
     position: static;

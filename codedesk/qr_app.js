@@ -53,10 +53,6 @@ mq.addEventListener?.('change', (e) => {
   if (!('theme' in localStorage)) setTheme(e.matches);
 });
 
-  // --- Footer year ---
-  const yearEl = document.getElementById('year');
-  if (yearEl) yearEl.textContent = new Date().getFullYear();
-
   /* === ECC (add-only, session-persistent) ========================== */
 const ECC_KEY = 'okqral_ecc';
 const ECC_DEFAULT = 'M';
