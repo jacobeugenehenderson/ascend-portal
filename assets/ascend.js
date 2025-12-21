@@ -863,7 +863,12 @@
           // the job leaves Copydesk lane and appears in FileRoom.
           if (job && job.Cutoff && isPastEofdEastern_(job.Cutoff, nowMs)) {
             const sourceId = job.JobId || "";
-            const title = job.NordsonJobId || job.AscendJobId || job.JobId || "Untitled job";
+            const title =
+              job.JobName ||
+              job.NordsonJobId ||
+              job.AscendJobId ||
+              job.JobId ||
+              "Untitled job";
 
             const subtitleParts = [];
             if (job.PublicationName) subtitleParts.push(job.PublicationName);
