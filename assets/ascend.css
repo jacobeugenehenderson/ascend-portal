@@ -881,6 +881,46 @@ textarea:focus {
   );
 }
 
+/* FileRoom-only: provenance is a slim vertical bar + big lettermark (no pill container) */
+.ascend-fileroom-card .ascend-job-card-provenance {
+  width: 48px;
+  padding-left: 22px;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* Force the gradient bar to exist and sit “where the stacked squares used to read” */
+.ascend-fileroom-card .ascend-job-card-provenance::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 10px;
+  bottom: 10px;
+  width: 8px;
+  border-radius: 6px;
+
+  background: linear-gradient(
+    180deg,
+    var(--ascend-hopper-stage-3) 0%,
+    var(--ascend-hopper-stage-2) 50%,
+    var(--ascend-hopper-stage-1) 100%
+  );
+
+  opacity: 1;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Make sure the letter sits above the bar */
+.ascend-fileroom-card .ascend-job-card-provenance span {
+  position: relative;
+  z-index: 1;
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
 .ascend-fileroom-card .ascend-job-card-provenance span {
   font-size: 1.25rem;
   line-height: 1;
