@@ -586,7 +586,7 @@
         : (revisedDate ? "REVISED: " + revisedDate.toUpperCase() : "");
 
       const card = document.createElement("div");
-      card.className = "ascend-job-card";
+      card.className = "ascend-job-card ascend-fileroom-card";
 
       const mainBtn = document.createElement("button");
       mainBtn.type = "button";
