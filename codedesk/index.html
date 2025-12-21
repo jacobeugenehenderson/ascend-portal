@@ -517,27 +517,21 @@ new MutationObserver(() => applyPickerTheme())
 (() => {
   const cards   = Array.from(document.querySelectorAll('.step-card'));
   const toggles = Array.from(document.querySelectorAll('[data-step-toggle]'));
-  const finish  = document.querySelector('.step-card[data-step="finish"]');
-
-  function setFooterVar(){
-    // Keep a live CSS var with the Finish bar height for max-height math
-    const h = finish ? finish.offsetHeight : 0;
-    document.documentElement.style.setProperty('--footer-h', (h || 72) + 'px');
-  }
 
   function openCard(card){
-  cards.forEach(c => {
-    const open  = (c === card);
-    const panel = c.querySelector('[data-step-panel]');
-    const btn   = c.querySelector('[data-step-toggle]');
-    c.classList.toggle('is-open', open);
-    if (panel) panel.style.display = open ? '' : 'none';      // <-- show/hide
-    if (btn)   btn.setAttribute('aria-expanded', String(open));
-  });
-  setFooterVar();
-}
+    cards.forEach(c => {
+      const open  = (c === card);
+      const panel = c.querySelector('[data-step-panel]');
+      const btn   = c.querySelector('[data-step-toggle]');
+      c.classList.toggle('is-open', open);
+      if (panel) panel.style.display = open ? '' : 'none';
+      if (btn)   btn.setAttribute('aria-expanded', String(open));
+    });
 
-  // Wire up open-state marker (no cascade changes, just a class)
+    // If you have park math, let it re-measure after a toggle
+    if (typeof window._setParkVars === 'function') window._setParkVars();
+  }
+
   toggles.forEach(btn => {
     btn.addEventListener('click', () => {
       const card = btn.closest('.step-card');
@@ -545,13 +539,8 @@ new MutationObserver(() => applyPickerTheme())
     });
   });
 
-  // On first paint: Caption should be open (per your current default)
-  // If your markup already opens it, the next line is harmless:
   const caption = cards.find(c => c.dataset.step === 'caption') || cards[0];
   if (caption) openCard(caption);
-
-  // Keep the var current if the user resizes
-  window.addEventListener('resize', setFooterVar, { passive: true });
 })();
 </script>
 

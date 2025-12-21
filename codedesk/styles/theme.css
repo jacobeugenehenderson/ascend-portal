@@ -270,14 +270,20 @@ body.theme--finish {
 
 body:has(#qrType) {
   position: relative;
+
+  /* Token-driven gradient (keeps the “gorgeous” depth, but now follows your knobs) */
   background:
     radial-gradient(1200px 800px at 50% 18%,
-      rgba(79, 209, 197, .18),
-      rgba(5, 8, 20, 0) 60%),
+      color-mix(in oklab, var(--md-sys-color-primary) 22%, transparent),
+      transparent 60%),
     radial-gradient(900px 650px at 50% 0%,
-      rgba(99, 102, 241, .16),
-      rgba(5, 8, 20, 0) 55%),
-    linear-gradient(180deg, #050814 0%, #070a18 45%, #05060c 100%);
+      color-mix(in oklab, var(--grid-line-color) 16%, transparent),
+      transparent 55%),
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--md-sys-color-background) 92%, #050814 8%) 0%,
+      color-mix(in oklab, var(--md-sys-color-background) 86%, #070a18 14%) 45%,
+      color-mix(in oklab, var(--md-sys-color-background) 94%, #05060c 6%) 100%);
+
   background-attachment: fixed;
 }
 
@@ -293,9 +299,9 @@ body:has(#qrType)::before {
   --cd-grid-size: var(--grid-size, 40px);
   --cd-grid-major: calc(var(--cd-grid-size) * 5);
 
-  /* Teal-forward blueprint lines (subtle) */
-  --cd-grid-minor: rgba(79, 209, 197, .10);
-  --cd-grid-major-line: rgba(79, 209, 197, .16);
+  /* Grid lines now follow your knobs */
+  --cd-grid-minor: color-mix(in oklab, var(--grid-line-color) 18%, transparent);
+  --cd-grid-major-line: color-mix(in oklab, var(--grid-line-color) 28%, transparent);
 
   background-image:
     /* minor */
@@ -316,7 +322,7 @@ body:has(#qrType)::before {
     var(--cd-grid-major) var(--cd-grid-major),
     100% 100%;
 
-  opacity: .9;
+  opacity: var(--grid-opacity, .85);
   mix-blend-mode: normal;
 }
 
@@ -434,7 +440,7 @@ main {
   gap: var(--stack-gap);
   min-width:0; width:100%; max-width:720px; margin-inline:auto;
   scroll-padding-top: calc(var(--header-h,56px) + var(--preview-overlap, 200px));
-  padding-bottom: calc(var(--footer-h,72px) + 8px); /* reserve for fixed footer */
+  padding-bottom: 16px; /* footer removed; keep a little breathing room */
 }
 
 #captionEl{
@@ -1027,7 +1033,6 @@ textarea::placeholder{
   max-height: calc(
     100dvh
     - var(--header-h,56px)   /* top controls if present */
-    - var(--footer-h,72px)   /* fixed footer */
     - 24px                   /* card margins/breathing */
   );
   overscroll-behavior: contain;
@@ -1219,7 +1224,7 @@ body:has(#qrType.is-placeholder) #stepper {
 }
 body:has(#qrType.start-here) main,
 body:has(#qrType.is-placeholder) main {
-  padding-bottom: var(--footer-h);
+  padding-bottom: 0;
 }
 body:has(#qrType.start-here) .preview-stage,
 body:has(#qrType.is-placeholder) .preview-stage {

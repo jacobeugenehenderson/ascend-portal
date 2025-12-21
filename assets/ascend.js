@@ -439,24 +439,61 @@
       });
     }
 
-  function buildUrlWithUser(baseUrl) {
-    const session = loadSession();
-    if (!session || !session.userEmail || !baseUrl) return baseUrl;
 
-    const url = new URL(baseUrl, window.location.href);
-    url.searchParams.set("user_email", session.userEmail);
 
-    if (session.userNameFirst) {
-      url.searchParams.set("user_name_first", session.userNameFirst);
-    }
-    if (session.userNameFull) {
-      url.searchParams.set("user_name", session.userNameFull);
+  function buildCodeDeskUrl_(mode, extraParams) {
+    // Always start from the user-carrying URL (token + user_email + names).
+    const base = buildUrlWithUser(CODEDESK_URL);
+    const url = new URL(base, window.location.href);
+
+    // Required lifecycle signal: where did CodeDesk come from?
+    url.searchParams.set("origin", "ascend");
+
+    // Required lifecycle signal: which creation path?
+    // - "new"      => ephemeral (no Hopper artifact)
+    // - "template" => persistent working-file (implicit duplication)
+    url.searchParams.set("mode", String(mode || "new"));
+
+    // Optional extra params (template ids, parent job keys, etc.)
+    if (extraParams && typeof extraParams === "object") {
+      Object.keys(extraParams).forEach((k) => {
+        const v = extraParams[k];
+        if (v == null) return;
+        const s = String(v).trim();
+        if (!s) return;
+        url.searchParams.set(k, s);
+      });
     }
 
     return url.toString();
   }
 
+  function openCodeDeskNew_() {
+    const target = buildCodeDeskUrl_("new", {});
+    if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
+      alert("[Codedesk] Destination URL not configured yet.");
+      return;
+    }
+    window.open(target, "_blank", "noopener");
+  }
+
+  // Not wired yet (because the CodeDesk Hopper lane is not wired yet),
+  // but this is THE portal seam where template-open becomes "working file creation".
+  function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
+    const target = buildCodeDeskUrl_("template", {
+      template_id: templateId,
+      parent_ascend_job_key: parentAscendJobKey || ""
+    });
+
+    if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
+      alert("[Codedesk] Destination URL not configured yet.");
+      return;
+    }
+    window.open(target, "_blank", "noopener");
+  }
+
   function initPrimaryButtons() {
+    
     const artstartBtn = document.getElementById("ascend-artstart-new");
     if (artstartBtn) {
       artstartBtn.addEventListener("click", () => {
@@ -484,11 +521,11 @@
     const codedeskBtn = document.getElementById("ascend-codedesk-open");
     if (codedeskBtn) {
       codedeskBtn.addEventListener("click", () => {
-        const target = buildUrlWithUser(CODEDESK_URL);
         if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
           alert("[Codedesk] Destination URL not configured yet.");
           return;
         }
+        const target = buildCodeDeskUrl_("portal_new");
         window.open(target, "_blank", "noopener");
       });
     }
@@ -670,6 +707,22 @@
         item.RevisedAt || item.UpdatedAt || item.CreatedAt
       );
 
+      // FileRoom display requirement:
+      // Show destination URL text (QR target) alongside thumbnails.
+      // IMPORTANT: this is display-only; no job association is inferred.
+      const destUrl =
+        item.DestinationUrl ||
+        item.DestinationURL ||
+        item.destination_url ||
+        item.dest_url ||
+        item.DestUrl ||
+        item.TargetUrl ||
+        item.target_url ||
+        item.Target ||
+        item.Link ||
+        item.link ||
+        "";
+
       const contextText = isArtStart
         ? [publication, soldAs].filter(Boolean).join(" · ")
         : "";
@@ -711,8 +764,13 @@
       timeEl.className = "ascend-job-card-time";
       timeEl.textContent = timeText;
 
+      const urlEl = document.createElement("div");
+      urlEl.className = "ascend-job-card-url";
+      urlEl.textContent = destUrl ? String(destUrl) : "";
+
       textStack.appendChild(titleEl);
       if (contextText) textStack.appendChild(contextEl);
+      if (destUrl) textStack.appendChild(urlEl);
       if (timeText) textStack.appendChild(timeEl);
 
       mainBtn.appendChild(prov);

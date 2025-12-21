@@ -193,8 +193,6 @@ function wireFontSelect(){
   wireFontSelect._done = true;
 }
 
-    document.addEventListener('DOMContentLoaded', wireFontSelect);
-
     // === Caption placeholders + body auto-size =============================
     function wireCaptionInputs(){
       const head = document.getElementById('campaign');
@@ -225,7 +223,6 @@ function wireFontSelect(){
     }
 
     // run after DOM loads
-    document.addEventListener('DOMContentLoaded', wireCaptionInputs);
 
     /* === Section color themes (Caption / Design / Mechanicals / Finish) === */
     /* Uses body.theme--* classes defined in theme.css; no HTML changes needed. */
@@ -282,8 +279,6 @@ function wireFontSelect(){
 
       wireSectionThemes._done = true;
     }
-
-    document.addEventListener('DOMContentLoaded', wireSectionThemes);
     
     // -------- Emoji picker (catalog + search) --------
     const EMOJI_BIG = ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","🙂","🙃","☺️","😋","😌","😍","🥰","😘","😗","😙","😚","😜","🤪","😝","😛","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😶‍🌫️","😏","😒","🙄","😬","🤥","😴","😪","😮‍💨","😌","😮","😯","😲","😳","🥵","🥶","😱","😨","😰","😥","😢","😭","😤","😡","😠","🤬","🤯","😷","🤒","🤕","🤢","🤮","🤧","🥴","😵","😵‍💫","🤠","🥳","😎","🤓","🧐","😕","🫤","😟","🙁","☹️","🤷","🤷‍♂️","🤷‍♀️","💪","👋","🤝","👍","👎","👏","🙌","👐","🤲","🤟","✌️","🤘","👌","🤌","🤏","👈","👉","☝️","👆","👇","✋","🖐️","🖖","✊","👊","💋","❤️","🩷","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟","🌈","🏳️‍🌈","🏳️‍⚧️","⭐️","✨","🔥","⚡️","💥","🌟","☀️","🌙","🪐","🌍","🌎","🌏","🌊","⛰️","🏙️","🗽","🚗","✈️","🚀","⌚️","📱","💻","🖥️","🖨️","🎧","🎤","🎬","📷","📸","📝","📚","🔖","📎","🔬","🔧","⚙️","🍎","🍉","🍇","🍓","🍑","🍍","🥑","🌮","🍣","🍰","🍫","🍩","🍿","🍺","🍷","🍸","🎉","🎊","🎈","🎮","🎯","🏆","🏵️","✊🏿","✊🏾","✊🏽","✊🏼","✊🏻","👍🏿","👍🏾","👍🏽","👍🏼","👍🏻","👋🏿","👋🏾","👋🏽","👋🏼","👋🏻","🏁","🚩","🏳️","🏴","🏳️‍🌈","🏳️‍⚧️","🇺🇸","🇨🇦","🇬🇧","🇫🇷","🇩🇪","🇮🇹","🇪🇸","🇧🇷","🇯🇵","🇰🇷","🇨🇳","🇮🇳","🇿🇦"];
@@ -321,28 +316,55 @@ window.closeEmoji = closeEmoji;
 });
 
 emojiGrid.appendChild(b); }); }
-    document.querySelectorAll('[data-emoji-target]').forEach(btn=> btn.addEventListener('click', ()=> openEmoji(btn.getAttribute('data-emoji-target'))));
-    emojiSearch.addEventListener('input', ()=> renderEmojiGrid(emojiSearch.value));
-    emojiClose.addEventListener('click', closeEmoji);
-    emojiModal.addEventListener('click', (e)=>{ if(e.target===emojiModal) closeEmoji(); });
-    document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && !emojiModal.classList.contains('hidden')) closeEmoji(); });
+    // Delegate: emoji open triggers (safe across form rebuilds)
+    if (!window._emojiTriggerBound) {
+      document.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest && e.target.closest('[data-emoji-target]');
+        if (!btn) return;
+        openEmoji(btn.getAttribute('data-emoji-target'));
+      });
+      window._emojiTriggerBound = true;
+    }
 
-    // -------- Scale clickers --------
+    // These are safe to bind once (static controls)
+    if (!window._emojiControlsBound) {
+      emojiSearch.addEventListener('input', ()=> renderEmojiGrid(emojiSearch.value));
+      emojiClose.addEventListener('click', closeEmoji);
+      emojiModal.addEventListener('click', (e)=>{ if(e.target===emojiModal) closeEmoji(); });
+
+      document.addEventListener('keydown', (e)=> {
+        if (e.key === 'Escape' && !emojiModal.classList.contains('hidden')) closeEmoji();
+      });
+
+      window._emojiControlsBound = true;
+    }
+
+    // -------- Scale clickers (delegated; safe across form rebuilds) --------
     function clamp(val,min,max){ return Math.min(max,Math.max(min,val)); }
-    document.querySelectorAll('[data-stepper]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
+
+    if (!window._stepperBound) {
+      document.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest && e.target.closest('[data-stepper]');
+        if (!btn) return;
+
         const targetId = btn.getAttribute('data-stepper');
         const delta = parseFloat(btn.getAttribute('data-delta')||'0');
+
         const input = document.getElementById(targetId);
+        if (!input) return;
+
         const v = parseFloat(input.value||'0') || 0;
         const step = parseFloat(input.step||'0.05') || 0.05;
         const min = parseFloat(input.min||'0.1') || 0.1;
         const max = parseFloat(input.max||'1') || 1;
+
         const next = clamp((Math.round((v + (delta||step))*100)/100), min, max);
         input.value = next.toFixed(2);
         input.dispatchEvent(new Event('input', {bubbles:true}));
       });
-    });
+
+      window._stepperBound = true;
+    }
 
 (async function(){
 
@@ -485,6 +507,14 @@ function _bgGradientFromKnobs() {
   return `linear-gradient(180deg, ${_hexToRGBA(top, ta)}, ${_hexToRGBA(bot, ba)})`;
 }
 
+function updatePreviewBackground() {
+  const card = document.getElementById('qrPreview');
+  if (!card) return;
+  const g = _bgGradientFromKnobs();
+  // single CSS var used by the preview skin (e.g., ::before)
+  card.style.setProperty('--frame-bg', g);
+}
+
 window.refreshBackground = function refreshBackground () {
   const card = document.getElementById('qrPreview');
   if (!card) return;
@@ -525,10 +555,6 @@ window.refreshBackground = function refreshBackground () {
 });
 
 // Default: Background ON at first paint
-document.addEventListener('DOMContentLoaded', () => {
-  // Respect whatever the preset (or saved UI) already set.
-  if (typeof window.refreshBackground === 'function') window.refreshBackground();
-});
 
 // optional helpers (put them right here too)
 window.getTypeFields = (t) => {
@@ -602,25 +628,13 @@ window.getPresets = (t) => {
     console.log('renderTypeForm:', type, ids);
     
     if (!ids.length) {
-  console.warn('[qr] Unknown type for manifest:', type);
-}
+      console.warn('[qr] Unknown type for manifest:', type);
+      return;
+    }
 
-// =====================================================
-//  Default ECC button: preselect "M" on first load
-// =====================================================
-document.addEventListener('DOMContentLoaded', function setDefaultECC() {
-  const eccBtns = document.querySelectorAll('.ecc-btn');
-  if (!eccBtns.length) return;
-
-  eccBtns.forEach(btn => {
-    const isDefault = btn.dataset.ecc === 'M';
-    btn.classList.toggle('active', isDefault);
-    btn.setAttribute('aria-pressed', isDefault ? 'true' : 'false');
-  });
-
-  // Global knob used by your QR generation logic
-  window.currentECC = 'M';
-});
+    // NOTE: do not wire global listeners here.
+    // renderTypeForm() can be called many times; wiring belongs in a one-time init()
+    // (or must be delegated / individually guarded per element).
 
     const frag = document.createDocumentFragment();
 
@@ -633,10 +647,6 @@ document.addEventListener('DOMContentLoaded', function setDefaultECC() {
     details.appendChild(frag);
     window.reflowStepper && window.reflowStepper();
   }
-
-    // (Re)wire gates now that the form is present
-    wireDesignGatesOnce._done = false;
-    wireDesignGatesOnce();
 
     // Wire type-specific behaviors
 
@@ -664,33 +674,25 @@ function applyPreset(type, index = 0) {
   // safe modulo
   const idx = ((index % list.length) + list.length) % list.length;
   currentPresetIdx.set(type, idx);
-  const p = list[idx];
-    if (p.fontFamily) setFont(p.fontFamily);
 
-  // ✅ Always load caption from the selected preset
+  const p = list[idx] || {};
+
+  // font first so preview typography is correct before caption paint
+  if (p.fontFamily) setFont(p.fontFamily);
+
+  // always load caption from preset (or type name fallback inside helper)
   setCaptionFromPreset(p, type);
 
-function setPlaceholder(id, text) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.setAttribute('placeholder', String(text ?? '')); // shows when empty
-  if (!el.value) {
-    // keep it empty so the native placeholder is visible
-    el.value = '';
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-}  
-  
   // Map preset keys → control IDs (only set what’s present)
-  if (p.captionColor)        setValAndFire('captionColor', p.captionColor);
-  if (p.bodyColor)           setValAndFire('bodyColor', p.bodyColor);
-  if (p.eyeRingColor)        setValAndFire('eyeRingColor', p.eyeRingColor);
-  if (p.eyeCenterColor) setValAndFire('eyeCenterColor', p.eyeCenterColor);
+  if (p.captionColor)     setValAndFire('captionColor', p.captionColor);
+  if (p.bodyColor)        setValAndFire('bodyColor', p.bodyColor);
+  if (p.eyeRingColor)     setValAndFire('eyeRingColor', p.eyeRingColor);
+  if (p.eyeCenterColor)   setValAndFire('eyeCenterColor', p.eyeCenterColor);
 
   // Prefer new gradient knobs if present
-  if (p.bgTopColor)    setValAndFire('bgTopHex',    p.bgTopColor);
-  if (p.bgBottomColor) setValAndFire('bgBottomHex', p.bgBottomColor);
-  if (p.bgTopAlpha != null)    setValAndFire('bgTopAlpha',    p.bgTopAlpha);
+  if (p.bgTopColor)          setValAndFire('bgTopHex', p.bgTopColor);
+  if (p.bgBottomColor)       setValAndFire('bgBottomHex', p.bgBottomColor);
+  if (p.bgTopAlpha != null)  setValAndFire('bgTopAlpha', p.bgTopAlpha);
   if (p.bgBottomAlpha != null) setValAndFire('bgBottomAlpha', p.bgBottomAlpha);
 
   // Back-compat: single bgColor → mirror to both ends
@@ -700,35 +702,40 @@ function setPlaceholder(id, text) {
     const botCol = document.getElementById('bgBottomColor');
     const topHex = document.getElementById('bgTopHex');
     const botHex = document.getElementById('bgBottomHex');
+
     if (topCol) topCol.value = c;
     if (botCol) botCol.value = c;
     if (topHex) topHex.value = c;
     if (botHex) botHex.value = c;
+
     const ta = document.getElementById('bgTopAlpha');
     const ba = document.getElementById('bgBottomAlpha');
     if (ta) { ta.value = 100; ta.dispatchEvent(new Event('input')); }
     if (ba) { ba.value = 100; ba.dispatchEvent(new Event('input')); }
-}
+  }
 
-if (typeof p.bgTransparent === 'boolean')
-  setValAndFire('bgTransparent', !p.bgTransparent);
+  // NOTE: your UI checkbox means "Background ON"
+  // preset key "bgTransparent: true" means "Background OFF"
+  if (typeof p.bgTransparent === 'boolean') {
+    setValAndFire('bgTransparent', !p.bgTransparent);
+  }
 
-  if (p.moduleShape)         setValAndFire('moduleShape', p.moduleShape);
-  if (p.eyeRingShape)        setValAndFire('eyeRingShape', p.eyeRingShape);
-  if (p.eyeCenterShape)      setValAndFire('eyeCenterShape', p.eyeCenterShape);
+  if (p.moduleShape)    setValAndFire('moduleShape', p.moduleShape);
+  if (p.eyeRingShape)   setValAndFire('eyeRingShape', p.eyeRingShape);
+  if (p.eyeCenterShape) setValAndFire('eyeCenterShape', p.eyeCenterShape);
 
-  if (p.modulesMode)         setValAndFire('modulesMode', p.modulesMode);
-  if (p.modulesEmoji)        setValAndFire('modulesEmoji', p.modulesEmoji);
-  if (p.modulesScale != null)setValAndFire('modulesScale', p.modulesScale);
+  if (p.modulesMode)          setValAndFire('modulesMode', p.modulesMode);
+  if (p.modulesEmoji)         setValAndFire('modulesEmoji', p.modulesEmoji);
+  if (p.modulesScale != null) setValAndFire('modulesScale', p.modulesScale);
 
   if (p.centerMode)          setValAndFire('centerMode', p.centerMode);
   if (p.centerEmoji)         setValAndFire('centerEmoji', p.centerEmoji);
   if (p.centerScale != null) setValAndFire('centerScale', p.centerScale);
 
-  // Re-apply any UI gating then re-render
+  if (typeof window.refreshBackground === 'function') window.refreshBackground();
   if (typeof refreshModulesMode === 'function') refreshModulesMode();
-  if (typeof refreshCenter === 'function')      refreshCenter();
-  if (typeof render === 'function')             render();
+  if (typeof refreshCenter === 'function') refreshCenter();
+  if (typeof render === 'function') render();
 }
 
 function setCaptionFromPreset(preset, typeName) {
@@ -766,6 +773,13 @@ typeSel.addEventListener('change', () => {
 
   // 1) rebuild the form for this type
   renderTypeForm(t);
+
+  // 1.5) re-wire dynamic controls created by the rebuild (must be idempotent)
+  if (typeof wireColorHexSync === 'function') wireColorHexSync();
+  if (typeof wireSteppers === 'function') wireSteppers();
+  if (typeof wireEmojiModal === 'function') wireEmojiModal();
+  if (typeof wireECCPill === 'function') wireECCPill();
+  if (typeof wireECCLegacySelect === 'function') wireECCLegacySelect();
 
   // 2) preset index bookkeeping
   if (!currentPresetIdx.has(t)) currentPresetIdx.set(t, 0);
@@ -885,7 +899,7 @@ if (!typeSel.value && typeof getPresets === 'function') {
   }
 
   if (typeof window.refreshBackground === 'function') {
-  window.refreshBackground();
+    window.refreshBackground();
   }
   if (typeof render === 'function') render();
 }
@@ -1938,51 +1952,58 @@ function boot() {
   // 1) Wire one-time bindings
   wireBackgroundBindingsOnce();
   wireRightAccordionBehaviorOnce();
-  wireECCPill();
-  
-// After your existing boot wiring:
-refreshModulesMode?.();   // enables Emoji + Scale when “Emoji” is selected
-refreshCenter?.();        // enables center Emoji + Scale when “Emoji” is selected
-refreshBackground?.();    // applies Transparent toggle to the preview frame
 
-requestAnimationFrame(() => {
+  // Centralized init wiring (idempotent / guarded where needed)
+  wireECCPill();
+  wireECCLegacySelect();
+  wireFontSelect();
+  wireCaptionInputs();
+  wireSectionThemes();
+  
+  // First-pass UI state (so fields/labels enable/disable correctly)
+  try { refreshModulesMode?.(); } catch {}
+  try { refreshCenter?.(); }      catch {}
+  try { refreshBackground?.(); }  catch {}
+
+  // One-time listeners that must never stack
+  if (!boot._listenersBound) {
+    document.getElementById('modulesMode')?.addEventListener('change', () => {
+      sendEvent('modules_mode', currentUiState());
+    });
+
+    document.getElementById('centerMode')?.addEventListener('change', () => {
+      sendEvent('center_mode', currentUiState());
+    });
+
+    document.getElementById('bgTransparent')?.addEventListener('change', () => {
+      const transparent = !!document.getElementById('bgTransparent')?.checked;
+      sendEvent('bg_mode', { transparent, ...currentUiState() });
+    });
+
+    document.getElementById('bgColor')?.addEventListener('input', () => {
+      try { refreshBackground?.(); } catch {}
+      if (typeof render === 'function') render();
+    });
+
+    document.getElementById('showCaption')?.addEventListener('change', () => {
+      const show = !!document.getElementById('showCaption')?.checked;
+      sendEvent('caption_toggle', { showCaption: show, ...currentUiState() });
+    });
+
+    boot._listenersBound = true;
+  }
+
+  // Analytics (view = first meaningful paint session)
+  sendEvent('view', currentUiState());
+
+  // First render (next frame avoids layout thrash)
+  requestAnimationFrame(() => {
     if (typeof render === 'function') render();
     document.documentElement.classList.add('ui-ready');
     // ensure click-through state is correct once the phone is painted
     if (typeof applyClickThroughForMobile === 'function') applyClickThroughForMobile();
   });
 }
-
-document.getElementById('modulesMode')?.addEventListener('change', () => {
-  sendEvent('modules_mode', currentUiState());
-});
-
-document.getElementById('centerMode')?.addEventListener('change', () => {
-  sendEvent('center_mode', currentUiState());
-});
-
-document.getElementById('bgTransparent')?.addEventListener('change', () => {
-  const transparent = !!document.getElementById('bgTransparent')?.checked;
-  sendEvent('bg_mode', { transparent, ...currentUiState() });
-});
-document.getElementById('bgColor')?.addEventListener('input', () => { refreshBackground?.(); render(); });
-
-  // 2) First-pass UI state (so fields/labels enable/disable correctly)
-  try { refreshModulesMode?.(); } catch {}
-  try { refreshBackground?.(); }  catch {}
-  try { refreshCenter?.(); }      catch {}
-
-  // 3) First render (next frame avoids layout thrash)
-    sendEvent('view', currentUiState());   // ← add this line
-  requestAnimationFrame(() => {
-    if (typeof render === 'function') render();
-    document.documentElement.classList.add('ui-ready');
-  });
-
-  document.getElementById('showCaption')?.addEventListener('change', () => {
-  const show = !!document.getElementById('showCaption')?.checked;
-  sendEvent('caption_toggle', { showCaption: show, ...currentUiState() });
-});
 
 // Run after DOM is ready (once)
 if (document.readyState === 'loading') {
@@ -2713,7 +2734,6 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
   window.addEventListener('resize', computeParkOffset, { passive: true });
   window.addEventListener('orientationchange', computeParkOffset, { passive: true });
   document.fonts?.ready?.then?.(computeParkOffset);
-  document.addEventListener('DOMContentLoaded', computeParkOffset);
 
 // --- Uniform "park under QR" on open (stacked only, stable + deterministic) ---
 document.removeEventListener?.('click', window.__okqr_park_handler__);
@@ -2775,7 +2795,6 @@ function applyClickThroughForMobile() {
   }
 }
 window.addEventListener('resize', applyClickThroughForMobile, { passive: true });
-document.addEventListener('DOMContentLoaded', applyClickThroughForMobile);
  
 })();
 
@@ -2784,66 +2803,84 @@ document.addEventListener('DOMContentLoaded', applyClickThroughForMobile);
 // =======================================================
 // Color picker / hex text sync (robust pairing, DOM-safe)
 // =======================================================
-(function bindColorHexSync(){
+(function bindColorHexSync() {
+  const toHex = (v) => {
+    if (!v) return null;
+    v = String(v).trim();
+    const short = /^#([0-9a-f]{3})$/i;
+    const full  = /^#([0-9a-f]{6})$/i;
+    if (short.test(v)) {
+      return '#' + v.slice(1).split('').map(c => c + c).join('').toUpperCase();
+    }
+    if (full.test(v)) return v.toUpperCase();
+    return null;
+  };
+
+  const pairTextForColor = (colorEl) => {
+    // 1) Fast path: FooColor -> FooHex
+    if (colorEl.id && /Color$/.test(colorEl.id)) {
+      const guess = document.getElementById(colorEl.id.replace(/Color$/, 'Hex'));
+      if (guess && guess.matches?.('input[type="text"]')) return guess;
+    }
+
+    // 2) Otherwise: look in a reasonable wrapper, then walk siblings
+    const wrapper =
+      colorEl.closest?.('.color-field, .field, .control, .form-row, .flex, .grid, div') || colorEl.parentElement;
+
+    let textEl = wrapper && wrapper.querySelector?.('input[type="text"]');
+
+    if (!textEl) {
+      let n = colorEl.nextElementSibling;
+      while (n) {
+        if (n.matches?.('input[type="text"]')) return n;
+        const inner = n.querySelector?.('input[type="text"]');
+        if (inner) return inner;
+        n = n.nextElementSibling;
+      }
+    }
+    return textEl || null;
+  };
+
   const ready = () => {
-    const toHex = (v) => {
-      if (!v) return null;
-      v = v.trim();
-      // #RGB -> #RRGGBB
-      const short = /^#([0-9a-f]{3})$/i;
-      const full  = /^#([0-9a-f]{6})$/i;
-      if (short.test(v)) {
-        return '#' + v.slice(1).split('').map(c => c + c).join('').toUpperCase();
-      }
-      if (full.test(v)) return v.toUpperCase();
-      return null;
-    };
+    document.querySelectorAll('input[type="color"]').forEach((colorEl) => {
+      if (colorEl.dataset.hexSyncBound === '1') return;
 
-    // For each color input, find the best matching text input nearby
-    document.querySelectorAll('input[type="color"]').forEach(colorEl => {
-      // Try common wrappers first, then siblings
-      const wrapper =
-        colorEl.closest('.color-field, .field, .control, .form-row, .flex, .grid, div') || colorEl.parentElement;
+      const textEl = pairTextForColor(colorEl);
+      if (!textEl) return;
 
-      let textEl = wrapper && wrapper.querySelector('input[type="text"]');
-      if (!textEl) {
-        // Walk forward through siblings until we find a text input (covers many layouts)
-        let n = colorEl.nextElementSibling;
-        while (n) {
-          if (n.matches?.('input[type="text"]')) { textEl = n; break; }
-          const inner = n.querySelector?.('input[type="text"]');
-          if (inner) { textEl = inner; break; }
-          n = n.nextElementSibling;
-        }
-      }
-      if (!textEl) return; // no pair found; skip silently
+      if (textEl.dataset.hexSyncBound === '1') return;
 
-      // Initialize hex field from color if empty/invalid
-      const initHex = toHex(textEl.value) || colorEl.value.toUpperCase();
-      textEl.value = initHex;
+      // mark both sides so rebinding is safe
+      colorEl.dataset.hexSyncBound = '1';
+      textEl.dataset.hexSyncBound  = '1';
 
-      // Color → Hex
+      // initialize: keep whatever the text says if valid, else mirror color
+      const initHex = toHex(textEl.value) || toHex(colorEl.value) || '#000000';
+      colorEl.value = initHex;
+      textEl.value  = initHex;
+
+      // Color -> Hex
       colorEl.addEventListener('input', () => {
-        textEl.value = colorEl.value.toUpperCase();
+        textEl.value = String(colorEl.value || '').toUpperCase();
         if (typeof render === 'function') render();
       });
 
-      // Hex → Color (on input/change/blur)
+      // Hex -> Color (input/change/blur)
       const applyHex = () => {
         const hx = toHex(textEl.value);
-        if (hx) {
-          colorEl.value = hx;
-          textEl.value = hx;
-          if (typeof render === 'function') render();
-        }
+        if (!hx) return;
+        colorEl.value = hx;
+        textEl.value  = hx;
+        if (typeof render === 'function') render();
       };
+
       textEl.addEventListener('input',  applyHex);
       textEl.addEventListener('change', applyHex);
       textEl.addEventListener('blur',   applyHex);
     });
   };
 
-    if (document.readyState === 'loading') {
+  if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ready, { once: true });
   } else {
     ready();
