@@ -542,6 +542,13 @@
     }
 
     items.forEach((item) => {
+      const origin =
+        item.Origin ||
+        item.Source ||
+        item.Kind ||
+        item.Type ||
+        ""; // expected: "artstart" or "copydesk" (best-effort)
+
       const title =
         item.Title ||
         item.Name ||
@@ -552,51 +559,93 @@
         item.JobId ||
         "Untitled";
 
-      const revisedDate =
-        formatShortDate(item.RevisedAt || item.UpdatedAt || item.CreatedAt);
-
-      const meta = revisedDate
-        ? "REVISED " + revisedDate.toUpperCase()
-        : "";
-
       const card = document.createElement("div");
-      card.className = "ascend-job-card";
+      card.className = "ascend-job-card ascend-fileroom-card";
 
       const mainBtn = document.createElement("button");
       mainBtn.type = "button";
       mainBtn.className = "ascend-job-card-main";
 
-      const stack = document.createElement("div");
+      // LEFT FIELD (replaces former status endcap / squares)
+      const provenance = document.createElement("div");
+      provenance.className = "ascend-job-card-provenance";
+      provenance.dataset.origin = origin;
+
+      const lettermark = document.createElement("div");
+      lettermark.className = "ascend-job-card-lettermark";
+      lettermark.textContent =
+        origin && String(origin).toLowerCase().indexOf("copy") !== -1 ? "C" : "A";
+
+      provenance.appendChild(lettermark);
+      mainBtn.appendChild(provenance);
+
+      // TEXT STACK
+      const textStack = document.createElement("div");
+      textStack.className = "ascend-job-card-stack";
 
       const titleEl = document.createElement("div");
       titleEl.className = "ascend-job-card-title";
       titleEl.textContent = title;
+      textStack.appendChild(titleEl);
 
-      const metaEl = document.createElement("div");
-      metaEl.className = "ascend-job-card-meta";
-      metaEl.textContent = meta;
+      // Metadata rules
+      let metaText = "";
 
-      stack.appendChild(titleEl);
-      stack.appendChild(metaEl);
-      mainBtn.appendChild(stack);
+      if (lettermark.textContent === "A") {
+        const parts = [];
+        if (item.Publication || item.PublicationName) {
+          parts.push(item.Publication || item.PublicationName);
+        }
+        if (item.SoldAs) parts.push(item.SoldAs);
+        const pubDate = formatShortDate(item.PublicationDate);
+        if (pubDate) parts.push(pubDate);
+        metaText = parts.join(" · ");
+      } else {
+        const revised =
+          formatShortDate(item.RevisedAt || item.UpdatedAt || item.CreatedAt);
+        if (revised) metaText = "Revised: " + revised;
+      }
 
-      // Endcap present (we’ll refine color mapping later)
-      const statusEl = document.createElement("div");
-      statusEl.className = "ascend-job-card-status";
-      statusEl.textContent = (item.Status || "output").toString();
-      mainBtn.appendChild(statusEl);
+      if (metaText) {
+        const metaEl = document.createElement("div");
+        metaEl.className = "ascend-job-card-meta";
+        metaEl.textContent = metaText;
+        textStack.appendChild(metaEl);
+      }
 
-      // If a URL exists, open it; otherwise no-op for now.
+      mainBtn.appendChild(textStack);
+
       mainBtn.addEventListener("click", (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
-        const url = item.OpenUrl || item.Url || item.URL || item.FileUrl || item.PreviewUrl || "";
+        const url =
+          item.OpenUrl ||
+          item.Url ||
+          item.URL ||
+          item.FileUrl ||
+          item.PreviewUrl ||
+          "";
         if (url && String(url).indexOf("http") === 0) {
           window.open(String(url), "_blank", "noopener");
         }
       });
 
+      // DELETE BUTTON (matches ArtStart / Copydesk)
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "ascend-job-card-delete";
+      deleteBtn.setAttribute("aria-label", "Remove item from FileRoom");
+      deleteBtn.textContent = "×";
+
+      deleteBtn.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        // FileRoom deletion wiring intentionally deferred
+        card.remove();
+      });
+
       card.appendChild(mainBtn);
+      card.appendChild(deleteBtn);
       lane.appendChild(card);
     });
   }

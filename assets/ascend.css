@@ -788,6 +788,11 @@ textarea:focus {
   gap: 0;
 }
 
+/* FileRoom rows use identical rhythm */
+.ascend-fileroom-card {
+  align-items: stretch;
+}
+
 /* Full-width clickable row */
 .ascend-job-card-main {
   /* reset native button look */
@@ -816,6 +821,48 @@ textarea:focus {
 
   /* hover */
   transition: background-color var(--ascend-transition-fast);
+}
+
+/* =========================================================
+ * FileRoom hopper provenance field
+ * ======================================================= */
+
+.ascend-fileroom-card .ascend-job-card-main {
+  grid-template-columns: 28px minmax(0, 1fr);
+}
+
+/* Single rectangular field replacing the former 3-square cluster */
+.ascend-job-card-provenance {
+  align-self: stretch;
+  border-radius: 6px;
+  position: relative;
+
+  background: linear-gradient(
+    180deg,
+    var(--ascend-hopper-stage-1),
+    var(--ascend-hopper-stage-2),
+    var(--ascend-hopper-stage-3)
+  );
+
+  opacity: 0.85;
+}
+
+/* Large decorative lettermark */
+.ascend-job-card-lettermark {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 0.95rem;
+  font-weight: var(--ascend-weight-bold);
+  letter-spacing: 0.08em;
+
+  color: rgba(255, 255, 255, 0.75);
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .ascend-hopper-progress {
@@ -918,20 +965,9 @@ textarea:focus {
   font-weight: var(--ascend-weight-regular);
 }
 
-/* Status becomes a right-side endcap (v1: same tint for now) */
-.ascend-job-card-status {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 10px;
-
-  /* hide the label text but keep element present */
-  font-size: 0;
-  line-height: 0;
-  color: transparent;
-
-  background: rgba(79, 209, 197, 0.55);
+/* Status endcap disabled for FileRoom rows */
+.ascend-fileroom-card .ascend-job-card-status {
+  display: none;
 }
 
 /* Row radius only at the very top/bottom of the drawer */
