@@ -265,10 +265,68 @@ body.theme--finish {
    2. GLOBAL SCAFFOLD
 ========================= */
 
-/* NOTE:
-   Ascend owns the page atmosphere (background, grid motif, shell padding).
-   CodeDesk must not paint the <body> background or fixed grid overlays here.
-   Keep only local layout spacing inside the CodeDesk content region. */
+/* CodeDesk: dark dawn + blueprint grid (CodeDesk-only).
+   We scope to pages that contain #qrType so this won’t touch other apps. */
+
+body:has(#qrType) {
+  position: relative;
+  background:
+    radial-gradient(1200px 800px at 50% 18%,
+      rgba(79, 209, 197, .18),
+      rgba(5, 8, 20, 0) 60%),
+    radial-gradient(900px 650px at 50% 0%,
+      rgba(99, 102, 241, .16),
+      rgba(5, 8, 20, 0) 55%),
+    linear-gradient(180deg, #050814 0%, #070a18 45%, #05060c 100%);
+  background-attachment: fixed;
+}
+
+/* Grid overlay */
+body:has(#qrType)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  /* Use existing grid knob; add a “major” grid every 5 cells */
+  --cd-grid-size: var(--grid-size, 40px);
+  --cd-grid-major: calc(var(--cd-grid-size) * 5);
+
+  /* Teal-forward blueprint lines (subtle) */
+  --cd-grid-minor: rgba(79, 209, 197, .10);
+  --cd-grid-major-line: rgba(79, 209, 197, .16);
+
+  background-image:
+    /* minor */
+    linear-gradient(to right, var(--cd-grid-minor) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--cd-grid-minor) 1px, transparent 1px),
+    /* major */
+    linear-gradient(to right, var(--cd-grid-major-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--cd-grid-major-line) 1px, transparent 1px),
+    /* vignette */
+    radial-gradient(circle at 50% 42%,
+      rgba(255,255,255,.10) 0%,
+      rgba(0,0,0,0) 58%);
+
+  background-size:
+    var(--cd-grid-size) var(--cd-grid-size),
+    var(--cd-grid-size) var(--cd-grid-size),
+    var(--cd-grid-major) var(--cd-grid-major),
+    var(--cd-grid-major) var(--cd-grid-major),
+    100% 100%;
+
+  opacity: .9;
+  mix-blend-mode: normal;
+}
+
+/* Ensure content sits above the grid overlay (without changing internal stacking) */
+body:has(#qrType) > header,
+body:has(#qrType) > main,
+body:has(#qrType) > footer {
+  position: relative;
+  z-index: 1;
+}
 
 main {
   margin-top: 2rem; /* internal breathing room only */
