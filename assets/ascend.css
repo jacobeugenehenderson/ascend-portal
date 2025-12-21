@@ -670,7 +670,10 @@ textarea:focus {
 
 .ascend-row-list {
   display: grid;
-  grid-template-rows: 1fr 1fr 1fr 2fr;
+
+  /* First 3 lanes size to content; FileRoom takes the remaining space */
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+
   gap: 0.75rem;
   margin-top: 0.4rem;
 
