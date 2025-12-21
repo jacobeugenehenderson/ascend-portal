@@ -150,6 +150,79 @@
     return (nowMs != null ? nowMs : Date.now()) > endMs;
   }
 
+  // --- FileRoom upsert helpers (clock-driven exits) ---
+  const FILEROOM_UPSERTED_KEY = "ascend_fileroom_upserted_v1";
+
+  function loadUpsertedMap_() {
+    try {
+      const raw = localStorage.getItem(FILEROOM_UPSERTED_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveUpsertedMap_(m) {
+    try {
+      localStorage.setItem(FILEROOM_UPSERTED_KEY, JSON.stringify(m || {}));
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function ascendJobKey_(app, sourceId) {
+    return String(app || "").toUpperCase() + ":" + String(sourceId || "");
+  }
+
+  function upsertFileRoomJob_(params) {
+    if (!params) return;
+
+    const callbackName =
+      "ascendFileRoomUpsertCallback_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000));
+
+    window[callbackName] = function (payload) {
+      try {
+        // Best-effort; no UI side effects here.
+        // eslint-disable-next-line no-unused-vars
+        const _ = payload;
+      } catch (e) {
+        // ignore
+      } finally {
+        try {
+          delete window[callbackName];
+        } catch (e2) {
+          // ignore
+        }
+      }
+    };
+
+    const url = new URL(FILEROOM_API_BASE);
+    url.searchParams.set("action", "upsertJob");
+    url.searchParams.set("callback", callbackName);
+
+    Object.keys(params).forEach((k) => {
+      if (params[k] == null) return;
+      url.searchParams.set(k, String(params[k]));
+    });
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
+  function maybeUpsertToFileRoomOnce_(app, sourceId, params) {
+    const key = ascendJobKey_(app, sourceId);
+    const m = loadUpsertedMap_();
+    if (m[key]) return false;
+    m[key] = 1;
+    saveUpsertedMap_(m);
+    upsertFileRoomJob_(params);
+    return true;
+  }
+
   function loadSession() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -779,7 +852,48 @@
     window[callbackName] = function (payload) {
       try {
         const jobs = payload && payload.jobs ? payload.jobs : [];
-        renderCopydeskHopper(jobs);
+        const session2 = loadSession();
+        const nowMs = Date.now();
+
+        const inPlay = [];
+        for (let i = 0; i < jobs.length; i++) {
+          const job = jobs[i];
+
+          // Clock-driven exit: once Cutoff day has passed (EOFD Eastern),
+          // the job leaves Copydesk lane and appears in FileRoom.
+          if (job && job.Cutoff && isPastEofdEastern_(job.Cutoff, nowMs)) {
+            const sourceId = job.JobId || "";
+            const title = job.NordsonJobId || job.AscendJobId || job.JobId || "Untitled job";
+
+            const subtitleParts = [];
+            if (job.PublicationName) subtitleParts.push(job.PublicationName);
+            if (job.SoldAs) subtitleParts.push(job.SoldAs);
+            const subtitle = subtitleParts.join(" · ");
+
+            const openUrlRaw =
+              COPYDESK_JOB_URL + "?jobid=" + encodeURIComponent(job.JobId || "");
+            const openUrl = buildUrlWithUser(openUrlRaw);
+
+            maybeUpsertToFileRoomOnce_("copydesk", sourceId, {
+              app: "copydesk",
+              source_id: sourceId,
+              title: title,
+              subtitle: subtitle,
+              open_url: openUrl,
+              owner_email: (session2 && session2.userEmail) ? session2.userEmail : ""
+            });
+
+            // Do not show in Copydesk lane once it has exited.
+            continue;
+          }
+
+          inPlay.push(job);
+        }
+
+        renderCopydeskHopper(inPlay);
+
+        // Optional: refresh FileRoom lane sooner after upserts.
+        requestFileRoomOutput();
       } catch (e) {
         console.warn("Ascend: error in Copydesk jobs callback", e);
         renderCopydeskHopper([]);
@@ -932,7 +1046,48 @@
     window[callbackName] = function (payload) {
       try {
         const jobs = payload && payload.jobs ? payload.jobs : [];
-        renderArtStartHopper(jobs);
+        const session2 = loadSession();
+        const nowMs = Date.now();
+
+        const inPlay = [];
+        for (let i = 0; i < jobs.length; i++) {
+          const job = jobs[i];
+
+          // Clock-driven exit: once MaterialsDueDate day has passed (EOFD Eastern),
+          // the job leaves ArtStart lane and appears in FileRoom.
+          if (job && job.MaterialsDueDate && isPastEofdEastern_(job.MaterialsDueDate, nowMs)) {
+            const sourceId = job.AscendJobId || "";
+            const title = job.NordsonJobId || job.AscendJobId || "Untitled job";
+
+            const subtitleParts = [];
+            if (job.PublicationName) subtitleParts.push(job.PublicationName);
+            if (job.DeliverableType) subtitleParts.push(job.DeliverableType);
+            const subtitle = subtitleParts.join(" · ");
+
+            const openUrlRaw =
+              ARTSTART_JOB_URL + "?jobid=" + encodeURIComponent(job.AscendJobId || "");
+            const openUrl = buildUrlWithUser(openUrlRaw);
+
+            maybeUpsertToFileRoomOnce_("artstart", sourceId, {
+              app: "artstart",
+              source_id: sourceId,
+              title: title,
+              subtitle: subtitle,
+              open_url: openUrl,
+              owner_email: (session2 && session2.userEmail) ? session2.userEmail : ""
+            });
+
+            // Do not show in ArtStart lane once it has exited.
+            continue;
+          }
+
+          inPlay.push(job);
+        }
+
+        renderArtStartHopper(inPlay);
+
+        // Optional: refresh FileRoom lane sooner after upserts.
+        requestFileRoomOutput();
       } catch (e) {
         console.warn("Ascend: error in ArtStart jobs callback", e);
       }
