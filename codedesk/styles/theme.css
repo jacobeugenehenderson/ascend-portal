@@ -1,5 +1,5 @@
 /* =======================================================================
-   okQRal — THEME.CSS
+   CodeDesk — THEME.CSS
    Master style sheet controlling UI variables, theming, and component look.
    Author: Jacob Eugene Henderson
    -----------------------------------------------------------------------
@@ -170,7 +170,7 @@ html.light, :root.light {
 
   /* ----- Export defaults (read by JS) ----- */
   --export-png-scale: 3;
-  --export-filename: "okQRal";
+  --export-filename: "CodeDesk";
 
   /* ----- Grid overlay knobs (for theme scaffold) ----- */
   --grid-size: 40px;
@@ -265,109 +265,13 @@ body.theme--finish {
    2. GLOBAL SCAFFOLD
 ========================= */
 
+/* NOTE:
+   Ascend owns the page atmosphere (background, grid motif, shell padding).
+   CodeDesk must not paint the <body> background or fixed grid overlays here.
+   Keep only local layout spacing inside the CodeDesk content region. */
+
 main {
-  margin-top: 2rem; /* or 24px */
-}
-
-body{
-  background: linear-gradient(
-    135deg,
-    var(--md-sys-color-background),
-    color-mix(in oklab, var(--md-sys-color-background) 85%, black)
-  );
-  color: var(--md-sys-color-on-background);
-}
-
-.theme-grid{ position:relative; }
-/* LAYER 1 — lines + primary glow (screen blend) */
-.theme-grid::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  opacity: var(--grid-opacity);
-
-  /* hard violet lines */
-  background:
-    linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid-line-color) 1px, transparent 1px);
-  background-size: var(--grid-size) var(--grid-size), var(--grid-size) var(--grid-size);
-
-  /* aqua bloom riding over the lines */
-  box-shadow:
-    0 0 24px 6px color-mix(in oklab, var(--grid-glow-color) 70%, transparent);
-
-  mix-blend-mode: screen;
-  /* ↑ more neon, less fog */
-  filter: saturate(1.6) contrast(1.12) blur(.15px);
-  z-index:0;
-}
-
-/* LAYER 2 — soft overlay + true backdrop blur */
-.theme-grid::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:0;
-
-  /* vivid bloom halo behind the grid */
-  opacity:var(--grid-glow-opacity, .55);
-  background:
-    radial-gradient(110% 85% at 50% 36%,
-  color-mix(in oklab, var(--grid-glow-color) 46%, transparent) 0%,
-  transparent 72%)
-    ,
-    linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid-line-color) 1px, transparent 1px);
-
-  background-size:
-    100% 100%,
-    var(--grid-size) var(--grid-size),
-    var(--grid-size) var(--grid-size);
-
-  background-blend-mode: screen, screen, normal;
-
-  /* radiant but tight — not foggy */
-  filter: blur(4px) brightness(1.18) saturate(1.75);
-  -webkit-backdrop-filter: blur(2px) saturate(1.05);
-          backdrop-filter: blur(2px) saturate(1.05);
-
-  /* keeps light focused near center, fades at edges */
-  mask-image: radial-gradient(95% 75% at 50% 45%, #000 70%, transparent 100%);
-}
-
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .theme-grid::after{
-    background-blend-mode:overlay,normal;
-    -webkit-backdrop-filter:none;
-            backdrop-filter:none;
-  }
-}
-
-@media (prefers-reduced-transparency:reduce){
-  .theme-grid::after{
-    -webkit-backdrop-filter:none;
-            backdrop-filter:none;
-  }
-}
-
-.theme-grid>*{ position:relative; z-index:1; }
-
-/* Make room for the fixed footer + a little air */
-main { padding-bottom: calc(var(--footer-h) + var(--stack-gap));
-}
-
-@media (max-width: 1279px) {
-  main {
-    /* make room for footer height */
-    padding-bottom: var(--footer-h, 6rem);
-  }
-
-  /* optional: ensure cards scroll naturally */
-  #stepper {
-    position: static;
-  }
+  margin-top: 2rem; /* internal breathing room only */
 }
 
 /* =========================
