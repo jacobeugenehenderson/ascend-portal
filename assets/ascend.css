@@ -970,6 +970,56 @@ textarea:focus {
   display: none;
 }
 
+/* ============================
+ * FileRoom provenance badge (replaces 3 squares with 1 gradient field)
+ * ============================ */
+
+.ascend-job-card-provenance {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: var(--ascend-weight-bold);
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.78);
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 10px 24px rgba(0, 0, 0, 0.30);
+}
+
+.ascend-job-card-provenance.is-artstart,
+.ascend-job-card-provenance.is-copydesk {
+  background: linear-gradient(
+    180deg,
+    var(--ascend-hopper-stage-1) 0%,
+    var(--ascend-hopper-stage-2) 50%,
+    var(--ascend-hopper-stage-3) 100%
+  );
+}
+
+.ascend-job-card-provenance span {
+  transform: translateY(0.5px);
+  font-size: 1.05rem;
+}
+
+/* FileRoom lane: always stretch cards full width */
+#ascend-fileroom-list {
+  width: 100%;
+}
+
+#ascend-fileroom-list .ascend-job-card {
+  width: 100%;
+}
+
+#ascend-fileroom-list .ascend-job-card-main {
+  width: 100%;
+}
+
 /* Row radius only at the very top/bottom of the drawer */
 .ascend-row-secondary > div[id$="-list"] .ascend-job-card:first-child .ascend-job-card-main {
   border-top-left-radius: 10px;

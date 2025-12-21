@@ -527,7 +527,7 @@
 
   // ---- Hopper: FileRoom output rows ----
 
-  function renderFileRoomHopper(items) {
+    function renderFileRoomHopper(items) {
     const lane = document.getElementById("ascend-fileroom-list");
     if (!lane) return;
 
@@ -542,14 +542,17 @@
     }
 
     items.forEach((item) => {
-      const origin =
-        item.Origin ||
-        item.Source ||
-        item.Kind ||
-        item.Type ||
-        ""; // expected: "artstart" or "copydesk" (best-effort)
+      const originRaw =
+        (item && (item.Origin || item.Source || item.App || item.Type || item.Kind)) || "";
+      const origin = String(originRaw).trim().toLowerCase();
+
+      const isArtStart =
+        origin === "artstart" || origin === "art start" || origin === "art";
+      const isCopydesk =
+        origin === "copydesk" || origin === "copy desk" || origin === "copy";
 
       const title =
+        item.NordsonJobId ||
         item.Title ||
         item.Name ||
         item.FileName ||
@@ -559,62 +562,70 @@
         item.JobId ||
         "Untitled";
 
+      // Display rules (per your spec):
+      // - ArtStart: Name, Publication, SoldAs, Published Date
+      // - Copydesk: Name, Revised: {date}
+      const publication =
+        item.PublicationName || item.Publication || item.PublicationId || "";
+      const soldAs = item.SoldAs || item.DeliverableType || item.Deliverable || "";
+
+      const publishedDate = formatShortDate(
+        item.PublicationDate || item.PublishDate || item.PublishedAt
+      );
+
+      const revisedDate = formatShortDate(
+        item.RevisedAt || item.UpdatedAt || item.CreatedAt
+      );
+
+      const contextText = isArtStart
+        ? [publication, soldAs].filter(Boolean).join(" · ")
+        : "";
+
+      const timeText = isArtStart
+        ? (publishedDate ? "PUBLISHED " + publishedDate.toUpperCase() : "")
+        : (revisedDate ? "REVISED: " + revisedDate.toUpperCase() : "");
+
       const card = document.createElement("div");
-      card.className = "ascend-job-card ascend-fileroom-card";
+      card.className = "ascend-job-card";
 
       const mainBtn = document.createElement("button");
       mainBtn.type = "button";
       mainBtn.className = "ascend-job-card-main";
 
-      // LEFT FIELD (replaces former status endcap / squares)
-      const provenance = document.createElement("div");
-      provenance.className = "ascend-job-card-provenance";
-      provenance.dataset.origin = origin;
+      // Provenance badge (single gradient field + lettermark)
+      const prov = document.createElement("div");
+      prov.className = "ascend-job-card-provenance";
 
-      const lettermark = document.createElement("div");
-      lettermark.className = "ascend-job-card-lettermark";
-      lettermark.textContent =
-        origin && String(origin).toLowerCase().indexOf("copy") !== -1 ? "C" : "A";
+      if (isArtStart) prov.className += " is-artstart";
+      if (isCopydesk) prov.className += " is-copydesk";
 
-      provenance.appendChild(lettermark);
-      mainBtn.appendChild(provenance);
+      const provText = document.createElement("span");
+      provText.textContent = isCopydesk ? "C" : "A";
+      prov.appendChild(provText);
 
-      // TEXT STACK
       const textStack = document.createElement("div");
       textStack.className = "ascend-job-card-stack";
 
       const titleEl = document.createElement("div");
       titleEl.className = "ascend-job-card-title";
       titleEl.textContent = title;
+
+      const contextEl = document.createElement("div");
+      contextEl.className = "ascend-job-card-context";
+      contextEl.textContent = contextText;
+
+      const timeEl = document.createElement("div");
+      timeEl.className = "ascend-job-card-time";
+      timeEl.textContent = timeText;
+
       textStack.appendChild(titleEl);
+      if (contextText) textStack.appendChild(contextEl);
+      if (timeText) textStack.appendChild(timeEl);
 
-      // Metadata rules
-      let metaText = "";
-
-      if (lettermark.textContent === "A") {
-        const parts = [];
-        if (item.Publication || item.PublicationName) {
-          parts.push(item.Publication || item.PublicationName);
-        }
-        if (item.SoldAs) parts.push(item.SoldAs);
-        const pubDate = formatShortDate(item.PublicationDate);
-        if (pubDate) parts.push(pubDate);
-        metaText = parts.join(" · ");
-      } else {
-        const revised =
-          formatShortDate(item.RevisedAt || item.UpdatedAt || item.CreatedAt);
-        if (revised) metaText = "Revised: " + revised;
-      }
-
-      if (metaText) {
-        const metaEl = document.createElement("div");
-        metaEl.className = "ascend-job-card-meta";
-        metaEl.textContent = metaText;
-        textStack.appendChild(metaEl);
-      }
-
+      mainBtn.appendChild(prov);
       mainBtn.appendChild(textStack);
 
+      // Open behavior (if url exists)
       mainBtn.addEventListener("click", (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
@@ -630,18 +641,32 @@
         }
       });
 
-      // DELETE BUTTON (matches ArtStart / Copydesk)
+      // Delete row “x” (best-effort; removes from UI immediately)
       const deleteBtn = document.createElement("button");
       deleteBtn.type = "button";
       deleteBtn.className = "ascend-job-card-delete";
-      deleteBtn.setAttribute("aria-label", "Remove item from FileRoom");
       deleteBtn.textContent = "×";
+      deleteBtn.setAttribute("aria-label", "Remove row");
 
       deleteBtn.addEventListener("click", (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
-        // FileRoom deletion wiring intentionally deferred
+
+        // Immediate UI removal (authoritative visual behavior)
         card.remove();
+
+        // Best-effort backend delete if an API exists (safe no-op if not)
+        try {
+          const id =
+            item.RowId || item.Id || item.JobId || item.AssetId || item.FileId || "";
+          if (FILEROOM_API_BASE && id) {
+            fetch(FILEROOM_API_BASE, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "delete", id: String(id) }),
+            }).catch(() => {});
+          }
+        } catch (e) {}
       });
 
       card.appendChild(mainBtn);
