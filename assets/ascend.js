@@ -147,10 +147,16 @@
 
     async function checkOnce() {
       try {
-        const pollUrl = AUTH_ENDPOINT + "?token=" + encodeURIComponent(token);
+        const pollUrl =
+          AUTH_ENDPOINT +
+          "?token=" +
+          encodeURIComponent(token) +
+          "&_ts=" +
+          String(Date.now());
+
         console.log("[Ascend] Polling auth at URL:", pollUrl);
 
-        const resp = await fetch(pollUrl, { method: "GET" });
+        const resp = await fetch(pollUrl, { method: "GET", cache: "no-store" });
 
         // Hard HTTP failure (network / 4xx / 5xx)
         if (!resp.ok) {
