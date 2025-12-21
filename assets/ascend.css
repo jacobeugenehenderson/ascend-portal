@@ -595,6 +595,11 @@ textarea:focus {
   border-radius: var(--ascend-radius-xl);
   border: var(--ascend-border-width) solid var(--ascend-card-border);
   padding: 1rem 1.25rem 1.2rem;
+
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .ascend-dashboard-header {
@@ -662,6 +667,9 @@ textarea:focus {
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 0.4rem;
+
+  flex: 1;
+  min-height: 0;
 }
 
 .ascend-row {
@@ -752,7 +760,6 @@ textarea:focus {
 .ascend-row-secondary {
   background: rgba(5, 9, 23, 0.9);
   border-radius: var(--ascend-radius-lg);
-
   /* Drawer frame */
   border: 1px solid rgba(255, 255, 255, 0.14);
 
@@ -762,7 +769,8 @@ textarea:focus {
   gap: 0.35rem;
   font-size: 0.78rem;
   color: var(--ascend-color-text-muted);
-  min-height: 84px;
+  
+  min-height: 0;
 }
 
 /* Hopper lists (ArtStart / Copydesk / Codedesk) */
