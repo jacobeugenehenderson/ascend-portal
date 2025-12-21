@@ -302,8 +302,9 @@ textarea:focus {
 #ascend-root {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: stretch;
-  justify-content: flex-start;
+  justify-content: stretch;
   padding: var(--ascend-shell-padding-y) var(--ascend-shell-padding-x);
 }
 
@@ -312,10 +313,11 @@ textarea:focus {
 .ascend-shell {
   width: 100%;
   max-width: var(--ascend-max-width);
+  min-height: 100%;
   background: var(--ascend-shell-bg);
   background-repeat: no-repeat;
   background-size: cover;
-  border-radius: 32px; /* shell keeps its special radius */
+  border-radius: 32px;
   box-shadow: var(--ascend-shadow-soft);
   border: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
   padding: 1.75rem 1.75rem 1.5rem;
@@ -421,6 +423,8 @@ textarea:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
 }
 
 /* When logged in, collapse the login column entirely */
