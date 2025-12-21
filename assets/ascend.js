@@ -218,7 +218,6 @@
           };
 
           saveSession(session);
-          updateKeepLoggedInToggle(session);
           applyLoggedInUI(session);
 
           if (pollingTimer) {
@@ -243,14 +242,6 @@
     // Initial immediate check, then interval polling.
     checkOnce();
     pollingTimer = setInterval(checkOnce, POLLING_INTERVAL_MS);
-  }
-
-  function initKeepLoggedInToggle() {
-    const toggle = document.getElementById("ascend-keep-logged-in");
-    if (!toggle) return;
-
-    toggle.dataset.on = "true";
-    toggle.setAttribute("aria-pressed", "true");
   }
 
     function initLogoutButton() {
@@ -858,7 +849,6 @@
 
     const existing = loadSession();
     if (isSessionValid(existing)) {
-      updateKeepLoggedInToggle(existing);
       applyLoggedInUI(existing);
     } else {
       // No valid session yet: stay logged out, show QR, and begin polling
