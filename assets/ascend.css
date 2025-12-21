@@ -313,7 +313,8 @@ textarea:focus {
 .ascend-shell {
   width: 100%;
   max-width: var(--ascend-max-width);
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
   background: var(--ascend-shell-bg);
   background-repeat: no-repeat;
   background-size: cover;
