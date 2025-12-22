@@ -664,7 +664,24 @@ async function requestCodeDeskTemplates() {
           manifest ||
           [];
 
-        const arr = Array.isArray(raw) ? raw : [];
+        let arr = [];
+
+        if (Array.isArray(raw)) {
+          arr = raw;
+        } else if (raw && typeof raw === "object") {
+          // Support map/object manifests: { key: { ... }, ... }
+          arr = Object.keys(raw).map((k) => {
+            const v = raw[k];
+            if (v && typeof v === "object") {
+              // carry key as a fallback id/name
+              if (!v.id && !v.template_id && !v.TemplateId) v.id = k;
+              if (!v.name && !v.title && !v.label && !v.Name) v.name = k;
+              return v;
+            }
+            return { id: k, name: String(v) };
+          });
+        }
+
         renderCodeDeskHopper(arr);
       })
       .catch((e) => {
