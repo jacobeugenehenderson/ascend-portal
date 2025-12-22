@@ -40,7 +40,27 @@
   // Copydesk API (hopper parity)
   const COPYDESK_API_BASE =
     "https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec";
-  let pollingTimer = null;
+    let pollingTimer = null;
+
+  // --- URL helper: carry session identity + token into downstream apps ---
+  function buildUrlWithUser(baseUrl) {
+    if (!baseUrl || String(baseUrl).indexOf("http") !== 0) return baseUrl;
+
+    const session = loadSession();
+    const url = new URL(String(baseUrl));
+
+    // propagate portal token if present
+    try {
+      const t = new URLSearchParams(window.location.search).get("token");
+      if (t) url.searchParams.set("token", t);
+    } catch (e) {}
+
+    if (session && session.userEmail) url.searchParams.set("user_email", session.userEmail);
+    if (session && session.userNameFirst) url.searchParams.set("user_name_first", session.userNameFirst);
+    if (session && session.userNameFull) url.searchParams.set("user_name", session.userNameFull);
+
+    return url.toString();
+  }  
 
   function nowTs() {
     return Date.now();
