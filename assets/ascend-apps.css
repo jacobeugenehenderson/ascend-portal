@@ -88,8 +88,11 @@ body.ascend-app-body {
     var(--ascend-grid-major) var(--ascend-grid-major),
     var(--ascend-grid-minor) var(--ascend-grid-minor),
     var(--ascend-grid-minor) var(--ascend-grid-minor),
-    auto; 
-    
+    auto;
+
+  color: var(--ascend-app-text-main);
+}
+
 /* Centered light panel, same radii spirit as portal shell */
 .ascend-app-shell {
   min-height: 100vh;
