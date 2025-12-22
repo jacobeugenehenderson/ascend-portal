@@ -378,7 +378,9 @@ emojiGrid.appendChild(b); }); }
     }
 
     // -------- Scale clickers (delegated; safe across form rebuilds) --------
-    function clamp(val,min,max){ return Math.min(max,Math.max(min,val)); }
+    function clamp(val, min, max) {
+      return Math.min(max, Math.max(min, val));
+    }
 
     if (!window._stepperBound) {
       document.addEventListener('click', (e) => {
@@ -489,14 +491,7 @@ emojiGrid.appendChild(b); }); }
     presets: {}
   };
 
-    if (typeof window.refreshBackground === 'function') {   
-    window.refreshBackground();
-  }
-  if (typeof render === 'function') render();
-} 
-})
-
-// <-- CLOSE catch(e) block
+}
 
 // after manifest = ... is set
 window.manifest = manifest;
@@ -3055,4 +3050,5 @@ window.addEventListener('resize', applyClickThroughForMobile, { passive: true })
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeAppModal();
   });
+})();
 })();
