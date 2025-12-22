@@ -1,24 +1,8 @@
 {
   "types": {
-    "URL": [
-      "urlData",
-      "utmSource",
-      "utmMedium",
-      "utmCampaign"
-    ],
-    "Payment": [
-      "payMode",
-      "payUser",
-      "payLink",
-      "payAmount",
-      "payNote"
-    ],
-    "WiFi": [
-      "wifiSsid",
-      "wifiPwd",
-      "wifiSec",
-      "wifiHidden"
-    ],
+    "URL": ["urlData", "utmSource", "utmMedium", "utmCampaign"],
+    "Payment": ["payMode", "payUser", "payLink", "payAmount", "payNote"],
+    "WiFi": ["wifiSsid", "wifiPwd", "wifiSec", "wifiHidden"],
     "Contact": [
       "vFirst",
       "vLast",
@@ -41,32 +25,12 @@
       "vCountry",
       "vNote"
     ],
-    "Message": [
-      "msgMode",
-      "smsNumber",
-      "smsText"
-    ],
-    "Event": [
-      "evtTitle",
-      "evtStart",
-      "evtEnd",
-      "evtLoc",
-      "evtDet",
-      "evtStyle"
-    ],
-    "Map": [
-      "mapQuery",
-      "mapLat",
-      "mapLng",
-      "mapProvider"
-    ]
+    "Message": ["msgMode", "smsNumber", "smsText"],
+    "Event": ["evtTitle", "evtStart", "evtEnd", "evtLoc", "evtDet", "evtStyle"],
+    "Map": ["mapQuery", "mapLat", "mapLng", "mapProvider"]
   },
   "fields": {
-    "urlData": {
-      "label": "URL",
-      "type": "text",
-      "placeholder": "Your URL Here"
-    },
+    "urlData": { "label": "URL", "type": "url", "placeholder": "Your URL Here" },
     "utmSource": {
       "label": "UTM Source",
       "type": "text",
@@ -82,249 +46,87 @@
       "type": "text",
       "placeholder": "campaign-name"
     },
-    "captionHeadline": {
-      "label": "Headline",
-      "type": "text",
-      "placeholder": "Headline"
-    },
+
     "captionBody": {
       "label": "Body (optional)",
       "type": "textarea",
       "rows": 2,
       "placeholder": "Body (optional)"
     },
+
     "payMode": {
       "label": "Mode",
       "type": "select",
-      "options": [
-        "Generic Link",
-        "Stripe Payment Link",
-        "PayPal.me",
-        "Venmo",
-        "Cash App"
-      ]
+      "options": ["Generic Link", "Stripe Payment Link", "PayPal.me", "Venmo", "Cash App"]
     },
     "payUser": {
       "label": "Username / Handle",
       "type": "text",
       "placeholder": "@name or $cashtag"
     },
-    "payLink": {
-      "label": "Direct Link",
-      "type": "text",
-      "placeholder": "https://…"
-    },
+    "payLink": { "label": "Direct Link", "type": "text", "placeholder": "https://…" },
     "payAmount": {
       "label": "Amount",
       "type": "number",
       "step": "0.01",
       "placeholder": "Optional"
     },
-    "payNote": {
-      "label": "Note",
-      "type": "text",
-      "placeholder": "Optional"
-    },
-    "wifiSsid": {
-      "label": "SSID",
-      "type": "text"
-    },
-    "wifiPwd": {
-      "label": "Password",
-      "type": "text"
-    },
-    "wifiSec": {
-      "label": "Security",
-      "type": "select",
-      "options": [
-        "WPA",
-        "WEP",
-        "nopass"
-      ]
-    },
-    "wifiHidden": {
-      "label": "Hidden network",
-      "type": "checkbox"
-    },
-    "vFirst": {
-      "label": "First",
-      "type": "text"
-    },
-    "vLast": {
-      "label": "Last",
-      "type": "text"
-    },
-    "vOrg": {
-      "label": "Org",
-      "type": "text"
-    },
-    "vTitle": {
-      "label": "Title",
-      "type": "text"
-    },
-    "vPhone1": {
-      "label": "Phone 1",
-      "type": "text"
-    },
-    "vPhone1Type": {
-      "label": "Type",
-      "type": "select",
-      "options": [
-        "CELL",
-        "WORK",
-        "HOME",
-        "MAIN"
-      ]
-    },
-    "vPhone2": {
-      "label": "Phone 2",
-      "type": "text"
-    },
-    "vPhone2Type": {
-      "label": "Type",
-      "type": "select",
-      "options": [
-        "WORK",
-        "HOME",
-        "CELL",
-        "MAIN"
-      ]
-    },
-    "vEmail1": {
-      "label": "Email 1",
-      "type": "email"
-    },
-    "vEmail1Type": {
-      "label": "Type",
-      "type": "select",
-      "options": [
-        "INTERNET",
-        "WORK",
-        "HOME"
-      ]
-    },
-    "vEmail2": {
-      "label": "Email 2",
-      "type": "email"
-    },
-    "vEmail2Type": {
-      "label": "Type",
-      "type": "select",
-      "options": [
-        "WORK",
-        "HOME",
-        "INTERNET"
-      ]
-    },
-    "vWebsite": {
-      "label": "Website",
-      "type": "url"
-    },
-    "vBday": {
-      "label": "Birthday",
-      "type": "text",
-      "placeholder": "YYYY-MM-DD"
-    },
-    "vStreet": {
-      "label": "Street",
-      "type": "text"
-    },
-    "vCity": {
-      "label": "City",
-      "type": "text"
-    },
-    "vRegion": {
-      "label": "State/Region",
-      "type": "text"
-    },
-    "vPostal": {
-      "label": "Postal",
-      "type": "text"
-    },
-    "vCountry": {
-      "label": "Country",
-      "type": "text"
-    },
-    "vNote": {
-      "label": "Notes",
-      "type": "textarea",
-      "rows": 2
-    },
-    "msgMode": {
-      "label": "Mode",
-      "type": "select",
-      "options": [
-        "Personal",
-        "Resistbot"
-      ]
-    },
-    "smsNumber": {
-      "label": "Phone #",
-      "type": "text"
-    },
-    "smsText": {
-      "label": "Message",
-      "type": "text"
-    },
-    "evtTitle": {
-      "label": "Title",
-      "type": "text"
-    },
-    "evtStart": {
-      "label": "Starts (UTC)",
-      "type": "text",
-      "placeholder": "YYYY-MM-DD HH:MM:SS"
-    },
-    "evtEnd": {
-      "label": "Ends (UTC)",
-      "type": "text",
-      "placeholder": "YYYY-MM-DD HH:MM:SS"
-    },
-    "evtLoc": {
-      "label": "Location",
-      "type": "text"
-    },
-    "evtDet": {
-      "label": "Details",
-      "type": "text"
-    },
+    "payNote": { "label": "Note", "type": "text", "placeholder": "Optional" },
+
+    "wifiSsid": { "label": "SSID", "type": "text" },
+    "wifiPwd": { "label": "Password", "type": "password" },
+    "wifiSec": { "label": "Security", "type": "select", "options": ["WPA", "WEP", "nopass"] },
+    "wifiHidden": { "label": "Hidden network", "type": "checkbox" },
+
+    "vFirst": { "label": "First", "type": "text" },
+    "vLast": { "label": "Last", "type": "text" },
+    "vOrg": { "label": "Org", "type": "text" },
+    "vTitle": { "label": "Title", "type": "text" },
+    "vPhone1": { "label": "Phone 1", "type": "text" },
+    "vPhone1Type": { "label": "Type", "type": "select", "options": ["CELL", "WORK", "HOME", "MAIN"] },
+    "vPhone2": { "label": "Phone 2", "type": "text" },
+    "vPhone2Type": { "label": "Type", "type": "select", "options": ["WORK", "HOME", "CELL", "MAIN"] },
+    "vEmail1": { "label": "Email 1", "type": "email" },
+    "vEmail1Type": { "label": "Type", "type": "select", "options": ["INTERNET", "WORK", "HOME"] },
+    "vEmail2": { "label": "Email 2", "type": "email" },
+    "vEmail2Type": { "label": "Type", "type": "select", "options": ["WORK", "HOME", "INTERNET"] },
+    "vWebsite": { "label": "Website", "type": "url" },
+    "vBday": { "label": "Birthday", "type": "text", "placeholder": "YYYY-MM-DD" },
+    "vStreet": { "label": "Street", "type": "text" },
+    "vCity": { "label": "City", "type": "text" },
+    "vRegion": { "label": "State/Region", "type": "text" },
+    "vPostal": { "label": "Postal", "type": "text" },
+    "vCountry": { "label": "Country", "type": "text" },
+    "vNote": { "label": "Notes", "type": "textarea", "rows": 2 },
+
+    "msgMode": { "label": "Mode", "type": "select", "options": ["Personal", "Resistbot"] },
+    "smsNumber": { "label": "Phone #", "type": "text" },
+    "smsText": { "label": "Message", "type": "text" },
+
+    "evtTitle": { "label": "Title", "type": "text" },
+    "evtStart": { "label": "Starts (UTC)", "type": "text", "placeholder": "YYYY-MM-DD HH:MM:SS" },
+    "evtEnd": { "label": "Ends (UTC)", "type": "text", "placeholder": "YYYY-MM-DD HH:MM:SS" },
+    "evtLoc": { "label": "Location", "type": "text" },
+    "evtDet": { "label": "Details", "type": "textarea", "rows": 2 },
     "evtStyle": {
       "label": "Link style",
       "type": "select",
-      "options": [
-        "Google Calendar",
-        "Hosted .ics (embedded)"
-      ]
+      "options": ["Google Calendar", "Hosted .ics (embedded)"]
     },
-    "mapQuery": {
-      "label": "Query / Address",
-      "type": "text"
-    },
-    "mapLat": {
-      "label": "Lat",
-      "type": "text"
-    },
-    "mapLng": {
-      "label": "Lng",
-      "type": "text"
-    },
-    "mapProvider": {
-      "label": "Provider",
-      "type": "select",
-      "options": [
-        "Google",
-        "Apple",
-        "geo"
-      ]
-    }
+
+    "mapQuery": { "label": "Query / Address", "type": "text" },
+    "mapLat": { "label": "Lat", "type": "text" },
+    "mapLng": { "label": "Lng", "type": "text" },
+    "mapProvider": { "label": "Provider", "type": "select", "options": ["google", "apple", "geo"] }
   },
   "presets": {
-    "WELCOME": [
+    "URL": [
       {
-        "name": "ASCEND",
-        "fontFamily": "Manrope",
-        "captionHeadline": "jacobhenderson.studio for Nordson",
+        "id": "URL:0:one",
+        "name": "One",
+        "campaign": "jacobhenderson.studio for Nordson",
         "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
         "captionColor": "#0039ac",
         "bodyColor": "#444B55",
         "eyeRingColor": "#007ac9",
@@ -341,197 +143,371 @@
         "modulesEmoji": "🟦",
         "modulesScale": 0.9,
         "centerMode": "Emoji",
-        "centerEmoji": "🔵",
+        "centerEmoji": "🟦",
         "centerScale": 1
-      }
-    ],
-    "URL": [
+      },
       {
-        "name": "bzbuzzbee",
-        "campaign": "bzbuzzbee",
-        "fontFamily": "Inter",
-        "captionColor": "#35d7e1",
-        "bodyColor": "#ebd700",
-        "eyeRingColor": "#35d7e1",
-        "eyeCenterColor": "#f167d7",
+        "id": "URL:1:two",
+        "name": "Two",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
         "bgTransparent": false,
         "moduleShape": "Rounded",
-        "eyeRingShape": "Rounded",
-        "eyeCenterShape": "Circle",
-        "modulesMode": "Shape",
-        "modulesEmoji": "🔲",
-        "modulesScale": 0.9,
-        "centerMode": "Emoji",
-        "centerEmoji": "🐬",
-        "centerScale": 1.2,
-        "captionHeadline": "bzbuzzbee",
-        "captionBody": "Ocean Inspired",
-        "bgTopColor": "#EDEDED",
-        "bgBottomColor": "#EDEDED",
-        "bgTopAlpha": 100,
-        "bgBottomAlpha": 100
-      }
-    ],
-    "Payment": [
-      {
-        "name": "Reimbursement",
-        "campaign": "Pay Up Y'all!",
-        "fontFamily": "Playfair Display",
-        "captionColor": "#112951",
-        "bodyColor": "#707070",
-        "eyeRingColor": "#1E4586",
-        "eyeCenterColor": "#1CCAD8",
-        "bgTransparent": false,
-        "moduleShape": "Square",
         "eyeRingShape": "Rounded",
         "eyeCenterShape": "Circle",
         "modulesMode": "Emoji",
         "modulesEmoji": "🟦",
         "modulesScale": 0.9,
         "centerMode": "Emoji",
-        "centerEmoji": "🅿️",
-        "centerScale": 1.2,
-        "captionHeadline": "",
-        "captionBody": "",
-        "bgTopColor": "#FFFFFF",
-        "bgBottomColor": "#FFFFFF",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      },
+      {
+        "id": "URL:2:three",
+        "name": "Three",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
         "bgTopAlpha": 100,
-        "bgBottomAlpha": 100
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      },
+      {
+        "id": "URL:3:four",
+        "name": "Four",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      },
+      {
+        "id": "URL:4:five",
+        "name": "Five",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      },
+      {
+        "id": "URL:5:six",
+        "name": "Six",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      },
+      {
+        "id": "URL:6:seven",
+        "name": "Seven",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      },
+      {
+        "id": "URL:7:eight",
+        "name": "Eight",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      },
+      {
+        "id": "URL:8:nine",
+        "name": "Nine",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      }
+    ],
+
+    "Payment": [
+      {
+        "id": "Payment:0:one",
+        "name": "One",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
       }
     ],
     "WiFi": [
       {
-        "name": "CONNECT",
-        "campaign": "CONNECT",
+        "id": "WiFi:0:one",
+        "name": "One",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
         "fontFamily": "Manrope",
-        "captionColor": "#334757",
-        "bodyColor": "#6F9AC8",
-        "eyeRingColor": "#789ABA",
-        "eyeCenterColor": "#546C80",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
         "bgTransparent": false,
         "moduleShape": "Rounded",
         "eyeRingShape": "Rounded",
-        "eyeCenterShape": "Square",
-        "modulesMode": "Shape",
-        "modulesEmoji": "🔲",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
         "modulesScale": 0.9,
         "centerMode": "Emoji",
-        "centerEmoji": "📶",
-        "centerScale": 0.9,
-        "captionHeadline": "",
-        "captionBody": "",
-        "bgTopColor": "#FAFDFF",
-        "bgBottomColor": "#FAFDFF",
-        "bgTopAlpha": 100,
-        "bgBottomAlpha": 100
+        "centerEmoji": "🟦",
+        "centerScale": 1
       }
     ],
     "Contact": [
       {
-        "name": "HELLO",
-        "campaign": "Your New Friend",
-        "fontFamily": "Playfair Display",
-        "captionColor": "#540D0D",
-        "bodyColor": "#EE920B",
-        "eyeRingColor": "#572600",
-        "eyeCenterColor": "#A56606",
+        "id": "Contact:0:one",
+        "name": "One",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
         "bgTransparent": false,
-        "moduleShape": "Circle",
+        "moduleShape": "Rounded",
         "eyeRingShape": "Rounded",
         "eyeCenterShape": "Circle",
         "modulesMode": "Emoji",
-        "modulesEmoji": "🟠",
-        "modulesScale": 0.75,
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
         "centerMode": "Emoji",
-        "centerEmoji": "🫠",
-        "centerScale": 1.15,
-        "captionHeadline": "",
-        "captionBody": "",
-        "bgTopColor": "#FFFFFF",
-        "bgBottomColor": "#FFFFFF",
-        "bgTopAlpha": 100,
-        "bgBottomAlpha": 100
+        "centerEmoji": "🟦",
+        "centerScale": 1
       }
     ],
     "Message": [
       {
-        "name": "YES",
-        "campaign": "YES",
-        "fontFamily": "Bebas Neue",
-        "captionColor": "#302403",
-        "bodyColor": "#04860D",
-        "eyeRingColor": "#4B3A0B",
-        "eyeCenterColor": "#AD8825",
-        "bgTransparent": false,
-        "moduleShape": "Rounded",
-        "eyeRingShape": "Circle",
-        "eyeCenterShape": "Rounded",
-        "modulesMode": "Shape",
-        "modulesEmoji": "🟢",
-        "modulesScale": 0.9,
-        "centerMode": "Emoji",
-        "centerEmoji": "👍️",
-        "centerScale": 0.95,
-        "captionHeadline": "",
-        "captionBody": "",
-        "bgTopColor": "#FFFFFF",
-        "bgBottomColor": "#FFFFFF",
+        "id": "Message:0:one",
+        "name": "One",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
         "bgTopAlpha": 100,
-        "bgBottomAlpha": 100
-      }
-    ],
-    "Event": [
-      {
-        "name": "TACO TUESDAY",
-        "campaign": "TACO TUESDAY",
-        "fontFamily": "IBM Plex Sans",
-        "captionColor": "#4E1009",
-        "bodyColor": "000000",
-        "eyeRingColor": "#175606",
-        "eyeCenterColor": "#008502",
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
         "bgTransparent": false,
         "moduleShape": "Rounded",
         "eyeRingShape": "Rounded",
         "eyeCenterShape": "Circle",
         "modulesMode": "Emoji",
-        "modulesEmoji": "🟥",
+        "modulesEmoji": "🟦",
         "modulesScale": 0.9,
         "centerMode": "Emoji",
-        "centerEmoji": "🌮",
-        "centerScale": 1,
-        "captionHeadline": "",
-        "captionBody": "",
+        "centerEmoji": "🟦",
+        "centerScale": 1
+      }
+    ],
+    "Event": [
+      {
+        "id": "Event:0:one",
+        "name": "One",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
+        "fontFamily": "Manrope",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
         "bgTopColor": "#EDEDED",
-        "bgBottomColor": "#EDEDED",
         "bgTopAlpha": 100,
-        "bgBottomAlpha": 100
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
+        "bgTransparent": false,
+        "moduleShape": "Rounded",
+        "eyeRingShape": "Rounded",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
+        "modulesScale": 0.9,
+        "centerMode": "Emoji",
+        "centerEmoji": "🟦",
+        "centerScale": 1
       }
     ],
     "Map": [
       {
-        "name": "BODY",
-        "campaign": "BODY",
+        "id": "Map:0:one",
+        "name": "One",
+        "campaign": "jacobhenderson.studio for Nordson",
+        "captionBody": "Choose a type to get started",
         "fontFamily": "Manrope",
-        "captionColor": "#000000",
-        "bodyColor": "#000000",
-        "eyeRingColor": "#444444",
-        "eyeCenterColor": "#888888",
+        "captionColor": "#0039ac",
+        "bodyColor": "#444B55",
+        "eyeRingColor": "#007ac9",
+        "eyeCenterColor": "#0039ac",
+        "bgTopColor": "#EDEDED",
+        "bgTopAlpha": 100,
+        "bgBottomColor": "#EDEDED",
+        "bgBottomAlpha": 100,
         "bgTransparent": false,
         "moduleShape": "Rounded",
         "eyeRingShape": "Rounded",
-        "eyeCenterShape": "Rounded",
-        "modulesMode": "Shape",
-        "modulesEmoji": "💬",
+        "eyeCenterShape": "Circle",
+        "modulesMode": "Emoji",
+        "modulesEmoji": "🟦",
         "modulesScale": 0.9,
         "centerMode": "Emoji",
-        "centerEmoji": "💬",
-        "centerScale": 0.85,
-        "captionHeadline": "",
-        "captionBody": "",
-        "bgTopColor": "#FFFFFF",
-        "bgBottomColor": "#FFFFFF",
-        "bgTopAlpha": 100,
-        "bgBottomAlpha": 100
+        "centerEmoji": "🟦",
+        "centerScale": 1
       }
     ]
   }

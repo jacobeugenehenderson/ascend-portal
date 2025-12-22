@@ -525,8 +525,7 @@
           alert("[Codedesk] Destination URL not configured yet.");
           return;
         }
-        const target = buildCodeDeskUrl_("portal_new");
-        window.open(target, "_blank", "noopener");
+        openCodeDeskNew_();
       });
     }
 

@@ -27,6 +27,44 @@
   });
 })();
 
+// =====================================================
+//  ASCEND ENTRY-POINT PARSING (add-only)
+//  - Reads lifecycle signals from URL params.
+//  - Does NOT change behavior yet; it only records context.
+// =====================================================
+(function parseEntryPointOnce() {
+  const qs = new URLSearchParams(window.location.search || "");
+
+  // Primary lifecycle signals
+  const origin = (qs.get("origin") || "").trim(); // e.g. "ascend"
+  let mode = (qs.get("mode") || "").trim();       // "new" | "template" (or legacy)
+  if (mode === "portal_new") mode = "new";        // normalize legacy portal mode
+
+  const templateId = (qs.get("template_id") || "").trim();
+  const parentAscendJobKey = (qs.get("parent_ascend_job_key") || "").trim();
+
+  // Carry-through identity (may be present when launched from Ascend)
+  const token = (qs.get("token") || "").trim();
+  const userEmail = (qs.get("user_email") || "").trim();
+  const userNameFirst = (qs.get("user_name_first") || "").trim();
+  const userNameFull = (qs.get("user_name_full") || "").trim();
+
+  window.CODEDESK_ENTRY = {
+    origin: origin || "",
+    mode: mode || "",
+
+    // Template path (persistent working-file) context
+    template_id: templateId || "",
+    parent_ascend_job_key: parentAscendJobKey || "",
+
+    // Optional identity context
+    token: token || "",
+    user_email: userEmail || "",
+    user_name_first: userNameFirst || "",
+    user_name_full: userNameFull || ""
+  };
+})();
+
 // --- Dark/Light toggle + persistence ---
 const root   = document.documentElement;
 const toggle = document.getElementById('themeToggle');
@@ -572,6 +610,178 @@ window.getPresets = (t) => {
   const key     = Object.keys(presets).find(k => k.toLowerCase() === want) || t;
   return presets[key] || [];
 };
+
+/* === CODEDESK WORKING FILES (add-only) ================================
+ * Purpose:
+ *  - Provide a stable JSON "state" format that Ascend (later) can create/open.
+ *  - Provide localStorage persistence so CodeDesk can keep editable templates.
+ *
+ * Notes:
+ *  - This does NOT change existing preset behavior.
+ *  - This is "add-only": if some control IDs are missing, they are ignored safely.
+ * ==================================================================== */
+
+const CODEDESK_STORE_KEY = 'codedesk_working_files_v1';
+
+function safeId(id){ return typeof id === 'string' && id.trim() ? id.trim() : ''; }
+
+function _getValueById(id){
+  const el = document.getElementById(id);
+  if (!el) return undefined;
+  if (el.type === 'checkbox') return !!el.checked;
+  return (el.value ?? '');
+}
+
+function _setValueById(id, value){
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.type === 'checkbox'){
+    el.checked = !!value;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  } else {
+    el.value = String(value ?? '');
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
+
+// The canonical list of "style knobs" (IDs that already exist in your file below)
+const CODEDESK_STYLE_IDS = [
+  'fontFamily',
+  'campaign','captionBody',
+
+  'captionColor','bodyColor',
+  'eyeRingColor','eyeCenterColor',
+
+  'bgTransparent','bgTopHex','bgBottomHex','bgTopAlpha','bgBottomAlpha',
+
+  'moduleShape','eyeRingShape','eyeCenterShape',
+
+  'modulesMode','modulesEmoji','modulesScale',
+  'centerMode','centerEmoji','centerScale'
+];
+
+// Build a stable export payload (safe if some IDs don’t exist in DOM)
+window.okqralExportState = function okqralExportState(){
+  const payload = { v: 1, at: Date.now(), fields: {}, style: {} };
+
+  // Type + subtype index are useful for CodeDesk “template provenance”
+  const typeSel = document.getElementById('qrType');
+  payload.type = typeSel ? (typeSel.value || '') : '';
+
+  // Export “detailsPanel” inputs by scanning ids in the panel (type-specific fields)
+  const details = document.getElementById('detailsPanel');
+  if (details){
+    details.querySelectorAll('input[id],select[id],textarea[id]').forEach(n => {
+      const id = safeId(n.id);
+      if (!id) return;
+      payload.fields[id] = _getValueById(id);
+    });
+  }
+
+  // Export known style knobs
+  CODEDESK_STYLE_IDS.forEach(id => {
+    payload.style[id] = _getValueById(id);
+  });
+
+  // Persist ECC + font session keys if present
+  try { payload.ecc  = sessionStorage.getItem('okqral_ecc')  || undefined; } catch(e){}
+  try { payload.font = sessionStorage.getItem('okqral_font') || undefined; } catch(e){}
+
+  return payload;
+};
+
+// Import a previously exported state blob
+window.okqralImportState = function okqralImportState(state){
+  if (!state || typeof state !== 'object') return false;
+
+  // 1) Switch type (rebuilds the form via existing listener)
+  const typeSel = document.getElementById('qrType');
+  if (typeSel && state.type && typeSel.value !== state.type){
+    typeSel.value = state.type;
+    typeSel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  // 2) Restore type-specific fields (after rebuild)
+  const fields = state.fields || {};
+  Object.keys(fields).forEach(id => _setValueById(id, fields[id]));
+
+  // 3) Restore style knobs
+  const style = state.style || {};
+  Object.keys(style).forEach(id => _setValueById(id, style[id]));
+
+  // 4) Restore ECC + font session if present (non-fatal)
+  try {
+    if (state.ecc && typeof setECC === 'function') setECC(state.ecc, { trigger: true });
+  } catch(e){}
+  try {
+    if (state.font && typeof setFont === 'function') setFont(state.font);
+  } catch(e){}
+
+  // 5) Repaint background + re-render (safe)
+  try { typeof window.refreshBackground === 'function' && window.refreshBackground(); } catch(e){}
+  try { typeof render === 'function' && render(); } catch(e){}
+
+  return true;
+};
+
+// Local working-file registry: { id, name, createdAt, updatedAt, state }
+function _readWorkingFiles(){
+  try {
+    const raw = localStorage.getItem(CODEDESK_STORE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch(e){
+    return [];
+  }
+}
+
+function _writeWorkingFiles(arr){
+  try { localStorage.setItem(CODEDESK_STORE_KEY, JSON.stringify(arr || [])); } catch(e){}
+}
+
+window.codedeskListWorkingFiles = function codedeskListWorkingFiles(){
+  return _readWorkingFiles().map(x => ({
+    id: x.id, name: x.name, createdAt: x.createdAt, updatedAt: x.updatedAt
+  }));
+};
+
+window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(name, { id } = {}){
+  const now = Date.now();
+  const files = _readWorkingFiles();
+  const state = window.okqralExportState();
+
+  const nextId = id || ('wf_' + now + '_' + Math.random().toString(16).slice(2));
+  const idx = files.findIndex(f => f.id === nextId);
+
+  const rec = {
+    id: nextId,
+    name: String(name || 'Untitled working file').trim() || 'Untitled working file',
+    createdAt: (idx >= 0 ? files[idx].createdAt : now),
+    updatedAt: now,
+    state
+  };
+
+  if (idx >= 0) files[idx] = rec;
+  else files.unshift(rec);
+
+  _writeWorkingFiles(files);
+  return rec.id;
+};
+
+window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
+  const files = _readWorkingFiles();
+  const rec = files.find(f => f.id === id);
+  if (!rec || !rec.state) return false;
+  return window.okqralImportState(rec.state);
+};
+
+window.codedeskDeleteWorkingFile = function codedeskDeleteWorkingFile(id){
+  const files = _readWorkingFiles().filter(f => f.id !== id);
+  _writeWorkingFiles(files);
+  return true;
+};
+
+/* === END CODEDESK WORKING FILES ===================================== */
 
   // --- helpers to create inputs ---
   function el(tag, props={}, children=[]){
