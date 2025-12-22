@@ -75,6 +75,10 @@ html.light, :root.light {
   --md-sys-color-primary-pressed:  color-mix(in oklab, var(--md-sys-color-primary) 78%, black);
   --md-sys-color-on-primary:       #ffffff;
 
+  /* QR frame cosmetics (Ascend-owned) */
+  --stage-frame:   var(--ascend-stage-frame, #1ff0ff);
+  --stage-frame-w: var(--ascend-stage-frame-w, 3px);
+
   /* Surfaces & text (inherit Ascend app shell) */
   --md-sys-color-background:       var(--ascend-app-bg);
   --md-sys-color-on-background:    var(--ascend-app-text-main);
@@ -115,21 +119,24 @@ html.light, :root.light {
   --export-png-scale: 3;
   --export-filename: "CodeDesk";
 
-  /* ----- Grid overlay knobs (for theme scaffold) ----- */
-  --grid-size: 40px;
-  --grid-opacity: .85;
-  --grid-line-color: hsl(275 100% 70%); /* hard neon violet */
-  --grid-glow-color: hsl(175 100% 62%);
-  --grid-glow-opacity: .55;         /* ↓ a touch less global glow */
-  --grid-glow-blur: 4px;            /* ↓ was effectively ~8px */
-  --grid-vignette-strength: .14;    /* ↓ weaker white “bloom” */
-  --grid-vignette-size: 94%;        /* ↑ larger = gentler center spot */
-  --grid-vignette-y: 42%;           /* center height bias */
+  /* ----- Grid overlay knobs (Ascend-owned cosmetics) ----- */
+  --grid-size:              var(--ascend-grid-size, 40px);
+  --grid-opacity:           var(--ascend-grid-opacity, .85);
+  --grid-line-color:        var(--ascend-grid-line-color, hsl(275 100% 70%));
+  --grid-glow-color:        var(--ascend-grid-glow-color, hsl(175 100% 62%));
+  --grid-glow-opacity:      var(--ascend-grid-glow-opacity, .55);
+  --grid-glow-blur:         var(--ascend-grid-glow-blur, 4px);
+  --grid-vignette-strength: var(--ascend-grid-vignette-strength, .14);
+  --grid-vignette-size:     var(--ascend-grid-vignette-size, 94%);
+  --grid-vignette-y:        var(--ascend-grid-vignette-y, 42%);
 
-  /* Hover / focus glow knobs */
-  --hover-glow-color: color-mix(in oklab, var(--md-sys-color-primary) 30%, transparent);
-  --hover-glow-blur:  8px;   /* glow softness */
-  --focus-glow-blur:  10px;  /* slightly stronger for focus */
+  /* Hover / focus glow knobs (Ascend-owned cosmetics) */
+  --hover-glow-color: var(
+    --ascend-hover-glow-color,
+    color-mix(in oklab, var(--md-sys-color-primary) 30%, transparent)
+  );
+  --hover-glow-blur:  var(--ascend-hover-glow-blur, 8px);
+  --focus-glow-blur:  var(--ascend-focus-glow-blur, 10px);
 
   /* Shared chevron for top controls */
   --chev-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'><path d='M5.23 7.21a.75.75 0 011.06.02L10 10.17l3.71-2.94a.75.75 0 111.04 1.08l-4.23 3.35a.75.75 0 01-.96 0L5.21 8.31a.75.75 0 01.02-1.1z'/></svg>");
@@ -146,10 +153,10 @@ html.light, :root.light {
   /* … existing vars … */
   --stack-gap: 0rem;        /* unify spacing rhythm */
 
-  /* ----- BG CARD STROKE (filled mode) ----- */
-    --bg-card-stroke-color:  hsl(179, 100%, 38%);   /* sharp turquoise */
-    --bg-card-stroke-width:  1px;                /* tweak for subtlety */
-    --bg-card-stroke-glow:   0 0 10px rgba(0,240,200,.35);  /* optional soft halo */
+  /* ----- BG CARD STROKE (filled mode) — Ascend-owned cosmetics ----- */
+  --bg-card-stroke-color: var(--ascend-bg-card-stroke-color, hsl(179, 100%, 38%));
+  --bg-card-stroke-width: var(--ascend-bg-card-stroke-width, 1px);
+  --bg-card-stroke-glow:  var(--ascend-bg-card-stroke-glow, 0 0 10px rgba(0,240,200,.35));
 
     /* Featured / open card accent (default = global lilac story) */
   --featured-stroke-width: 1px;
@@ -453,9 +460,9 @@ label:has(#captionBody) > *{
     0 0 var(--focus-glow-blur) var(--focus-ring-color);
 }
 
-/* Tinted placeholder text*/
+/* Tinted placeholder text (Ascend-owned cosmetics) */
 .card--fill text.placeholder {
-  fill: rgb(3, 162, 171);
+  fill: var(--ascend-caption-placeholder-fill, rgb(3, 162, 171));
 }
 
 /* Closed accordion buttons: navy stroke */
@@ -714,7 +721,7 @@ select.rounded-md,
 .topctl:focus-visible,
 #qrType:focus-visible,
 #appMenuBtn:focus-visible{
-  background: rgba(255,255,255,.08); /* mirrors .ecc-btn hover */
+  background: var(--ascend-control-hover-wash, rgba(255,255,255,.08));
   transform: translateY(-1px);
   outline: none;
 }
@@ -1280,8 +1287,8 @@ label:has(input[type="color"]) input[type="color"]{
 
 /* Backdrop polish + allow dismissal clicks */
 .modal-bg {
-  background: rgba(0,0,0,.25);
-  backdrop-filter: blur(3px);
+  background: var(--ascend-modal-backdrop, rgba(0,0,0,.25));
+  backdrop-filter: blur(var(--ascend-modal-blur, 3px));
   pointer-events: auto;
 }
 

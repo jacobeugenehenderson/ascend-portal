@@ -20,6 +20,46 @@
   --ascend-app-radius-lg: var(--ascend-radius-lg, 18px);
   --ascend-app-radius-xl: var(--ascend-radius-xl, 26px);
   --ascend-app-radius-pill: 999px;
+
+  /* =========================================================
+     ASCEND APP — SHARED COSMETIC TOKENS (Authoritative Skin)
+     ========================================================= */
+
+  /* Backdrop/grid */
+  --ascend-grid-bg: #e5edf7;
+
+  --ascend-grid-major: 48px;
+  --ascend-grid-minor: 12px;
+
+  --ascend-grid-line-color: rgba(0, 81, 255, 0.35);
+  --ascend-grid-line-color-soft: rgba(79, 209, 197, 0.22);
+
+  --ascend-grid-wash-color: rgba(79, 209, 197, 0.20);
+  --ascend-grid-wash-stop: 55%;
+
+  /* QR / stage frame */
+  --ascend-stage-frame: var(--ascend-app-accent);
+  --ascend-stage-frame-w: 3px;
+
+  /* Card stroke cosmetics (filled mode) */
+  --ascend-bg-card-stroke-color: color-mix(in oklab, var(--ascend-app-accent) 85%, white);
+  --ascend-bg-card-stroke-width: 1px;
+  --ascend-bg-card-stroke-glow: 0 0 10px color-mix(in oklab, var(--ascend-app-accent) 45%, transparent);
+
+  /* Placeholder ink */
+  --ascend-caption-placeholder-fill: color-mix(in oklab, var(--ascend-app-accent) 75%, black);
+
+  /* Modal cosmetics */
+  --ascend-modal-backdrop: rgba(0, 0, 0, .25);
+  --ascend-modal-blur: 3px;
+
+  /* Control hover wash */
+  --ascend-control-hover-wash: rgba(255, 255, 255, .08);
+
+  /* Hover/focus glow knobs */
+  --ascend-hover-glow-color: color-mix(in oklab, var(--ascend-app-accent) 30%, transparent);
+  --ascend-hover-glow-blur: 8px;
+  --ascend-focus-glow-blur: 10px;
 }
 
 /* Base for all app pages: light version of the portal body */
@@ -36,20 +76,20 @@ body.ascend-app-body {
   --ascend-control-ring: var(--ascend-app-accent-soft);
   --ascend-control-radius: 10px;
 
-  background-color: #e5edf7;
+  background-color: var(--ascend-grid-bg);
   background-image:
-    linear-gradient(to right, rgba(0, 81, 255, 0.35) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 81, 255, 0.35) 1px, transparent 1px),
-    linear-gradient(to right, rgba(79, 209, 197, 0.22) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(79, 209, 197, 0.22) 1px, transparent 1px),
-    radial-gradient(circle at top, rgba(79, 209, 197, 0.20), transparent 55%);
+    linear-gradient(to right, var(--ascend-grid-line-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ascend-grid-line-color) 1px, transparent 1px),
+    linear-gradient(to right, var(--ascend-grid-line-color-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ascend-grid-line-color-soft) 1px, transparent 1px),
+    radial-gradient(circle at top, var(--ascend-grid-wash-color), transparent var(--ascend-grid-wash-stop));
   background-size:
-    48px 48px, 48px 48px,
-    12px 12px, 12px 12px,
-    auto;
-  color: var(--ascend-app-text-main);
-}
-
+    var(--ascend-grid-major) var(--ascend-grid-major),
+    var(--ascend-grid-major) var(--ascend-grid-major),
+    var(--ascend-grid-minor) var(--ascend-grid-minor),
+    var(--ascend-grid-minor) var(--ascend-grid-minor),
+    auto; 
+    
 /* Centered light panel, same radii spirit as portal shell */
 .ascend-app-shell {
   min-height: 100vh;
