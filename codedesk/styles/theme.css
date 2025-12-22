@@ -46,13 +46,13 @@ html.light { color-scheme: light; }
 /* LIGHT MODE */
 html.light, :root.light {
   /* Light overrides — keep in sync with your existing values */
-  --md-sys-color-background:      #fafafa;
-  --md-sys-color-on-background:   #0b0b0b;
-  --md-sys-color-surface:         #ffffff;
-  --md-sys-color-on-surface:      #111;
-  --md-sys-color-surface-variant: #f1f1f6;
-  --md-sys-color-outline:         rgba(110,90,210,.35);
-  --md-sys-color-outline-variant: rgba(110,90,210,.55);
+  --md-sys-color-background:      var(--ascend-app-bg, #f3f4f6);
+  --md-sys-color-on-background:   var(--ascend-app-text-main, #020617);
+  --md-sys-color-surface:         var(--ascend-app-surface, #ffffff);
+  --md-sys-color-on-surface:      var(--ascend-app-text-main, #020617);
+  --md-sys-color-surface-variant: var(--ascend-control-bg, #ffffff);
+  --md-sys-color-outline:         var(--ascend-app-border, rgba(15, 23, 42, 0.10));
+  --md-sys-color-outline-variant: color-mix(in oklab, var(--md-sys-color-outline) 70%, var(--md-sys-color-primary) 30%);
 
   --ui-surface:         var(--md-sys-color-surface);
   --ui-surface-variant: var(--md-sys-color-surface-variant);
@@ -69,13 +69,10 @@ html.light, :root.light {
   /* ----- Header ----- */
   --header-h: 56px;
 
-  /* ----- Brand / Accent (HSL-based) ----- */
-  --brand-h: 266;
-  --brand-s: 92%;
-  --brand-l: 66%;
-  --md-sys-color-primary: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+  /* ----- Brand / Accent (Ascend) ----- */
+  --md-sys-color-primary: var(--ascend-app-accent, var(--ascend-color-accent, #4fd1c5));
   --md-sys-color-primary-hover: color-mix(in oklab, var(--md-sys-color-primary) 86%, white);
-  --md-sys-color-primary-pressed: color-mix(in oklab, var(--md-sys-color-primary) 80%, black);
+  --md-sys-color-primary-pressed: color-mix(in oklab, var(--md-sys-color-primary) 78%, black);
   --md-sys-color-on-primary: #ffffff;
   
   /* Stage Frame */
@@ -105,17 +102,17 @@ html.light, :root.light {
   --typo-ph-weight: 200;
   --typo-ph-opacity: .65;
 
-  /* Surfaces & text */
-  --md-sys-color-background:      #050505;
-  --md-sys-color-on-background:   #EAEAEA;
-  --md-sys-color-surface:         #0E0A12;   /* cards, panels */
-  --md-sys-color-on-surface:      #EAEAEA;
-  --md-sys-color-surface-variant: #171421;   /* inputs, chips */
-  --md-sys-color-muted:           #a1a1aa;
+  /* Surfaces & text (Ascend-mapped) */
+  --md-sys-color-background:      var(--ascend-app-bg, #f3f4f6);
+  --md-sys-color-on-background:   var(--ascend-app-text-main, #020617);
+  --md-sys-color-surface:         var(--ascend-app-surface, #ffffff);   /* cards, panels */
+  --md-sys-color-on-surface:      var(--ascend-app-text-main, #020617);
+  --md-sys-color-surface-variant: var(--ascend-control-bg, #ffffff);    /* inputs, chips */
+  --md-sys-color-muted:           var(--ascend-app-text-muted, #334155);
 
-      /* Strokes — fixed lilac so global chrome stays brand-colored */
-  --md-sys-color-outline:         rgba(160,140,255,.35);
-  --md-sys-color-outline-variant: rgba(160,140,255,.55);
+  /* Strokes (Ascend) */
+  --md-sys-color-outline:         var(--ascend-app-border, rgba(15, 23, 42, 0.10));
+  --md-sys-color-outline-variant: color-mix(in oklab, var(--md-sys-color-outline) 70%, var(--md-sys-color-primary) 30%);
 
   /* Elevation (shadows) */
   --elevation-1: 0 4px 12px rgba(0,0,0,.35);
@@ -546,24 +543,27 @@ label:has(#captionBody) > *{
   align-items: center;
   justify-content: center;
 
-  /* visuals (use the nicer color-mix set you had below) */
-  background: color-mix(in srgb, var(--md-sys-color-surface-variant) 85%, white 15%);
-  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 40%, transparent);
-  color: var(--md-sys-color-on-surface);
+  /* visuals (Ascend controls) */
+  background: var(--ascend-control-bg, #ffffff);
+  border: 1px solid var(--ascend-control-border, rgba(15, 23, 42, 0.10));
+  color: var(--ascend-control-text, var(--md-sys-color-on-surface));
   text-decoration: none !important;
 
   /* type + motion */
   font: 600 0.85rem/1 var(--font-family, system-ui);
-  transition: box-shadow var(--motion-duration-1) var(--motion-ease);
+  transition:
+    box-shadow var(--motion-duration-1) var(--motion-ease),
+    background-color var(--motion-duration-1) var(--motion-ease),
+    transform var(--motion-duration-1) var(--motion-ease);
 }
 
 /* Buttons — pressed (canonical, token-based) */
 .ecc-btn[aria-pressed="true"] {
   outline: none; /* avoid default rectangular outline */
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  border-color: var(--md-sys-color-primary);
-  /* thin, token-based ring so it matches the “control panel” focus visuals */
+  background: var(--ascend-control-bg-active, #eef2f7);
+  color: var(--ascend-control-text, var(--md-sys-color-on-surface));
+  border-color: var(--ascend-control-border, rgba(15, 23, 42, 0.10));
+  /* thin, token-based ring so it matches Ascend focus visuals */
   box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
 }
 
@@ -579,7 +579,7 @@ body.kbd .ecc-btn[aria-pressed="true"] {
   text-decoration: none;
 }
 
-.ecc-btn:hover, .ecc-btn:focus-visible { background: rgba(255,255,255,.08); outline: none; }
+.ecc-btn:hover, .ecc-btn:focus-visible { background: var(--ascend-control-bg-hover, #f8fafc); outline: none; }
 .ecc-btn:hover { transform: translateY(-1px); }
 
 /* Mobile tweaks */
