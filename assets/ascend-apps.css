@@ -72,6 +72,58 @@
   --ascend-hover-glow-color: color-mix(in oklab, var(--ascend-app-accent) 30%, transparent);
   --ascend-hover-glow-blur: 8px;
   --ascend-focus-glow-blur: 10px;
+
+  /* =========================================================
+     ASCEND APP — SHARED COSMETIC TOKENS (Authoritative Skin)
+     ========================================================= */
+
+  /* Backdrop/grid */
+  --ascend-grid-bg: #e5edf7;
+
+  --ascend-grid-major: 48px;
+  --ascend-grid-minor: 12px;
+
+  --ascend-grid-line-color: rgba(0, 81, 255, 0.35);
+  --ascend-grid-line-color-soft: rgba(79, 209, 197, 0.22);
+
+  --ascend-grid-wash-color: rgba(79, 209, 197, 0.20);
+  --ascend-grid-wash-stop: 55%;
+
+  /* Compatibility tokens expected by theme.css (unification layer) */
+  --ascend-grid-size: var(--ascend-grid-major);
+  --ascend-grid-opacity: 1;
+
+  --ascend-grid-glow-color: var(--ascend-grid-line-color-soft);
+  --ascend-grid-glow-opacity: 1;
+  --ascend-grid-glow-blur: 0px;
+
+  --ascend-grid-vignette-strength: 0.20;
+  --ascend-grid-vignette-size: 55%;
+  --ascend-grid-vignette-y: top;
+
+  /* QR / stage frame */
+  --ascend-stage-frame: var(--ascend-app-accent);
+  --ascend-stage-frame-w: 3px;
+
+  /* Card stroke cosmetics (filled mode) */
+  --ascend-bg-card-stroke-color: color-mix(in oklab, var(--ascend-app-accent) 85%, white);
+  --ascend-bg-card-stroke-width: 1px;
+  --ascend-bg-card-stroke-glow: 0 0 10px color-mix(in oklab, var(--ascend-app-accent) 45%, transparent);
+
+  /* Placeholder ink */
+  --ascend-caption-placeholder-fill: color-mix(in oklab, var(--ascend-app-accent) 75%, black);
+
+  /* Modal cosmetics */
+  --ascend-modal-backdrop: rgba(0, 0, 0, .25);
+  --ascend-modal-blur: 3px;
+
+  /* Control hover wash */
+  --ascend-control-hover-wash: rgba(255, 255, 255, .08);
+
+  /* Hover/focus glow knobs */
+  --ascend-hover-glow-color: color-mix(in oklab, var(--ascend-app-accent) 30%, transparent);
+  --ascend-hover-glow-blur: 8px;
+  --ascend-focus-glow-blur: 10px;
 }
 
 /* Base for all app pages: light version of the portal body */

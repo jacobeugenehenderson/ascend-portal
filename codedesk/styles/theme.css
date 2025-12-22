@@ -204,7 +204,24 @@ html, body{
 body{
   margin: 0;
   color: var(--md-sys-color-on-background);
-  background: var(--md-sys-color-background);
+
+  /* Ascend app grid (same as Copydesk) */
+  background-color: var(--ascend-grid-bg, var(--md-sys-color-background));
+  background-image:
+    linear-gradient(to right, var(--ascend-grid-line-color, rgba(0, 81, 255, 0.35)) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ascend-grid-line-color, rgba(0, 81, 255, 0.35)) 1px, transparent 1px),
+    linear-gradient(to right, var(--ascend-grid-line-color-soft, rgba(79, 209, 197, 0.22)) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ascend-grid-line-color-soft, rgba(79, 209, 197, 0.22)) 1px, transparent 1px),
+    radial-gradient(circle at top, var(--ascend-grid-wash-color, rgba(79, 209, 197, 0.20)), transparent var(--ascend-grid-wash-stop, 55%));
+  background-size:
+    var(--ascend-grid-major, 48px) var(--ascend-grid-major, 48px),
+    var(--ascend-grid-major, 48px) var(--ascend-grid-major, 48px),
+    var(--ascend-grid-minor, 12px) var(--ascend-grid-minor, 12px),
+    var(--ascend-grid-minor, 12px) var(--ascend-grid-minor, 12px),
+    auto;
+  background-attachment: fixed;
+  background-repeat: repeat;
+
   position: relative;
   isolation: isolate;
 }
@@ -608,8 +625,8 @@ body.theme--design   .step-card[data-step="design"] .step-header,
 body.theme--mechanical .step-card[data-step="mechanicals"] .step-header,
 body.theme--finish   .step-card[data-step="finish"] .step-header {
   background: color-mix(in oklab,
-    var(--step-color-primary) 18%,
-    rgba(5,5,8,0.60)
+    var(--ui-surface) 82%,
+    var(--step-color-primary) 18%
   );
   backdrop-filter: saturate(1.1) blur(6px);
   border-bottom-color: var(--md-sys-color-outline-variant);
