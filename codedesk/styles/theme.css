@@ -69,78 +69,24 @@ html.light, :root.light {
   /* ----- Header ----- */
   --header-h: 56px;
 
-  /* ----- Brand / Accent (Ascend) ----- */
-  --md-sys-color-primary: var(--ascend-app-accent, var(--ascend-color-accent, #4fd1c5));
-  --md-sys-color-primary-hover: color-mix(in oklab, var(--md-sys-color-primary) 86%, white);
-  --md-sys-color-primary-pressed: color-mix(in oklab, var(--md-sys-color-primary) 78%, black);
-  --md-sys-color-on-primary: #ffffff;
+  /* ----- Ascend token aliases (no CodeDesk branding here) ----- */
+  --md-sys-color-primary:          var(--ascend-app-accent);
+  --md-sys-color-primary-hover:    color-mix(in oklab, var(--md-sys-color-primary) 86%, white);
+  --md-sys-color-primary-pressed:  color-mix(in oklab, var(--md-sys-color-primary) 78%, black);
+  --md-sys-color-on-primary:       #ffffff;
+
+  /* Surfaces & text (inherit Ascend app shell) */
+  --md-sys-color-background:       var(--ascend-app-bg);
+  --md-sys-color-on-background:    var(--ascend-app-text-main);
+  --md-sys-color-surface:          var(--ascend-app-surface);
+  --md-sys-color-on-surface:       var(--ascend-app-text-main);
+  --md-sys-color-surface-variant:  var(--ascend-control-bg);
+  --md-sys-color-muted:            var(--ascend-app-text-muted);
+
+  /* Strokes (inherit Ascend app shell) */
+  --md-sys-color-outline:          var(--ascend-app-border);
+  --md-sys-color-outline-variant:  color-mix(in oklab, var(--md-sys-color-outline) 70%, var(--md-sys-color-primary) 30%);
   
-  /* Stage Frame */
-  --stage-frame: #1ff0ff; /* staging stroke color */
-  --stage-frame-w: 1px;   /* stroke width */
-
-  /* Typography */
-  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
-
-  /* Display (section buttons: Caption, Design, Mechanicals, Finish) */
-  --typo-display-size: 1rem;         /* 16px */
-  --typo-display-weight: 600;        /* semibold */
-  --typo-display-track: .012em;
-
-  /* Labels (field names like “Module Fill”, “Background”) */
-  --typo-label-size: .9375rem;       /* 15px */
-  --typo-label-weight: 300;          /* medium */
-  --typo-label-track: .01em;
-  --typo-label-color: color-mix(in oklab, var(--md-sys-color-on-surface) 82%, transparent);
-
-  /* Inputs text (inside fields) */
-  --typo-input-size: .9375rem;       /* 15px */
-  --typo-input-weight: 200;
-
-  /* Placeholder text (“dummy” text) */
-  --typo-ph-color: color-mix(in oklab, var(--md-sys-color-on-surface) 55%, transparent);
-  --typo-ph-weight: 200;
-  --typo-ph-opacity: .65;
-
-  /* Surfaces & text (Ascend-mapped) */
-  --md-sys-color-background:      var(--ascend-app-bg, #f3f4f6);
-  --md-sys-color-on-background:   var(--ascend-app-text-main, #020617);
-  --md-sys-color-surface:         var(--ascend-app-surface, #ffffff);   /* cards, panels */
-  --md-sys-color-on-surface:      var(--ascend-app-text-main, #020617);
-  --md-sys-color-surface-variant: var(--ascend-control-bg, #ffffff);    /* inputs, chips */
-  --md-sys-color-muted:           var(--ascend-app-text-muted, #334155);
-
-  /* Strokes (Ascend) */
-  --md-sys-color-outline:         var(--ascend-app-border, rgba(15, 23, 42, 0.10));
-  --md-sys-color-outline-variant: color-mix(in oklab, var(--md-sys-color-outline) 70%, var(--md-sys-color-primary) 30%);
-
-  /* Elevation (shadows) */
-  --elevation-1: 0 4px 12px rgba(0,0,0,.35);
-  --elevation-2: 0 8px 24px rgba(0,0,0,.40);
-  --elevation-3: 0 12px 32px rgba(0,0,0,.45);
-
-  /* ----- Shape / Corner scale ----- */
-  --shape-corner-scale: 1;
-  --shape-corner-sm-base: 8px;
-  --shape-corner-md-base: 14px;
-  --shape-corner-lg-base: 20px;
-  --shape-corner-sm: calc(var(--shape-corner-sm-base) * var(--shape-corner-scale));
-  --shape-corner-md: calc(var(--shape-corner-md-base) * var(--shape-corner-scale));
-  --shape-corner-lg: calc(var(--shape-corner-lg-base) * var(--shape-corner-scale));
-  --shape-corner-full: 9999px;
-
-  /* Interaction */
-  --state-hover-opacity:   .08;
-  --state-focus-opacity:   .12;
-  --state-pressed-opacity: .12;
-  --focus-ring:            rgba(56,189,248,.7);
-
-  /* Component aliases (single source of truth) */
-  --ui-surface:        rgba(14,14,20,.92);
-  --ui-surface-variant:var(--md-sys-color-surface-variant);
-  --ui-stroke:         var(--md-sys-color-outline);
-  --ui-stroke-hover:   var(--md-sys-color-outline-variant);
-
   /* QR frame (Transparent mode) */
   --qr-stroke-color:   rgba(139,92,246,.70);
   --qr-stroke-width:   1;
@@ -224,34 +170,6 @@ html.light, :root.light {
    Uses existing brand knobs: --brand-h / --brand-s / --brand-l
    ========================================================== */
 
-/* Default / Caption — violet */
-body.theme--caption {
-  --step-color-primary: hsl(266 92% 66%);
-  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 85%, var(--step-color-primary) 15%);
-  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
-}
-
-/* Design — bright yellow */
-body.theme--design {
-  --step-color-primary: #FFD200;
-  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 80%, var(--step-color-primary) 20%);
-  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
-}
-
-/* Mechanicals — dense blue */
-body.theme--mechanical {
-  --step-color-primary: #00208F;
-  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 82%, var(--step-color-primary) 18%);
-  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
-}
-
-/* Finish — pastel peach */
-body.theme--finish {
-  --step-color-primary: #FFC8A2;
-  --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 82%, var(--step-color-primary) 18%);
-  --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
-}
-
 /* shared sticky offset */
 .stage-stick {
   position: sticky;
@@ -261,6 +179,75 @@ body.theme--finish {
 /* =========================
    2. GLOBAL SCAFFOLD
 ========================= */
+
+/* Make the page use the same scaffold everywhere */
+html, body{
+  height: 100%;
+}
+
+body{
+  margin: 0;
+  color: var(--md-sys-color-on-background);
+  background: var(--md-sys-color-background);
+
+  /* Your theme tokens already define the grid knobs:
+     --grid-size, --grid-opacity, --grid-line-color, --grid-glow-color, etc. */
+  position: relative;
+  isolation: isolate; /* keep overlay effects contained */
+}
+
+/* GRID OVERLAY (uses the tokens already defined in :root) */
+body::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  /* 1) crisp grid lines */
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--grid-line-color) calc(var(--grid-opacity) * 100%), transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--grid-line-color) calc(var(--grid-opacity) * 100%), transparent) 1px,
+      transparent 1px
+    );
+
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: center center;
+
+  /* 2) glow + vignette to match your “theme scaffold” notes */
+  filter: drop-shadow(0 0 var(--grid-glow-blur) color-mix(in oklab, var(--grid-glow-color) calc(var(--grid-glow-opacity) * 100%), transparent));
+  opacity: 1;
+}
+
+/* Subtle center bloom / vignette */
+body::after{
+  content:"";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  background:
+    radial-gradient(
+      circle at 50% var(--grid-vignette-y),
+      rgba(255,255,255,var(--grid-vignette-strength)),
+      transparent var(--grid-vignette-size)
+    );
+  mix-blend-mode: screen;
+  opacity: 1;
+}
+
+/* Ensure the actual UI sits above the scaffold */
+#app, #root, main, header, footer, .app, .shell, .wrap, #stepper, #qrPreview, .preview-stage{
+  position: relative;
+  z-index: 1;
+}
 
 /* =========================
    3. CARDS / SURFACES
