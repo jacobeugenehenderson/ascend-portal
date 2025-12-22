@@ -675,7 +675,7 @@ textarea:focus {
   display: grid;
 
   /* First 3 lanes size to content; FileRoom takes the remaining space */
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-rows: repeat(4, minmax(0, 1fr));
 
   gap: 0.75rem;
   margin-top: 0.4rem;
