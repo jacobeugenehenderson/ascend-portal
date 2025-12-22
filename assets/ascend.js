@@ -422,8 +422,8 @@
             expiresAt: null,
           };
 
-          saveSession(session);
-          applyLoggedInUI(session);
+          renderCodeDeskHopper([]);
+          requestCodeDeskTemplates();
 
           if (pollingTimer) {
             console.log("Stopping polling loop (login complete).");
@@ -503,20 +503,84 @@
     window.open(target, "_blank", "noopener");
   }
 
-  // Not wired yet (because the CodeDesk Hopper lane is not wired yet),
-  // but this is THE portal seam where template-open becomes "working file creation".
-  function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
-    const target = buildCodeDeskUrl_("template", {
-      template_id: templateId,
-      parent_ascend_job_key: parentAscendJobKey || ""
+  // CodeDesk template-open → "working file creation" seam
+function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
+  const target = buildCodeDeskUrl_("template", {
+    template_id: templateId,
+    parent_ascend_job_key: parentAscendJobKey || ""
+  });
+
+  if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
+    alert("[Codedesk] Destination URL not configured yet.");
+    return;
+  }
+  window.open(target, "_blank", "noopener");
+}
+
+// ---- Hopper: CodeDesk template cards ----
+
+function renderCodeDeskHopper(templates) {
+  const host = document.getElementById("ascend-codedesk-list");
+  if (!host) return;
+
+  host.innerHTML = "";
+
+  const list = Array.isArray(templates) ? templates : [];
+  if (!list.length) {
+    // Match your existing “empty lane” behavior (simple, quiet)
+    return;
+  }
+
+  list.forEach((t) => {
+    const id = (t && (t.id || t.template_id || t.key)) ? String(t.id || t.template_id || t.key) : "";
+    const name = (t && (t.name || t.title || t.label)) ? String(t.name || t.title || t.label) : "Template";
+
+    const card = document.createElement("div");
+    card.className = "ascend-hopper-card";
+    card.tabIndex = 0;
+
+    const title = document.createElement("div");
+    title.className = "ascend-hopper-card-title";
+    title.textContent = name;
+
+    // optional: show the template id as muted meta if present
+    if (id) {
+      const meta = document.createElement("div");
+      meta.className = "ascend-hopper-card-meta";
+      meta.textContent = id;
+      card.appendChild(meta);
+    }
+
+    card.appendChild(title);
+
+    card.addEventListener("click", () => openCodeDeskFromTemplate_(id, ""));
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") openCodeDeskFromTemplate_(id, "");
     });
 
-    if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
-      alert("[Codedesk] Destination URL not configured yet.");
-      return;
-    }
-    window.open(target, "_blank", "noopener");
+    host.appendChild(card);
+  });
+}
+
+async function requestCodeDeskTemplates() {
+  // Manifest location: CodeDesk folder in your GitHub Pages workspace
+  const url = "https://jacobeugenehenderson.github.io/ascend-portal/codedesk/qr_type_manifest.json";
+
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+
+    const data = await res.json();
+
+    // Accept either: { templates: [...] } or just [...]
+    const templates = Array.isArray(data) ? data : (data && data.templates) ? data.templates : [];
+
+    renderCodeDeskHopper(templates);
+  } catch (err) {
+    console.warn("[Codedesk] Failed to load template manifest", err);
+    renderCodeDeskHopper([]);
   }
+}
 
   // ---- Hopper: CodeDesk templates (manifest-driven) ----
 
