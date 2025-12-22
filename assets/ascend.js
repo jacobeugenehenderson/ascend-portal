@@ -443,35 +443,6 @@
     pollingTimer = setInterval(checkOnce, POLLING_INTERVAL_MS);
   }
 
-  // --- URL helper: carry session identity + token into downstream apps ---
-  function buildUrlWithUser(baseUrl) {
-    // Accept absolute URLs; if anything else slips through, return as-is.
-    if (!baseUrl || String(baseUrl).indexOf("http") !== 0) return baseUrl;
-
-    const session = loadSession();
-    const url = new URL(String(baseUrl));
-
-    // Propagate handshake token if present on the portal URL
-    // (lets downstream apps correlate sessions if they want to).
-    try {
-      const t = new URLSearchParams(window.location.search).get("token");
-      if (t) url.searchParams.set("token", t);
-    } catch (e) {}
-
-    // Carry user identity (primary requirement)
-    if (session && session.userEmail) {
-      url.searchParams.set("user_email", session.userEmail);
-    }
-    if (session && session.userNameFirst) {
-      url.searchParams.set("user_name_first", session.userNameFirst);
-    }
-    if (session && session.userNameFull) {
-      url.searchParams.set("user_name", session.userNameFull);
-    }
-
-    return url.toString();
-  }  
-
     function initLogoutButton() {
       const btn = document.getElementById("ascend-logout-btn");
       if (!btn) return;
