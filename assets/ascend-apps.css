@@ -50,6 +50,23 @@ body.ascend-app-body {
   color: var(--ascend-app-text-main);
 }
 
+/* CODEDESK fallback: if the page didn’t add .ascend-app-body,
+   still inherit Ascend app background + text colors. */
+body:has(#qrType) {
+  background-color: #e5edf7;
+  background-image:
+    linear-gradient(to right, rgba(0, 81, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 81, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(to right, rgba(79, 209, 197, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(79, 209, 197, 0.22) 1px, transparent 1px),
+    radial-gradient(circle at top, rgba(79, 209, 197, 0.20), transparent 55%);
+  background-size:
+    48px 48px, 48px 48px,
+    12px 12px, 12px 12px,
+    auto;
+  color: var(--ascend-app-text-main);
+}
+
 /* Centered light panel, same radii spirit as portal shell */
 .ascend-app-shell {
   min-height: 100vh;
