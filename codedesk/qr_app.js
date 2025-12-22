@@ -612,6 +612,11 @@ function _setValueById(id, value){
   }
 }
 
+function val(id){
+  const v = _getValueById(id);
+  return (v == null) ? '' : v;
+}
+
 // The canonical list of "style knobs" (IDs that already exist in your file below)
 const CODEDESK_STYLE_IDS = [
   'fontFamily',
@@ -2201,25 +2206,96 @@ function render() {
   const mount   = document.getElementById('qrMount');
   if (!preview || !mount) return;
 
-    // Capture caption state early
-  const showCap = !!document.getElementById('showCaption')?.checked;
+  // ---- helpers (local, no global pollution)
+  const toHex = (v) => {
+    if (!v) return null;
+    v = String(v).trim();
+    const short = /^#([0-9a-f]{3})$/i;
+    const full  = /^#([0-9a-f]{6})$/i;
+    if (short.test(v)) return ('#' + v.slice(1).split('').map(c => c + c).join('')).toUpperCase();
+    if (full.test(v))  return v.toUpperCase();
+    return null;
+  };
 
-  const headlineEl = document.getElementById('campaign');     // Headline
-  const bodyEl     = document.getElementById('captionBody');  // Body
+  const hexPair = (colorId, textId, fallback) => {
+    const t = toHex(document.getElementById(textId)?.value);
+    if (t) return t;
+    const c = toHex(document.getElementById(colorId)?.value);
+    return c || fallback;
+  };
 
-  const headline = (headlineEl?.value || '').trim().slice(0, 20);
+  const num = (id, fallback) => {
+    const v = parseFloat(document.getElementById(id)?.value);
+    return Number.isFinite(v) ? v : fallback;
+  };
 
-  const body = (bodyEl?.value || '').trim().slice(0, 60);     // body budget
+  // ---- background mode + CSS paint
+  try { if (typeof window.refreshBackground === 'function') window.refreshBackground(); } catch {}
 
-    // Caption mode: drives stage ratio (square vs wallet)
-  const hasHeadline = showCap && !!headline;
-  const hasBody     = showCap && !!body;
-  const hasAnyCaption = hasHeadline || hasBody;
+  // ---- caption
+  const showCap  = !!document.getElementById('showCaption')?.checked;
+  const headline = (document.getElementById('campaign')?.value || '').trim().slice(0, 20);
+  const body     = (document.getElementById('captionBody')?.value || '').trim().slice(0, 60);
 
-  const stage = preview.closest('.preview-stage');
-  if (stage) {
-    stage.classList.toggle('preview--square', !hasAnyCaption);
-  }
+  // ---- core paint knobs
+  const transparentBg = !document.getElementById('bgTransparent')?.checked; // checked = background ON
+
+  const cardWidth = 900; // stable internal geometry; SVG scales to fit
+
+  const svg = composeCardSvg({
+    cardWidth,
+    transparentBg,
+
+    // gradient inputs (used by CSS when bg is ON, frame drawn when transparent)
+    bgTopColor:    hexPair('bgTopColor', 'bgTopHex', '#FFFFFF'),
+    bgBottomColor: hexPair('bgBottomColor', 'bgBottomHex', '#FFFFFF'),
+    bgTopAlpha:    Math.max(0, Math.min(100, num('bgTopAlpha', 100))),
+    bgBottomAlpha: Math.max(0, Math.min(100, num('bgBottomAlpha', 100))),
+
+    captionHeadline: showCap ? headline : '',
+    captionBody:     showCap ? body     : '',
+    captionColor:    hexPair('captionColor', 'captionColorHex', '#000000'),
+
+    ecc: (typeof getECC === 'function') ? getECC() : 'M',
+
+    // QR look
+    modulesShape:   document.getElementById('moduleShape')?.value || 'Square',
+    bodyColor:      hexPair('bodyColor', 'bodyColorHex', '#000000'),
+
+    eyeRingColor:   hexPair('eyeRingColor',   'eyeRingColorHex',   '#000000'),
+    eyeCenterColor: hexPair('eyeCenterColor', 'eyeCenterColorHex', '#000000'),
+    eyeRingShape:   document.getElementById('eyeRingShape')?.value   || 'Square',
+    eyeCenterShape: document.getElementById('eyeCenterShape')?.value || 'Square',
+
+    // module fill mode + center content
+    modulesMode:    document.getElementById('modulesMode')?.value || 'Shape',
+    modulesScale:   num('modulesScale', 1.0),
+    modulesEmoji:   (document.getElementById('modulesEmoji')?.value || '😀'),
+
+    centerMode:     document.getElementById('centerMode')?.value || 'None',
+    centerScale:    num('centerScale', 0.9),
+    centerEmoji:    (document.getElementById('centerEmoji')?.value || '😀'),
+  });
+
+  // Make it responsive in the mount
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+
+  // Replace mount contents
+  mount.innerHTML = '';
+  mount.appendChild(svg);
+
+  // Keep your existing enable/disable logic for Emoji mode
+  const mode = document.getElementById('modulesMode')?.value || 'Shape';
+  const emojiInp = document.getElementById('modulesEmoji');
+  const scaleInp = document.getElementById('modulesScale');
+  const shapeSel = document.getElementById('moduleShape');
+  const isEmoji = (mode === 'Emoji');
+
+  if (emojiInp) emojiInp.disabled = !isEmoji;
+  if (scaleInp) scaleInp.disabled = !isEmoji;
+  if (shapeSel) shapeSel.disabled = isEmoji;
+}
 
   // Toggle visual style (stroke vs fill card)
   const isTransparent = !document.getElementById('bgTransparent')?.checked;
