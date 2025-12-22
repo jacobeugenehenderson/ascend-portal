@@ -995,6 +995,8 @@ function cyclePreset(dir) {
   });
 }
 
+window.cyclePreset = cyclePreset;
+
 prevBtn?.addEventListener('click', () => cyclePreset(-1));
 nextBtn?.addEventListener('click', () => cyclePreset(1));
 
@@ -2149,7 +2151,7 @@ function boot() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot, { once: true });
 } else {
-  boot();
+  try { boot(); } catch (e) { console.error('[boot]', e); }
 }
 // --- Initial global gate: everything off until a QR Type is chosen ---
 (function gateUntilTypeChosen(){
@@ -2269,6 +2271,8 @@ function render() {
   mount.innerHTML = '';
   mount.appendChild(svg);
 }
+
+window.render = render;
 
   // One-time lightweight listeners that re-render
   if (!render._wired) {
