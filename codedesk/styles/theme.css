@@ -120,15 +120,25 @@ html.light, :root.light {
   --export-filename: "CodeDesk";
 
   /* ----- Grid overlay knobs (Ascend-owned cosmetics) ----- */
-  --grid-size:              var(--ascend-grid-size, 40px);
-  --grid-opacity:           var(--ascend-grid-opacity, .85);
-  --grid-line-color:        var(--ascend-grid-line-color, hsl(275 100% 70%));
-  --grid-glow-color:        var(--ascend-grid-glow-color, hsl(175 100% 62%));
-  --grid-glow-opacity:      var(--ascend-grid-glow-opacity, .55);
-  --grid-glow-blur:         var(--ascend-grid-glow-blur, 4px);
-  --grid-vignette-strength: var(--ascend-grid-vignette-strength, .14);
-  --grid-vignette-size:     var(--ascend-grid-vignette-size, 94%);
-  --grid-vignette-y:        var(--ascend-grid-vignette-y, 42%);
+  /* Unification layer: provide Ascend-compatible defaults derived from the canonical Ascend shell tokens */
+  --ascend-grid-size:         var(--ascend-grid-major, 48px);
+  --ascend-grid-opacity:      1;
+  --ascend-grid-glow-color:   var(--ascend-grid-line-color-soft, rgba(79, 209, 197, 0.22));
+  --ascend-grid-glow-opacity: 1;
+  --ascend-grid-glow-blur:    0px;
+  --ascend-grid-vignette-strength: 0.20;
+  --ascend-grid-vignette-size:     var(--ascend-grid-wash-stop, 55%);
+  --ascend-grid-vignette-y:        top;
+
+  --grid-size:              var(--ascend-grid-size, 48px);
+  --grid-opacity:           var(--ascend-grid-opacity, 1);
+  --grid-line-color:        var(--ascend-grid-line-color, rgba(0, 81, 255, 0.35));
+  --grid-glow-color:        var(--ascend-grid-glow-color, rgba(79, 209, 197, 0.22));
+  --grid-glow-opacity:      var(--ascend-grid-glow-opacity, 1);
+  --grid-glow-blur:         var(--ascend-grid-glow-blur, 0px);
+  --grid-vignette-strength: var(--ascend-grid-vignette-strength, 0.20);
+  --grid-vignette-size:     var(--ascend-grid-vignette-size, 55%);
+  --grid-vignette-y:        var(--ascend-grid-vignette-y, top);
 
   /* Hover / focus glow knobs (Ascend-owned cosmetics) */
   --hover-glow-color: var(
@@ -1344,15 +1354,8 @@ label:has(input[type="color"]) input[type="color"]{
   padding-inline: 1rem;               /* same side padding as QR Types */
 }
 
-
 /* Center the heart emoji in the QR Types button when it's acting as a circular icon */
-#qrType {
-  display: inline-grid;
-  place-items: center;     /* centers emoji both horizontally and vertically */
-  text-align: center;
-  line-height: 1;          /* remove baseline drift */
-  vertical-align: middle;  /* ensure inline alignment with neighbors */
-}
+/* (Removed: conflicting layout model. Keep #qrType unified as inline-flex with the other top-bar pills.) */
 
 /* Temporarily hide the SVG export toggle in the Finish step */
 .step-card[data-step="finish"] label:has(#wantSvg) {

@@ -37,6 +37,18 @@
   --ascend-grid-wash-color: rgba(79, 209, 197, 0.20);
   --ascend-grid-wash-stop: 55%;
 
+  /* Compatibility tokens expected by theme.css (unification layer) */
+  --ascend-grid-size: var(--ascend-grid-major);
+  --ascend-grid-opacity: 1;
+
+  --ascend-grid-glow-color: var(--ascend-grid-line-color-soft);
+  --ascend-grid-glow-opacity: 1;
+  --ascend-grid-glow-blur: 0px;
+
+  --ascend-grid-vignette-strength: 0.20;
+  --ascend-grid-vignette-size: 55%;
+  --ascend-grid-vignette-y: top;
+
   /* QR / stage frame */
   --ascend-stage-frame: var(--ascend-app-accent);
   --ascend-stage-frame-w: 3px;
