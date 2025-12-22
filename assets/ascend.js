@@ -505,8 +505,13 @@
 
   // CodeDesk template-open → "working file creation" seam
 function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
+  const tid = String(templateId || "").trim();
+
+  // Wiring-only compatibility: pass the same id under the common keys CodeDesk may already support.
   const target = buildCodeDeskUrl_("template", {
-    template_id: templateId,
+    template_id: tid,
+    templateId: tid,
+    template: tid,
     parent_ascend_job_key: parentAscendJobKey || ""
   });
 
@@ -547,8 +552,10 @@ function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
       mainBtn.className = "ascend-job-card-main";
 
       // Use the existing progress footprint for consistent layout,
-      // but mark as a template via class/data so CSS can paint it Ascend-blue.
+      // but force all three dots to render in the "step 1" color (Ascend blue).
       const progress = buildHopperProgress_(3);
+      const dots = progress.querySelectorAll(".ascend-hopper-progress-dot");
+      dots.forEach((d) => (d.dataset.step = "1"));
 
       const textStack = document.createElement("div");
       textStack.className = "ascend-job-card-stack";
