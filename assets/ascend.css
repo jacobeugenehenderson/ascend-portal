@@ -975,6 +975,12 @@ textarea:focus {
   box-shadow: 0 0 0 0.5px rgba(0,0,0,0.35);
 }
 
+/* CodeDesk templates: show “already done” (all blue) */
+.ascend-hopper-progress.is-template .ascend-hopper-progress-dot {
+  background: var(--ascend-hopper-stage-3) !important;
+  opacity: 1 !important;
+}
+
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="2"],
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="2"] {
   background: var(--ascend-hopper-stage-2);

@@ -422,8 +422,8 @@
             expiresAt: null,
           };
 
-          renderCodeDeskHopper([]);
-          requestCodeDeskTemplates();
+          saveSession(session);
+          applyLoggedInUI(session);
 
           if (pollingTimer) {
             console.log("Stopping polling loop (login complete).");
@@ -515,51 +515,6 @@ function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
     return;
   }
   window.open(target, "_blank", "noopener");
-}
-
-// ---- Hopper: CodeDesk template cards ----
-
-function renderCodeDeskHopper(templates) {
-  const host = document.getElementById("ascend-codedesk-list");
-  if (!host) return;
-
-  host.innerHTML = "";
-
-  const list = Array.isArray(templates) ? templates : [];
-  if (!list.length) {
-    // Match your existing “empty lane” behavior (simple, quiet)
-    return;
-  }
-
-  list.forEach((t) => {
-    const id = (t && (t.id || t.template_id || t.key)) ? String(t.id || t.template_id || t.key) : "";
-    const name = (t && (t.name || t.title || t.label)) ? String(t.name || t.title || t.label) : "Template";
-
-    const card = document.createElement("div");
-    card.className = "ascend-hopper-card";
-    card.tabIndex = 0;
-
-    const title = document.createElement("div");
-    title.className = "ascend-hopper-card-title";
-    title.textContent = name;
-
-    // optional: show the template id as muted meta if present
-    if (id) {
-      const meta = document.createElement("div");
-      meta.className = "ascend-hopper-card-meta";
-      meta.textContent = id;
-      card.appendChild(meta);
-    }
-
-    card.appendChild(title);
-
-    card.addEventListener("click", () => openCodeDeskFromTemplate_(id, ""));
-    card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") openCodeDeskFromTemplate_(id, "");
-    });
-
-    host.appendChild(card);
-  });
 }
 
 async function requestCodeDeskTemplates() {
@@ -658,8 +613,10 @@ async function requestCodeDeskTemplates() {
         // - { subtypes: [...] }
         // - [ ... ]
         const raw =
-          (manifest && manifest.types) ||
           (manifest && manifest.templates) ||
+          (manifest && manifest.types) ||          // <-- your screenshot suggests this exists
+          (manifest && manifest.qr_types) ||
+          (manifest && manifest.qrTypes) ||
           (manifest && manifest.subtypes) ||
           (manifest && manifest.items) ||
           [];
@@ -668,18 +625,10 @@ async function requestCodeDeskTemplates() {
 
         if (Array.isArray(raw)) {
           arr = raw;
-        } else if (raw && typeof raw === "object") {
-          // Support map/object manifests: { key: { ... }, ... }
-          arr = Object.keys(raw).map((k) => {
-            const v = raw[k];
-            if (v && typeof v === "object") {
-              // carry key as a fallback id/name
-              if (!v.id && !v.template_id && !v.TemplateId) v.id = k;
-              if (!v.name && !v.title && !v.label && !v.Name) v.name = k;
-              return v;
-            }
-            return { id: k, name: String(v) };
-          });
+        } else {
+          // If raw isn't an array, do NOT explode object keys into cards.
+          // That’s what produced "types / fields / presets".
+          arr = [];
         }
 
         renderCodeDeskHopper(arr);
