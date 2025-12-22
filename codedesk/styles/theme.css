@@ -177,21 +177,9 @@ html.light, :root.light {
 }
 
 /* =========================
-   2. GLOBAL SCAFFOLD
+   2. GLOBAL SCAFFOLD (functional only)
 ========================= */
 
-/* Let ascend-apps.css own the decorative backdrop (grid/gradient). */
-body {
-  background: transparent !important;
-  background-image: none !important;
-}
-body::before,
-body::after {
-  background: transparent !important;
-  background-image: none !important;
-}
-
-/* Make the page use the same scaffold everywhere */
 html, body{
   height: 100%;
 }
@@ -200,61 +188,11 @@ body{
   margin: 0;
   color: var(--md-sys-color-on-background);
   background: var(--md-sys-color-background);
-
-  /* Your theme tokens already define the grid knobs:
-     --grid-size, --grid-opacity, --grid-line-color, --grid-glow-color, etc. */
   position: relative;
-  isolation: isolate; /* keep overlay effects contained */
+  isolation: isolate;
 }
 
-/* GRID OVERLAY (uses the tokens already defined in :root) */
-body::before{
-  content:"";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-
-  /* 1) crisp grid lines */
-  background-image:
-    linear-gradient(
-      to right,
-      color-mix(in oklab, var(--grid-line-color) calc(var(--grid-opacity) * 100%), transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--grid-line-color) calc(var(--grid-opacity) * 100%), transparent) 1px,
-      transparent 1px
-    );
-
-  background-size: var(--grid-size) var(--grid-size);
-  background-position: center center;
-
-  /* 2) glow + vignette to match your “theme scaffold” notes */
-  filter: drop-shadow(0 0 var(--grid-glow-blur) color-mix(in oklab, var(--grid-glow-color) calc(var(--grid-glow-opacity) * 100%), transparent));
-  opacity: 1;
-}
-
-/* Subtle center bloom / vignette */
-body::after{
-  content:"";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-
-  background:
-    radial-gradient(
-      circle at 50% var(--grid-vignette-y),
-      rgba(255,255,255,var(--grid-vignette-strength)),
-      transparent var(--grid-vignette-size)
-    );
-  mix-blend-mode: screen;
-  opacity: 1;
-}
-
-/* Ensure the actual UI sits above the scaffold */
+/* Ensure the actual UI sits above any upstream decorative layers */
 #app, #root, main, header, footer, .app, .shell, .wrap, #stepper, #qrPreview, .preview-stage{
   position: relative;
   z-index: 1;
