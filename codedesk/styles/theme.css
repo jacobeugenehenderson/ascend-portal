@@ -1143,21 +1143,6 @@ textarea::placeholder{
   }
 }
 
-/* ===== Welcome mode (no type chosen) ===== */
-/* Works for the old .start-here and the new .is-placeholder class */
-body:has(#qrType.start-here) #stepper,
-body:has(#qrType.is-placeholder) #stepper {
-  display: none !important;
-}
-body:has(#qrType.start-here) main,
-body:has(#qrType.is-placeholder) main {
-  padding-bottom: 0;
-}
-body:has(#qrType.start-here) .preview-stage,
-body:has(#qrType.is-placeholder) .preview-stage {
-  margin-bottom: min(8vh, 96px);
-}
-
 /* =========================
    6. ARROWS
 ========================= */
@@ -1416,17 +1401,6 @@ label:has(input[type="color"]) input[type="color"]{
   padding-inline: 1rem;               /* same side padding as QR Types */
 }
 
-/* ==========================================================
-   START-HERE HIGHLIGHT  (active until a QR Type is chosen)
-   ========================================================== */
-#qrType.start-here {
-  outline: 1px solid #ff5bde;            /* vivid red ring */
-  outline-offset: 3px;
-  box-shadow:
-    0 0 1px rgba(255, 85, 85, 0.7),
-    0 0 1px rgba(255, 85, 85, 0.4);
-  border-color: #ff5555 !important;      /* keep visible even in dark mode */
-}
 
 /* Center the heart emoji in the QR Types button when it's acting as a circular icon */
 #qrType {
