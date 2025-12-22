@@ -404,7 +404,7 @@ emojiGrid.appendChild(b); }); }
       window._stepperBound = true;
     }
 
-(async function () {
+;(async function () {
 
   // --- Load manifest (with inline fallback) ---
   let manifest;
@@ -485,15 +485,19 @@ emojiGrid.appendChild(b); }); }
             mapLng:    { type:'text',  label:'Longitude', placeholder:'-74.0445' },
       mapProvider:{ type:'select',label:'Provider', options:['google','geo'] }
     },
-
+  
     presets: {}
   };
 
-  if (typeof window.refreshBackground === 'function') {
+    if (typeof window.refreshBackground === 'function') {   
     window.refreshBackground();
   }
   if (typeof render === 'function') render();
-  
+} 
+})
+
+// <-- CLOSE catch(e) block
+
 // after manifest = ... is set
 window.manifest = manifest;
 
@@ -1064,6 +1068,7 @@ if (t0 && getPresets(t0).length) {
     const n = $(id);
     return n ? (n.type === "checkbox" ? n.checked : (n.value || "")) : "";
   };
+  
 })();
 
   // --- Build QR "text" for each Type (simple, pragmatic encoders for preview) ---
@@ -2937,8 +2942,6 @@ function applyClickThroughForMobile() {
 window.addEventListener('resize', applyClickThroughForMobile, { passive: true });
  
 })();
-
-
 
 // =======================================================
 // Color picker / hex text sync (robust pairing, DOM-safe)
