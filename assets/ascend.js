@@ -555,7 +555,7 @@ function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
       // but force all three dots to render in the "step 3" color (Ascend blue).
       const progress = buildHopperProgress_(3);
       const dots = progress.querySelectorAll(".ascend-hopper-progress-dot");
-      dots.forEach((d) => (d.dataset.step = "3"));
+      dots.forEach((d) => (d.dataset.step = "2"));
 
       const textStack = document.createElement("div");
       textStack.className = "ascend-job-card-stack";
