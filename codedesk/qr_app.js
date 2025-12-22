@@ -2237,66 +2237,6 @@ function render() {
   const headline = (document.getElementById('campaign')?.value || '').trim().slice(0, 20);
   const body     = (document.getElementById('captionBody')?.value || '').trim().slice(0, 60);
 
-  // ---- core paint knobs
-  const transparentBg = !document.getElementById('bgTransparent')?.checked; // checked = background ON
-
-  const cardWidth = 900; // stable internal geometry; SVG scales to fit
-
-  const svg = composeCardSvg({
-    cardWidth,
-    transparentBg,
-
-    // gradient inputs (used by CSS when bg is ON, frame drawn when transparent)
-    bgTopColor:    hexPair('bgTopColor', 'bgTopHex', '#FFFFFF'),
-    bgBottomColor: hexPair('bgBottomColor', 'bgBottomHex', '#FFFFFF'),
-    bgTopAlpha:    Math.max(0, Math.min(100, num('bgTopAlpha', 100))),
-    bgBottomAlpha: Math.max(0, Math.min(100, num('bgBottomAlpha', 100))),
-
-    captionHeadline: showCap ? headline : '',
-    captionBody:     showCap ? body     : '',
-    captionColor:    hexPair('captionColor', 'captionColorHex', '#000000'),
-
-    ecc: (typeof getECC === 'function') ? getECC() : 'M',
-
-    // QR look
-    modulesShape:   document.getElementById('moduleShape')?.value || 'Square',
-    bodyColor:      hexPair('bodyColor', 'bodyColorHex', '#000000'),
-
-    eyeRingColor:   hexPair('eyeRingColor',   'eyeRingColorHex',   '#000000'),
-    eyeCenterColor: hexPair('eyeCenterColor', 'eyeCenterColorHex', '#000000'),
-    eyeRingShape:   document.getElementById('eyeRingShape')?.value   || 'Square',
-    eyeCenterShape: document.getElementById('eyeCenterShape')?.value || 'Square',
-
-    // module fill mode + center content
-    modulesMode:    document.getElementById('modulesMode')?.value || 'Shape',
-    modulesScale:   num('modulesScale', 1.0),
-    modulesEmoji:   (document.getElementById('modulesEmoji')?.value || '😀'),
-
-    centerMode:     document.getElementById('centerMode')?.value || 'None',
-    centerScale:    num('centerScale', 0.9),
-    centerEmoji:    (document.getElementById('centerEmoji')?.value || '😀'),
-  });
-
-  // Make it responsive in the mount
-  svg.setAttribute('width', '100%');
-  svg.setAttribute('height', '100%');
-
-  // Replace mount contents
-  mount.innerHTML = '';
-  mount.appendChild(svg);
-
-  // Keep your existing enable/disable logic for Emoji mode
-  const mode = document.getElementById('modulesMode')?.value || 'Shape';
-  const emojiInp = document.getElementById('modulesEmoji');
-  const scaleInp = document.getElementById('modulesScale');
-  const shapeSel = document.getElementById('moduleShape');
-  const isEmoji = (mode === 'Emoji');
-
-  if (emojiInp) emojiInp.disabled = !isEmoji;
-  if (scaleInp) scaleInp.disabled = !isEmoji;
-  if (shapeSel) shapeSel.disabled = isEmoji;
-}
-
   // Toggle visual style (stroke vs fill card)
   const isTransparent = !document.getElementById('bgTransparent')?.checked;
   preview.classList.toggle('card--stroke', isTransparent);
@@ -2348,7 +2288,7 @@ function render() {
   mount.appendChild(svg);
 }
 
-window.render = render;
+;window.render = render;
 
   // One-time lightweight listeners that re-render
   if (!render._wired) {
