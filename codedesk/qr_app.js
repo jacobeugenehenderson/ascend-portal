@@ -479,7 +479,6 @@ emojiGrid.appendChild(b); }); }
       evtStart:   { type:'text',  label:'Start (YYYY-MM-DD HH:MM:SS)' },
       evtEnd:     { type:'text',  label:'End (YYYY-MM-DD HH:MM:SS)' },
       evtLoc:     { type:'text',  label:'Location' },
-      evtDet:     { type:'textarea', rows:3, label:'Details' },
       evtStyle:   { type:'select',label:'Style', options:['Basic'] },
 
       mapQuery:   { type:'text',  label:'Search query', placeholder:'Statue of Liberty' },
