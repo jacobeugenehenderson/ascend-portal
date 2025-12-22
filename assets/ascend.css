@@ -184,7 +184,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  overflow: hidden;
+  overflow: hidden; /* document locked; scrolling delegated to shell */
 }
 
 body {
@@ -332,7 +332,10 @@ textarea:focus {
 
   /* host for grid overlay */
   position: relative;
-  overflow: hidden;
+
+  /* SINGLE SCROLL AUTHORITY */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .ascend-shell::before {
@@ -1000,6 +1003,35 @@ textarea:focus {
 
 .ascend-job-card-main:hover {
   background: rgba(79, 209, 197, 0.10);
+}
+
+/* =========================================================
+ * CodeDesk — Template Rows (Hopper Only)
+ * Static, reusable, non-persistent
+ * ======================================================= */
+
+.ascend-codedesk-template .ascend-hopper-progress-dot {
+  background: var(--ascend-hopper-stage-3);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.ascend-codedesk-template .ascend-job-card-main {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(78, 134, 223, 0.18),
+      rgba(78, 134, 223, 0.04) 70%,
+      transparent
+    );
+}
+
+.ascend-codedesk-template .ascend-job-card-title {
+  color: color-mix(
+    in srgb,
+    var(--ascend-hopper-stage-3) 88%,
+    white 12%
+  );
 }
 
 /* Title + meta stack inside the left cell */

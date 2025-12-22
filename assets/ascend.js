@@ -26,6 +26,10 @@
   const CODEDESK_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/codedesk/index.html";
 
+  // CodeDesk template manifest (static JSON; hopper templates must read from this)
+  // Relative so it works on jacobhenderson.studio/ascend/ (and any mirrored host).
+  const CODEDESK_MANIFEST_URL = "codedesk/qr_type_manifest.json";
+
   // FileRoom (output / delivery layer)
   const FILEROOM_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/fileroom/frontend/index.html";
@@ -323,11 +327,13 @@
     // Immediately paint empty-states so lanes never appear "blank" while JSONP loads/fails.
     renderArtStartHopper([]);
     renderCopydeskHopper([]);
+    renderCodeDeskHopper([]); // safe no-op if lane not present yet
     renderFileRoomHopper([]);
 
     // Refresh hopper lanes for this user
     requestArtStartJobs();
     requestCopydeskJobs();
+    requestCodeDeskTemplates(); // templates are static; still refresh on login
     requestFileRoomOutput();
   }
 
@@ -510,6 +516,97 @@
       return;
     }
     window.open(target, "_blank", "noopener");
+  }
+
+  // ---- Hopper: CodeDesk templates (manifest-driven) ----
+
+  function renderCodeDeskHopper(items) {
+    const lane = document.getElementById("ascend-codedesk-list");
+    if (!lane) return;
+
+    lane.innerHTML = "";
+
+    if (!items || !items.length) {
+      const empty = document.createElement("div");
+      empty.className = "ascend-job-list-empty";
+      empty.textContent = "";
+      lane.appendChild(empty);
+      return;
+    }
+
+    items.forEach((tpl) => {
+      const templateId = (tpl && (tpl.id || tpl.template_id || tpl.TemplateId)) || "";
+      const titleText = (tpl && (tpl.name || tpl.title || tpl.label || tpl.Name)) || "QR Template";
+
+      const card = document.createElement("div");
+      card.className = "ascend-job-card ascend-codedesk-template";
+      card.dataset.codedesk = "template";
+      if (templateId) card.dataset.templateId = String(templateId);
+
+      const mainBtn = document.createElement("button");
+      mainBtn.type = "button";
+      mainBtn.className = "ascend-job-card-main";
+
+      // Use the existing progress footprint for consistent layout,
+      // but mark as a template via class/data so CSS can paint it Ascend-blue.
+      const progress = buildHopperProgress_(1);
+      progress.className += " is-template";
+
+      const textStack = document.createElement("div");
+      textStack.className = "ascend-job-card-stack";
+
+      const title = document.createElement("div");
+      title.className = "ascend-job-card-title";
+      title.textContent = titleText;
+
+      textStack.appendChild(title);
+
+      mainBtn.appendChild(progress);
+      mainBtn.appendChild(textStack);
+
+      mainBtn.addEventListener("click", () => {
+        // Parent job association is a later wiring step (needs Ascend job context).
+        openCodeDeskFromTemplate_(String(templateId || ""), "");
+      });
+
+      card.appendChild(mainBtn);
+      lane.appendChild(card);
+    });
+  }
+
+  function requestCodeDeskTemplates() {
+    // Templates are static + global; still only load if logged in (parity with other lanes).
+    const session = loadSession();
+    if (!session || !session.userEmail) return;
+
+    // If the lane doesn't exist in the shell yet, do nothing.
+    const lane = document.getElementById("ascend-codedesk-list");
+    if (!lane) return;
+
+    fetch(CODEDESK_MANIFEST_URL, { method: "GET", cache: "no-store" })
+      .then((r) => {
+        if (!r.ok) throw new Error("Manifest HTTP " + r.status);
+        return r.json();
+      })
+      .then((manifest) => {
+        // Support a few plausible shapes without inventing a schema:
+        // - { templates: [...] }
+        // - { subtypes: [...] }
+        // - [ ... ]
+        const raw =
+          (manifest && manifest.templates) ||
+          (manifest && manifest.subtypes) ||
+          (manifest && manifest.items) ||
+          manifest ||
+          [];
+
+        const arr = Array.isArray(raw) ? raw : [];
+        renderCodeDeskHopper(arr);
+      })
+      .catch((e) => {
+        console.warn("Ascend: CodeDesk manifest load failed", e);
+        renderCodeDeskHopper([]);
+      });
   }
 
   function initPrimaryButtons() {
@@ -1293,6 +1390,8 @@
   window.AscendDebug.requestArtStartJobs = requestArtStartJobs;
   window.AscendDebug.requestCopydeskJobs = requestCopydeskJobs;
   window.AscendDebug.requestFileRoomOutput = requestFileRoomOutput;
+  window.AscendDebug.requestCodeDeskTemplates = requestCodeDeskTemplates;
+  window.AscendDebug.CODEDESK_MANIFEST_URL = CODEDESK_MANIFEST_URL;
   window.AscendDebug.loadSession = loadSession;
 
     // ---- bootstrap ----
