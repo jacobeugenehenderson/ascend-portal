@@ -404,7 +404,7 @@ emojiGrid.appendChild(b); }); }
       window._stepperBound = true;
     }
 
-(async function(){
+(async function () {
 
   // --- Load manifest (with inline fallback) ---
   let manifest;
@@ -486,45 +486,14 @@ emojiGrid.appendChild(b); }); }
       mapProvider:{ type:'select',label:'Provider', options:['google','geo'] }
     },
 
-    // WELCOME always exists offline
-    presets: {
-      "WELCOME": [
-        {
-          "name": "Welcome",
-          "fontFamily": "Inter",
-
-          "captionHeadline": "WELCOME",
-          "captionBody": "",
-
-          "captionColor": "#496039",
-          "bodyColor": "#444B55",
-
-          "eyeRingColor": "#283F19",
-          "eyeCenterColor": "#A06B22",
-
-          "bgTopColor":    "#EDEDED",
-          "bgTopAlpha":     100,
-          "bgBottomColor": "#EDEDED",
-          "bgBottomAlpha":  100,
-          "bgTransparent": true,
-
-          "moduleShape": "Rounded",
-          "eyeRingShape": "Rounded",
-          "eyeCenterShape": "Circle",
-
-          "modulesMode": "Emoji",
-          "modulesEmoji": "🟫",
-          "modulesScale": 0.9,
-
-          "centerMode": "Emoji",
-          "centerEmoji": "🐿️",
-          "centerScale": 1.5
-        }
-      ]
-    }
+    presets: {}
   };
-}
 
+  if (typeof window.refreshBackground === 'function') {
+    window.refreshBackground();
+  }
+  if (typeof render === 'function') render();
+  
 // after manifest = ... is set
 window.manifest = manifest;
 
@@ -1076,45 +1045,6 @@ if (t0 && getPresets(t0).length) {
   const list0 = getPresets(t0);
   setCaptionFromPreset(list0[0] || {}, t0);
 }
-
-// =====================================================
-//  WELCOME PRESET: show default QR before any type chosen
-// =====================================================
-if (!typeSel.value && typeof getPresets === 'function') {
-  const welcomeList = getPresets('WELCOME') || [];
-  if (welcomeList.length) {
-    currentPresetIdx.set('WELCOME', 0);
-    applyPreset('WELCOME', 0);
-    setCaptionFromPreset(welcomeList[0] || {}, 'WELCOME');
-  } else {
-    // Synthesize a safe default so something renders
-    const topCol = document.getElementById('bgTopColor');
-    const botCol = document.getElementById('bgBottomColor');
-    const topHex = document.getElementById('bgTopHex');
-    const botHex = document.getElementById('bgBottomHex');
-    if (topCol) topCol.value = '#EDEDED';
-    if (botCol) botCol.value = '#EDEDED';
-    if (topHex) topHex.value = '#EDEDED';
-    if (botHex) botHex.value = '#EDEDED';
-    const ta = document.getElementById('bgTopAlpha');
-    const ba = document.getElementById('bgBottomAlpha');
-    if (ta) { ta.value = 100; ta.dispatchEvent(new Event('input')); }
-    if (ba) { ba.value = 100; ba.dispatchEvent(new Event('input')); }
-    const tcb = document.getElementById('bgTransparent');
-    if (tcb) { tcb.checked = true; tcb.dispatchEvent(new Event('change', { bubbles: true })); }
-    const head = document.getElementById('campaign');
-    const body = document.getElementById('captionBody');
-    if (head) { head.value = 'WELCOME'; head.dispatchEvent(new Event('input', { bubbles: true })); }
-    if (body) { body.value = '';       body.dispatchEvent(new Event('input', { bubbles: true })); }
-  }
-
-  if (typeof window.refreshBackground === 'function') {
-    window.refreshBackground();
-  }
-  if (typeof render === 'function') render();
-}
-
-})();
 
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -3123,5 +3053,3 @@ window.addEventListener('resize', applyClickThroughForMobile, { passive: true })
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeAppModal();
   });
 })();
-
-
