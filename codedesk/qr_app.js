@@ -2200,7 +2200,36 @@ if (document.readyState === 'loading') {
   if (hasType && typeof wireDesignGatesOnce === 'function') wireDesignGatesOnce();
 })();
 
-  // Toggle visual style on the preview card (for CSS glow/inset)
+  function colorHex(colorId, fallback = '#000000') {
+  const colorEl = document.getElementById(colorId);
+
+  // Try common paired-hex conventions:
+  let hexEl = document.getElementById(colorId + 'Hex');                 // bodyColorHex, captionColorHex, eyeRingColorHex...
+  if (!hexEl && /Color$/.test(colorId)) {
+    hexEl = document.getElementById(colorId.replace(/Color$/, 'Hex'));  // bgTopHex, bgBottomHex
+  }
+
+  let v =
+    (hexEl && typeof hexEl.value === 'string' && hexEl.value.trim()) ||
+    (colorEl && typeof colorEl.value === 'string' && colorEl.value.trim()) ||
+    (fallback || '#000000');
+
+  v = String(v).trim();
+  if (!v) v = fallback || '#000000';
+  if (v[0] !== '#') v = '#' + v;
+
+  // Normalize 3-digit hex to 6-digit
+  const m3 = /^#([0-9a-fA-F]{3})$/.exec(v);
+  if (m3) {
+    v = '#' + m3[1].split('').map(c => c + c).join('');
+  }
+
+  // Validate; if bad, fall back
+  if (!/^#([0-9a-fA-F]{6})$/.test(v)) return (fallback || '#000000');
+  return v;
+}
+
+// Toggle visual style on the preview card (for CSS glow/inset)
 function render() {
   const preview = document.getElementById('qrPreview');
   const mount   = document.getElementById('qrMount');
