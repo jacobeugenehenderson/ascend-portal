@@ -658,10 +658,10 @@ async function requestCodeDeskTemplates() {
         // - { subtypes: [...] }
         // - [ ... ]
         const raw =
+          (manifest && manifest.types) ||
           (manifest && manifest.templates) ||
           (manifest && manifest.subtypes) ||
           (manifest && manifest.items) ||
-          manifest ||
           [];
 
         let arr = [];
