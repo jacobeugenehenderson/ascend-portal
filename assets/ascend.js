@@ -507,8 +507,8 @@
 function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
   const tid = String(templateId || "").trim();
 
-  // Wiring-only compatibility: pass the same id under the common keys CodeDesk may already support.
   const target = buildCodeDeskUrl_("template", {
+    // wiring-only compatibility: same id, multiple common keys
     template_id: tid,
     templateId: tid,
     template: tid,
