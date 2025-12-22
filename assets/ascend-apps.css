@@ -88,7 +88,7 @@ body.ascend-app-body {
   --ascend-control-ring: var(--ascend-app-accent-soft);
   --ascend-control-radius: 10px;
 
-  background-color: var(--ascend-grid-bg);
+    background-color: var(--ascend-grid-bg);
   background-image:
     linear-gradient(to right, var(--ascend-grid-line-color) 1px, transparent 1px),
     linear-gradient(to bottom, var(--ascend-grid-line-color) 1px, transparent 1px),
@@ -101,6 +101,9 @@ body.ascend-app-body {
     var(--ascend-grid-minor) var(--ascend-grid-minor),
     var(--ascend-grid-minor) var(--ascend-grid-minor),
     auto;
+
+  background-attachment: fixed;
+  background-repeat: repeat;
 
   color: var(--ascend-app-text-main);
 }
@@ -238,6 +241,14 @@ body.ascend-app-body {
   gap: 16px;
   padding: 18px 18px 14px 18px;
   border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Ensure all headers inherit Ascend light-theme ink (not Material black) */
+.ascend-app-panel h1,
+.ascend-app-panel h2,
+.ascend-app-panel h3,
+.ascend-app-panel h4 {
+  color: var(--ascend-app-text-main);
 }
 
 .ascend-app-title-block {
