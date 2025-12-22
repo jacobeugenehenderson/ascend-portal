@@ -155,13 +155,13 @@ html.light, :root.light {
   --featured-stroke-width: 1px;
   --step-color-primary: var(--md-sys-color-primary);
   --featured-stroke-color: color-mix(in oklab, var(--step-color-primary) 45%, transparent);
-  --featured-stroke-glow: 0 0 12px color-mix(in oklab, var(--step-color-primary) 30%, transparent);
+  --featured-stroke-glow: none;
 
   /* Open step fills (used only inside cards) */
   --step-header-open-bg: color-mix(in oklab, var(--ui-surface) 85%, var(--step-color-primary) 15%);
   --step-card-open-bg:   color-mix(in oklab, var(--ui-surface) 94%, var(--step-color-primary) 6%);
 
-  --stepper-stroke-closed: hsl(221, 100%, 7%);
+  --stepper-stroke-closed: var(--md-sys-color-outline);
  
 }
 
@@ -179,6 +179,17 @@ html.light, :root.light {
 /* =========================
    2. GLOBAL SCAFFOLD
 ========================= */
+
+/* Let ascend-apps.css own the decorative backdrop (grid/gradient). */
+body {
+  background: transparent !important;
+  background-image: none !important;
+}
+body::before,
+body::after {
+  background: transparent !important;
+  background-image: none !important;
+}
 
 /* Make the page use the same scaffold everywhere */
 html, body{
