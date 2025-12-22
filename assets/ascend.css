@@ -823,6 +823,10 @@ textarea:focus {
   gap: 0;
 }
 
+.ascend-job-list .ascend-job-card {
+  flex: 1 1 0;
+}
+
 /* FileRoom rows use identical rhythm */
 .ascend-fileroom-card {
   align-items: stretch;

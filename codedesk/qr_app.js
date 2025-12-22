@@ -414,6 +414,20 @@ emojiGrid.appendChild(b); }); }
     const res = await fetch('qr_type_manifest.json', { cache: 'no-store' });
     if (!res.ok) throw new Error('manifest not found');
     manifest = await res.json();
+
+  // --- Load templates (separate from type manifest) ---
+  let templates = [];
+
+  try {
+    const tRes = await fetch('qr_templates.json', { cache: 'no-store' });
+    if (tRes.ok) {
+      const tJson = await tRes.json();
+      templates = Array.isArray(tJson.templates) ? tJson.templates : [];
+    }
+  } catch (e) {
+    console.warn('Template load failed, continuing without templates');
+  }
+
   } catch (e) {
   // Fallback to a baked-in copy (keeps UI working if fetch fails)
   manifest = {

@@ -28,7 +28,7 @@
 
   // CodeDesk template manifest (static JSON; hopper templates must read from this)
   // Relative so it works on jacobhenderson.studio/ascend/ (and any mirrored host).
-  const CODEDESK_MANIFEST_URL = "codedesk/qr_type_manifest.json";
+  const CODEDESK_MANIFEST_URL = "codedesk/qr_templates.json";
 
   // FileRoom (output / delivery layer)
   const FILEROOM_URL =
@@ -517,26 +517,6 @@ function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
   window.open(target, "_blank", "noopener");
 }
 
-async function requestCodeDeskTemplates() {
-  // Manifest location: CodeDesk folder in your GitHub Pages workspace
-  const url = "https://jacobeugenehenderson.github.io/ascend-portal/codedesk/qr_type_manifest.json";
-
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-
-    const data = await res.json();
-
-    // Accept either: { templates: [...] } or just [...]
-    const templates = Array.isArray(data) ? data : (data && data.templates) ? data.templates : [];
-
-    renderCodeDeskHopper(templates);
-  } catch (err) {
-    console.warn("[Codedesk] Failed to load template manifest", err);
-    renderCodeDeskHopper([]);
-  }
-}
-
   // ---- Hopper: CodeDesk templates (manifest-driven) ----
 
   function renderCodeDeskHopper(items) {
@@ -558,7 +538,7 @@ async function requestCodeDeskTemplates() {
       const titleText = (tpl && (tpl.name || tpl.title || tpl.label || tpl.Name)) || "QR Template";
 
       const card = document.createElement("div");
-      card.className = "ascend-job-card ascend-codedesk-template";
+      card.className = "ascend-job-card";
       card.dataset.codedesk = "template";
       if (templateId) card.dataset.templateId = String(templateId);
 
@@ -568,8 +548,7 @@ async function requestCodeDeskTemplates() {
 
       // Use the existing progress footprint for consistent layout,
       // but mark as a template via class/data so CSS can paint it Ascend-blue.
-      const progress = buildHopperProgress_(1);
-      progress.className += " is-template";
+      const progress = buildHopperProgress_(3);
 
       const textStack = document.createElement("div");
       textStack.className = "ascend-job-card-stack";
@@ -579,6 +558,11 @@ async function requestCodeDeskTemplates() {
       title.textContent = titleText;
 
       textStack.appendChild(title);
+
+      const meta = document.createElement("div");
+      meta.className = "ascend-job-card-context";
+      meta.textContent = "TEMPLATE";
+      textStack.appendChild(meta);
 
       mainBtn.appendChild(progress);
       mainBtn.appendChild(textStack);
@@ -608,27 +592,18 @@ async function requestCodeDeskTemplates() {
         return r.json();
       })
       .then((manifest) => {
-        // Support a few plausible shapes without inventing a schema:
-        // - { templates: [...] }
-        // - { subtypes: [...] }
-        // - [ ... ]
-        const raw =
-          (manifest && manifest.templates) ||
-          (manifest && manifest.types) ||          // <-- your screenshot suggests this exists
-          (manifest && manifest.qr_types) ||
-          (manifest && manifest.qrTypes) ||
-          (manifest && manifest.subtypes) ||
-          (manifest && manifest.items) ||
-          [];
-
+        // Accept either:
+        //  - { templates: [...] }  (preferred minimal shape)
+        //  - { presets: { URL: [...] } } (legacy shape from qr_type_manifest-style files)
+        //  - [ ... ] (raw array)
         let arr = [];
 
-        if (Array.isArray(raw)) {
-          arr = raw;
-        } else {
-          // If raw isn't an array, do NOT explode object keys into cards.
-          // That’s what produced "types / fields / presets".
-          arr = [];
+        if (Array.isArray(manifest)) {
+          arr = manifest;
+        } else if (manifest && Array.isArray(manifest.templates)) {
+          arr = manifest.templates;
+        } else if (manifest && manifest.presets && Array.isArray(manifest.presets.URL)) {
+          arr = manifest.presets.URL;
         }
 
         renderCodeDeskHopper(arr);
