@@ -666,12 +666,19 @@ window.getPresets = (t) => {
  *  - Provide a stable JSON "state" format that Ascend (later) can create/open.
  *  - Provide localStorage persistence so CodeDesk can keep editable templates.
  *
- * Notes:
- *  - This does NOT change existing preset behavior.
- *  - This is "add-only": if some control IDs are missing, they are ignored safely.
+ * Additions in this patch:
+ *  - Track “active working file” id (so saves are idempotent)
+ *  - Quiet autosave (debounced)
+ *  - “Finish” button becomes “Finish setup” + re-click updates same file
  * ==================================================================== */
 
 const CODEDESK_STORE_KEY = 'codedesk_working_files_v1';
+
+// Active working file pointer (so we can save “the same file” repeatedly)
+const CODEDESK_ACTIVE_WF_KEY = 'codedesk_active_working_file_v1';
+
+// Autosave tuning
+const CODEDESK_AUTOSAVE_DEBOUNCE_MS = 900;
 
 function safeId(id){ return typeof id === 'string' && id.trim() ? id.trim() : ''; }
 
@@ -716,29 +723,6 @@ const CODEDESK_STYLE_IDS = [
 ];
 
 // Build a stable export payload (safe if some IDs don’t exist in DOM)
-window.addEventListener('beforeunload', (e) => {
-  try {
-    const wid = String(window.__CODEDESK_CURRENT_WF_ID__ || '').trim();
-    if (!wid) return;
-
-    // Unsaved changes warning
-    if (window.__CODEDESK_DIRTY__) {
-      e.preventDefault();
-      e.returnValue = '';
-      return '';
-    }
-
-    // Never-finished warning (no FileRoom deliverable yet)
-    const rec = window.codedeskOpenWorkingFile(wid);
-    const neverFinished = !(rec && rec.finishedAt && rec.fileroom && rec.fileroom.drive_file_id);
-    if (neverFinished) {
-      e.preventDefault();
-      e.returnValue = '';
-      return '';
-    }
-  } catch (err) {}
-});
-
 window.okqralExportState = function okqralExportState(){
   const payload = { v: 1, at: Date.now(), fields: {}, style: {} };
 
@@ -817,18 +801,34 @@ function _writeWorkingFiles(arr){
   try { localStorage.setItem(CODEDESK_STORE_KEY, JSON.stringify(arr || [])); } catch(e){}
 }
 
+function _getActiveWorkingFileId(){
+  try { return String(localStorage.getItem(CODEDESK_ACTIVE_WF_KEY) || '').trim(); } catch(e){ return ''; }
+}
+function _setActiveWorkingFileId(id){
+  try {
+    const v = String(id || '').trim();
+    if (v) localStorage.setItem(CODEDESK_ACTIVE_WF_KEY, v);
+  } catch(e){}
+}
+
+window.codedeskGetActiveWorkingFileId = function codedeskGetActiveWorkingFileId(){
+  return _getActiveWorkingFileId();
+};
+
 window.codedeskListWorkingFiles = function codedeskListWorkingFiles(){
   return _readWorkingFiles().map(x => ({
     id: x.id, name: x.name, createdAt: x.createdAt, updatedAt: x.updatedAt
   }));
 };
 
+// Save (create-or-update). If id is provided, it updates the same record.
+// If id is omitted, it creates a new record and becomes the active working file.
 window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(name, { id } = {}){
   const now = Date.now();
   const files = _readWorkingFiles();
   const state = window.okqralExportState();
 
-  const nextId = id || ('wf_' + now + '_' + Math.random().toString(16).slice(2));
+  const nextId = (id || _getActiveWorkingFileId()) || ('wf_' + now + '_' + Math.random().toString(16).slice(2));
   const idx = files.findIndex(f => f.id === nextId);
 
   const rec = {
@@ -843,63 +843,128 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(name, { id } =
   else files.unshift(rec);
 
   _writeWorkingFiles(files);
+  _setActiveWorkingFileId(rec.id);
   return rec.id;
 };
 
 window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
-  try {
-    const list = JSON.parse(localStorage.getItem(CODEDESK_STORE_KEY) || '[]');
-    const rec = (list||[]).find(x => String(x.id) === String(id));
-    if (!rec) return null;
-
-    window.__CODEDESK_CURRENT_WF_ID__ = String(id || '').trim();
-
-    if (rec.state) window.okqralImportState(rec.state);
-
-    // Opening a working file should immediately refresh the paired FileRoom deliverable (if it exists).
-    const hasPair = !!(rec && rec.fileroom && rec.fileroom.drive_file_id && rec.finishedAt);
-    if (hasPair) {
-      setTimeout(async () => {
-        try {
-          const svgNode = getCurrentSvgNode();
-          if (!svgNode) return;
-
-          const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
-          if (!folderId) return;
-
-          const svgText = new XMLSerializer().serializeToString(svgNode);
-          const fileName = 'codedesk_auto_update.svg';
-
-          await fetch(window.CODEDESK_FILEROOM_API_BASE, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'upsertQrAsset',
-              folder_id: folderId,
-              svg_text: svgText,
-              file_name: fileName,
-              drive_file_id: String(rec.fileroom.drive_file_id || ''),
-              app: 'codedesk',
-              source_id: String(id || ''),
-              title: 'CODEDESK QR',
-              subtitle: 'CODEDESK — FLATTENED',
-              status: 'delivered',
-              owner_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : ''
-            })
-          });
-        } catch (e) {
-          console.warn('CodeDesk auto-update on open failed', e);
-        }
-      }, 0);
-    }
-
-    window.__CODEDESK_DIRTY__ = false;
-    return rec;
-  } catch (e) {
-    console.warn('codedeskOpenWorkingFile failed', e);
-    return null;
-  }
+  const files = _readWorkingFiles();
+  const rec = files.find(f => f.id === id);
+  if (!rec || !rec.state) return false;
+  _setActiveWorkingFileId(rec.id);
+  return window.okqralImportState(rec.state);
 };
+
+window.codedeskDeleteWorkingFile = function codedeskDeleteWorkingFile(id){
+  const files = _readWorkingFiles().filter(f => f.id !== id);
+  _writeWorkingFiles(files);
+  try {
+    if (_getActiveWorkingFileId() === String(id || '').trim()) {
+      localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY);
+    }
+  } catch(e){}
+  return true;
+};
+
+/* -------- Quiet autosave (debounced) -------- */
+let _codedeskAutosaveTimer = null;
+
+function codedeskAutosaveKick(){
+  const activeId = _getActiveWorkingFileId();
+  if (!activeId) return; // no active file → nothing to autosave
+
+  if (_codedeskAutosaveTimer) clearTimeout(_codedeskAutosaveTimer);
+  _codedeskAutosaveTimer = setTimeout(() => {
+    try {
+      // Use current headline as name fallback; keep existing name if possible
+      const files = _readWorkingFiles();
+      const rec = files.find(f => f.id === activeId);
+      const head = String(document.getElementById('campaign')?.value || '').trim();
+      const keepName = rec?.name || '';
+      const nextName = keepName || head || 'Working file';
+
+      window.codedeskSaveWorkingFile(nextName, { id: activeId });
+    } catch(e){}
+  }, CODEDESK_AUTOSAVE_DEBOUNCE_MS);
+}
+
+// Arm once: autosave on any user edits (delegated; safe across form rebuilds)
+(function wireCodedeskAutosaveOnce(){
+  if (window.__CODEDESK_AUTOSAVE_WIRED__) return;
+  window.__CODEDESK_AUTOSAVE_WIRED__ = true;
+
+  const handler = (e) => {
+    const t = e.target;
+    if (!t) return;
+    // only react to edits on inputs/selects/textareas
+    const tag = (t.tagName || '').toLowerCase();
+    if (tag !== 'input' && tag !== 'select' && tag !== 'textarea') return;
+
+    // Ignore emoji search box + modal controls (not “document state”)
+    if (t.id === 'emojiSearch') return;
+
+    codedeskAutosaveKick();
+  };
+
+  document.addEventListener('input', handler, { passive: true });
+  document.addEventListener('change', handler, { passive: true });
+})();
+
+/* -------- Finish button behavior --------
+   Goal:
+     - Clicking “Finish” should NOT be a one-time ceremony.
+     - It should simply “lock in” the current working file state (same id),
+       and autosave already covers ongoing edits.
+*/
+window.codedeskFinishSetup = function codedeskFinishSetup(){
+  const activeId = _getActiveWorkingFileId();
+  const head = String(document.getElementById('campaign')?.value || '').trim();
+  const name = head || 'Working file';
+
+  // If no active file exists yet, create one now.
+  const id = window.codedeskSaveWorkingFile(name, activeId ? { id: activeId } : {});
+  return id;
+};
+
+(function wireFinishSetupOnce(){
+  if (window.__CODEDESK_FINISH_SETUP_WIRED__) return;
+  window.__CODEDESK_FINISH_SETUP_WIRED__ = true;
+
+  function relabel(btn){
+    try {
+      const txt = (btn.textContent || '').trim().toLowerCase();
+      if (txt === 'finish') btn.textContent = 'Finish setup';
+    } catch(e){}
+  }
+
+  function isFinishButton(el){
+    if (!el) return false;
+    const id = (el.id || '').toLowerCase();
+    const da = (el.getAttribute && el.getAttribute('data-action')) || '';
+    const txt = (el.textContent || '').trim().toLowerCase();
+
+    // Be permissive: you can tighten this later if you want
+    if (da && String(da).toLowerCase() === 'finish') return true;
+    if (id === 'finish' || id === 'finishbtn' || id === 'btnfinish') return true;
+    if (txt === 'finish' || txt === 'finish setup') return true;
+    return false;
+  }
+
+  // initial relabel pass
+  document.querySelectorAll('button').forEach(b => { if (isFinishButton(b)) relabel(b); });
+
+  // capture click for finish/setup
+  document.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('button');
+    if (!isFinishButton(btn)) return;
+
+    // Don’t break existing finish behaviors elsewhere:
+    // we run “finish setup” first, then allow downstream handlers to proceed.
+    try { window.codedeskFinishSetup(); } catch(err){}
+
+    relabel(btn);
+  }, true);
+})();
 
 /* === END CODEDESK WORKING FILES ===================================== */
 
