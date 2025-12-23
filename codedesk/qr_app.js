@@ -487,12 +487,21 @@ emojiGrid.appendChild(b); }); }
 
   // --- Load manifest (with inline fallback) ---
   let manifest;
+  // Build a directory-safe base URL so fetches work even if the page URL is missing a trailing slash.
+  const __CODEDESK_BASE_URL__ = (function () {
+    var p = window.location.pathname || "/";
+    // If we are at "/codedesk" (no trailing slash), treat it as a folder, not a file.
+    if (p && !p.endsWith("/")) p = p + "/";
+    return window.location.origin + p;
+  })();
+
   try {
-    const res = await fetch('qr_type_manifest.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('manifest not found');
+    const manifestUrl = new URL("qr_type_manifest.json", __CODEDESK_BASE_URL__).toString();
+    const res = await fetch(manifestUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error("manifest not found: " + res.status);
     manifest = await res.json();
   } catch (e) {
-    console.warn('Manifest load failed, continuing with inline fallback');
+    console.warn("Manifest load failed, continuing with inline fallback", e);
     manifest = { types: [] };
   }
 
@@ -500,13 +509,16 @@ emojiGrid.appendChild(b); }); }
   templates = [];
 
   try {
-    const tRes = await fetch('qr_templates.json', { cache: 'no-store' });
+    const templatesUrl = new URL("qr_templates.json", __CODEDESK_BASE_URL__).toString();
+    const tRes = await fetch(templatesUrl, { cache: "no-store" });
     if (tRes.ok) {
       const tJson = await tRes.json();
       templates = Array.isArray(tJson.templates) ? tJson.templates : [];
+    } else {
+      console.warn("Templates fetch returned non-OK:", tRes.status);
     }
   } catch (e) {
-    console.warn('Template load failed, continuing without templates');
+    console.warn("Template load failed, continuing without templates", e);
   }
 
   // Expose for debugging + Ascend/console introspection
@@ -588,10 +600,24 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
       if (mode === 'template' && templateId) {
         const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + templateId;
 
-        // Find matching template by common id keys
-        const tpl = (templates || []).find(t =>
-          String((t && (t.id || t.template_id || t.templateId || t.TemplateId)) || '').trim() === templateId
-        );
+        // Find matching template by tolerant keys (handles "two" vs "2" vs "TWO" vs slug keys)
+        const wantRaw = String(templateId || '').trim();
+        const want = wantRaw.toLowerCase();
+
+        const tpl = (templates || []).find(t => {
+          if (!t) return false;
+
+          const candidates = [
+            t.id, t.template_id, t.templateId, t.TemplateId,
+            t.slug, t.key, t.code
+          ];
+
+          return candidates.some(v => {
+            const s = String(v || '').trim();
+            if (!s) return false;
+            return s === wantRaw || s.toLowerCase() === want;
+          });
+        });
 
         // Prefer explicit state payloads, otherwise convert the plain template record
         const tplState =
