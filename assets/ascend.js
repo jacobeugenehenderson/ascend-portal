@@ -543,7 +543,28 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
     lane.innerHTML = "";
 
-    if (!items || !items.length) {
+    const CODEDESK_STORE_KEY = "codedesk_working_files_v1";
+
+    function listWorking_() {
+      try {
+        const list = JSON.parse(localStorage.getItem(CODEDESK_STORE_KEY) || "[]");
+        return Array.isArray(list) ? list : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function deleteWorking_(id) {
+      try {
+        const list = listWorking_().filter((x) => String(x.id) !== String(id));
+        localStorage.setItem(CODEDESK_STORE_KEY, JSON.stringify(list));
+      } catch (e) {}
+    }
+
+    const working = listWorking_();
+
+    const hasAnything = (working && working.length) || (items && items.length);
+    if (!hasAnything) {
       const empty = document.createElement("div");
       empty.className = "ascend-job-list-empty";
       empty.textContent = "";
@@ -551,7 +572,74 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       return;
     }
 
-    items.forEach((tpl) => {
+    // ---- WORKING FILES (orange stacked squares + X cancel) ----
+    (working || []).forEach((wf) => {
+      const wfId = (wf && wf.id) ? String(wf.id) : "";
+      const wfName = (wf && wf.name) ? String(wf.name) : "QR Working File";
+      if (!wfId) return;
+
+      const card = document.createElement("div");
+      card.className = "ascend-job-card";
+      card.dataset.codedesk = "working";
+      card.dataset.workingFileId = wfId;
+
+      const mainBtn = document.createElement("button");
+      mainBtn.type = "button";
+      mainBtn.className = "ascend-job-card-main";
+
+      const progress = buildHopperProgress_(1);
+      progress.classList.add("is-working");
+      const dots = progress.querySelectorAll(".ascend-hopper-progress-dot");
+      dots.forEach((d) => (d.dataset.step = "1"));
+
+      const textStack = document.createElement("div");
+      textStack.className = "ascend-job-card-stack";
+
+      const title = document.createElement("div");
+      title.className = "ascend-job-card-title";
+      title.textContent = wfName;
+
+      const meta = document.createElement("div");
+      meta.className = "ascend-job-card-subtitle";
+      meta.textContent = "WORKING FILE";
+      textStack.appendChild(title);
+      textStack.appendChild(meta);
+
+      mainBtn.appendChild(progress);
+      mainBtn.appendChild(textStack);
+
+      mainBtn.addEventListener("click", () => {
+        const target = buildCodeDeskUrl_("new", {
+          working_file_id: wfId,
+          workingFileId: wfId
+        });
+
+        if (!CODEDESK_URL || CODEDESK_URL.indexOf("http") !== 0) {
+          alert("[Codedesk] Destination URL not configured yet.");
+          return;
+        }
+        window.open(target, "_blank", "noopener");
+      });
+
+      const xBtn = document.createElement("button");
+      xBtn.type = "button";
+      xBtn.className = "ascend-job-card-cancel";
+      xBtn.textContent = "×";
+      xBtn.setAttribute("aria-label", "Cancel working file");
+      xBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        deleteWorking_(wfId);
+        renderCodeDeskHopper(items);
+      });
+
+      card.appendChild(mainBtn);
+      card.appendChild(xBtn);
+      lane.appendChild(card);
+    });
+
+    // ---- TEMPLATES (existing behavior) ----
+    (items || []).forEach((tpl) => {
       const templateId = (tpl && (tpl.id || tpl.template_id || tpl.TemplateId)) || "";
       const titleText = (tpl && (tpl.name || tpl.title || tpl.label || tpl.Name)) || "QR Template";
 
@@ -577,20 +665,19 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       title.className = "ascend-job-card-title";
       title.textContent = titleText;
 
-      textStack.appendChild(title);
-
       const meta = document.createElement("div");
-      meta.className = "ascend-job-card-context";
+      meta.className = "ascend-job-card-subtitle";
       meta.textContent = "TEMPLATE";
+      textStack.appendChild(title);
       textStack.appendChild(meta);
 
       mainBtn.appendChild(progress);
       mainBtn.appendChild(textStack);
 
       mainBtn.addEventListener("click", () => {
-      // Parent job association is a later wiring step (needs Ascend job context).
-      openCodeDeskFromTemplate_(tpl, "");
-    });
+        // Parent job association is a later wiring step (needs Ascend job context).
+        openCodeDeskFromTemplate_(tpl, "");
+      });
 
       card.appendChild(mainBtn);
       lane.appendChild(card);

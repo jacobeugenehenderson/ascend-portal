@@ -98,7 +98,7 @@ function upsertJob_(p) {
 
     const header = getHeaderMap_(sh);
     ensureHeaders_(header, [
-      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail',
+      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','DestinationUrl','OwnerEmail',
       'Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted'
     ]);
 
@@ -120,6 +120,7 @@ function upsertJob_(p) {
       Subtitle: opt_(p, 'subtitle', ''),
       Status: opt_(p, 'status', 'open'),
       OpenUrl: opt_(p, 'open_url', ''),
+      DestinationUrl: (opt_(p, 'destination_url', '') || opt_(p, 'destinationUrl', '') || opt_(p, 'dest_url', '') || opt_(p, 'target_url', '') || opt_(p, 'targetUrl', '') || ''),
       OwnerEmail: opt_(p, 'owner_email', ''),
       Collaborators: opt_(p, 'collaborators', ''),
       CreatedAt: opt_(p, 'created_at', nowIso),
@@ -185,7 +186,7 @@ function listJobsForUser_(p) {
 
   const jobsHeader = getHeaderMap_(jobsSh);
   ensureHeaders_(jobsHeader, [
-    'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail',
+    'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','DestinationUrl','OwnerEmail',
     'Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted'
   ]);
 
@@ -231,6 +232,7 @@ function listJobsForUser_(p) {
       Subtitle: job.Subtitle,
       Status: job.Status,
       OpenUrl: job.OpenUrl,
+      DestinationUrl: job.DestinationUrl || '',
       UpdatedAt: job.UpdatedAt,
       Pinned: pinned,
       Hidden: hidden,

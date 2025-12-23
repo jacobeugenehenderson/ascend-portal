@@ -433,7 +433,7 @@ textarea:focus {
   gap: 1.5rem;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* When logged in, collapse the login column entirely */
@@ -608,7 +608,7 @@ textarea:focus {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .ascend-dashboard-header {
@@ -682,7 +682,7 @@ textarea:focus {
 
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .ascend-row {
@@ -862,6 +862,40 @@ textarea:focus {
   transition: background-color var(--ascend-transition-fast);
 }
 
+.ascend-job-card {
+  position: relative;
+}
+
+.ascend-job-card-cancel {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.82);
+
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+
+  transition: background-color var(--ascend-transition-fast), border-color var(--ascend-transition-fast);
+}
+
+.ascend-job-card-cancel:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.26);
+}
+
 /* =========================================================
  * FileRoom hopper provenance field
  * (matches the old 3-stacked-squares real estate)
@@ -982,6 +1016,11 @@ textarea:focus {
 /* CodeDesk templates: show “already done” (all blue) */
 .ascend-hopper-progress.is-template .ascend-hopper-progress-dot {
   background: var(--ascend-hopper-stage-3) !important;
+  opacity: 1 !important;
+}
+
+.ascend-hopper-progress.is-working .ascend-hopper-progress-dot {
+  background: var(--ascend-hopper-stage-1) !important;
   opacity: 1 !important;
 }
 

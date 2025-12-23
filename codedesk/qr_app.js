@@ -716,6 +716,29 @@ const CODEDESK_STYLE_IDS = [
 ];
 
 // Build a stable export payload (safe if some IDs don’t exist in DOM)
+window.addEventListener('beforeunload', (e) => {
+  try {
+    const wid = String(window.__CODEDESK_CURRENT_WF_ID__ || '').trim();
+    if (!wid) return;
+
+    // Unsaved changes warning
+    if (window.__CODEDESK_DIRTY__) {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+
+    // Never-finished warning (no FileRoom deliverable yet)
+    const rec = window.codedeskOpenWorkingFile(wid);
+    const neverFinished = !(rec && rec.finishedAt && rec.fileroom && rec.fileroom.drive_file_id);
+    if (neverFinished) {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  } catch (err) {}
+});
+
 window.okqralExportState = function okqralExportState(){
   const payload = { v: 1, at: Date.now(), fields: {}, style: {} };
 
@@ -824,16 +847,58 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(name, { id } =
 };
 
 window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
-  const files = _readWorkingFiles();
-  const rec = files.find(f => f.id === id);
-  if (!rec || !rec.state) return false;
-  return window.okqralImportState(rec.state);
-};
+  try {
+    const list = JSON.parse(localStorage.getItem(CODEDESK_STORE_KEY) || '[]');
+    const rec = (list||[]).find(x => String(x.id) === String(id));
+    if (!rec) return null;
 
-window.codedeskDeleteWorkingFile = function codedeskDeleteWorkingFile(id){
-  const files = _readWorkingFiles().filter(f => f.id !== id);
-  _writeWorkingFiles(files);
-  return true;
+    window.__CODEDESK_CURRENT_WF_ID__ = String(id || '').trim();
+
+    if (rec.state) window.okqralImportState(rec.state);
+
+    // Opening a working file should immediately refresh the paired FileRoom deliverable (if it exists).
+    const hasPair = !!(rec && rec.fileroom && rec.fileroom.drive_file_id && rec.finishedAt);
+    if (hasPair) {
+      setTimeout(async () => {
+        try {
+          const svgNode = getCurrentSvgNode();
+          if (!svgNode) return;
+
+          const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
+          if (!folderId) return;
+
+          const svgText = new XMLSerializer().serializeToString(svgNode);
+          const fileName = 'codedesk_auto_update.svg';
+
+          await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'upsertQrAsset',
+              folder_id: folderId,
+              svg_text: svgText,
+              file_name: fileName,
+              drive_file_id: String(rec.fileroom.drive_file_id || ''),
+              app: 'codedesk',
+              source_id: String(id || ''),
+              title: 'CODEDESK QR',
+              subtitle: 'CODEDESK — FLATTENED',
+              status: 'delivered',
+              owner_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : ''
+            })
+          });
+        } catch (e) {
+          console.warn('CodeDesk auto-update on open failed', e);
+        }
+      }, 0);
+    }
+
+    window.__CODEDESK_DIRTY__ = false;
+    return rec;
+  } catch (e) {
+    console.warn('codedeskOpenWorkingFile failed', e);
+    return null;
+  }
 };
 
 /* === END CODEDESK WORKING FILES ===================================== */
@@ -2896,6 +2961,15 @@ async function reportExport() {
   }
 }
 
+// =====================================================
+// CodeDesk → FileRoom pairing config
+// =====================================================
+window.CODEDESK_FILEROOM_API_BASE = 'https://script.google.com/macros/s/AKfycbxv0QKYdwr0_woTAMr33R4MNc6KTDtQDN_aQCx7nWZy2oivRHNLS_O4PtEQ6D2W6Njx/exec';
+window.CODEDESK_FILEROOM_FOLDER_ID = window.CODEDESK_FILEROOM_FOLDER_ID || ''; // <-- YOU must set this (see questions below)
+
+// Dirty tracking for navigation safety + autosync
+window.__CODEDESK_DIRTY__ = window.__CODEDESK_DIRTY__ || false;
+
 document.getElementById('exportBtn')?.addEventListener('click', async () => {
   const wantPng = document.getElementById('wantPng')?.checked;
   const wantSvg = document.getElementById('wantSvg')?.checked;
@@ -2914,9 +2988,65 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
   // log to Sheets (non-blocking)
   reportExport().catch(() => { /* silent */ });
 
-  // then download(s)
-  //if (wantSvg) downloadSvg(`${base}.svg`);//
+  // local downloads (unchanged intent)
+  if (wantSvg) downloadSvg(`${base}.svg`);
   if (wantPng) downloadPng(`${base}.png`);
+
+  // ==== FINISH: create/update paired FileRoom deliverable ====
+  try {
+    const svgNode = getCurrentSvgNode();
+    if (!svgNode) throw new Error('Finish: no SVG found');
+
+    const workingId = (window.__CODEDESK_CURRENT_WF_ID__ || '').trim();
+    if (!workingId) throw new Error('Finish: no working file id in session');
+
+    const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
+    if (!folderId) throw new Error('Finish: CODEDESK_FILEROOM_FOLDER_ID is missing');
+
+    const svgText = new XMLSerializer().serializeToString(svgNode);
+    const fileName = `${base || 'codedesk'}.svg`;
+
+    const rec = window.codedeskOpenWorkingFile(workingId);
+    const prevDriveId = (rec && rec.fileroom && rec.fileroom.drive_file_id) ? String(rec.fileroom.drive_file_id) : '';
+
+    const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'upsertQrAsset',
+        folder_id: folderId,
+        svg_text: svgText,
+        file_name: fileName,
+        drive_file_id: prevDriveId || '',
+        app: 'codedesk',
+        source_id: workingId,
+        title: base || 'CODEDESK QR',
+        subtitle: 'CODEDESK — FLATTENED',
+        status: 'delivered',
+        owner_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : ''
+      })
+    });
+
+    const j = await res.json();
+    if (!j || !j.ok) throw new Error((j && j.error) ? j.error : 'Finish: FileRoom upsert failed');
+
+    const data = j.data || {};
+    const driveId = String(data.drive_file_id || '').trim();
+    const openUrl = String(data.open_url || '').trim();
+    const jobKey  = String(data.ascend_job_key || '').trim();
+
+    // Persist pairing into the working file record
+    if (rec) {
+      rec.finishedAt = Date.now();
+      rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
+      rec.updatedAt = Date.now();
+      window.codedeskSaveWorkingFile(rec);
+    }
+
+    window.__CODEDESK_DIRTY__ = false;
+  } catch (e) {
+    alert(String(e && e.message ? e.message : e));
+  }
 });
 
 // === Stacked-mode "park under phone" helper ==========================
