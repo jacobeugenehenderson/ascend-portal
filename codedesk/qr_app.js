@@ -428,6 +428,22 @@ emojiGrid.appendChild(b); }); }
     console.warn('Template load failed, continuing without templates');
   }
 
+  // --- Template resolution (Ascend → CodeDesk) ---
+  try {
+    const entry = window.CODEDESK_ENTRY || {};
+    const tid = (entry.template_id || '').trim();
+
+    if (entry.mode === 'template' && tid && templates.length) {
+      const tpl = templates.find(t => String(t.id || '').trim() === tid);
+
+      if (tpl && tpl.state && typeof window.okqralImportState === 'function') {
+        window.okqralImportState(tpl.state);
+      }
+    }
+  } catch (e) {
+    console.warn('Template resolution failed', e);
+  }
+
   } catch (e) {
   // Fallback to a baked-in copy (keeps UI working if fetch fails)
   manifest = {
