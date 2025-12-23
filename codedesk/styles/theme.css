@@ -211,6 +211,12 @@ html.light, :root.light {
 html, body{
   height: 100%;
   overflow-x: hidden;
+  overflow-y: auto; /* default: allow normal scrolling */
+}
+
+/* Only lock scroll on pages that actually have the stepper layout */
+html:has(#stepper),
+body:has(#stepper){
   overflow-y: hidden; /* let #stepper own scrolling */
 }
 
