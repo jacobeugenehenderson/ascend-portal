@@ -46,10 +46,10 @@
       "eyeRingShape": "Rounded",
       "eyeCenterShape": "Circle",
       "modulesMode": "Emoji",
-      "modulesEmoji": "🟦",
+      "modulesEmoji": "🟥",
       "modulesScale": 0.9,
       "centerMode": "Emoji",
-      "centerEmoji": "🟦",
+      "centerEmoji": "🟥",
       "centerScale": 1
     },
     {
@@ -98,10 +98,10 @@
       "eyeRingShape": "Rounded",
       "eyeCenterShape": "Circle",
       "modulesMode": "Emoji",
-      "modulesEmoji": "🟦",
+      "modulesEmoji": "🟨",
       "modulesScale": 0.9,
       "centerMode": "Emoji",
-      "centerEmoji": "🟦",
+      "centerEmoji": "🟨",
       "centerScale": 1
     },
     {
