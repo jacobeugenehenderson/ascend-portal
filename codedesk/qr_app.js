@@ -441,11 +441,12 @@ emojiGrid.appendChild(b); }); }
     console.warn('Template load failed, continuing without templates');
   }
 
-  // Expose for console/debug
-  window.CODEDESK_TEMPLATES = templates;
-
   // Expose for debugging + Ascend/console introspection
   window.CODEDESK_TEMPLATES = templates;
+
+// force UI refresh now that templates are in memory
+try { if (typeof render === "function") render(); } catch (e) {}
+try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } catch (e) {}
 
   // --- Template-open bootstrap ---
   // If CodeDesk was opened from Ascend in "template" mode, we:
@@ -583,7 +584,7 @@ window.getTypeFields = (t) => {
 };
 
 window.getPresets = (t) => {
-  const presets = manifest.presets || {};
+  const items = (window.CODEDESK_TEMPLATES || []);
   const want    = String(t || '').trim().toLowerCase();
   const key     = Object.keys(presets).find(k => k.toLowerCase() === want) || t;
   return presets[key] || [];
