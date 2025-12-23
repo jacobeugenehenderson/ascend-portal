@@ -652,11 +652,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       mainBtn.type = "button";
       mainBtn.className = "ascend-job-card-main";
 
-      // Use the existing progress footprint for consistent layout,
-      // but force all three dots to render in the "step 3" color (Ascend blue).
+      // Use the existing progress footprint; mark as template so CSS forces all-blue.
       const progress = buildHopperProgress_(3);
-      const dots = progress.querySelectorAll(".ascend-hopper-progress-dot");
-      dots.forEach((d) => (d.dataset.step = "3"));
+      progress.classList.add("is-template");
 
       const textStack = document.createElement("div");
       textStack.className = "ascend-job-card-stack";

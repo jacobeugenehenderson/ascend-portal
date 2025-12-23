@@ -48,6 +48,17 @@ function doGet(e) {
         data = upsertJob_(p);
         break;
 
+      case 'upsertQrAsset':
+        // NOTE: GET is supported for small payloads only.
+        // For SVG/card, use POST (doPost) to avoid URL-length limits.
+        data = upsertQrAsset_(p, null);
+        break;
+
+      case 'upsertQrPngAsset':
+        // NOTE: PNG payloads must use POST (doPost). This GET handler exists only for symmetry/testing.
+        data = upsertQrPngAsset_(p);
+        break;
+
       case 'listJobsForUser':
         data = listJobsForUser_(p);
         break;
@@ -75,9 +86,217 @@ function doGet(e) {
   }
 }
 
+function doPost(e) {
+  // JSON body:
+  // {
+  //   "action": "upsertQrAsset",
+  //   "folder_id": "...",
+  //   "svg_text": "<svg ...>...</svg>",
+  //   "file_name": "something.svg",
+  //   "drive_file_id": "(optional)",
+  //   "app": "codedesk",
+  //   "source_id": "(working file id)",
+  //   "ascend_job_key": "(optional)",
+  //   "title": "(optional)",
+  //   "subtitle": "(optional)",
+  //   "status": "(optional)",
+  //   "owner_email": "(optional)"
+  // }
+  try {
+    const raw = e && e.postData && e.postData.contents ? e.postData.contents : '';
+    const body = raw ? JSON.parse(raw) : {};
+    const action = String(body.action || '').trim();
+    if (!action) throw new Error('Missing action');
+
+    let data;
+    switch (action) {
+      case 'upsertQrAsset':
+        data = upsertQrAsset_(body, raw);
+        break;
+
+      case 'upsertQrPngAsset':
+        data = upsertQrPngAsset_(body);
+        break;
+
+      default:
+        throw new Error('Unknown action: ' + action);
+    }
+
+    return jsonp_('', { ok: true, action, data });
+  } catch (err) {
+    return jsonp_('', {
+      ok: false,
+      action: null,
+      error: String(err && err.message ? err.message : err),
+      version: FILEROOM_API_VERSION
+    });
+  }
+}
+
 /** =========================
  * ACTIONS
  * ======================= */
+
+function upsertQrAsset_(p, rawBody) {
+  // Required:
+  //  - folder_id
+  //  - svg_text
+  //  - file_name
+  //  - app
+  //  - source_id
+  //
+  // Optional:
+  //  - drive_file_id (if updating an existing Drive file)
+  //  - title, subtitle, status, owner_email, ascend_job_key
+  //
+  const folderId = String(p.folder_id || '').trim();
+  const svgText  = String(p.svg_text || '').trim();
+  const fileName = String(p.file_name || '').trim();
+
+  const app = String(p.app || '').trim();
+  const sourceId = String(p.source_id || '').trim();
+
+  if (!folderId) throw new Error('upsertQrAsset: missing folder_id');
+  if (!svgText) throw new Error('upsertQrAsset: missing svg_text');
+  if (!fileName) throw new Error('upsertQrAsset: missing file_name');
+  if (!app) throw new Error('upsertQrAsset: missing app');
+  if (!sourceId) throw new Error('upsertQrAsset: missing source_id');
+
+  const existingFileId = String(p.drive_file_id || '').trim();
+
+  const folder = DriveApp.getFolderById(folderId);
+  const blob = Utilities.newBlob(svgText, 'image/svg+xml', fileName);
+
+  let file;
+  if (existingFileId) {
+    file = DriveApp.getFileById(existingFileId);
+    file.setContent(svgText);
+    file.setName(fileName);
+  } else {
+    file = folder.createFile(blob);
+  }
+
+  const openUrl = file.getUrl();
+
+  const jobTitle = String(p.title || fileName.replace(/\.svg$/i, '') || 'QR Deliverable');
+  const jobSubtitle = String(p.subtitle || 'CODEDESK — FLATTENED');
+  const jobStatus = String(p.status || 'delivered');
+  const ownerEmail = String(p.owner_email || '').trim();
+
+  const ascendJobKey = String(p.ascend_job_key || (String(app).toUpperCase() + '_FLAT:' + sourceId)).trim();
+
+  const upsert = upsertJob_({
+    ascend_job_key: ascendJobKey,
+    app: app,
+    source_id: sourceId,
+    title: jobTitle,
+    subtitle: jobSubtitle,
+    status: jobStatus,
+    open_url: openUrl,
+    owner_email: ownerEmail,
+    lane: 'FILEROOM'
+  });
+
+  return {
+    drive_file_id: file.getId(),
+    open_url: openUrl,
+    ascend_job_key: ascendJobKey,
+    upsert_job: upsert
+  };
+}
+
+function upsertQrPngAsset_(p) {
+  // Requires Advanced Drive Service: Drive API
+  // Required:
+  //  - folder_id
+  //  - png_data_url   (data:image/png;base64,...)
+  //  - source_id
+  //
+  // Optional:
+  //  - title, subtitle, status, owner_email, ascend_job_key
+  //
+  // Behavior:
+  //  - Stable Drive file identity by stable filename CODEDESK_<source_id>.png
+  //  - Overwrites the same Drive file (same ID) on every call
+  //  - Upserts a FileRoom JOB pointing at the Drive URL
+  //
+  const folderId = String(p.folder_id || '').trim();
+  const dataUrl  = String(p.png_data_url || '').trim();
+  const sourceId = String(p.source_id || '').trim();
+
+  if (!folderId) throw new Error('upsertQrPngAsset: missing folder_id');
+  if (!dataUrl)  throw new Error('upsertQrPngAsset: missing png_data_url');
+  if (!sourceId) throw new Error('upsertQrPngAsset: missing source_id');
+
+  const m = dataUrl.match(/^data:image\/png;base64,(.+)$/i);
+  if (!m) throw new Error('upsertQrPngAsset: png_data_url must be data:image/png;base64,...');
+
+  const bytes = Utilities.base64Decode(m[1]);
+  const stableName = 'CODEDESK_' + sourceId + '.png';
+  const blob = Utilities.newBlob(bytes, 'image/png', stableName);
+
+  // Find or create in the target folder by name
+  const folder = DriveApp.getFolderById(folderId);
+  const it = folder.getFilesByName(stableName);
+
+  let fileId = '';
+  if (it.hasNext()) {
+    fileId = it.next().getId();
+
+    // Overwrite binary content IN PLACE (same Drive file ID)
+    Drive.Files.update(
+      { title: stableName, mimeType: 'image/png' },
+      fileId,
+      blob
+    );
+  } else {
+    const created = Drive.Files.insert(
+      {
+        title: stableName,
+        mimeType: 'image/png',
+        parents: [{ id: folderId }]
+      },
+      blob
+    );
+    fileId = created && created.id ? String(created.id) : '';
+  }
+
+  // Prefer Drive API webViewLink/alternateLink if available
+  let openUrl = '';
+  try {
+    const meta = Drive.Files.get(fileId);
+    openUrl = String((meta && (meta.webViewLink || meta.alternateLink)) ? (meta.webViewLink || meta.alternateLink) : '').trim();
+  } catch (e) {
+    // Fallback: DriveApp file URL
+    openUrl = DriveApp.getFileById(fileId).getUrl();
+  }
+
+  const jobTitle = String(p.title || 'CODEDESK QR').trim();
+  const jobSubtitle = String(p.subtitle || 'CODEDESK — FLATTENED (PNG)').trim();
+  const jobStatus = String(p.status || 'delivered').trim();
+  const ownerEmail = String(p.owner_email || '').trim();
+
+  const ascendJobKey = String(p.ascend_job_key || ('CODEDESK_FLAT:' + sourceId)).trim();
+
+  const upsert = upsertJob_({
+    ascend_job_key: ascendJobKey,
+    app: 'codedesk',
+    source_id: sourceId,
+    title: jobTitle,
+    subtitle: jobSubtitle,
+    status: jobStatus,
+    open_url: openUrl,
+    owner_email: ownerEmail,
+    lane: 'FILEROOM'
+  });
+
+  return {
+    drive_file_id: fileId,
+    open_url: openUrl,
+    ascend_job_key: ascendJobKey,
+    upsert_job: upsert
+  };
+}
 
 /**
  * upsertJob
