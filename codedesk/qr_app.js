@@ -584,9 +584,24 @@ window.getTypeFields = (t) => {
 };
 
 window.getPresets = (t) => {
-  const items = (window.CODEDESK_TEMPLATES || []);
-  const want    = String(t || '').trim().toLowerCase();
-  const key     = Object.keys(presets).find(k => k.toLowerCase() === want) || t;
+  const want = String(t || "").trim().toLowerCase();
+
+  // Prefer templates loaded from qr_templates.json (Ascend/CodeDesk templates)
+  const templates = Array.isArray(window.CODEDESK_TEMPLATES) ? window.CODEDESK_TEMPLATES : [];
+  if (templates.length) {
+    // If templates carry a type field, return only matches for the current type.
+    const byType = templates.filter((p) => {
+      const ty = (p.qrType || p.qr_type || p.type || "").toString().trim().toLowerCase();
+      return ty && ty === want;
+    });
+    if (byType.length) return byType;
+
+    // Otherwise, just return all templates (better than returning nothing).
+    return templates;
+  }
+
+  // Fallback: legacy presets from the manifest
+  const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
   return presets[key] || [];
 };
 
