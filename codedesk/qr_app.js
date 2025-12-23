@@ -2259,6 +2259,14 @@ function render() {
   const body     = (document.getElementById('captionBody')?.value || '').trim().slice(0, 60);
   const hasCaption = !!(headline || body);
 
+  // Preview stage must match the same two-state geometry as composeCardSvg()
+  // - no caption: square
+  // - caption present: wallet card (0.63 : 1 width : height)
+  const stageEl = preview.closest('.preview-stage');
+  if (stageEl) {
+    stageEl.style.aspectRatio = hasCaption ? '0.63 / 1' : '1 / 1';
+  }
+
   // Toggle visual style (stroke vs fill card)
   const isTransparent = !document.getElementById('bgTransparent')?.checked;
   preview.classList.toggle('card--stroke', isTransparent);
