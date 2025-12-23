@@ -438,6 +438,32 @@ body.ascend-app-body {
   box-shadow: none;
 }
 
+/* =========================================================
+   CODEDESK — Finish/Setup button states
+   ========================================================= */
+
+/* Busy feedback */
+.ascend-app-primary-btn.is-busy {
+  cursor: progress;
+  filter: brightness(0.96);
+}
+
+/* “Setup complete” — dramatic crosshatch warning state */
+.ascend-app-primary-btn.is-setup-done {
+  border-color: rgba(220, 38, 38, 0.55);
+  color: rgba(255, 255, 255, 0.92);
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(220, 38, 38, 0.34) 0px,
+      rgba(220, 38, 38, 0.34) 6px,
+      rgba(0, 0, 0, 0.0) 6px,
+      rgba(0, 0, 0, 0.0) 12px
+    ),
+    linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.92));
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.25);
+}
+
 /* Status messages (JS sets className='status' / 'status error', etc.) */
 .status {
   margin-top: 10px;

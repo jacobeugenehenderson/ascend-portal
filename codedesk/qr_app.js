@@ -1079,8 +1079,16 @@ window.codedeskSyncFileRoomDebounced = function codedeskSyncFileRoomDebounced(re
 };
 
 function codedeskAutosaveKick(){
-  const activeId = _getActiveWorkingFileId();
-  if (!activeId) return; // no active file → nothing to autosave
+  let activeId = _getActiveWorkingFileId();
+
+  // If the user has started editing but no working file exists yet,
+  // establish it immediately so it appears in the hopper.
+  if (!activeId) {
+    try { activeId = window.codedeskFinishSetup && window.codedeskFinishSetup(); } catch(e){}
+    activeId = activeId || _getActiveWorkingFileId();
+  }
+
+  if (!activeId) return; // still nothing to autosave (should be rare)
 
   if (_codedeskAutosaveTimer) clearTimeout(_codedeskAutosaveTimer);
   _codedeskAutosaveTimer = setTimeout(() => {
@@ -1172,9 +1180,14 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   document.querySelectorAll('button').forEach(b => { if (isFinishButton(b)) relabel(b); });
 
   // capture click for finish/setup
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
   const btn = e.target && e.target.closest && e.target.closest('button');
   if (!isFinishButton(btn)) return;
+
+  const prevText = (btn.textContent || '').trim();
+  btn.disabled = true;
+  btn.classList.add('is-busy');
+  btn.textContent = 'Saving…';
 
   let id = '';
   try { id = window.codedeskFinishSetup(); } catch(err){}
@@ -1182,9 +1195,15 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   // After Finish, ensure FileRoom pairing exists or is updated
   try {
     if (id && window.codedeskSyncFileRoomNow) {
-      window.codedeskSyncFileRoomNow('finish');
+      await window.codedeskSyncFileRoomNow('finish');
     }
   } catch(e){}
+
+  // “Setup complete” visual state (does NOT change lifecycle logic)
+  btn.classList.remove('is-busy');
+  btn.classList.add('is-setup-done');
+  btn.textContent = 'Setup complete';
+  btn.disabled = false;
 
   relabel(btn);
 }, true);
