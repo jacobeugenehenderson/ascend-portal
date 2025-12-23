@@ -1,4 +1,10 @@
 "use strict";
+
+// ------------------------------------------------------------
+// CodeDesk template bootstrap gate (single-run invariant)
+// ------------------------------------------------------------
+window.__CODEDESK_BOOTSTRAP_DONE__ = window.__CODEDESK_BOOTSTRAP_DONE__ || false;
+const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
 // This file runs in the browser.  No <script> or HTML tags belong here.
 
 (function loadQRCodeOnce() {
@@ -434,7 +440,7 @@ emojiGrid.appendChild(b); }); }
   // Expose for console/debug
   window.CODEDESK_TEMPLATES = templates;
 
-  // If opened via Ascend in template mode, import the template immediately.
+  // If opened via Ascend in template mode, defer all imports to the Template-open bootstrap below.
   // IMPORTANT: templates in qr_templates.json are the state blob (no .state property required).
   try {
     const entry = window.CODEDESK_ENTRY || {};
@@ -511,22 +517,6 @@ emojiGrid.appendChild(b); }); }
     }
   } catch (e) {
     console.warn('CodeDesk template bootstrap failed (non-fatal)', e);
-  }
-
-  // --- Template resolution (Ascend → CodeDesk) ---
-  try {
-    const entry = window.CODEDESK_ENTRY || {};
-    const tid = (entry.template_id || '').trim();
-
-    if (entry.mode === 'template' && tid && templates.length) {
-      const tpl = templates.find(t => String(t.id || '').trim() === tid);
-
-      if (tpl && tpl.state && typeof window.okqralImportState === 'function') {
-        window.okqralImportState(tpl.state);
-      }
-    }
-  } catch (e) {
-    console.warn('Template resolution failed', e);
   }
 
   } catch (e) {
@@ -810,64 +800,6 @@ window.okqralImportState = function okqralImportState(state){
 
   return true;
 };
-
-/* === CODEDESK TEMPLATE RESOLUTION (add-only) ============================
- * If launched with:
- *   ?mode=template&template_id=...
- * then:
- *   1) If template_id looks like a working-file id (wf_*), open it.
- *   2) Else, try to find a matching template in qr_templates.json (by id)
- *      and import its .state (or .payload).
- * Notes:
- *   - Runs once per page load.
- *   - Defers one tick so the type-change listener + DOM are ready.
- * ===================================================================== */
-(function codedeskResolveTemplateOnce(){
-  if (window._codedeskTemplateResolved) return;
-  window._codedeskTemplateResolved = true;
-
-  const entry = window.CODEDESK_ENTRY || {};
-  if (String(entry.mode || '') !== 'template') return;
-
-  const templateId = String(entry.template_id || '').trim();
-  if (!templateId) return;
-
-  // Expose for debugging in console
-  try { window.CODEDESK_TEMPLATES = templates; } catch(e){}
-
-  setTimeout(() => {
-    let ok = false;
-
-    // 1) Working file id path
-    if (/^wf_/.test(templateId) && typeof window.codedeskOpenWorkingFile === 'function') {
-      ok = !!window.codedeskOpenWorkingFile(templateId);
-      if (ok) return;
-    }
-
-    // 2) qr_templates.json path
-    try {
-      const list = Array.isArray(templates) ? templates : [];
-      const t = list.find(x => {
-        const id = String((x && (x.id || x.template_id || x.key)) || '').trim();
-        return id === templateId;
-      });
-
-      if (t) {
-        const blob = t.state || t.payload || t.data || null;
-        if (blob && typeof window.okqralImportState === 'function') {
-          ok = !!window.okqralImportState(blob);
-        }
-      }
-    } catch(e){}
-
-    if (!ok) {
-      console.warn('[CODEDESK] template resolution failed:', templateId, entry);
-      console.warn('[CODEDESK] templates available:', (Array.isArray(templates) ? templates.length : 0));
-    }
-  }, 0);
-})();
-
-/* === END CODEDESK TEMPLATE RESOLUTION ================================== */
 
 // Local working-file registry: { id, name, createdAt, updatedAt, state }
 function _readWorkingFiles(){
