@@ -405,17 +405,6 @@ body{
   line-height: 1.2;
 }
 
-/* If the input is inside a <label>, collapse it to a single column */
-label:has(#campaign),
-label:has(#captionBody){
-  display:grid;
-  grid-template-columns: 1fr !important;
-}
-label:has(#campaign) > *,
-label:has(#captionBody) > *{
-  min-width:0;
-}
-
 /* Caption text input: single row, full width */
 #campaign{
   display:block;
@@ -630,36 +619,6 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 .step-card[data-step="design"] .step-header-wrap [data-step-toggle]{
   flex:1 1 auto;
   padding-right:0;
-}
-
-/* Theme-tinted section headers — translucent, per-section color */
-body.theme--caption  .step-card[data-step="caption"] .step-header,
-body.theme--design   .step-card[data-step="design"] .step-header,
-body.theme--mechanicals .step-card[data-step="mechanicals"] .step-header,
-body.theme--finish   .step-card[data-step="finish"] .step-header {
-  background: color-mix(in oklab,
-    var(--ui-surface) 82%,
-    var(--step-color-primary) 18%
-  );
-  backdrop-filter: saturate(1.1) blur(6px);
-  border-bottom-color: var(--md-sys-color-outline-variant);
-}
-
-/* STEP CARD STROKES — DECOUPLE FROM GLOBAL LILAC
-   --------------------------------------------- */
-
-/* All stepper cards use the neutral closed stroke by default,
-   not the global --ui-stroke (lilac). */
-#stepper > .step-card {
-  border-color: var(--stepper-stroke-closed) !important;
-}
-
-/* Open step: outer stroke follows the section accent color,
-   never the global lilac outline. */
-#stepper .step-card.is-open {
-  border-color: var(--step-color-primary) !important;
-  box-shadow: var(--featured-stroke-glow);
-  background: var(--step-card-open-bg);
 }
 
 /* =========================
@@ -888,7 +847,6 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
 
 /* DISPLAY: section headers (Caption / Design / Mechanicals / Finish) */
 .step-header,
-.step-header button,
 .step-header .title{
   font-family: var(--font-family);
   font-size: var(--typo-display-size);
@@ -989,6 +947,11 @@ textarea::placeholder{
 }
 
 #emojiSearch { display: none !important; }
+
+/* There should be no "Details" step in CodeDesk */
+.step-card[data-step="details"]{
+  display: none !important;
+}
 
 /* =========================
    5. PREVIEW LAYOUT
@@ -1283,18 +1246,21 @@ label.text-sm.block{
 }
 
 /* Rows that include a color swatch: title · swatch · hex */
-label:has(input[type="color"]){
+.step-card[data-step="design"] label:has(input[type="color"]),
+.step-card[data-step="mechanicals"] label:has(input[type="color"]){
   grid-template-columns: auto auto 1fr; /* title, chip, hex input */
 }
 
 /* Make the hex field actually flex and not collapse */
-label:has(input[type="color"]) input[type="text"]{
+.step-card[data-step="design"] label:has(input[type="color"]) input[type="text"],
+.step-card[data-step="mechanicals"] label:has(input[type="color"]) input[type="text"]{
   width: 100%;
   min-width: 16ch;     /* keep it readable on tight layouts */
 }
 
 /* Optional: keep the chip from crowding the field */
-label:has(input[type="color"]) input[type="color"]{
+.step-card[data-step="design"] label:has(input[type="color"]) input[type="color"],
+.step-card[data-step="mechanicals"] label:has(input[type="color"]) input[type="color"]{
   margin-inline-start: .25rem;
 }
 
