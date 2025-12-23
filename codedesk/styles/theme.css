@@ -211,7 +211,7 @@ html.light, :root.light {
 html, body{
   height: 100%;
   overflow-x: hidden;
-  overflow-y: auto; /* default: allow normal scrolling */
+  overflow-y: auto; /* allow native scroll + middle-click autoscroll */
 }
 
 body{
