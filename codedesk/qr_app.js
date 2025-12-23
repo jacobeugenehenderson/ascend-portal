@@ -428,6 +428,63 @@ emojiGrid.appendChild(b); }); }
     console.warn('Template load failed, continuing without templates');
   }
 
+  // Expose for debugging + Ascend/console introspection
+  window.CODEDESK_TEMPLATES = templates;
+
+  // --- Template-open bootstrap ---
+  // If CodeDesk was opened from Ascend in "template" mode, we:
+  //  1) resolve template_id → template record
+  //  2) on first open, import its state and create a local working file
+  //  3) on subsequent reloads, open the already-created working file
+  try {
+    const entry = window.CODEDESK_ENTRY || {};
+    const mode = String(entry.mode || '').toLowerCase();
+    const templateId = String(entry.template_id || entry.templateId || '').trim();
+
+    if (mode === 'template' && templateId) {
+      const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + templateId;
+
+      // Find matching template by common id keys
+      const tpl = (templates || []).find(t =>
+        String((t && (t.id || t.template_id || t.templateId || t.TemplateId)) || '').trim() === templateId
+      );
+
+      // Accept a few common state payload keys (pick one canonical shape)
+      const tplState =
+        (tpl && (tpl.state || tpl.okqral_state || tpl.export_state || tpl.payload)) || null;
+
+      // If we already created a working file for this template, reopen it.
+      const existingWfId = (function(){
+        try { return String(localStorage.getItem(BOOT_KEY) || '').trim(); } catch(e){ return ''; }
+      })();
+
+      if (existingWfId) {
+        // Ensure the UI reflects the persisted working-file state
+        if (typeof window.codedeskOpenWorkingFile === 'function') {
+          window.codedeskOpenWorkingFile(existingWfId);
+        }
+      } else if (tplState && typeof window.okqralImportState === 'function') {
+        // First-time bootstrap: import → save → reopen
+        window.okqralImportState(tplState);
+
+        if (typeof window.codedeskSaveWorkingFile === 'function') {
+          const wfName = String((tpl && (tpl.name || tpl.title || tpl.label)) || 'QR Template').trim() || 'QR Template';
+          const newWfId = window.codedeskSaveWorkingFile(wfName);
+
+          try { localStorage.setItem(BOOT_KEY, String(newWfId || '').trim()); } catch(e){}
+
+          if (newWfId && typeof window.codedeskOpenWorkingFile === 'function') {
+            window.codedeskOpenWorkingFile(newWfId);
+          }
+        }
+      } else {
+        console.warn('CodeDesk template bootstrap: could not resolve template or state for', templateId, tpl);
+      }
+    }
+  } catch (e) {
+    console.warn('CodeDesk template bootstrap failed (non-fatal)', e);
+  }
+
   // --- Template resolution (Ascend → CodeDesk) ---
   try {
     const entry = window.CODEDESK_ENTRY || {};
