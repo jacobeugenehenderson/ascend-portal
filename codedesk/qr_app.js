@@ -786,7 +786,7 @@ window.okqralImportState = function okqralImportState(state){
   return true;
 };
 
-// Local working-file registry: { id, name, createdAt, updatedAt, state }
+// Local working-file registry: { id, name, createdAt, updatedAt, state, finishedAt, fileroom }
 function _readWorkingFiles(){
   try {
     const raw = localStorage.getItem(CODEDESK_STORE_KEY);
@@ -811,8 +811,44 @@ function _setActiveWorkingFileId(id){
   } catch(e){}
 }
 
+function _getWorkingFileRecordById(id){
+  const files = _readWorkingFiles();
+  return files.find(f => String(f.id || '') === String(id || '')) || null;
+}
+
+function _upsertWorkingFileRecord(rec){
+  if (!rec || !rec.id) return null;
+
+  const now = Date.now();
+  const files = _readWorkingFiles();
+  const idx = files.findIndex(f => f.id === rec.id);
+
+  const prev = (idx >= 0) ? files[idx] : null;
+
+  const next = Object.assign({}, prev || {}, rec);
+
+  // Always keep CreatedAt stable once created
+  next.createdAt = prev ? prev.createdAt : (rec.createdAt || now);
+  next.updatedAt = rec.updatedAt || now;
+
+  if (idx >= 0) files[idx] = next;
+  else files.unshift(next);
+
+  _writeWorkingFiles(files);
+  _setActiveWorkingFileId(next.id);
+
+  // Keep a session-visible pointer for Finish/Autosave
+  try { window.__CODEDESK_CURRENT_WF_ID__ = String(next.id || '').trim(); } catch(e){}
+
+  return next;
+}
+
 window.codedeskGetActiveWorkingFileId = function codedeskGetActiveWorkingFileId(){
   return _getActiveWorkingFileId();
+};
+
+window.codedeskGetWorkingFileRecord = function codedeskGetWorkingFileRecord(id){
+  return _getWorkingFileRecordById(id);
 };
 
 window.codedeskListWorkingFiles = function codedeskListWorkingFiles(){
@@ -821,38 +857,64 @@ window.codedeskListWorkingFiles = function codedeskListWorkingFiles(){
   }));
 };
 
-// Save (create-or-update). If id is provided, it updates the same record.
-// If id is omitted, it creates a new record and becomes the active working file.
-window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(name, { id } = {}){
+// Save (create-or-update).
+// Supports BOTH call shapes:
+//   codedeskSaveWorkingFile(name, {id})
+//   codedeskSaveWorkingFile(recObjectWithIdAndOptionalFileroomEtc)
+window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(a, b){
+  // Object form: codedeskSaveWorkingFile(rec)
+  if (a && typeof a === 'object' && a.id) {
+    // Always refresh the serialized state unless explicitly provided
+    if (!('state' in a)) {
+      try { a.state = window.okqralExportState(); } catch(e){}
+    }
+    return (_upsertWorkingFileRecord(a) || {}).id || '';
+  }
+
+  // Name + id form: codedeskSaveWorkingFile(name, {id})
+  const name = a;
+  const opts = b || {};
   const now = Date.now();
-  const files = _readWorkingFiles();
+
+  const nextId =
+    (opts && opts.id) ||
+    _getActiveWorkingFileId() ||
+    ('wf_' + now + '_' + Math.random().toString(16).slice(2));
+
   const state = window.okqralExportState();
 
-  const nextId = (id || _getActiveWorkingFileId()) || ('wf_' + now + '_' + Math.random().toString(16).slice(2));
-  const idx = files.findIndex(f => f.id === nextId);
+  const prev = _getWorkingFileRecordById(nextId);
 
   const rec = {
     id: nextId,
-    name: String(name || 'Untitled working file').trim() || 'Untitled working file',
-    createdAt: (idx >= 0 ? files[idx].createdAt : now),
-    updatedAt: now,
-    state
+    name: String(name || (prev && prev.name) || 'Untitled working file').trim() || 'Untitled working file',
+    state: state,
+    createdAt: (prev ? prev.createdAt : now),
+    updatedAt: now
   };
 
-  if (idx >= 0) files[idx] = rec;
-  else files.unshift(rec);
-
-  _writeWorkingFiles(files);
-  _setActiveWorkingFileId(rec.id);
+  _upsertWorkingFileRecord(rec);
   return rec.id;
 };
 
 window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
-  const files = _readWorkingFiles();
-  const rec = files.find(f => f.id === id);
+  const rec = _getWorkingFileRecordById(id);
   if (!rec || !rec.state) return false;
+
   _setActiveWorkingFileId(rec.id);
-  return window.okqralImportState(rec.state);
+  try { window.__CODEDESK_CURRENT_WF_ID__ = String(rec.id || '').trim(); } catch(e){}
+
+  const ok = window.okqralImportState(rec.state);
+
+  // If this working file has been Finished before, opening it should trigger an update.
+  // Debounced so the first render settles.
+  try {
+    if (rec && rec.fileroom && rec.fileroom.drive_file_id) {
+      setTimeout(() => { try { window.codedeskSyncFileRoomDebounced && window.codedeskSyncFileRoomDebounced('open'); } catch(e){} }, 250);
+    }
+  } catch(e){}
+
+  return ok;
 };
 
 window.codedeskDeleteWorkingFile = function codedeskDeleteWorkingFile(id){
@@ -861,6 +923,7 @@ window.codedeskDeleteWorkingFile = function codedeskDeleteWorkingFile(id){
   try {
     if (_getActiveWorkingFileId() === String(id || '').trim()) {
       localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY);
+      window.__CODEDESK_CURRENT_WF_ID__ = '';
     }
   } catch(e){}
   return true;
@@ -868,6 +931,77 @@ window.codedeskDeleteWorkingFile = function codedeskDeleteWorkingFile(id){
 
 /* -------- Quiet autosave (debounced) -------- */
 let _codedeskAutosaveTimer = null;
+let _codedeskFileRoomTimer = null;
+
+function _codedeskHasFinishedPairing(activeId){
+  try {
+    const rec = window.codedeskGetWorkingFileRecord && window.codedeskGetWorkingFileRecord(activeId);
+    return !!(rec && rec.fileroom && String(rec.fileroom.drive_file_id || '').trim());
+  } catch(e){
+    return false;
+  }
+}
+
+window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
+  const workingId = String(window.__CODEDESK_CURRENT_WF_ID__ || _getActiveWorkingFileId() || '').trim();
+  if (!workingId) return false;
+
+  const rec = window.codedeskGetWorkingFileRecord && window.codedeskGetWorkingFileRecord(workingId);
+  if (!rec || !rec.fileroom || !String(rec.fileroom.drive_file_id || '').trim()) return false;
+
+  const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
+  if (!folderId) return false;
+
+  const svgNode = (typeof getCurrentSvgNode === 'function') ? getCurrentSvgNode() : null;
+  if (!svgNode) return false;
+
+  const caption = String(document.getElementById('campaign')?.value || '').trim() || 'codedesk';
+  const base = caption.replace(/[^\w\d-_]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40) || 'codedesk';
+  const fileName = `${base}.svg`;
+
+  const prevDriveId = String(rec.fileroom.drive_file_id || '').trim();
+  const svgText = new XMLSerializer().serializeToString(svgNode);
+
+  const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'upsertQrAsset',
+      folder_id: folderId,
+      svg_text: svgText,
+      file_name: fileName,
+      drive_file_id: prevDriveId,
+      app: 'codedesk',
+      source_id: workingId,
+      title: base || 'CODEDESK QR',
+      subtitle: 'CODEDESK — FLATTENED',
+      status: 'delivered',
+      owner_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : ''
+    })
+  });
+
+  const j = await res.json();
+  if (!j || !j.ok) return false;
+
+  const data = j.data || {};
+  const driveId = String(data.drive_file_id || '').trim();
+  const openUrl = String(data.open_url || '').trim();
+  const jobKey  = String(data.ascend_job_key || '').trim();
+
+  // Persist any updated metadata (e.g., file name changes)
+  rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
+  rec.updatedAt = Date.now();
+  window.codedeskSaveWorkingFile(rec);
+
+  return true;
+};
+
+window.codedeskSyncFileRoomDebounced = function codedeskSyncFileRoomDebounced(reason){
+  if (_codedeskFileRoomTimer) clearTimeout(_codedeskFileRoomTimer);
+  _codedeskFileRoomTimer = setTimeout(() => {
+    try { window.codedeskSyncFileRoomNow && window.codedeskSyncFileRoomNow(reason || 'debounced'); } catch(e){}
+  }, CODEDESK_AUTOSAVE_DEBOUNCE_MS);
+};
 
 function codedeskAutosaveKick(){
   const activeId = _getActiveWorkingFileId();
@@ -877,13 +1011,17 @@ function codedeskAutosaveKick(){
   _codedeskAutosaveTimer = setTimeout(() => {
     try {
       // Use current headline as name fallback; keep existing name if possible
-      const files = _readWorkingFiles();
-      const rec = files.find(f => f.id === activeId);
+      const rec = window.codedeskGetWorkingFileRecord && window.codedeskGetWorkingFileRecord(activeId);
       const head = String(document.getElementById('campaign')?.value || '').trim();
       const keepName = rec?.name || '';
       const nextName = keepName || head || 'Working file';
 
       window.codedeskSaveWorkingFile(nextName, { id: activeId });
+
+      // If finished, autosave should also update the paired FileRoom deliverable (quietly).
+      if (_codedeskHasFinishedPairing(activeId)) {
+        window.codedeskSyncFileRoomDebounced && window.codedeskSyncFileRoomDebounced('autosave');
+      }
     } catch(e){}
   }, CODEDESK_AUTOSAVE_DEBOUNCE_MS);
 }
@@ -917,13 +1055,18 @@ function codedeskAutosaveKick(){
        and autosave already covers ongoing edits.
 */
 window.codedeskFinishSetup = function codedeskFinishSetup(){
-  const activeId = _getActiveWorkingFileId();
+  let activeId = _getActiveWorkingFileId();
   const head = String(document.getElementById('campaign')?.value || '').trim();
   const name = head || 'Working file';
 
-  // If no active file exists yet, create one now.
-  const id = window.codedeskSaveWorkingFile(name, activeId ? { id: activeId } : {});
-  return id;
+  // Finish must be allowed to establish the working file exactly once.
+  if (!activeId) {
+    activeId = window.codedeskSaveWorkingFile(name);
+  } else {
+    window.codedeskSaveWorkingFile(name, { id: activeId });
+  }
+
+  return activeId;
 };
 
 (function wireFinishSetupOnce(){
@@ -955,15 +1098,21 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   // capture click for finish/setup
   document.addEventListener('click', (e) => {
-    const btn = e.target && e.target.closest && e.target.closest('button');
-    if (!isFinishButton(btn)) return;
+  const btn = e.target && e.target.closest && e.target.closest('button');
+  if (!isFinishButton(btn)) return;
 
-    // Don’t break existing finish behaviors elsewhere:
-    // we run “finish setup” first, then allow downstream handlers to proceed.
-    try { window.codedeskFinishSetup(); } catch(err){}
+  let id = '';
+  try { id = window.codedeskFinishSetup(); } catch(err){}
 
-    relabel(btn);
-  }, true);
+  // After Finish, ensure FileRoom pairing exists or is updated
+  try {
+    if (id && window.codedeskSyncFileRoomNow) {
+      window.codedeskSyncFileRoomNow('finish');
+    }
+  } catch(e){}
+
+  relabel(btn);
+}, true);
 })();
 
 /* === END CODEDESK WORKING FILES ===================================== */
@@ -3030,7 +3179,7 @@ async function reportExport() {
 // CodeDesk → FileRoom pairing config
 // =====================================================
 window.CODEDESK_FILEROOM_API_BASE = 'https://script.google.com/macros/s/AKfycbxv0QKYdwr0_woTAMr33R4MNc6KTDtQDN_aQCx7nWZy2oivRHNLS_O4PtEQ6D2W6Njx/exec';
-window.CODEDESK_FILEROOM_FOLDER_ID = window.CODEDESK_FILEROOM_FOLDER_ID || ''; // <-- YOU must set this (see questions below)
+window.CODEDESK_FILEROOM_FOLDER_ID = window.CODEDESK_FILEROOM_FOLDER_ID || '1x882jC2h_2YJsIXQrVK56nqKvCPzJ4Nl';
 
 // Dirty tracking for navigation safety + autosync
 window.__CODEDESK_DIRTY__ = window.__CODEDESK_DIRTY__ || false;
@@ -3062,7 +3211,14 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     const svgNode = getCurrentSvgNode();
     if (!svgNode) throw new Error('Finish: no SVG found');
 
-    const workingId = (window.__CODEDESK_CURRENT_WF_ID__ || '').trim();
+    let workingId = (window.__CODEDESK_CURRENT_WF_ID__ || window.codedeskGetActiveWorkingFileId?.() || '').trim();
+    if (!workingId) {
+      // Ensure a working file exists so Finish can create the pairing.
+      if (typeof window.codedeskFinishSetup === 'function') {
+        window.codedeskFinishSetup(); // expected to set __CODEDESK_CURRENT_WF_ID__ / active wf id
+      }
+      workingId = (window.__CODEDESK_CURRENT_WF_ID__ || window.codedeskGetActiveWorkingFileId?.() || '').trim();
+    }
     if (!workingId) throw new Error('Finish: no working file id in session');
 
     const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
@@ -3071,7 +3227,7 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     const svgText = new XMLSerializer().serializeToString(svgNode);
     const fileName = `${base || 'codedesk'}.svg`;
 
-    const rec = window.codedeskOpenWorkingFile(workingId);
+    const rec = window.codedeskGetWorkingFileRecord ? window.codedeskGetWorkingFileRecord(workingId) : null;
     const prevDriveId = (rec && rec.fileroom && rec.fileroom.drive_file_id) ? String(rec.fileroom.drive_file_id) : '';
 
     const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
@@ -3100,13 +3256,16 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     const openUrl = String(data.open_url || '').trim();
     const jobKey  = String(data.ascend_job_key || '').trim();
 
-    // Persist pairing into the working file record
+    // Persist pairing into the working file record (Finish is repeatable)
     if (rec) {
-      rec.finishedAt = Date.now();
+      rec.finishedAt = rec.finishedAt || Date.now();
       rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
       rec.updatedAt = Date.now();
       window.codedeskSaveWorkingFile(rec);
     }
+
+    // Immediately begin quiet lifecycle updates
+    try { window.codedeskSyncFileRoomDebounced && window.codedeskSyncFileRoomDebounced('finish'); } catch(e){}
 
     window.__CODEDESK_DIRTY__ = false;
   } catch (e) {
