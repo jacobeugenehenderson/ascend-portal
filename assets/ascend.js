@@ -504,14 +504,27 @@
   }
 
   // CodeDesk template-open → "working file creation" seam
-function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
+function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
+  const templateId = (tpl && (tpl.id || tpl.template_id || tpl.TemplateId)) || "";
   const tid = String(templateId || "").trim();
 
+  // Make the full template payload available to CodeDesk at open time.
+  // (Wiring-only: no schema changes; CodeDesk can read whichever key it already supports.)
+  try {
+    const payload = JSON.stringify(tpl || {});
+    localStorage.setItem("codedesk_template_bootstrap_v1", payload);
+    localStorage.setItem("codedesk_template_bootstrap", payload);
+    localStorage.setItem("ascend_codedesk_template_bootstrap_v1", payload);
+  } catch (e) {}
+
   const target = buildCodeDeskUrl_("template", {
-    // wiring-only compatibility: same id, multiple common keys
     template_id: tid,
     templateId: tid,
     template: tid,
+
+    // Optional hint for CodeDesk (harmless if unused).
+    bootstrap_key: "codedesk_template_bootstrap_v1",
+
     parent_ascend_job_key: parentAscendJobKey || ""
   });
 
@@ -575,9 +588,9 @@ function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
       mainBtn.appendChild(textStack);
 
       mainBtn.addEventListener("click", () => {
-        // Parent job association is a later wiring step (needs Ascend job context).
-        openCodeDeskFromTemplate_(String(templateId || ""), "");
-      });
+      // Parent job association is a later wiring step (needs Ascend job context).
+      openCodeDeskFromTemplate_(tpl, "");
+    });
 
       card.appendChild(mainBtn);
       lane.appendChild(card);
@@ -600,18 +613,12 @@ function openCodeDeskFromTemplate_(templateId, parentAscendJobKey) {
       })
       .then((manifest) => {
         // Accept either:
-        //  - { templates: [...] }  (preferred minimal shape)
-        //  - { presets: { URL: [...] } } (legacy shape from qr_type_manifest-style files)
         //  - [ ... ] (raw array)
+        //  - { templates: [...] }
         let arr = [];
 
-        if (Array.isArray(manifest)) {
-          arr = manifest;
-        } else if (manifest && Array.isArray(manifest.templates)) {
-          arr = manifest.templates;
-        } else if (manifest && manifest.presets && Array.isArray(manifest.presets.URL)) {
-          arr = manifest.presets.URL;
-        }
+        if (Array.isArray(manifest)) arr = manifest;
+        else if (manifest && Array.isArray(manifest.templates)) arr = manifest.templates;
 
         renderCodeDeskHopper(arr);
       })
