@@ -423,6 +423,10 @@ emojiGrid.appendChild(b); }); }
     const res = await fetch('qr_type_manifest.json', { cache: 'no-store' });
     if (!res.ok) throw new Error('manifest not found');
     manifest = await res.json();
+  } catch (e) {
+    console.warn('Manifest load failed, continuing with inline fallback');
+    manifest = { types: [] };
+  }
 
   // --- Load templates (separate from type manifest) ---
   templates = [];
@@ -439,28 +443,6 @@ emojiGrid.appendChild(b); }); }
 
   // Expose for console/debug
   window.CODEDESK_TEMPLATES = templates;
-
-  // If opened via Ascend in template mode, defer all imports to the Template-open bootstrap below.
-  // IMPORTANT: templates in qr_templates.json are the state blob (no .state property required).
-  try {
-    const entry = window.CODEDESK_ENTRY || {};
-    const mode = String(entry.mode || '').toLowerCase();
-    const tid = String(entry.template_id || entry.templateId || '').trim();
-
-    if (mode === 'template' && tid && Array.isArray(templates) && templates.length) {
-      const tpl = templates.find(t => String((t && (t.id || t.template_id || t.templateId || t.TemplateId)) || '').trim() === tid);
-
-      if (tpl && typeof window.okqralImportState === 'function') {
-        // Prefer tpl.state if present, otherwise treat tpl itself as the state blob.
-        const blob = (tpl.state || tpl.payload || tpl.data || tpl);
-        window.okqralImportState(blob);
-      } else {
-        console.warn('CodeDesk template bootstrap: could not resolve template for', tid);
-      }
-    }
-  } catch (e) {
-    console.warn('CodeDesk template bootstrap failed (non-fatal)', e);
-  }
 
   // Expose for debugging + Ascend/console introspection
   window.CODEDESK_TEMPLATES = templates;
@@ -484,8 +466,9 @@ emojiGrid.appendChild(b); }); }
       );
 
       // Accept a few common state payload keys (pick one canonical shape)
+      // Accept both "wrapped" and "bare state blob" templates
       const tplState =
-        (tpl && (tpl.state || tpl.okqral_state || tpl.export_state || tpl.payload)) || null;
+        (tpl && (tpl.state || tpl.okqral_state || tpl.export_state || tpl.payload || tpl.data || tpl)) || null;
 
       // If we already created a working file for this template, reopen it.
       const existingWfId = (function(){
@@ -515,87 +498,10 @@ emojiGrid.appendChild(b); }); }
         console.warn('CodeDesk template bootstrap: could not resolve template or state for', templateId, tpl);
       }
     }
+
   } catch (e) {
     console.warn('CodeDesk template bootstrap failed (non-fatal)', e);
   }
-
-  } catch (e) {
-  // Fallback to a baked-in copy (keeps UI working if fetch fails)
-  manifest = {
-    types: {
-      "URL": ["urlData","utmSource","utmMedium","utmCampaign"],
-      "Payment": ["payMode","payUser","payLink","payAmount","payNote"],
-      "WiFi": ["wifiSsid","wifiPwd","wifiSec","wifiHidden"],
-      "Contact": [
-        "vFirst","vLast","vOrg","vTitle",
-        "vPhone1","vPhone1Type","vPhone2","vPhone2Type",
-        "vEmail1","vEmail1Type","vEmail2","vEmail2Type",
-        "vWebsite","vBday","vStreet","vCity","vRegion","vPostal","vCountry","vNote"
-      ],
-      "Message": ["msgMode","smsNumber","smsText"],
-      "Event": ["evtTitle","evtStart","evtEnd","evtLoc","evtDet","evtStyle"],
-      "Map": ["mapQuery","mapLat","mapLng","mapProvider"]
-    },
-
-    fields: {
-      urlData:    { type:'url',   label:'URL', placeholder:'https://example.org' },
-      utmSource:   { type:'text', label:'UTM Source',   placeholder:'site, newsletter, etc.' },
-      utmMedium:   { type:'text', label:'UTM Medium',   placeholder:'qr, social, cpc…' },
-      utmCampaign: { type:'text', label:'UTM Campaign', placeholder:'campaign-name' },
-
-      payMode:    { type:'select',label:'Payment Type',
-                    options:['Venmo','Cash App','PayPal.me','Generic Link','Stripe Payment Link'] },
-      payUser:    { type:'text',  label:'Username / $Cashtag / @handle', placeholder:'@yourname' },
-      payLink:    { type:'url',   label:'Payment Link', placeholder:'https://…' },
-      payAmount:  { type:'number',label:'Amount', step:'0.01', placeholder:'Optional' },
-      payNote:    { type:'text',  label:'Note',   placeholder:'Optional' },
-
-      wifiSsid:   { type:'text',  label:'Network (SSID)' },
-      wifiPwd:    { type:'text',  label:'Password' },
-      wifiSec:    { type:'select',label:'Security', options:['WPA','WEP','nopass'] },
-      wifiHidden: { type:'checkbox', label:'Hidden SSID' },
-
-      vFirst:     { type:'text',  label:'First name' },
-      vLast:      { type:'text',  label:'Last name' },
-      vOrg:       { type:'text',  label:'Organization' },
-      vTitle:     { type:'text',  label:'Title' },
-      vPhone1:    { type:'tel',   label:'Phone' },
-      vPhone1Type:{ type:'select',label:'Phone type', options:['CELL','WORK','HOME','MAIN'] },
-      vPhone2:    { type:'tel',   label:'Phone 2' },
-      vPhone2Type:{ type:'select',label:'Phone 2 type', options:['CELL','WORK','HOME','MAIN'] },
-      vEmail1:    { type:'email', label:'Email' },
-      vEmail1Type:{ type:'select',label:'Email type', options:['INTERNET','WORK','HOME'] },
-      vEmail2:    { type:'email', label:'Email 2' },
-      vEmail2Type:{ type:'select',label:'Email 2 type', options:['INTERNET','WORK','HOME'] },
-      vWebsite:   { type:'url',   label:'Website', placeholder:'https://…' },
-      vBday:      { type:'date',  label:'Birthday' },
-      vStreet:    { type:'text',  label:'Street' },
-      vCity:      { type:'text',  label:'City' },
-      vRegion:    { type:'text',  label:'State/Region' },
-      vPostal:    { type:'text',  label:'Postal code' },
-      vCountry:   { type:'text',  label:'Country' },
-      vNote:      { type:'textarea', rows:3, label:'Notes' },
-
-      msgMode:    { type:'select',label:'Message Type', options:['SMS','Resistbot'] },
-      smsNumber:  { type:'tel',   label:'Phone number', placeholder:'+1…' },
-      smsText:    { type:'textarea', rows:2, label:'Message' },
-
-      evtTitle:   { type:'text',  label:'Title' },
-      evtStart:   { type:'text',  label:'Start (YYYY-MM-DD HH:MM:SS)' },
-      evtEnd:     { type:'text',  label:'End (YYYY-MM-DD HH:MM:SS)' },
-      evtLoc:     { type:'text',  label:'Location' },
-      evtStyle:   { type:'select',label:'Style', options:['Basic'] },
-
-      mapQuery:   { type:'text',  label:'Search query', placeholder:'Statue of Liberty' },
-      mapLat:     { type:'text',  label:'Latitude', placeholder:'40.6892' },
-            mapLng:    { type:'text',  label:'Longitude', placeholder:'-74.0445' },
-      mapProvider:{ type:'select',label:'Provider', options:['google','geo'] }
-    },
-  
-    presets: {}
-  };
-
-}
 
 // after manifest = ... is set
 window.manifest = manifest;
