@@ -3202,10 +3202,6 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
   // log to Sheets (non-blocking)
   reportExport().catch(() => { /* silent */ });
 
-  // local downloads (unchanged intent)
-  if (wantSvg) downloadSvg(`${base}.svg`);
-  if (wantPng) downloadPng(`${base}.png`);
-
   // ==== FINISH: create/update paired FileRoom deliverable ====
   try {
     const svgNode = getCurrentSvgNode();
