@@ -214,12 +214,6 @@ html, body{
   overflow-y: auto; /* default: allow normal scrolling */
 }
 
-/* Only lock scroll on pages that actually have the stepper layout */
-html:has(#stepper),
-body:has(#stepper){
-  overflow-y: hidden; /* let #stepper own scrolling */
-}
-
 body{
   margin: 0;
   color: var(--md-sys-color-on-background);
@@ -348,8 +342,8 @@ body{
 #stepper{
   display:flex;
   flex-direction:column;
-  height:100dvh;
-  overflow:auto;
+  height:auto;
+  overflow:visible;
   gap: var(--stack-gap);
   min-width:0; width:100%; max-width:720px; margin-inline:auto;
   scroll-padding-top: calc(var(--header-h,56px) + var(--preview-overlap, 200px));
@@ -1459,15 +1453,12 @@ label:has(input[type="color"]) input[type="color"]{
 @media (min-width: 1280px){
   .stage-stick { position: static; top: auto; }
 
-  /* Keep a scrollable authority on desktop, since the document is locked (Ascend pattern). */
+  /* Standard scroll: #stepper does not own scrolling on desktop. */
   #stepper{
-    height: 100dvh;
-    overflow: auto;
+    height: auto;
+    overflow: visible;
     margin-top: 0;
     padding-top: 0;
-
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable both-edges;
   }
 }
 
