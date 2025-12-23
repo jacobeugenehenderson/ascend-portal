@@ -3181,7 +3181,7 @@ async function reportExport() {
 // CodeDesk → FileRoom pairing config
 // =====================================================
 window.CODEDESK_FILEROOM_API_BASE = 'https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec';
-window.CODEDESK_FILEROOM_FOLDER_ID = window.CODEDESK_FILEROOM_FOLDER_ID || '1x882jC2h_2YJsIXQrVK56nqKvCPzJ4N';
+window.CODEDESK_FILEROOM_FOLDER_ID = window.CODEDESK_FILEROOM_FOLDER_ID || '1x882jC2h_2YJsIXQrV1K56nqKvCPzJ4N';
 
 // Dirty tracking for navigation safety + autosync
 window.__CODEDESK_DIRTY__ = window.__CODEDESK_DIRTY__ || false;
