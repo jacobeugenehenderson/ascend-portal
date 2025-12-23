@@ -127,6 +127,15 @@
 }
 
 /* Base for all app pages: light version of the portal body */
+html,
+body.ascend-app-body {
+  /* Undo portal document-locking for standalone app pages */
+  height: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
 body.ascend-app-body {
   margin: 0;
   font-family: var(--ascend-font-body, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif);
