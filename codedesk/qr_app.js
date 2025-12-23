@@ -1004,33 +1004,6 @@ typeSel.addEventListener('change', () => {
   sendEvent('type_change', currentUiState());
 });
 
-// Arrow handlers
-const prevBtn = document.getElementById('prevSubtype');
-const nextBtn = document.getElementById('nextSubtype');
-
-function cyclePreset(dir) {
-  const t = typeSel?.value;
-  if (!t) return;
-  const list = getPresets(t);
-  if (!list.length) return;
-
-  const cur  = currentPresetIdx.get(t) ?? 0;
-  const next = (cur + dir + list.length) % list.length;
-  applyPreset(t, next);
-  setCaptionFromPreset(list[next] || {}, t);
-
-  sendEvent('preset_change', {
-    presetIndex: next,
-    presetName: (list[next] && (list[next].name || list[next].label || list[next].campaign)) || undefined,
-    ...currentUiState()
-  });
-}
-
-window.cyclePreset = cyclePreset;
-
-prevBtn?.addEventListener('click', () => cyclePreset(-1));
-nextBtn?.addEventListener('click', () => cyclePreset(1));
-
     // Payment: toggle user vs link by mode
     const payMode = document.getElementById('payMode');
     const payUser = document.getElementById('payUser');
@@ -1400,8 +1373,7 @@ function buildQrSvg({
   centerScale = 0.9,             // 0.1..1
   centerEmoji = '😊',
 
-  // NEW: caption-in-SVG
-  showCaption = false,
+  // NEW: caption-in-SVG (implicit: caption renders only when captionText is non-empty)
   captionText = '',
   captionColor = '#000000',
   captionFontFamily = 'Work Sans, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", "Noto Sans", sans-serif',
@@ -1426,6 +1398,8 @@ const minSize   = Math.round(size * 0.10);
 let capLayout = null;
 let capPadTop = 0, capPadBot = 0;
 let totalH = size;
+
+const showCaption = !!String(captionText || '').trim();
 
 if (showCaption) {
   const maxWidth = size - marginX * 2;
@@ -1894,7 +1868,6 @@ if (!hasAnyCaption) {
     centerMode,  centerScale,  centerEmoji,
 
     // We compose the card/caption externally:
-    showCaption:    false,
     transparentBg:  true,    // QR background off (we already drew the card)
     bgColor:        '#000000',// ignored when transparent
     bare:          true     // <- no bg, no stroke on the inner QR
@@ -2158,11 +2131,6 @@ function boot() {
       if (typeof render === 'function') render();
     });
 
-    document.getElementById('showCaption')?.addEventListener('change', () => {
-      const show = !!document.getElementById('showCaption')?.checked;
-      sendEvent('caption_toggle', { showCaption: show, ...currentUiState() });
-    });
-
     boot._listenersBound = true;
   }
 
@@ -2216,8 +2184,7 @@ if (document.readyState === 'loading') {
   typeSel?.addEventListener('change', () => {
     typeSel.classList.remove('start-here'); // remove highlight once chosen
     setDisabled(false);
-    document.getElementById('prevSubtype')?.classList.remove('hidden');
-    document.getElementById('nextSubtype')?.classList.remove('hidden');
+
     // Hand off to your existing, granular “Design” section gating
     if (typeof wireDesignGatesOnce === 'function') wireDesignGatesOnce();
   }, { once: true, passive: true });
@@ -2287,10 +2254,10 @@ function render() {
   // ---- background mode + CSS paint
   try { if (typeof window.refreshBackground === 'function') window.refreshBackground(); } catch {}
 
-  // ---- caption
-  const showCap  = !!document.getElementById('showCaption')?.checked;
+  // ---- caption (implicit: any text enables caption + rectangular card)
   const headline = (document.getElementById('campaign')?.value || '').trim().slice(0, 20);
   const body     = (document.getElementById('captionBody')?.value || '').trim().slice(0, 60);
+  const hasCaption = !!(headline || body);
 
   // Toggle visual style (stroke vs fill card)
   const isTransparent = !document.getElementById('bgTransparent')?.checked;
@@ -2313,8 +2280,8 @@ function render() {
   bgTopAlpha:     Math.max(0, Math.min(100, parseFloat(document.getElementById('bgTopAlpha')?.value || '100'))),
   bgBottomAlpha:  Math.max(0, Math.min(100, parseFloat(document.getElementById('bgBottomAlpha')?.value || '100'))),
 
-  captionHeadline: showCap ? headline : '',
-  captionBody:     showCap ? body : '',
+  captionHeadline: hasCaption ? headline : '',
+  captionBody:     hasCaption ? body : '',
   captionColor:    colorHex('captionColor', '#000000'),
   ecc,
 
@@ -2777,8 +2744,7 @@ function currentUiState() {
       type:        document.getElementById('qrType')?.value || '',
       ecc:         document.getElementById('ecc')?.value || '',
       modulesMode: document.getElementById('modulesMode')?.value || '',
-      centerMode:  document.getElementById('centerMode')?.value || '',
-      showCaption: !!document.getElementById('showCaption')?.checked
+        centerMode:  document.getElementById('centerMode')?.value  || ''
     },
     outputs: {
       png: !!document.getElementById('wantPng')?.checked,

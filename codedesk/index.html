@@ -118,10 +118,6 @@
         <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
       </div>
 
-      <!-- Previous and Next Arrows -->
-    <button id="prevSubtype" class="nav-arrow absolute w-10 h-10 grid place-items-center"></button>
-
-    <button id="nextSubtype" class="nav-arrow absolute w-10 h-10 grid place-items-center"></button>
     </div>
   </div>
 </section>
@@ -157,11 +153,6 @@
           placeholder="Body (optional)"></textarea>
       </label>
 
-      <!-- Toggle -->
-      <label class="inline-flex items-center gap-2">
-        <input id="showCaption" type="checkbox" class="rounded border" checked />
-        <span class="text-sm">Show caption under preview</span>
-      </label>
     </div>
   </div>
 
@@ -641,13 +632,6 @@ new MutationObserver(() => applyPickerTheme())
   window.render();
 })();
 
-  // Ensure arrows are wired (safe no-ops if you have logic already)
-  document.getElementById('prevSubtype')?.addEventListener('click', () => {
-    if (window.cyclePreset) return window.cyclePreset(-1);
-  });
-  document.getElementById('nextSubtype')?.addEventListener('click', () => {
-    if (window.cyclePreset) return window.cyclePreset(1);
-  });
 </script>
 
 <script>
