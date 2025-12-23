@@ -46,7 +46,7 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
   let mode = (qs.get("mode") || "").trim();       // "new" | "template" (or legacy)
   if (mode === "portal_new") mode = "new";        // normalize legacy portal mode
 
-  const templateId = (qs.get("template_id") || "").trim();
+  const templateId = (qs.get("template_id") || qs.get("templateId") || "").trim();
   const parentAscendJobKey = (qs.get("parent_ascend_job_key") || "").trim();
 
   // Carry-through identity (may be present when launched from Ascend)
@@ -458,47 +458,103 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
     const mode = String(entry.mode || '').toLowerCase();
     const templateId = String(entry.template_id || entry.templateId || '').trim();
 
-    if (mode === 'template' && templateId) {
-      const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + templateId;
+    // Convert a "template record" (qr_templates.json) into an okqralImportState()-friendly blob.
+    function _codedeskTemplateToState(tpl) {
+      if (!tpl) return null;
 
-      // Find matching template by common id keys
-      const tpl = (templates || []).find(t =>
-        String((t && (t.id || t.template_id || t.templateId || t.TemplateId)) || '').trim() === templateId
-      );
+      // NOTE: bgTransparent in your UI is inverted (checked = Background ON) per refreshBackground():
+      // const isTransparent = !tgl?.checked; // checked = Background ON
+      // So: template bgTransparent=false => Background ON => checkbox checked=true
+      const bgOnChecked = !Boolean(tpl.bgTransparent);
 
-      // Accept a few common state payload keys (pick one canonical shape)
-      // Accept both "wrapped" and "bare state blob" templates
-      const tplState =
-        (tpl && (tpl.state || tpl.okqral_state || tpl.export_state || tpl.payload || tpl.data || tpl)) || null;
+      return {
+        v: 1,
+        type: String(tpl.type || '').trim() || 'URL',
+        fields: {
+          // keep URL empty for templates unless you add tpl.urlData later
+          urlData: String(tpl.urlData || '').trim()
+        },
+        style: {
+          campaign: tpl.campaign,
+          captionBody: tpl.captionBody,
+          fontFamily: tpl.fontFamily,
+          captionColor: tpl.captionColor,
+          bodyColor: tpl.bodyColor,
+          eyeRingColor: tpl.eyeRingColor,
+          eyeCenterColor: tpl.eyeCenterColor,
 
-      // If we already created a working file for this template, reopen it.
-      const existingWfId = (function(){
-        try { return String(localStorage.getItem(BOOT_KEY) || '').trim(); } catch(e){ return ''; }
-      })();
+          // Background gradient knobs (these IDs exist in your background handlers)
+          bgTopColor: tpl.bgTopColor,
+          bgTopAlpha: tpl.bgTopAlpha,
+          bgBottomColor: tpl.bgBottomColor,
+          bgBottomAlpha: tpl.bgBottomAlpha,
 
-      if (existingWfId) {
-        // Ensure the UI reflects the persisted working-file state
-        if (typeof window.codedeskOpenWorkingFile === 'function') {
-          window.codedeskOpenWorkingFile(existingWfId);
+          // UI checkbox id is bgTransparent (checked = Background ON)
+          bgTransparent: bgOnChecked,
+
+          // Shapes / modes
+          moduleShape: tpl.moduleShape,
+          eyeRingShape: tpl.eyeRingShape,
+          eyeCenterShape: tpl.eyeCenterShape,
+          modulesMode: tpl.modulesMode,
+          modulesEmoji: tpl.modulesEmoji,
+          modulesScale: tpl.modulesScale,
+          centerMode: tpl.centerMode,
+          centerEmoji: tpl.centerEmoji,
+          centerScale: tpl.centerScale
         }
-      } else if (tplState && typeof window.okqralImportState === 'function') {
-        // First-time bootstrap: import → save → reopen
-        window.okqralImportState(tplState);
+      };
+    }
 
-        if (typeof window.codedeskSaveWorkingFile === 'function') {
+    function _runTemplateBootstrap(attempt) {
+      const a = attempt || 0;
+
+      // Wait until the import/save/open functions exist (this is what was tripping your warning).
+      if (typeof window.okqralImportState !== 'function' ||
+          typeof window.codedeskSaveWorkingFile !== 'function' ||
+          typeof window.codedeskOpenWorkingFile !== 'function') {
+        if (a < 80) return setTimeout(function(){ _runTemplateBootstrap(a + 1); }, 25);
+        return;
+      }
+
+      if (mode === 'template' && templateId) {
+        const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + templateId;
+
+        // Find matching template by common id keys
+        const tpl = (templates || []).find(t =>
+          String((t && (t.id || t.template_id || t.templateId || t.TemplateId)) || '').trim() === templateId
+        );
+
+        // Prefer explicit state payloads, otherwise convert the plain template record
+        const tplState =
+          (tpl && (tpl.state || tpl.okqral_state || tpl.export_state || tpl.payload || tpl.data)) ||
+          _codedeskTemplateToState(tpl) ||
+          null;
+
+        // If we already created a working file for this template, reopen it.
+        const existingWfId = (function(){
+          try { return String(localStorage.getItem(BOOT_KEY) || '').trim(); } catch(e){ return ''; }
+        })();
+
+        if (existingWfId) {
+          window.codedeskOpenWorkingFile(existingWfId);
+        } else if (tplState) {
+          // First-time bootstrap: import → save → reopen
+          window.okqralImportState(tplState);
+
           const wfName = String((tpl && (tpl.name || tpl.title || tpl.label)) || 'QR Template').trim() || 'QR Template';
           const newWfId = window.codedeskSaveWorkingFile(wfName);
 
           try { localStorage.setItem(BOOT_KEY, String(newWfId || '').trim()); } catch(e){}
 
-          if (newWfId && typeof window.codedeskOpenWorkingFile === 'function') {
-            window.codedeskOpenWorkingFile(newWfId);
-          }
+          if (newWfId) window.codedeskOpenWorkingFile(newWfId);
+        } else {
+          console.warn('CodeDesk template bootstrap: could not resolve template or state for', templateId, tpl);
         }
-      } else {
-        console.warn('CodeDesk template bootstrap: could not resolve template or state for', templateId, tpl);
       }
     }
+
+    _runTemplateBootstrap(0);
 
   } catch (e) {
     console.warn('CodeDesk template bootstrap failed (non-fatal)', e);
