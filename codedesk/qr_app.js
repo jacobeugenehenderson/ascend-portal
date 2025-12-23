@@ -97,6 +97,74 @@ mq.addEventListener?.('change', (e) => {
   if (!('theme' in localStorage)) setTheme(e.matches);
 });
 
+/* === Wheel scroll (independent, app-level) ============================
+   Fix: some wrappers end up "locking" scroll so wheel does nothing.
+   Strategy: on wheel, find nearest scrollable ancestor and scroll it.
+   (Does not interfere with textareas / inputs / normal page scroll.)
+====================================================================== */
+(function wireWheelScrollOnce(){
+  if (window.__CODEDESK_WHEEL_SCROLL_WIRED__) return;
+  window.__CODEDESK_WHEEL_SCROLL_WIRED__ = true;
+
+  function isEditable(el){
+    if (!el) return false;
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'textarea') return true;
+    if (tag === 'input') {
+      const t = (el.getAttribute('type') || 'text').toLowerCase();
+      // allow wheel to behave normally on number inputs too (don’t hijack)
+      return true;
+    }
+    return el.isContentEditable === true;
+  }
+
+  function isScrollable(el){
+    if (!el || el === document.body || el === document.documentElement) return false;
+    const cs = getComputedStyle(el);
+    const oy = cs.overflowY;
+    if (!(oy === 'auto' || oy === 'scroll')) return false;
+    return el.scrollHeight > el.clientHeight + 1;
+  }
+
+  function nearestScrollable(start){
+    let el = start;
+    while (el && el !== document.body && el !== document.documentElement){
+      if (isScrollable(el)) return el;
+      el = el.parentElement;
+    }
+    // fall back to preview scroller if present
+    const main =
+      document.querySelector('[data-scroll-root]') ||
+      document.getElementById('appScroll') ||
+      document.querySelector('.app-scroll') ||
+      null;
+    if (main && isScrollable(main)) return main;
+    return null;
+  }
+
+  document.addEventListener('wheel', (e) => {
+    // If user is interacting with an editable control, let the browser do its thing.
+    if (isEditable(e.target)) return;
+
+    // If the page itself is already scrollable and working, don’t hijack it.
+    // Only intervene when we can find an internal scroller to move.
+    const scroller = nearestScrollable(e.target);
+    if (!scroller) return;
+
+    // If scroller can scroll in the wheel direction, consume and scroll it.
+    const dy = e.deltaY || 0;
+    if (!dy) return;
+
+    const atTop = scroller.scrollTop <= 0;
+    const atBot = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+
+    if ((dy < 0 && !atTop) || (dy > 0 && !atBot)) {
+      e.preventDefault(); // REQUIRED to take control
+      scroller.scrollTop += dy;
+    }
+  }, { passive: false });
+})();
+
   /* === ECC (add-only, session-persistent) ========================== */
 const ECC_KEY = 'okqral_ecc';
 const ECC_DEFAULT = 'M';
