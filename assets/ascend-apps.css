@@ -509,3 +509,67 @@ body.ascend-app-body {
 .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
   transform: none !important;
 }
+
+/* =========================================================
+   CODEDESK — WORKING FILE INDICATOR (ORANGE STACK)
+   Cosmetic only. No logic. No lifecycle impact.
+   ========================================================= */
+
+/* Target working files explicitly marked by CodeDesk */
+.ascend-hopper-item[data-indicator="working_orange_stack"] .hopper-indicator,
+.ascend-hopper-item[data-kind="working"] .hopper-indicator {
+
+  /* preserve existing geometry */
+  width: 14px;
+  height: 14px;
+  position: relative;
+}
+
+/* Base square */
+.ascend-hopper-item[data-indicator="working_orange_stack"] .hopper-indicator::before,
+.ascend-hopper-item[data-kind="working"] .hopper-indicator::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    #fb923c,   /* orange-400 */
+    #f97316    /* orange-500 */
+  );
+  border-radius: 2px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* Middle square */
+.ascend-hopper-item[data-indicator="working_orange_stack"] .hopper-indicator::after,
+.ascend-hopper-item[data-kind="working"] .hopper-indicator::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translate(3px, -3px);
+  background: linear-gradient(
+    135deg,
+    #fdba74,   /* orange-300 */
+    #fb923c    /* orange-400 */
+  );
+  border-radius: 2px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* Top square (uses existing inner element if present) */
+.ascend-hopper-item[data-indicator="working_orange_stack"] .hopper-indicator span,
+.ascend-hopper-item[data-kind="working"] .hopper-indicator span {
+  position: absolute;
+  inset: 0;
+  transform: translate(6px, -6px);
+  background: linear-gradient(
+    135deg,
+    #fed7aa,   /* orange-200 */
+    #fdba74    /* orange-300 */
+  );
+  border-radius: 2px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}

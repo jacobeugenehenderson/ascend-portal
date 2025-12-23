@@ -887,6 +887,11 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(a, b){
 
   const rec = {
     id: nextId,
+
+    // Marker fields for hopper UI (CSS-only differentiation on the Ascend side)
+    kind: (prev && prev.kind) ? prev.kind : 'working',
+    indicator: (prev && prev.indicator) ? prev.indicator : 'working_orange_stack',
+
     name: String(name || (prev && prev.name) || 'Untitled working file').trim() || 'Untitled working file',
     state: state,
     createdAt: (prev ? prev.createdAt : now),
@@ -3257,11 +3262,15 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     const jobKey  = String(data.ascend_job_key || '').trim();
 
     // Persist pairing into the working file record (Finish is repeatable)
-    if (rec) {
-      rec.finishedAt = rec.finishedAt || Date.now();
-      rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
-      rec.updatedAt = Date.now();
-      window.codedeskSaveWorkingFile(rec);
+    // IMPORTANT: pairing is NOT completion — do not set finishedAt (that can evict from the hopper)
+    const _rec =
+      rec ||
+      (window.codedeskGetWorkingFileRecord ? window.codedeskGetWorkingFileRecord(workingId) : null);
+
+    if (_rec) {
+      _rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
+      _rec.updatedAt = Date.now();
+      window.codedeskSaveWorkingFile(_rec);
     }
 
     // Immediately begin quiet lifecycle updates
