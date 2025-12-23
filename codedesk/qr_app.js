@@ -408,6 +408,9 @@ emojiGrid.appendChild(b); }); }
 
 ;(async function () {
 
+  // Templates must be function-scoped (used by template mode boot logic)
+  var templates = [];
+
   // --- Load manifest (with inline fallback) ---
   let manifest;
   try {
@@ -416,7 +419,7 @@ emojiGrid.appendChild(b); }); }
     manifest = await res.json();
 
   // --- Load templates (separate from type manifest) ---
-  let templates = [];
+  templates = [];
 
   try {
     const tRes = await fetch('qr_templates.json', { cache: 'no-store' });
@@ -426,6 +429,31 @@ emojiGrid.appendChild(b); }); }
     }
   } catch (e) {
     console.warn('Template load failed, continuing without templates');
+  }
+
+  // Expose for console/debug
+  window.CODEDESK_TEMPLATES = templates;
+
+  // If opened via Ascend in template mode, import the template immediately.
+  // IMPORTANT: templates in qr_templates.json are the state blob (no .state property required).
+  try {
+    const entry = window.CODEDESK_ENTRY || {};
+    const mode = String(entry.mode || '').toLowerCase();
+    const tid = String(entry.template_id || entry.templateId || '').trim();
+
+    if (mode === 'template' && tid && Array.isArray(templates) && templates.length) {
+      const tpl = templates.find(t => String((t && (t.id || t.template_id || t.templateId || t.TemplateId)) || '').trim() === tid);
+
+      if (tpl && typeof window.okqralImportState === 'function') {
+        // Prefer tpl.state if present, otherwise treat tpl itself as the state blob.
+        const blob = (tpl.state || tpl.payload || tpl.data || tpl);
+        window.okqralImportState(blob);
+      } else {
+        console.warn('CodeDesk template bootstrap: could not resolve template for', tid);
+      }
+    }
+  } catch (e) {
+    console.warn('CodeDesk template bootstrap failed (non-fatal)', e);
   }
 
   // Expose for debugging + Ascend/console introspection
