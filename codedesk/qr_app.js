@@ -964,7 +964,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 
   const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({
       action: 'upsertQrAsset',
       folder_id: folderId,
@@ -3232,7 +3232,7 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
 
     const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'upsertQrAsset',
         folder_id: folderId,
