@@ -825,7 +825,7 @@ window.getPresets = (t) => {
   return presets[key] || [];
 };
 
-/* === CODEDESK WORKING FILES (add-only) ================================
+ /* ====================================================================     
  * Purpose:
  *  - Provide a stable JSON "state" format that Ascend (later) can create/open.
  *  - Provide localStorage persistence so CodeDesk can keep editable templates.
@@ -1062,7 +1062,11 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(a, b){
     updatedAt: now
   };
 
-  _upsertWorkingFileRecord(rec);
+  const out = _upsertWorkingFileRecord(rec);
+
+  // Notify Ascend (optional): keep orange working file + FileRoom PNG linked
+  try { codedeskNotifyAscendWorkingSave(out); } catch(e){}
+
   return rec.id;
 };
 
@@ -2364,8 +2368,47 @@ function composeCardSvg({
   frame.setAttribute('rx', String(RADIUS));
   frame.setAttribute('ry', String(RADIUS));
 
-// The card paint is owned by CSS (#qrPreview::before).
-// Only add a frame rect when transparent mode is active.
+  // Card paint: paint inside the SVG so preview/export stay in sync (Ascend does not guarantee #qrPreview::before).
+  if (!transparentBg) {
+    const defs = document.createElementNS(SVG_NS, "defs");
+
+    const grad = document.createElementNS(SVG_NS, "linearGradient");
+    grad.setAttribute("id", "cd_bg");
+    grad.setAttribute("x1", "0");
+    grad.setAttribute("y1", "0");
+    grad.setAttribute("x2", "0");
+    grad.setAttribute("y2", "1");
+
+    const aTop = Math.max(0, Math.min(1, (Number(bgTopAlpha) || 100) / 100));
+    const aBot = Math.max(0, Math.min(1, (Number(bgBottomAlpha) || 100) / 100));
+
+    const stop1 = document.createElementNS(SVG_NS, "stop");
+    stop1.setAttribute("offset", "0%");
+    stop1.setAttribute("stop-color", String(bgTopColor || "#0b1020"));
+    stop1.setAttribute("stop-opacity", String(aTop));
+
+    const stop2 = document.createElementNS(SVG_NS, "stop");
+    stop2.setAttribute("offset", "100%");
+    stop2.setAttribute("stop-color", String(bgBottomColor || "#070a14"));
+    stop2.setAttribute("stop-opacity", String(aBot));
+
+    grad.appendChild(stop1);
+    grad.appendChild(stop2);
+    defs.appendChild(grad);
+    svg.appendChild(defs);
+
+    const bg = document.createElementNS(SVG_NS, "rect");
+    bg.setAttribute("x", String(OUTER_PAD));
+    bg.setAttribute("y", String(OUTER_PAD));
+    bg.setAttribute("width", String(cardW - OUTER_PAD * 2));
+    bg.setAttribute("height", String(cardH - OUTER_PAD * 2));
+    bg.setAttribute("rx", String(RADIUS));
+    bg.setAttribute("ry", String(RADIUS));
+    bg.setAttribute("fill", "url(#cd_bg)");
+    svg.appendChild(bg);
+  }
+
+  // Only add a frame rect when transparent mode is active.
 if (transparentBg) {
   frame.setAttribute('fill', 'none');
   svg.appendChild(frame);
