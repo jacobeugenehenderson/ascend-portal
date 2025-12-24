@@ -1165,7 +1165,13 @@ function codedeskAutosaveKick(){
 */
 window.codedeskFinishSetup = function codedeskFinishSetup(){
   let activeId = _getActiveWorkingFileId();
-  const head = String(document.getElementById('campaign')?.value || '').trim();
+
+  // Name source (canonical CodeDesk UI): Headline (Caption)
+  // Fallbacks kept for older/alternate shells.
+  const head =
+    String(document.getElementById('headline')?.value || '').trim() ||
+    String(document.getElementById('campaign')?.value || '').trim();
+
   const name = head || 'Working file';
 
   // Finish must be allowed to establish the working file exactly once.
@@ -2679,8 +2685,27 @@ if (document.readyState === 'loading') {
 
 // Toggle visual style on the preview card (for CSS glow/inset)
 function render() {
-  const preview = document.getElementById('qrPreview');
-  const mount   = document.getElementById('qrMount');
+  let preview = document.getElementById('qrPreview');
+  let mount   = document.getElementById('qrMount');
+
+  // If the host HTML is a different/older variant, self-heal by creating
+  // the required nodes inside the existing preview-stage wrapper.
+  if (!preview || !mount) {
+    const stage = document.querySelector('.preview-stage');
+    if (stage) {
+      if (!preview) {
+        preview = document.createElement('div');
+        preview.id = 'qrPreview';
+        stage.appendChild(preview);
+      }
+      if (!mount) {
+        mount = document.createElement('div');
+        mount.id = 'qrMount';
+        preview.appendChild(mount);
+      }
+    }
+  }
+
   if (!preview || !mount) return;
 
   // ---- helpers (local, no global pollution)
@@ -2824,44 +2849,6 @@ function refreshModulesMode(){
   if (bodyHex)    bodyHex.disabled   = isEmoji;
   if (bodySwatch) bodySwatch.disabled= isEmoji;
   if (bodyRow)    bodyRow.classList.toggle('field-muted', isEmoji);
-}
-
-function updatePreviewBackground() {
-  const card = document.getElementById('qrPreview');
-  if (!card) return;
-
-  const tgl = document.getElementById('bgTransparent');
-  const isTransparent = !tgl?.checked; // checked = background ON
-
-  // Read knobs (use existing ids; harmless if missing)
-  const topHex  = document.getElementById('bgTopHex')?.value
-               || document.getElementById('bgTopColor')?.value || '#FFFFFF';
-  const botHex  = document.getElementById('bgBottomHex')?.value
-               || document.getElementById('bgBottomColor')?.value || '#FFFFFF';
-  const topA    = Number(document.getElementById('bgTopAlpha')?.value ?? 100);
-  const botA    = Number(document.getElementById('bgBottomAlpha')?.value ?? 100);
-
-  // Tiny local converter; no new globals
-  const hexToRgb = (h) => {
-    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h || '');
-    return m ? { r: parseInt(m[1],16), g: parseInt(m[2],16), b: parseInt(m[3],16) } : { r:255,g:255,b:255 };
-  };
-  const rgba = (hex, aPct) => {
-    const {r,g,b} = hexToRgb(hex);
-    const a = Math.max(0, Math.min(100, Number(aPct))) / 100;
-    return `rgba(${r}, ${g}, ${b}, ${a})`;
-  };
-
-  // Construct the CSS gradient for the unified ::before
-  const grad = `linear-gradient(180deg, ${rgba(topHex, topA)} 0%, ${rgba(botHex, botA)} 100%)`;
-  card.style.setProperty('--bg-paint', grad);
-
-  // Optional soft shadow only for fill mode
-  card.style.setProperty('--bg-shadow', isTransparent ? 'none' : '0 14px 40px rgba(0,0,0,.35)');
-
-  // Maintain stroke/fill classes (used by CSS above)
-  card.classList.toggle('card--stroke', isTransparent);
-  card.classList.toggle('card--fill', !isTransparent);
 }
 
 // ----- Background gating (transparent toggle) -----
