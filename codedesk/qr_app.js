@@ -2739,6 +2739,15 @@ function render() {
 
   if (!preview || !mount) return;
 
+  // QRCode lib loads async; if it isn't ready yet, retry soon.
+  // Without this, buildQrSvg() can throw and the preview mounts nothing (blank card).
+  if (!window.QRCode || !window.QRCode.CorrectLevel) {
+    try { mount.innerHTML = ''; } catch (e) {}
+    clearTimeout(render._qrRetry);
+    render._qrRetry = setTimeout(render, 60);
+    return;
+  }
+
   // ---- helpers (local, no global pollution)
   const toHex = (v) => {
     if (!v) return null;
@@ -2789,37 +2798,49 @@ function render() {
 
   // Build composed SVG
   const ecc = getECC();
-    const svg = composeCardSvg({
-  cardWidth,
-  transparentBg: isTransparent,
 
-  // gradient pieces
-  bgTopColor:     colorHex('bgTopColor',    '#FFFFFF') || '#FFFFFF',
-  bgBottomColor:  colorHex('bgBottomColor', '#FFFFFF') || '#FFFFFF',
-  bgTopAlpha:     Math.max(0, Math.min(100, parseFloat(document.getElementById('bgTopAlpha')?.value || '100'))),
-  bgBottomAlpha:  Math.max(0, Math.min(100, parseFloat(document.getElementById('bgBottomAlpha')?.value || '100'))),
+  let svg;
+  try {
+    svg = composeCardSvg({
+      cardWidth,
+      transparentBg: isTransparent,
 
-  captionHeadline: hasCaption ? headline : '',
-  captionBody:     hasCaption ? body : '',
-  captionColor:    colorHex('captionColor', '#000000'),
-  ecc,
+      // gradient pieces
+      bgTopColor:     colorHex('bgTopColor',    '#FFFFFF') || '#FFFFFF',
+      bgBottomColor:  colorHex('bgBottomColor', '#FFFFFF') || '#FFFFFF',
+      bgTopAlpha:     Math.max(0, Math.min(100, parseFloat(document.getElementById('bgTopAlpha')?.value || '100'))),
+      bgBottomAlpha:  Math.max(0, Math.min(100, parseFloat(document.getElementById('bgBottomAlpha')?.value || '100'))),
 
-    // look controls
-    modulesShape:   document.getElementById('moduleShape')?.value || 'Square',
-    bodyColor:      colorHex('bodyColor',   '#000000'),
-    eyeRingColor:   colorHex('eyeRingColor',   '#000000'),
-    eyeCenterColor: colorHex('eyeCenterColor', '#000000'),
-    eyeRingShape:   document.getElementById('eyeRingShape')?.value   || 'Square',
-    eyeCenterShape: document.getElementById('eyeCenterShape')?.value || 'Square',
+      captionHeadline: hasCaption ? headline : '',
+      captionBody:     hasCaption ? body : '',
+      captionColor:    colorHex('captionColor', '#000000'),
+      ecc,
 
-    modulesMode:    document.getElementById('modulesMode')?.value || 'Shape',
-    modulesScale:   parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
-    modulesEmoji:   document.getElementById('modulesEmoji')?.value || '😀',
+      // look controls
+      modulesShape:   document.getElementById('moduleShape')?.value || 'Square',
+      bodyColor:      colorHex('bodyColor',   '#000000'),
+      eyeRingColor:   colorHex('eyeRingColor',   '#000000'),
+      eyeCenterColor: colorHex('eyeCenterColor', '#000000'),
+      eyeRingShape:   document.getElementById('eyeRingShape')?.value   || 'Square',
+      eyeCenterShape: document.getElementById('eyeCenterShape')?.value || 'Square',
 
-    centerMode:     document.getElementById('centerMode')?.value || 'None',
-    centerScale:    parseFloat(document.getElementById('centerScale')?.value || '1'),
-    centerEmoji:    document.getElementById('centerEmoji')?.value || '😊',
-  });
+      modulesMode:    document.getElementById('modulesMode')?.value || 'Shape',
+      modulesScale:   parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
+      modulesEmoji:   document.getElementById('modulesEmoji')?.value || '😀',
+
+      centerMode:     document.getElementById('centerMode')?.value || 'None',
+      centerScale:    parseFloat(document.getElementById('centerScale')?.value || '1'),
+      centerEmoji:    document.getElementById('centerEmoji')?.value || '😊',
+    });
+  } catch (e) {
+    console.error('❌ render(): composeCardSvg failed', e);
+    mount.innerHTML = '';
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font: 12px/1.4 system-ui; padding: 10px; color: #b00020;';
+    msg.textContent = 'Preview error: ' + (e && e.message ? e.message : String(e));
+    mount.appendChild(msg);
+    return;
+  }
 
   // MOUNT DEBUG
   console.log('✅ render() running:', { svg, cardWidth });
