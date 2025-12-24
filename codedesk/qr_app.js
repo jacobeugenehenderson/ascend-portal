@@ -49,6 +49,9 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
   const templateId = (qs.get("template_id") || qs.get("templateId") || "").trim();
   const parentAscendJobKey = (qs.get("parent_ascend_job_key") || "").trim();
 
+  // Working-file open path (from hopper)
+  const workingFileId = (qs.get("working_file_id") || qs.get("workingFileId") || "").trim();
+
   // Carry-through identity (may be present when launched from Ascend)
   const token = (qs.get("token") || "").trim();
   const userEmail = (qs.get("user_email") || "").trim();
@@ -62,6 +65,9 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
     // Template path (persistent working-file) context
     template_id: templateId || "",
     parent_ascend_job_key: parentAscendJobKey || "",
+
+    // Working-file open path
+    working_file_id: workingFileId || "",
 
     // Optional identity context
     token: token || "",
@@ -650,6 +656,26 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
 
     _runTemplateBootstrap(0);
 
+    // --- Working-file open bootstrap ---
+    // If opened from Ascend hopper with a working_file_id, open that exact file.
+    (function _runWorkingOpen(attempt){
+      const a = attempt || 0;
+
+      if (typeof window.codedeskOpenWorkingFile !== 'function') {
+        if (a < 80) return setTimeout(function(){ _runWorkingOpen(a + 1); }, 25);
+        return;
+      }
+
+      const entry2 = window.CODEDESK_ENTRY || {};
+      const mode2 = String(entry2.mode || '').toLowerCase();
+      const wfId2 = String(entry2.working_file_id || entry2.workingFileId || '').trim();
+
+      // Accept both "working" and "new" so Ascend is resilient during transition.
+      if ((mode2 === 'working' || mode2 === 'new') && wfId2) {
+        window.codedeskOpenWorkingFile(wfId2);
+      }
+    })(0);
+
   } catch (e) {
     console.warn('CodeDesk template bootstrap failed (non-fatal)', e);
   }
@@ -722,6 +748,11 @@ window.refreshBackground = function refreshBackground () {
 });
 
 // Default: Background ON at first paint
+try {
+  const tgl0 = document.getElementById('bgTransparent');
+  if (tgl0 && tgl0.checked !== true) tgl0.checked = true; // checked = Background ON
+  if (typeof window.refreshBackground === 'function') window.refreshBackground();
+} catch (e) {}
 
 // optional helpers (put them right here too)
 window.getTypeFields = (t) => {

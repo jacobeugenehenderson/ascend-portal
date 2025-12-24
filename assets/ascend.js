@@ -556,8 +556,14 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
     function deleteWorking_(id) {
       try {
-        const list = listWorking_().filter((x) => String(x.id) !== String(id));
+        const dead = String(id);
+        const list = listWorking_().filter((x) => String(x.id) !== dead);
         localStorage.setItem(CODEDESK_STORE_KEY, JSON.stringify(list));
+
+        // If the deleted file is currently “active” in CodeDesk, clear that pointer too.
+        const ACTIVE_KEY = "codedesk_active_working_file_v1";
+        const cur = String(localStorage.getItem(ACTIVE_KEY) || "");
+        if (cur && cur === dead) localStorage.removeItem(ACTIVE_KEY);
       } catch (e) {}
     }
 
@@ -609,7 +615,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       mainBtn.appendChild(textStack);
 
       mainBtn.addEventListener("click", () => {
-        const target = buildCodeDeskUrl_("new", {
+        const target = buildCodeDeskUrl_("working", {
           working_file_id: wfId,
           workingFileId: wfId
         });
