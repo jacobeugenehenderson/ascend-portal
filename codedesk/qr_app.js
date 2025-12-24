@@ -520,6 +520,45 @@ emojiGrid.appendChild(b); }); }
     if (tRes.ok) {
       const tJson = await tRes.json();
       templates = Array.isArray(tJson.templates) ? tJson.templates : [];
+
+      // Normalize template objects to the "preset" shape expected by applyPreset().
+      // Many templates are stored as { type, fields, style:{...} } — applyPreset reads flat keys.
+      templates = templates.map((tpl) => {
+        const t = (tpl && typeof tpl === "object") ? tpl : {};
+        const flat = Object.assign({}, t);
+
+        // Flatten style block
+        if (t.style && typeof t.style === "object") {
+          Object.assign(flat, t.style);
+        }
+
+        // Normalize type keys
+        if (!flat.type) flat.type = t.qrType || t.qr_type || t.type || "";
+
+        // Key alias helper
+        const mapKey = (from, to) => {
+          if (flat[to] == null && flat[from] != null) flat[to] = flat[from];
+        };
+
+        // Common snake_case → camelCase aliases
+        mapKey("bg_top_color", "bgTopColor");
+        mapKey("bg_bottom_color", "bgBottomColor");
+        mapKey("bg_top_alpha", "bgTopAlpha");
+        mapKey("bg_bottom_alpha", "bgBottomAlpha");
+        mapKey("caption_color", "captionColor");
+        mapKey("body_color", "bodyColor");
+        mapKey("eye_ring_color", "eyeRingColor");
+        mapKey("eye_center_color", "eyeCenterColor");
+        mapKey("font_family", "fontFamily");
+
+        // Some schemas store bgOn instead of bgTransparent
+        if (typeof flat.bgOn === "boolean" && typeof flat.bgTransparent !== "boolean") {
+          // applyPreset expects bgTransparent=true to mean "background OFF"
+          flat.bgTransparent = !flat.bgOn;
+        }
+
+        return flat;
+      });
     } else {
       console.warn("Templates fetch returned non-OK:", tRes.status);
     }
