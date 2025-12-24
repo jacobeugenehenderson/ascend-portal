@@ -1535,7 +1535,8 @@ typeSel.addEventListener('change', () => {
     
   }
 
-const t0 = typeSel?.value;
+const _ts0 = document.getElementById('qrType');
+const t0 = _ts0 ? (_ts0.value || '') : '';
 if (t0 && getPresets(t0).length) {
   currentPresetIdx.set(t0, 0);
   applyPreset(t0, 0);
@@ -1566,7 +1567,8 @@ if (t0 && getPresets(t0).length) {
 
   // --- Build QR "text" for each Type (simple, pragmatic encoders for preview) ---
   function buildText(){
-    const t = typeSel.value;
+    const _typeSel = document.getElementById('qrType');
+    const t = _typeSel ? (_typeSel.value || '') : '';
     switch(t){
       case "URL": {
         const raw = val("urlData") || "https://example.org";
