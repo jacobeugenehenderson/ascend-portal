@@ -577,7 +577,75 @@ emojiGrid.appendChild(b); }); }
   }
 
   // Expose for debugging + Ascend/console introspection
+window.CODEDESK_TEMPLATES = templates;
+
+// ------------------------------------------------------------
+// Canonical template_id resolver
+// ------------------------------------------------------------
+window.codedeskResolveTemplateById = function codedeskResolveTemplateById(templateId){
+  const want = String(templateId || '').trim();
+  if (!want) return null;
+
+  const wantLower = want.toLowerCase();
+
+  return (window.CODEDESK_TEMPLATES || []).find(t => {
+    if (!t) return false;
+
+    return [
+      t.id,
+      t.template_id,
+      t.templateId,
+      t.slug,
+      t.key,
+      t.code
+    ].some(v => {
+      if (!v) return false;
+      const s = String(v).trim();
+      return s === want || s.toLowerCase() === wantLower;
+    });
+  }) || null;
+};
   window.CODEDESK_TEMPLATES = templates;
+
+/**
+ * Apply a specific template by ID (used by hopper selection).
+ * This bypasses preset cycling entirely.
+ */
+window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId){
+  const id = String(templateId || '').trim();
+  if (!id) return false;
+
+  const tpl = window.codedeskResolveTemplateById(templateId);
+
+  if (!tpl) {
+    console.warn('codedeskApplyTemplateById: template not found:', templateId);
+    return false;
+  }
+
+  const state =
+    tpl.state ||
+    tpl.okqral_state ||
+    tpl.export_state ||
+    tpl.payload ||
+    tpl.data ||
+    _codedeskTemplateToState(tpl);
+
+  if (!state) {
+    console.warn('codedeskApplyTemplateById: no usable state for template:', tpl);
+    return false;
+  }
+
+  // Import → save → open (same as template bootstrap path)
+  window.okqralImportState(state);
+
+  const name =
+    String(tpl.name || tpl.title || tpl.label || 'QR Template').trim();
+
+  const wfId = window.codedeskSaveWorkingFile(name);
+  if (wfId) window.codedeskOpenWorkingFile(wfId);
+
+  return true;
+};
 
 // force UI refresh now that templates are in memory
 try { if (typeof render === "function") render(); } catch (e) {}
@@ -659,20 +727,7 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
         const wantRaw = String(templateId || '').trim();
         const want = wantRaw.toLowerCase();
 
-        const tpl = (templates || []).find(t => {
-          if (!t) return false;
-
-          const candidates = [
-            t.id, t.template_id, t.templateId, t.TemplateId,
-            t.slug, t.key, t.code
-          ];
-
-          return candidates.some(v => {
-            const s = String(v || '').trim();
-            if (!s) return false;
-            return s === wantRaw || s.toLowerCase() === want;
-          });
-        });
+        const tpl = window.codedeskResolveTemplateById(templateId);
 
         // Prefer explicit state payloads, otherwise convert the plain template record
         const tplState =
@@ -2408,12 +2463,13 @@ function composeCardSvg({
     svg.appendChild(defs);
 
     const bg = document.createElementNS(NS, "rect");
-    bg.setAttribute("x", String(OUTER_PAD));
-    bg.setAttribute("y", String(OUTER_PAD));
-    bg.setAttribute("width", String(cardWidth - OUTER_PAD * 2));
-    bg.setAttribute("height", String(cardHeight - OUTER_PAD * 2));
-    bg.setAttribute("rx", String(RADIUS));
-    bg.setAttribute("ry", String(RADIUS));
+    const OUTER_R = Math.max(0, (Number(RADIUS) || 0) + (Number(OUTER_PAD) || 0));
+    bg.setAttribute("x", "0");
+    bg.setAttribute("y", "0");
+    bg.setAttribute("width", String(cardWidth));
+    bg.setAttribute("height", String(cardHeight));
+    bg.setAttribute("rx", String(OUTER_R));
+    bg.setAttribute("ry", String(OUTER_R));
     bg.setAttribute("fill", "url(#cd_bg)");
     svg.appendChild(bg);
   }
