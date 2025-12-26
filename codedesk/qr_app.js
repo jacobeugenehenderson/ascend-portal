@@ -496,7 +496,17 @@ emojiGrid.appendChild(b); }); }
   // Build a directory-safe base URL so fetches work even if the page URL is missing a trailing slash.
   const __CODEDESK_BASE_URL__ = (function () {
     var p = window.location.pathname || "/";
-    // If we are at "/codedesk" (no trailing slash), treat it as a folder, not a file.
+    // If we are at "/codedesk/index.html", treat it as a file and strip it to the folder.
+    if (p && !p.endsWith("/")) {
+      var last = p.split("/").pop() || "";
+      if (last.indexOf(".") !== -1) {
+        // Looks like a filename (e.g., index.html) — remove the last segment
+        p = p.slice(0, p.length - last.length);
+      } else {
+        // Looks like a folder path missing a trailing slash
+        p = p + "/";
+      }
+    }
     if (p && !p.endsWith("/")) p = p + "/";
     return window.location.origin + p;
   })();
@@ -3754,6 +3764,6 @@ window.addEventListener('resize', applyClickThroughForMobile, { passive: true })
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeAppModal();
   });
-  
+
 })(); // end App Menu Modal IIFE
 })(); // end main async bootstrap IIFE (opened near Ln ~489)
