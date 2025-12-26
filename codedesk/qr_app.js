@@ -580,32 +580,72 @@ emojiGrid.appendChild(b); }); }
 window.CODEDESK_TEMPLATES = templates;
 
 // ------------------------------------------------------------
-// Canonical template_id resolver
+// Canonical template_id resolver + converter (shared by hopper + bootstrap)
 // ------------------------------------------------------------
-window.codedeskResolveTemplateById = function codedeskResolveTemplateById(templateId){
-  const want = String(templateId || '').trim();
-  if (!want) return null;
+function _codedeskResolveTemplateById_(templateId){
+  const wantRaw = String(templateId || '').trim();
+  if (!wantRaw) return null;
 
-  const wantLower = want.toLowerCase();
+  const want = wantRaw.toLowerCase();
+  const list = window.CODEDESK_TEMPLATES || [];
 
-  return (window.CODEDESK_TEMPLATES || []).find(t => {
+  return list.find(t => {
     if (!t) return false;
-
     return [
-      t.id,
-      t.template_id,
-      t.templateId,
-      t.slug,
-      t.key,
-      t.code
+      t.id, t.template_id, t.templateId, t.TemplateId,
+      t.slug, t.key, t.code
     ].some(v => {
-      if (!v) return false;
-      const s = String(v).trim();
-      return s === want || s.toLowerCase() === wantLower;
+      const s = String(v || '').trim();
+      if (!s) return false;
+      return s === wantRaw || s.toLowerCase() === want;
     });
   }) || null;
-};
-  window.CODEDESK_TEMPLATES = templates;
+}
+
+window.codedeskResolveTemplateById = _codedeskResolveTemplateById_;
+
+function _codedeskTemplateToState(tpl) {
+  if (!tpl) return null;
+
+  // refreshBackground(): checked = Background ON.
+  // template bgTransparent=false => Background ON => checkbox checked=true
+  const bgOnChecked = !Boolean(tpl.bgTransparent);
+
+  return {
+    v: 1,
+    type: String(tpl.type || '').trim() || 'URL',
+    fields: {
+      urlData: String(tpl.urlData || '').trim()
+    },
+    style: {
+      campaign: tpl.campaign,
+      captionBody: tpl.captionBody,
+      fontFamily: tpl.fontFamily,
+      captionColor: tpl.captionColor,
+      bodyColor: tpl.bodyColor,
+      eyeRingColor: tpl.eyeRingColor,
+      eyeCenterColor: tpl.eyeCenterColor,
+
+      bgTopColor: tpl.bgTopColor,
+      bgTopAlpha: tpl.bgTopAlpha,
+      bgBottomColor: tpl.bgBottomColor,
+      bgBottomAlpha: tpl.bgBottomAlpha,
+
+      // UI checkbox id is bgTransparent (checked = Background ON)
+      bgTransparent: bgOnChecked,
+
+      moduleShape: tpl.moduleShape,
+      eyeRingShape: tpl.eyeRingShape,
+      eyeCenterShape: tpl.eyeCenterShape,
+      modulesMode: tpl.modulesMode,
+      modulesEmoji: tpl.modulesEmoji,
+      modulesScale: tpl.modulesScale,
+      centerMode: tpl.centerMode,
+      centerEmoji: tpl.centerEmoji,
+      centerScale: tpl.centerScale
+    }
+  };
+}
 
 /**
  * Apply a specific template by ID (used by hopper selection).
@@ -660,54 +700,6 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
     const entry = window.CODEDESK_ENTRY || {};
     const mode = String(entry.mode || '').toLowerCase();
     const templateId = String(entry.template_id || entry.templateId || '').trim();
-
-    // Convert a "template record" (qr_templates.json) into an okqralImportState()-friendly blob.
-    function _codedeskTemplateToState(tpl) {
-      if (!tpl) return null;
-
-      // NOTE: bgTransparent in your UI is inverted (checked = Background ON) per refreshBackground():
-      // const isTransparent = !tgl?.checked; // checked = Background ON
-      // So: template bgTransparent=false => Background ON => checkbox checked=true
-      const bgOnChecked = !Boolean(tpl.bgTransparent);
-
-      return {
-        v: 1,
-        type: String(tpl.type || '').trim() || 'URL',
-        fields: {
-          // keep URL empty for templates unless you add tpl.urlData later
-          urlData: String(tpl.urlData || '').trim()
-        },
-        style: {
-          campaign: tpl.campaign,
-          captionBody: tpl.captionBody,
-          fontFamily: tpl.fontFamily,
-          captionColor: tpl.captionColor,
-          bodyColor: tpl.bodyColor,
-          eyeRingColor: tpl.eyeRingColor,
-          eyeCenterColor: tpl.eyeCenterColor,
-
-          // Background gradient knobs (these IDs exist in your background handlers)
-          bgTopColor: tpl.bgTopColor,
-          bgTopAlpha: tpl.bgTopAlpha,
-          bgBottomColor: tpl.bgBottomColor,
-          bgBottomAlpha: tpl.bgBottomAlpha,
-
-          // UI checkbox id is bgTransparent (checked = Background ON)
-          bgTransparent: bgOnChecked,
-
-          // Shapes / modes
-          moduleShape: tpl.moduleShape,
-          eyeRingShape: tpl.eyeRingShape,
-          eyeCenterShape: tpl.eyeCenterShape,
-          modulesMode: tpl.modulesMode,
-          modulesEmoji: tpl.modulesEmoji,
-          modulesScale: tpl.modulesScale,
-          centerMode: tpl.centerMode,
-          centerEmoji: tpl.centerEmoji,
-          centerScale: tpl.centerScale
-        }
-      };
-    }
 
     function _runTemplateBootstrap(attempt) {
       const a = attempt || 0;
