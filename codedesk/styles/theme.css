@@ -51,7 +51,7 @@ html.light, :root.light {
   --md-sys-color-surface:         var(--ascend-app-surface, #ffffff);
   --md-sys-color-on-surface:      var(--ascend-app-text-main, #020617);
   --md-sys-color-surface-variant: var(--ascend-control-bg, #ffffff);
-  --md-sys-color-outline:         var(--ascend-app-border, rgba(15, 23, 42, 0.10));
+  --md-sys-color-outline:         var(--ascend-app-border, rgba(15, 23, 42, 0.18));
   --md-sys-color-outline-variant: color-mix(in oklab, var(--md-sys-color-outline) 70%, var(--md-sys-color-primary) 30%);
 
   --ui-surface:         var(--md-sys-color-surface);
@@ -79,13 +79,14 @@ html.light, :root.light {
   --stage-frame:   var(--ascend-stage-frame, #1ff0ff);
   --stage-frame-w: var(--ascend-stage-frame-w, 3px);
 
-  /* Surfaces & text (inherit Ascend app shell) */
-  --md-sys-color-background:       var(--ascend-app-bg);
-  --md-sys-color-on-background:    var(--ascend-app-text-main);
-  --md-sys-color-surface:          var(--ascend-app-surface);
-  --md-sys-color-on-surface:       var(--ascend-app-text-main);
-  --md-sys-color-surface-variant:  var(--ascend-control-bg);
-  --md-sys-color-muted:            var(--ascend-app-text-muted);
+  /* Surfaces & text (inherit Ascend app shell)
+     IMPORTANT: include fallbacks so light-mode doesn't go "empty" if Ascend tokens aren't present. */
+  --md-sys-color-background:       var(--ascend-app-bg, #050814);
+  --md-sys-color-on-background:    var(--ascend-app-text-main, #e6eefc);
+  --md-sys-color-surface:          var(--ascend-app-surface, rgba(15, 23, 42, 0.78));
+  --md-sys-color-on-surface:       var(--ascend-app-text-main, #e6eefc);
+  --md-sys-color-surface-variant:  var(--ascend-control-bg, rgba(15, 23, 42, 0.92));
+  --md-sys-color-muted:            var(--ascend-app-text-muted, rgba(230, 238, 252, 0.68));
 
   /* Strokes (inherit Ascend app shell) */
   --md-sys-color-outline:          var(--ascend-app-border);
@@ -450,7 +451,7 @@ body{
   background: var(--ui-surface);
   color: var(--md-sys-color-on-surface);
   border: 1px solid var(--ui-stroke);
-  border-radius: var(--shape-corner-lg);
+  border-radius: var(--phone-radius);
   box-shadow: var(--elevation-2);
 }
 
