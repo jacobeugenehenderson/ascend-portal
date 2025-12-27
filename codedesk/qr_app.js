@@ -651,6 +651,22 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
   const id = String(templateId || '').trim();
   if (!id) return false;
 
+  // Idempotent: if we are in URL "template" mode and already bootstrapped this template,
+  // reopen the previously created working file instead of creating a new one.
+  try {
+    const entry = window.CODEDESK_ENTRY || {};
+    const mode = String(entry.mode || '').toLowerCase();
+    const entryTpl = String(entry.template_id || entry.templateId || '').trim();
+    if (mode === 'template' && entryTpl && entryTpl.toLowerCase() === id.toLowerCase()) {
+      const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
+      const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
+      if (existingWfId && typeof window.codedeskOpenWorkingFile === 'function') {
+        window.codedeskOpenWorkingFile(existingWfId);
+        return true;
+      }
+    }
+  } catch (e) {}
+
   const tpl = window.codedeskResolveTemplateById(templateId);
 
   if (!tpl) {
@@ -671,13 +687,25 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
     return false;
   }
 
-  // Import → save → open (same as template bootstrap path)
+  // Import → save → open
   window.okqralImportState(state);
 
   const name =
     String(tpl.name || tpl.title || tpl.label || 'QR Template').trim();
 
   const wfId = window.codedeskSaveWorkingFile(name);
+
+  // Persist the created working file id for URL template mode (idempotent reload)
+  try {
+    const entry2 = window.CODEDESK_ENTRY || {};
+    const mode2 = String(entry2.mode || '').toLowerCase();
+    const entryTpl2 = String(entry2.template_id || entry2.templateId || '').trim();
+    if (mode2 === 'template' && entryTpl2) {
+      const BOOT_KEY2 = 'codedesk_template_bootstrap_v1:' + entryTpl2;
+      if (wfId) localStorage.setItem(BOOT_KEY2, String(wfId).trim());
+    }
+  } catch (e) {}
+
   if (wfId) window.codedeskOpenWorkingFile(wfId);
 
   return true;
@@ -687,90 +715,42 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
 try { if (typeof render === "function") render(); } catch (e) {}
 try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } catch (e) {}
 
-  // --- Template-open bootstrap ---
-  // If CodeDesk was opened from Ascend in "template" mode, we:
-  //  1) resolve template_id → template record
-  //  2) on first open, import its state and create a local working file
-  //  3) on subsequent reloads, open the already-created working file
+  // --- URL bootstrap (idempotent; no polling loops) ---
+  // Runs once per page-load (and once per session via sessionStorage key).
+  // Uses a microtask so it executes after this script finishes defining functions.
   try {
-    const entry = window.CODEDESK_ENTRY || {};
-    const mode = String(entry.mode || '').toLowerCase();
-    const templateId = String(entry.template_id || entry.templateId || '').trim();
+    queueMicrotask(function codedeskBootstrapFromEntryOnce(){
+      if (window.__CODEDESK_BOOTSTRAP_DONE__) return;
 
+      try {
+        if (sessionStorage.getItem(CODEDESK_BOOTSTRAP_SESSION_KEY) === "1") return;
+        sessionStorage.setItem(CODEDESK_BOOTSTRAP_SESSION_KEY, "1");
+      } catch (e) {}
 
-    function _runTemplateBootstrap(attempt) {
-      const a = attempt || 0;
+      const entry = window.CODEDESK_ENTRY || {};
+      const mode = String(entry.mode || '').toLowerCase();
+      const templateId = String(entry.template_id || entry.templateId || '').trim();
+      const wfId = String(entry.working_file_id || entry.workingFileId || '').trim();
 
-      // Wait until the import/save/open functions exist (this is what was tripping your warning).
-      if (typeof window.okqralImportState !== 'function' ||
-          typeof window.codedeskSaveWorkingFile !== 'function' ||
-          typeof window.codedeskOpenWorkingFile !== 'function') {
-        if (a < 80) return setTimeout(function(){ _runTemplateBootstrap(a + 1); }, 25);
+      // 1) Working-file open path wins (hopper open)
+      if ((mode === 'working' || mode === 'new') && wfId && typeof window.codedeskOpenWorkingFile === 'function') {
+        window.codedeskOpenWorkingFile(wfId);
+        window.__CODEDESK_BOOTSTRAP_DONE__ = true;
         return;
       }
 
-      if (mode === 'template' && templateId) {
-        const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + templateId;
-
-        // Find matching template by tolerant keys (handles "two" vs "2" vs "TWO" vs slug keys)
-        const wantRaw = String(templateId || '').trim();
-        const want = wantRaw.toLowerCase();
-
-        const tpl = window.codedeskResolveTemplateById(templateId);
-
-        // Prefer explicit state payloads, otherwise convert the plain template record
-        const tplState =
-          (tpl && (tpl.state || tpl.okqral_state || tpl.export_state || tpl.payload || tpl.data)) ||
-          _codedeskTemplateToState(tpl) ||
-          null;
-
-        // If we already created a working file for this template, reopen it.
-        const existingWfId = (function(){
-          try { return String(localStorage.getItem(BOOT_KEY) || '').trim(); } catch(e){ return ''; }
-        })();
-
-        if (existingWfId) {
-          window.codedeskOpenWorkingFile(existingWfId);
-        } else if (tplState) {
-          // First-time bootstrap: import → save → reopen
-          window.okqralImportState(tplState);
-
-          const wfName = String((tpl && (tpl.name || tpl.title || tpl.label)) || 'QR Template').trim() || 'QR Template';
-          const newWfId = window.codedeskSaveWorkingFile(wfName);
-
-          try { localStorage.setItem(BOOT_KEY, String(newWfId || '').trim()); } catch(e){}
-
-          if (newWfId) window.codedeskOpenWorkingFile(newWfId);
-        } else {
-          console.warn('CodeDesk template bootstrap: could not resolve template or state for', templateId, tpl);
-        }
-      }
-    }
-
-    _runTemplateBootstrap(0);
-
-    // --- Working-file open bootstrap ---
-    // If opened from Ascend hopper with a working_file_id, open that exact file.
-    (function _runWorkingOpen(attempt){
-      const a = attempt || 0;
-
-      if (typeof window.codedeskOpenWorkingFile !== 'function') {
-        if (a < 80) return setTimeout(function(){ _runWorkingOpen(a + 1); }, 25);
+      // 2) Template path (URL template open) routes through codedeskApplyTemplateById (idempotent)
+      if (mode === 'template' && templateId && typeof window.codedeskApplyTemplateById === 'function') {
+        window.codedeskApplyTemplateById(templateId);
+        window.__CODEDESK_BOOTSTRAP_DONE__ = true;
         return;
       }
 
-      const entry2 = window.CODEDESK_ENTRY || {};
-      const mode2 = String(entry2.mode || '').toLowerCase();
-      const wfId2 = String(entry2.working_file_id || entry2.workingFileId || '').trim();
-
-      // Accept both "working" and "new" so Ascend is resilient during transition.
-      if ((mode2 === 'working' || mode2 === 'new') && wfId2) {
-        window.codedeskOpenWorkingFile(wfId2);
-      }
-    })(0);
-
+      // Nothing to do
+      window.__CODEDESK_BOOTSTRAP_DONE__ = true;
+    });
   } catch (e) {
-    console.warn('CodeDesk template bootstrap failed (non-fatal)', e);
+    console.warn('CodeDesk URL bootstrap failed (non-fatal)', e);
   }
 
 // after manifest = ... is set
