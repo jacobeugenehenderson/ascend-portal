@@ -579,6 +579,22 @@ emojiGrid.appendChild(b); }); }
   // Expose for debugging + Ascend/console introspection
 window.CODEDESK_TEMPLATES = templates;
 
+function _codedeskResolveTemplateById_(id){
+  if (!id) return null;
+  const want = String(id).trim().toLowerCase();
+
+  const list = Array.isArray(window.CODEDESK_TEMPLATES)
+    ? window.CODEDESK_TEMPLATES
+    : [];
+
+  return list.find(tpl => {
+    if (!tpl) return false;
+    if (String(tpl.id || '').toLowerCase() === want) return true;
+    if (String(tpl.name || '').toLowerCase() === want) return true;
+    return false;
+  }) || null;
+}
+
 window.codedeskResolveTemplateById = _codedeskResolveTemplateById_;
 
 function _codedeskTemplateToState(tpl) {
