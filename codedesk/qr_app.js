@@ -579,96 +579,32 @@ try {
  * Apply a specific template by ID (used by hopper selection).
  * This bypasses preset cycling entirely.
  */
-window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId){
-  const id = String(templateId || '').trim();
-  if (!id) return false;
 
-    // Idempotent: if we are in URL "template" mode and already bootstrapped this template,
-  // reopen the previously created working file instead of creating a new one.
-  try {
-    const entry = window.CODEDESK_ENTRY || {};
-    const mode = String(entry.mode || '').toLowerCase();
-    const entryTpl = String(entry.template_id || entry.templateId || '').trim();
-
-    if (mode === 'template' && entryTpl && entryTpl.toLowerCase() === id.toLowerCase()) {
-      const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
-      const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
-      if (existingWfId && typeof window.codedeskOpenWorkingFile === 'function') {
-        window.codedeskOpenWorkingFile(existingWfId);
-        return true;
-      }
-    }
-  } catch (e) {}
-
-  const tpl = window.codedeskResolveTemplateById(id);
-
-  if (!tpl) {
-    const msg = 'codedeskApplyTemplateById: template not found: ' + String(templateId);
-    console.error(msg);
-    throw new Error(msg);
-  }
-
-  const state =
-    tpl.state ||
-    tpl.okqral_state ||
-    tpl.export_state ||
-    tpl.payload ||
-    tpl.data ||
-    _codedeskTemplateToState(tpl);
-
-    // ------------------------------------------------------------
-    // TEMPLATE TYPE NORMALIZATION
-    // Templates define type as "URL", but runtime expects "url"
-    // ------------------------------------------------------------
-    if (tpl.type && !state.type) {
-      state.type = String(tpl.type).trim().toLowerCase();
-    }
-
-  if (!state) {
-    console.warn('codedeskApplyTemplateById: no usable state for template:', tpl);
+window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
+  const t = codedeskResolveTemplateById(tid);
+  if (!t || !t.state) {
+    console.warn('codedeskApplyTemplateById: missing template/state for', tid, t);
     return false;
   }
 
-  // ------------------------------------------------------------------
-  // Template hydration guard:
-  // Prevent qrType "change" handler from calling applyPreset() and
-  // overwriting the just-imported template state.
-  // ------------------------------------------------------------------
-  window.__CODEDESK_APPLYING_TEMPLATE__ = true;
+  // IMPORTANT: template selection must never reuse or reopen a stale working file id.
+  // Create a fresh working-file record for this template, then mark it active WITHOUT re-importing.
+  const name = (t.type || 'QR') + ' — ' + (t.name || t.id || 'Template');
+  const wfId = window.codedeskSaveWorkingFile(name, {
+    id: 'wf_' + Date.now() + '_' + Math.random().toString(16).slice(2),
+    template_id: t.id
+  });
 
-  try {
-    // Import → (typeSel change will fire inside here) → guard blocks presets
-    window.okqralImportState(state);
-  } finally {
-    // Release guard after the import-triggered handlers have run
-    queueMicrotask(() => { window.__CODEDESK_APPLYING_TEMPLATE__ = false; });
+  window.CODEDESK_ACTIVE_WORKING_FILE_ID = wfId;
+  window.CODEDESK_ACTIVE_TEMPLATE_ID = t.id;
+
+  // This is the missing step: apply the template’s saved state to the live UI + preview.
+  if (typeof window.okqralImportState === 'function') {
+    window.okqralImportState(t.state);
   }
+  if (typeof render === 'function') render();
 
-  const name =
-    String(tpl.name || tpl.title || tpl.label || 'QR Template').trim();
-
-  // IMPORTANT: never let a template save re-use whatever "active" working file was open.
-  // Pass an explicit id so Template 2 can't overwrite Template 1 (or some stale file).
-  const now = Date.now();
-  const rand = Math.random().toString(16).slice(2);
-  const stableTplId = String(tpl.id || templateId || id || '').trim();
-  const explicitId = stableTplId ? ('wf_tpl_' + stableTplId) : ('wf_' + now + '_' + rand);
-
-  const wfId = window.codedeskSaveWorkingFile(name, { id: explicitId });
-
-  // Persist the created working file id for URL template mode (idempotent reload)
-  try {
-    const entry2 = window.CODEDESK_ENTRY || {};
-    const mode2 = String(entry2.mode || '').toLowerCase();
-    const entryTpl2 = String(entry2.template_id || entry2.templateId || '').trim();
-    if (mode2 === 'template' && entryTpl2) {
-      const BOOT_KEY2 = 'codedesk_template_bootstrap_v1:' + entryTpl2;
-      if (wfId) localStorage.setItem(BOOT_KEY2, String(wfId).trim());
-    }
-  } catch (e) {}
-
-  if (wfId) window.codedeskOpenWorkingFile(wfId);
-
+  try { localStorage.setItem('codedesk_active_working_file_v1', wfId); } catch (e) {}
   return true;
 };
 
@@ -943,9 +879,18 @@ window.okqralImportState = function okqralImportState(state){
   try {
     // 1) Switch type (rebuilds the form via existing listener)
     const typeSel = document.getElementById('qrType');
-    if (typeSel && state.type && typeSel.value !== state.type){
-      typeSel.value = state.type;
-      typeSel.dispatchEvent(new Event('change', { bubbles: true }));
+    if (typeSel && state.type) {
+      const desired = String(state.type).toLowerCase();
+      let match = null;
+
+      for (const opt of Array.from(typeSel.options || [])) {
+        if (String(opt.value).toLowerCase() === desired) { match = opt.value; break; }
+      }
+
+      if (match && typeSel.value !== match) {
+        typeSel.value = match;
+        typeSel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
     }
 
     // 2) Restore type-specific fields (after rebuild)
