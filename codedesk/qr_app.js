@@ -913,9 +913,31 @@ window.okqralImportState = function okqralImportState(state){
     const fields = state.fields || {};
     Object.keys(fields).forEach(id => _setValueById(id, fields[id]));
 
-    // 3) Restore style knobs
-    const style = state.style || {};
-    Object.keys(style).forEach(id => _setValueById(id, style[id]));
+    // 3) Restore style knobs (with legacy key aliases + hex/color pairing)
+    const style = Object.assign({}, state.style || {});
+
+    // Legacy aliases (older templates / older HTML variants)
+    if (style.bgTopColor && !style.bgTopHex) style.bgTopHex = style.bgTopColor;
+    if (style.bgBottomColor && !style.bgBottomHex) style.bgBottomHex = style.bgBottomColor;
+    if (style.bgTopHex && !style.bgTopColor) style.bgTopColor = style.bgTopHex;
+    if (style.bgBottomHex && !style.bgBottomColor) style.bgBottomColor = style.bgBottomHex;
+
+    const _setStyleKnob = (id, val) => {
+      _setValueById(id, val);
+
+      // Keep paired Hex/Color inputs in lockstep.
+      // Programmatic .value assignments do NOT fire input events,
+      // and your colorHex() prefers Hex when present.
+      if (/Color$/.test(id)) _setValueById(id.replace(/Color$/, 'Hex'), val);
+      if (/Hex$/.test(id))   _setValueById(id.replace(/Hex$/,   'Color'), val);
+    };
+
+    Object.keys(style).forEach(id => _setStyleKnob(id, style[id]));
+
+    // Re-apply gating AFTER import so disabled/enabled states match the imported values
+    try { typeof refreshBackground === 'function' && refreshBackground(); } catch(e){}
+    try { typeof refreshModulesMode === 'function' && refreshModulesMode(); } catch(e){}
+    try { typeof refreshCenter === 'function' && refreshCenter(); } catch(e){}
 
   // 4) Restore ECC + font session if present (non-fatal)
   try {
