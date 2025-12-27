@@ -454,7 +454,7 @@ body{
   background: var(--ui-surface);
   color: var(--md-sys-color-on-surface);
   border: 1px solid var(--ui-stroke);
-  border-radius: var(--phone-radius);
+  border-radius: var(--shape-corner-lg);
   box-shadow: var(--elevation-2);
 }
 
