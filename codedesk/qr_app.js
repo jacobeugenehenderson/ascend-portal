@@ -587,19 +587,43 @@ emojiGrid.appendChild(b); }); }
 window.CODEDESK_TEMPLATES = templates;
 
 const _codedeskResolveTemplateById_ = function(id){
-  if (!id) return null;
-  const want = String(id).trim().toLowerCase();
+  if (id == null) return null;
+  const wantRaw = String(id).trim();
+  if (!wantRaw) return null;
+
+  const want = wantRaw.toLowerCase();
 
   const list = Array.isArray(window.CODEDESK_TEMPLATES)
     ? window.CODEDESK_TEMPLATES
     : [];
 
-  return list.find(tpl => {
-    if (!tpl) return false;
-    if (String(tpl.id || '').toLowerCase() === want) return true;
-    if (String(tpl.name || '').toLowerCase() === want) return true;
-    return false;
-  }) || null;
+  if (!list.length) return null;
+
+  // --- 1) Direct match by canonical id or name ---
+  const direct =
+    list.find(tpl => {
+      if (!tpl) return false;
+      if (String(tpl.id || '').trim().toLowerCase() === want) return true;
+      if (String(tpl.name || '').trim().toLowerCase() === want) return true;
+      return false;
+    }) || null;
+
+  if (direct) return direct;
+
+  // --- 2) Support "Template 2" / "template-2" / "t2" / "#2" ---
+  const m = want.match(/^(?:template|tpl|t|#)\s*[-:]?\s*(\d+)$/i);
+  const nFromLabel = m ? parseInt(m[1], 10) : NaN;
+
+  // --- 3) Support bare numeric "2" (1-based index) ---
+  const nBare = /^[0-9]+$/.test(want) ? parseInt(want, 10) : NaN;
+
+  const n = Number.isFinite(nFromLabel) ? nFromLabel : nBare;
+
+  if (Number.isFinite(n) && n >= 1 && n <= list.length) {
+    return list[n - 1] || null; // 1-based -> 0-based
+  }
+
+  return null;
 };
 
 window.codedeskResolveTemplateById = _codedeskResolveTemplateById_;
