@@ -619,8 +619,11 @@ function _codedeskTemplateToState(tpl) {
       eyeRingColor: tpl.eyeRingColor,
       eyeCenterColor: tpl.eyeCenterColor,
 
+      // Map semantic template keys → BOTH UI control IDs (color input + hex text)
+      bgTopColor: tpl.bgTopColor,
       bgTopHex: tpl.bgTopColor,
       bgTopAlpha: tpl.bgTopAlpha,
+      bgBottomColor: tpl.bgBottomColor,
       bgBottomHex: tpl.bgBottomColor,
       bgBottomAlpha: tpl.bgBottomAlpha,
 
@@ -670,8 +673,9 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
   const tpl = window.codedeskResolveTemplateById(templateId);
 
   if (!tpl) {
-    console.warn('codedeskApplyTemplateById: template not found:', templateId);
-    return false;
+    const msg = 'codedeskApplyTemplateById: template not found: ' + String(templateId);
+    console.error(msg);
+    throw new Error(msg);
   }
 
   const state =
@@ -683,12 +687,24 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
     _codedeskTemplateToState(tpl);
 
   if (!state) {
-    console.warn('codedeskApplyTemplateById: no usable state for template:', tpl);
-    return false;
+    const msg = 'codedeskApplyTemplateById: no usable state for template: ' + (tpl && (tpl.id || tpl.name) ? (tpl.id || tpl.name) : 'UNKNOWN');
+    console.error(msg, tpl);
+    throw new Error(msg);
   }
 
-  // Import → save → open
-  window.okqralImportState(state);
+  // Import → save → open (guard against preset cycling overwrite)
+  window.__CODEDESK_APPLYING_TEMPLATE__ = true;
+  try {
+    window.okqralImportState(state);
+  } finally {
+    window.__CODEDESK_APPLYING_TEMPLATE__ = false;
+  }
+
+  // Ensure immediate preview refresh after template hydration
+  if (typeof window.refreshBackground === 'function') window.refreshBackground();
+  if (typeof refreshModulesMode === 'function') refreshModulesMode();
+  if (typeof refreshCenter === 'function') refreshCenter();
+  if (typeof render === 'function') render();
 
   const name =
     String(tpl.name || tpl.title || tpl.label || 'QR Template').trim();
@@ -1567,6 +1583,15 @@ typeSel.addEventListener('change', () => {
   if (typeof wireEmojiModal === 'function') wireEmojiModal();
   if (typeof wireECCPill === 'function') wireECCPill();
   if (typeof wireECCLegacySelect === 'function') wireECCLegacySelect();
+
+  // 🚫 Template hydration guard: NEVER allow preset cycling to overwrite a template import.
+  if (window.__CODEDESK_APPLYING_TEMPLATE__ === true) {
+    if (typeof window.refreshBackground === 'function') window.refreshBackground();
+    if (typeof refreshModulesMode === 'function') refreshModulesMode();
+    if (typeof refreshCenter === 'function') refreshCenter();
+    if (typeof render === 'function') render();
+    return;
+  }
 
   // 2) preset index bookkeeping
   if (!currentPresetIdx.has(t)) currentPresetIdx.set(t, 0);
