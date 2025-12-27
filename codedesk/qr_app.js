@@ -654,28 +654,28 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
   const id = String(templateId || '').trim();
   if (!id) return false;
 
-  // Idempotent: if we are in URL "template" mode and already bootstrapped this template,
-  // reopen the previously created working file instead of creating a new one.
-  try {
-    const entry = window.CODEDESK_ENTRY || {};
-    const mode = String(entry.mode || '').toLowerCase();
-    const entryTpl = String(entry.template_id || entry.templateId || '').trim();
-    // Only short-circuit reopen DURING the initial URL bootstrap.
-    // If we allow this after bootstrap, manual template selection can get "stuck"
-    // reopening an old working file that does not match the requested template state.
-    if (!window.__CODEDESK_BOOTSTRAP_DONE__ &&
-        mode === 'template' &&
-        entryTpl &&
-        entryTpl.toLowerCase() === id.toLowerCase()) {
-      const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
-      const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
-      if (existingWfId && typeof window.codedeskOpenWorkingFile === 'function') {
-        window.codedeskOpenWorkingFile(existingWfId);
-        return true;
-      }
-    }
-  } catch (e) {}
+    // Idempotent URL-template bootstrap: ONLY reopen the bootstrapped working file
+    // during the initial bootstrap pass. After bootstrap, template selection MUST
+    // re-hydrate state (no silent fallback to prior working file).
+    try {
+      const entry = window.CODEDESK_ENTRY || {};
+      const mode = String(entry.mode || '').toLowerCase();
+      const entryTpl = String(entry.template_id || entry.templateId || '').trim();
 
+      if (!window.__CODEDESK_BOOTSTRAP_DONE__ &&
+          mode === 'template' &&
+          entryTpl &&
+          entryTpl.toLowerCase() === id.toLowerCase()) {
+
+        const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
+        const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
+
+        if (existingWfId && typeof window.codedeskOpenWorkingFile === 'function') {
+          window.codedeskOpenWorkingFile(existingWfId);
+          return true;
+        }
+      }
+    } catch (e) {}
   const tpl = window.codedeskResolveTemplateById(templateId);
 
   if (!tpl) {
@@ -1654,15 +1654,6 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
       });
     
   }
-
-const _ts0 = document.getElementById('qrType');
-const t0 = _ts0 ? (_ts0.value || '') : '';
-if (t0 && getPresets(t0).length) {
-  currentPresetIdx.set(t0, 0);
-  applyPreset(t0, 0);
-  const list0 = getPresets(t0);
-  setCaptionFromPreset(list0[0] || {}, t0);
-}
 
 (function () {
   const $ = (id) => document.getElementById(id);
