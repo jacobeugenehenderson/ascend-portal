@@ -886,6 +886,8 @@ function codedeskResolveTemplateById(id){
 
 // expose for Ascend / console / future callers
 window.codedeskResolveTemplateById = codedeskResolveTemplateById;
+
+window.getPresets = (t) => {
   const want = String(t || "").trim().toLowerCase();
 
   // Prefer templates loaded from qr_templates.json (Ascend/CodeDesk templates)
@@ -903,7 +905,7 @@ window.codedeskResolveTemplateById = codedeskResolveTemplateById;
   }
 
   // Fallback: legacy presets from the manifest
-  const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
+  const key = Object.keys(presets).find((k) => k.toLowerCase() === want);
   return presets[key] || [];
 };
 
