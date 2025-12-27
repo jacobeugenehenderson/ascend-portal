@@ -710,23 +710,11 @@ window.refreshBackground = function refreshBackground () {
   const card = document.getElementById('qrPreview');
   if (!card) return;
 
-  const tgl = document.getElementById('bgTransparent');
-  const isTransparent = !tgl?.checked; // checked = Background ON
+  const topA = (parseFloat(document.getElementById('bgTopAlpha')?.value)    || 0) / 100;
+  const botA = (parseFloat(document.getElementById('bgBottomAlpha')?.value) || 0) / 100;
 
-  // legacy single-field (no-ops if missing)
-  const swatch = document.getElementById('bgColor');
-  const hex    = document.getElementById('bgColorHex') ||
-                 document.getElementById('bgHex')     ||
-                 document.getElementById('bghex');
-
-  if (hex)    hex.disabled    = isTransparent;
-  if (swatch) swatch.disabled = isTransparent;
-
-  // gradient fields
-  const hexes   = [...document.querySelectorAll('#bgTopHex,#bgBottomHex')];
-  const swatchs = [...document.querySelectorAll('#bgTopColor,#bgBottomColor')];
-  const sliders = [...document.querySelectorAll('#bgTopAlpha,#bgBottomAlpha')];
-  [...hexes, ...swatchs, ...sliders].forEach(el => { if (el) el.disabled = isTransparent; });
+  // “Transparent background” is simply both alphas at 0
+  const isTransparent = (topA <= 0.001 && botA <= 0.001);
 
   // class gating (stroke vs fill)
   card.classList.toggle('card--stroke', isTransparent);
@@ -737,7 +725,7 @@ window.refreshBackground = function refreshBackground () {
 };
 
 // Live re-paint when user moves any background knob
-['bgTransparent','bgTopColor','bgBottomColor','bgTopHex','bgBottomHex','bgTopAlpha','bgBottomAlpha'].forEach(id => {
+['bgTopColor','bgBottomColor','bgTopHex','bgBottomHex','bgTopAlpha','bgBottomAlpha'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', () => {
     window.refreshBackground();
@@ -745,10 +733,8 @@ window.refreshBackground = function refreshBackground () {
   });
 });
 
-// Default: Background ON at first paint
+// Default: background mode is determined by the alpha sliders (0 = transparent)
 try {
-  const tgl0 = document.getElementById('bgTransparent');
-  if (tgl0 && tgl0.checked !== true) tgl0.checked = true; // checked = Background ON
   if (typeof window.refreshBackground === 'function') window.refreshBackground();
 } catch (e) {}
 
@@ -2227,7 +2213,7 @@ function composeCardSvg({
   if (host2) {
   const cs2    = getComputedStyle(host2);
   const w2     = host2.clientWidth || parseFloat(cs2.width) || cardWidth;
-  const token2 = parseFloat(cs2.getPropertyValue('--shape-corner-lg')) ||
+  const token2 = parseFloat(cs2.getPropertyValue('--phone-radius')) ||
                  parseFloat(cs2.borderTopLeftRadius) || 0;
 
   if (w2 > 0 && token2 > 0) {
@@ -2955,9 +2941,6 @@ function wireDesignGatesOnce() {
   // Listeners (passive, and re-render after gating)
   mm.addEventListener('change', () => { refreshModulesMode(); render(); }, { passive: true });
   cm.addEventListener('change', () => { refreshCenter();      render(); }, { passive: true });
-
-  const bt = document.getElementById('bgTransparent');
-  bt?.addEventListener('change', () => { refreshBackground(); render(); }, { passive: true });
 
   // Initial gate state
   refreshModulesMode();

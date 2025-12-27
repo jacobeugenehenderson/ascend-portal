@@ -293,10 +293,9 @@
 
     <!-- Background (gradient) -->
     <div class="grid grid-cols-[auto,auto,1fr] items-start gap-3">
-      <label class="inline-flex items-center gap-2 leading-9">
-        <input id="bgTransparent" type="checkbox" class="rounded border" onchange="refreshBackground()" />
-        <span class="text-sm">Background</span>
-      </label>
+      <div class="inline-flex items-center gap-2 leading-9">
+  <span class="text-sm">Background</span>
+</div>
 
       <div class="flex flex-col gap-2 col-span-2">
         <!-- Top color + hex + opacity -->
@@ -599,7 +598,7 @@ new MutationObserver(() => applyPickerTheme())
     const preview = document.getElementById('qrPreview');
     if (!preview) return;
 
-    const wantTransparent = !document.getElementById('bgTransparent')?.checked;
+    const wantTransparent = (topA <= 0.001 && botA <= 0.001);
 
     const topHex   = document.getElementById('bgTopHex')?.value?.trim()   || document.getElementById('bgTopColor')?.value || '#FFFFFF';
     const botHex   = document.getElementById('bgBottomHex')?.value?.trim()|| document.getElementById('bgBottomColor')?.value || topHex;
