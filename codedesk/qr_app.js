@@ -2738,7 +2738,7 @@ function render() {
   }
 
   // Toggle visual style (stroke vs fill card)
-  const isTransparent = !document.getElementById('bgTransparent')?.checked;
+  const isTransparent = !!document.getElementById('bgTransparent')?.checked;
   preview.classList.toggle('card--stroke', isTransparent);
   preview.classList.toggle('card--fill',  !isTransparent);
 
@@ -2862,7 +2862,7 @@ function refreshBackground() {
                || document.getElementById('bgHex')
                || document.getElementById('bghex');
 
-  const isTransparent = !tgl?.checked;
+  const isTransparent = !!tgl?.checked;
 
   // 1) Disable inputs
   // legacy single-field (safe no-ops if missing)
@@ -3027,7 +3027,7 @@ async function downloadPng(filename = 'qr.png', scale = 3) {
 
   // Match preview background (gradient vs transparent) before drawing SVG
   const tgl = document.getElementById('bgTransparent');
-  const isTransparent = !tgl?.checked; // checked = background ON (fill)
+  const isTransparent = !!tgl?.checked; // checked = background ON (fill)
 
   if (!isTransparent) {
     // Read the same knobs used by updatePreviewBackground()
