@@ -669,11 +669,13 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
   try {
     const u = new URL(window.location.href);
     const mode = String(u.searchParams.get('mode') || '').toLowerCase();
-    const templateId =
+    const entryTpl = String(
       u.searchParams.get('template_id') ||
       u.searchParams.get('templateId') ||
       u.searchParams.get('template') ||
-      '';
+      ''
+    ).trim();
+
     if (mode === 'template' && entryTpl && entryTpl.toLowerCase() === id.toLowerCase()) {
       const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
       const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
@@ -684,7 +686,7 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
     }
   } catch (e) {}
 
-  const tpl = window.codedeskResolveTemplateById(templateId);
+  const tpl = window.codedeskResolveTemplateById(id);
 
   if (!tpl) {
     const msg = 'codedeskApplyTemplateById: template not found: ' + String(templateId);
