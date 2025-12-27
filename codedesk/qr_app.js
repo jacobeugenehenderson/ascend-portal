@@ -3,7 +3,9 @@
 // ------------------------------------------------------------
 // CodeDesk template bootstrap gate (single-run invariant)
 // ------------------------------------------------------------
-window.__CODEDESK_BOOTSTRAP_DONE__ = window.__CODEDESK_BOOTSTRAP_DONE__ || false;
+// NOTE: Do not use a global "done" latch for bootstrapping.
+// URL bootstrap is signature-driven via CODEDESK_BOOTSTRAP_SESSION_KEY.
+window.__CODEDESK_BOOTSTRAP_DONE__ = false;
 const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
 // This file runs in the browser.  No <script> or HTML tags belong here.
 
@@ -740,12 +742,12 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
   // Uses a microtask so it executes after this script finishes defining functions.
   try {
     queueMicrotask(function codedeskBootstrapFromEntryOnce(){
-      if (window.__CODEDESK_BOOTSTRAP_DONE__) return;
-
-      // Session guard MUST be keyed to the actual entry payload, not a single "1",
-      // otherwise a second template click in the same tab never boots.
+      // Signature guard is the *only* guard that should matter.
+      // The global "__CODEDESK_BOOTSTRAP_DONE__" latch can block legitimate re-entry
+      // (e.g., selecting Template 2 after Template 1 in the same tab/session).
+      let __sig = '';
       try {
-        const __sig = [
+        __sig = [
           String((window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.mode) || '').toLowerCase(),
           String((window.CODEDESK_ENTRY && (window.CODEDESK_ENTRY.template_id || window.CODEDESK_ENTRY.templateId)) || '').trim().toLowerCase(),
           String((window.CODEDESK_ENTRY && (window.CODEDESK_ENTRY.working_file_id || window.CODEDESK_ENTRY.workingFileId)) || '').trim()
@@ -764,19 +766,16 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
       // 1) Working-file open path wins (hopper open)
       if ((mode === 'working' || mode === 'new') && wfId && typeof window.codedeskOpenWorkingFile === 'function') {
         window.codedeskOpenWorkingFile(wfId);
-        window.__CODEDESK_BOOTSTRAP_DONE__ = true;
         return;
       }
 
       // 2) Template path (URL template open) routes through codedeskApplyTemplateById (idempotent)
       if (mode === 'template' && templateId && typeof window.codedeskApplyTemplateById === 'function') {
         window.codedeskApplyTemplateById(templateId);
-        window.__CODEDESK_BOOTSTRAP_DONE__ = true;
         return;
       }
 
       // Nothing to do
-      window.__CODEDESK_BOOTSTRAP_DONE__ = true;
     });
   } catch (e) {
     console.warn('CodeDesk URL bootstrap failed (non-fatal)', e);
@@ -869,8 +868,10 @@ window.getTypeFields = (t) => {
 window.getPresets = (t) => {
   const want = String(t || "").trim().toLowerCase();
 
-  // Prefer templates loaded from qr_templates.json (Ascend/CodeDesk templates)
-  const templates = Array.isArray(window.CODEDESK_TEMPLATES) ? window.CODEDESK_TEMPLATES : [];
+  // IMPORTANT:
+  // Templates are *not* presets. They are hydrated explicitly (hopper / URL template_id).
+  // getPresets() must return only legacy presets unless you deliberately opt-in.
+  const templates = [];
   if (templates.length) {
     // If templates carry a type field, return only matches for the current type.
     const byType = templates.filter((p) => {
