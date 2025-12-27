@@ -549,6 +549,11 @@ emojiGrid.appendChild(b); }); }
           Object.assign(flat, t.style);
         }
 
+        // Flatten fields block (critical: templates often store urlData/etc under tpl.fields)
+        if (t.fields && typeof t.fields === "object") {
+          Object.assign(flat, t.fields);
+        }
+
         // Normalize type keys
         if (!flat.type) flat.type = t.qrType || t.qr_type || t.type || "";
 
@@ -912,23 +917,34 @@ window.getTypeFields = (t) => {
 window.getPresets = (t) => {
   const want = String(t || "").trim().toLowerCase();
 
-  // Prefer templates loaded from qr_templates.json (Ascend/CodeDesk templates)
+  // In template mode, templates must NEVER masquerade as presets.
+  // Preset cycling to index 0 is exactly what stomps the imported template state.
+  try {
+    const entry = window.CODEDESK_ENTRY || {};
+    const mode = String(entry.mode || "").trim().toLowerCase();
+        if (mode === "template") {
+      // In template mode, NEVER return presets OR templates here.
+      // Template hydration must be exclusively via codedeskApplyTemplateById().
+      return [];
+    }
+  } catch (e) {}
+
+  // Prefer templates loaded from qr_templates.json ONLY if there are no legacy presets for this type.
+  const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
+  const legacy = presets[key] || [];
+  if (legacy && legacy.length) return legacy;
+
   const templates = Array.isArray(window.CODEDESK_TEMPLATES) ? window.CODEDESK_TEMPLATES : [];
   if (templates.length) {
-    // If templates carry a type field, return only matches for the current type.
     const byType = templates.filter((p) => {
       const ty = (p.qrType || p.qr_type || p.type || "").toString().trim().toLowerCase();
       return ty && ty === want;
     });
     if (byType.length) return byType;
-
-    // Otherwise, just return all templates (better than returning nothing).
     return templates;
   }
 
-  // Fallback: legacy presets from the manifest
-  const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
-  return presets[key] || [];
+  return [];
 };
 
  /* ====================================================================     
@@ -1666,7 +1682,10 @@ typeSel.addEventListener('change', () => {
 try {
   const __e = window.CODEDESK_ENTRY || {};
   const __m = String(__e.mode || '').toLowerCase();
-  if (__m !== 'template') {
+
+  // Only do the default type hydration when we are NOT about to open a working file
+  // and NOT about to apply a template via bootstrap.
+  if (__m !== 'template' && __m !== 'working' && __m !== 'new') {
     typeSel.dispatchEvent(new Event('change', { bubbles: true }));
   }
 } catch (e) {}
