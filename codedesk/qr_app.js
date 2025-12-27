@@ -710,10 +710,10 @@ window.refreshBackground = function refreshBackground () {
   const card = document.getElementById('qrPreview');
   if (!card) return;
 
-  const topA = (parseFloat(document.getElementById('bgTopAlpha')?.value)    || 0) / 100;
-  const botA = (parseFloat(document.getElementById('bgBottomAlpha')?.value) || 0) / 100;
+  const topA = (+document.getElementById('bgTopAlpha')?.value || 0) / 100;
+  const botA = (+document.getElementById('bgBottomAlpha')?.value || 0) / 100;
 
-  // “Transparent background” is simply both alphas at 0
+  // “Transparent background” = both alphas are 0
   const isTransparent = (topA <= 0.001 && botA <= 0.001);
 
   // class gating (stroke vs fill)
