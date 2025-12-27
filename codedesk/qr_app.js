@@ -660,7 +660,13 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
     const entry = window.CODEDESK_ENTRY || {};
     const mode = String(entry.mode || '').toLowerCase();
     const entryTpl = String(entry.template_id || entry.templateId || '').trim();
-    if (mode === 'template' && entryTpl && entryTpl.toLowerCase() === id.toLowerCase()) {
+    // Only short-circuit reopen DURING the initial URL bootstrap.
+    // If we allow this after bootstrap, manual template selection can get "stuck"
+    // reopening an old working file that does not match the requested template state.
+    if (!window.__CODEDESK_BOOTSTRAP_DONE__ &&
+        mode === 'template' &&
+        entryTpl &&
+        entryTpl.toLowerCase() === id.toLowerCase()) {
       const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
       const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
       if (existingWfId && typeof window.codedeskOpenWorkingFile === 'function') {
