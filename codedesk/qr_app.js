@@ -983,20 +983,27 @@ window.okqralExportState = function okqralExportState(){
 window.okqralImportState = function okqralImportState(state){
   if (!state || typeof state !== 'object') return false;
 
-  // 1) Switch type (rebuilds the form via existing listener)
-  const typeSel = document.getElementById('qrType');
-  if (typeSel && state.type && typeSel.value !== state.type){
-    typeSel.value = state.type;
-    typeSel.dispatchEvent(new Event('change', { bubbles: true }));
-  }
+  // ------------------------------------------------------------------
+  // Global import guard:
+  // Any import (template OR working-file open) must suppress applyPreset().
+  // ------------------------------------------------------------------
+  window.__CODEDESK_IMPORTING_STATE__ = true;
 
-  // 2) Restore type-specific fields (after rebuild)
-  const fields = state.fields || {};
-  Object.keys(fields).forEach(id => _setValueById(id, fields[id]));
+  try {
+    // 1) Switch type (rebuilds the form via existing listener)
+    const typeSel = document.getElementById('qrType');
+    if (typeSel && state.type && typeSel.value !== state.type){
+      typeSel.value = state.type;
+      typeSel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 
-  // 3) Restore style knobs
-  const style = state.style || {};
-  Object.keys(style).forEach(id => _setValueById(id, style[id]));
+    // 2) Restore type-specific fields (after rebuild)
+    const fields = state.fields || {};
+    Object.keys(fields).forEach(id => _setValueById(id, fields[id]));
+
+    // 3) Restore style knobs
+    const style = state.style || {};
+    Object.keys(style).forEach(id => _setValueById(id, style[id]));
 
   // 4) Restore ECC + font session if present (non-fatal)
   try {
@@ -1006,11 +1013,15 @@ window.okqralImportState = function okqralImportState(state){
     if (state.font && typeof setFont === 'function') setFont(state.font);
   } catch(e){}
 
-  // 5) Repaint background + re-render (safe)
-  try { typeof window.refreshBackground === 'function' && window.refreshBackground(); } catch(e){}
-  try { typeof render === 'function' && render(); } catch(e){}
+    // 5) Repaint background + re-render (safe)
+    try { typeof window.refreshBackground === 'function' && window.refreshBackground(); } catch(e){}
+    try { typeof render === 'function' && render(); } catch(e){}
 
-  return true;
+    return true;
+  } finally {
+    // Release after all import-triggered handlers have run
+    queueMicrotask(() => { window.__CODEDESK_IMPORTING_STATE__ = false; });
+  }
 };
 
 // Local working-file registry: { id, name, createdAt, updatedAt, state, finishedAt, fileroom }
@@ -1588,8 +1599,9 @@ typeSel.addEventListener('change', () => {
   if (typeof wireECCPill === 'function') wireECCPill();
   if (typeof wireECCLegacySelect === 'function') wireECCLegacySelect();
 
-  // 🚫 Template hydration guard: NEVER allow preset cycling to overwrite a template import.
-  if (window.__CODEDESK_APPLYING_TEMPLATE__ === true) {
+  // 🚫 Import guard: NEVER allow preset cycling to overwrite imported state
+  // (template apply OR working-file open OR any okqralImportState).
+  if (window.__CODEDESK_APPLYING_TEMPLATE__ === true || window.__CODEDESK_IMPORTING_STATE__ === true) {
     if (typeof window.refreshBackground === 'function') window.refreshBackground();
     if (typeof refreshModulesMode === 'function') refreshModulesMode();
     if (typeof refreshCenter === 'function') refreshCenter();
@@ -1653,19 +1665,9 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
     
   }
 
-const _ts0 = document.getElementById('qrType');
-const t0 = _ts0 ? (_ts0.value || '') : '';
-if (t0 && getPresets(t0).length) {
-  // If a template is being applied (or just got applied), NEVER stomp it with preset #0.
-  if (window.__CODEDESK_APPLYING_TEMPLATE__ === true) {
-    // no-op
-  } else {
-    currentPresetIdx.set(t0, 0);
-    applyPreset(t0, 0);
-    const list0 = getPresets(t0);
-    setCaptionFromPreset(list0[0] || {}, t0);
-  }
-}
+// NOTE: Do not apply preset #0 here.
+// Initial UI hydration is owned by the qrType change dispatch above,
+// and imported state (templates/working files) must never be stomped.
 
 (function () {
   const $ = (id) => document.getElementById(id);
