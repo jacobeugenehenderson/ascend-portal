@@ -667,9 +667,13 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
   // Idempotent: if we are in URL "template" mode and already bootstrapped this template,
   // reopen the previously created working file instead of creating a new one.
   try {
-    const entry = window.CODEDESK_ENTRY || {};
-    const mode = String(entry.mode || '').toLowerCase();
-    const entryTpl = String(entry.template_id || entry.templateId || '').trim();
+    const u = new URL(window.location.href);
+    const mode = String(u.searchParams.get('mode') || '').toLowerCase();
+    const templateId =
+      u.searchParams.get('template_id') ||
+      u.searchParams.get('templateId') ||
+      u.searchParams.get('template') ||
+      '';
     if (mode === 'template' && entryTpl && entryTpl.toLowerCase() === id.toLowerCase()) {
       const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
       const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
@@ -880,7 +884,9 @@ window.getPresets = (t) => {
   const want = String(t || "").trim().toLowerCase();
 
   // Defensive: presets may not exist in template-first builds
-  const safePresets = (typeof presets === 'object' && presets !== null) ? presets : {};
+  const safePresets = (manifest && typeof manifest.presets === 'object')
+  ? manifest.presets
+  : {};
 
   // IMPORTANT:
   // Templates are *not* presets. They are hydrated explicitly (hopper / URL template_id).
