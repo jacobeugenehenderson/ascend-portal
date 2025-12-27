@@ -2270,7 +2270,11 @@ function composeCardSvg({
     svg.appendChild(defs);
 
     const bg = document.createElementNS(NS, "rect");
-    const OUTER_R = Math.max(0, (Number(RADIUS) || 0) + (Number(OUTER_PAD) || 0));
+
+    // Match the stroke-only reference: the filled background must use the same radius
+    // as the card/stage, not "radius + padding".
+    const OUTER_R = Math.max(0, (Number(RADIUS) || 0));
+
     bg.setAttribute("x", "0");
     bg.setAttribute("y", "0");
     bg.setAttribute("width", String(cardWidth));
