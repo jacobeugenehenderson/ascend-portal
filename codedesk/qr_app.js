@@ -523,70 +523,28 @@ emojiGrid.appendChild(b); }); }
     manifest = { types: [] };
   }
 
-  // --- Load templates (separate from type manifest) ---
-  templates = [];
+// --- Load templates (separate from type manifest) ---
+templates = [];
 
-  try {
-    const templatesUrl = new URL("qr_templates.json", __CODEDESK_BASE_URL__).toString();
-    const tRes = await fetch(templatesUrl, { cache: "no-store" });
-    if (tRes.ok) {
-      const tJson = await tRes.json();
-      templates = Array.isArray(tJson.templates) ? tJson.templates : [];
+try {
+  const templatesUrl = new URL("qr_templates.json", __CODEDESK_BASE_URL__).toString();
+  const tRes = await fetch(templatesUrl, { cache: "no-store" });
+  if (tRes.ok) {
+    const tJson = await tRes.json();
+    templates = Array.isArray(tJson.templates) ? tJson.templates : [];
 
-      // Normalize template objects to the "preset" shape expected by applyPreset().
-      // Many templates are stored as { type, fields, style:{...} } — applyPreset reads flat keys.
-      templates = templates.map((tpl) => {
-        const t = (tpl && typeof tpl === "object") ? tpl : {};
-        const flat = Object.assign({}, t);
-
-        // Flatten style block
-        if (t.style && typeof t.style === "object") {
-          Object.assign(flat, t.style);
-        }
-
-        // Normalize type keys
-        if (!flat.type) flat.type = t.qrType || t.qr_type || t.type || "";
-
-        // Normalize id keys (canonical template_id support)
-        if (!flat.id) {
-          flat.id =
-            t.template_id ||
-            t.templateId ||
-            t.id ||
-            "";
-        }
-
-        // Key alias helper
-        const mapKey = (from, to) => {
-          if (flat[to] == null && flat[from] != null) flat[to] = flat[from];
-        };
-
-        // Common snake_case → camelCase aliases
-        mapKey("bg_top_color", "bgTopColor");
-        mapKey("bg_bottom_color", "bgBottomColor");
-        mapKey("bg_top_alpha", "bgTopAlpha");
-        mapKey("bg_bottom_alpha", "bgBottomAlpha");
-        mapKey("caption_color", "captionColor");
-        mapKey("body_color", "bodyColor");
-        mapKey("eye_ring_color", "eyeRingColor");
-        mapKey("eye_center_color", "eyeCenterColor");
-        mapKey("font_family", "fontFamily");
-
-        // Some schemas store bgOn instead of bgTransparent
-        if (typeof flat.bgOn === "boolean" && typeof flat.bgTransparent !== "boolean") {
-          // applyPreset expects bgTransparent=true to mean "background OFF"
-          flat.bgTransparent = !flat.bgOn;
-        }
-
-        return flat;
-      });
-    } else {
-      console.warn("Templates fetch returned non-OK:", tRes.status);
-    }
-  } catch (e) {
-    console.warn("Template load failed, continuing without templates", e);
+    // Canonical invariant: templates MUST carry a ready-to-import state object.
+    templates = templates.filter(tpl => {
+      const ok = tpl && typeof tpl === 'object' && tpl.id && tpl.state && typeof tpl.state === 'object';
+      if (!ok) console.warn('Dropping invalid template (missing id/state):', tpl);
+      return ok;
+    });
+  } else {
+    console.warn("Templates fetch returned non-OK:", tRes.status);
   }
-
+} catch (e) {
+  console.warn("Template load failed, continuing without templates", e);
+}
   // Expose for debugging + Ascend/console introspection
 window.CODEDESK_TEMPLATES = templates;
 
@@ -610,51 +568,12 @@ const _codedeskResolveTemplateById_ = function(id){
 
 window.codedeskResolveTemplateById = _codedeskResolveTemplateById_;
 
-function _codedeskTemplateToState(tpl) {
-  if (!tpl) return null;
-
-  // refreshBackground(): checked = Background ON.
-  // template bgTransparent=false => Background ON => checkbox checked=true
-  const bgOnChecked = !Boolean(tpl.bgTransparent);
-
-  return {
-    v: 1,
-    type: String(tpl.type || '').trim() || 'URL',
-    fields: {
-      urlData: String(tpl.urlData || '').trim()
-    },
-    style: {
-      campaign: tpl.campaign,
-      captionBody: tpl.captionBody,
-      fontFamily: tpl.fontFamily,
-      captionColor: tpl.captionColor,
-      bodyColor: tpl.bodyColor,
-      eyeRingColor: tpl.eyeRingColor,
-      eyeCenterColor: tpl.eyeCenterColor,
-
-      bgTopHex: tpl.bgTopColor,
-      bgTopAlpha: tpl.bgTopAlpha,
-      bgBottomHex: tpl.bgBottomColor,
-      bgBottomAlpha: tpl.bgBottomAlpha,
-
-      // UI checkbox id is bgTransparent (checked = Background ON)
-      bgTransparent: bgOnChecked,
-
-      moduleShape: tpl.moduleShape,
-      eyeRingShape: tpl.eyeRingShape,
-      eyeCenterShape: tpl.eyeCenterShape,
-      modulesMode: tpl.modulesMode,
-      modulesEmoji: tpl.modulesEmoji,
-      modulesScale: tpl.modulesScale,
-      centerMode: tpl.centerMode,
-      centerEmoji: tpl.centerEmoji,
-      centerScale: tpl.centerScale
-    }
-  };
-}
-
 // allow other call sites (hopper / bootstrap / apply-by-id) to use it
-window.codedeskTemplateToState = _codedeskTemplateToState;
+try {
+  if (typeof _codedeskTemplateToState === 'function') {
+    window.codedeskTemplateToState = _codedeskTemplateToState;
+  }
+} catch (e) {}
 
 /**
  * Apply a specific template by ID (used by hopper selection).
@@ -782,6 +701,12 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
       const mode = String(entry.mode || '').toLowerCase();
       const templateId = String(entry.template_id || entry.templateId || '').trim();
       const wfId = String(entry.working_file_id || entry.workingFileId || '').trim();
+
+      // Canonical rule: non-working entry must not inherit an old active working file.
+      if (mode === 'template' || mode === 'new') {
+        try { localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
+        try { window.__CODEDESK_CURRENT_WF_ID__ = ''; } catch(e){}
+}
 
       // 1) Working-file open path wins (hopper open)
       if ((mode === 'working' || mode === 'new') && wfId && typeof window.codedeskOpenWorkingFile === 'function') {
@@ -1281,12 +1206,9 @@ window.codedeskSyncFileRoomDebounced = function codedeskSyncFileRoomDebounced(re
 function codedeskAutosaveKick(){
   let activeId = _getActiveWorkingFileId();
 
-  // If the user has started editing but no working file exists yet,
-  // establish it immediately so it appears in the hopper.
-  if (!activeId) {
-    try { activeId = window.codedeskFinishSetup && window.codedeskFinishSetup(); } catch(e){}
-    activeId = activeId || _getActiveWorkingFileId();
-  }
+  // Canonical rule: autosave never creates working files.
+  // Working files are created only by explicit Finish.
+  if (!activeId) return;
 
   if (!activeId) return; // still nothing to autosave (should be rare)
 
@@ -1315,6 +1237,10 @@ function codedeskAutosaveKick(){
   window.__CODEDESK_AUTOSAVE_WIRED__ = true;
 
   const handler = (e) => {
+    // Never autosave during any import (template apply or working-file open)
+    if (window.__CODEDESK_IMPORTING_STATE__ === true) return;
+    if (window.__CODEDESK_APPLYING_TEMPLATE__ === true) return;
+
     const t = e.target;
     if (!t) return;
     // only react to edits on inputs/selects/textareas
@@ -1512,6 +1438,9 @@ function setValAndFire(id, value) {
 }
 
 function applyPreset(type, index = 0) {
+  // Canonical guard: never allow presets to overwrite imported state (template/workfile).
+  if (window.__CODEDESK_IMPORTING_STATE__ === true) return;
+  if (window.__CODEDESK_APPLYING_TEMPLATE__ === true) return;
   const list = getPresets(type);
   if (!list.length) return;
 
