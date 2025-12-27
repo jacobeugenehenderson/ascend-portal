@@ -592,21 +592,28 @@ new MutationObserver(() => applyPickerTheme())
     return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, a))})`;
   }
 
-  window.render = function(){
+    window.render = function(){
     origRender();
 
     const preview = document.getElementById('qrPreview');
     if (!preview) return;
 
-    const topHex   = document.getElementById('bgTopHex')?.value?.trim()    || document.getElementById('bgTopColor')?.value || '#FFFFFF';
-    const botHex   = document.getElementById('bgBottomHex')?.value?.trim() || document.getElementById('bgBottomColor')?.value || topHex;
+    const topHex   = document.getElementById('bgTopHex')?.value?.trim()
+                  || document.getElementById('bgTopColor')?.value
+                  || '#FFFFFF';
 
-    const topA     = (parseFloat(document.getElementById('bgTopAlpha')?.value)     || 100) / 100;
-    const botA     = (parseFloat(document.getElementById('bgBottomAlpha')?.value)  || 100) / 100;
+    const botHex   = document.getElementById('bgBottomHex')?.value?.trim()
+                  || document.getElementById('bgBottomColor')?.value
+                  || topHex;
 
-    // "Transparent" if toggle is OFF OR both alphas are effectively 0
-    const tglChecked = !!document.getElementById('bgTransparent')?.checked; // checked = Background ON
-    const wantTransparent = (!tglChecked) || (topA <= 0.001 && botA <= 0.001);
+    // IMPORTANT: do NOT use `|| 100` here; 0 is a valid value.
+    const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
+    const botRaw = parseFloat(document.getElementById('bgBottomAlpha')?.value);
+    const topA   = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
+    const botA   = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
+
+    // “Transparent mode” is purely: both alphas are 0
+    const wantTransparent = (topA <= 0.001 && botA <= 0.001);
 
     // keep a single “frame color” token for any places that still use it
     preview.style.setProperty('--frame-color', topHex);

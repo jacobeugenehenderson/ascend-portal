@@ -1013,7 +1013,7 @@ textarea::placeholder{
   width: clamp(250px, 26vw, 330px);
   aspect-ratio: .63 / 1;   /* wallet portrait */
   margin-inline: auto;
-  border-radius: inherit; /* MUST match #qrPreview exactly */
+  border-radius: var(--phone-radius);
   display: grid;
   align-items: start;
   justify-items: center;
