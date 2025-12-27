@@ -1035,6 +1035,8 @@ textarea::placeholder{
   margin: 0 !important;
   padding: 0 !important;
   border: 0 !important;
+  border-radius: inherit;
+  overflow: clip;
   background: transparent !important; /* never add a host fill */
 }
 
