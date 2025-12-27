@@ -579,7 +579,7 @@ emojiGrid.appendChild(b); }); }
   // Expose for debugging + Ascend/console introspection
 window.CODEDESK_TEMPLATES = templates;
 
-function _codedeskResolveTemplateById_(id){
+const _codedeskResolveTemplateById_ = function(id){
   if (!id) return null;
   const want = String(id).trim().toLowerCase();
 
@@ -593,7 +593,7 @@ function _codedeskResolveTemplateById_(id){
     if (String(tpl.name || '').toLowerCase() === want) return true;
     return false;
   }) || null;
-}
+};
 
 window.codedeskResolveTemplateById = _codedeskResolveTemplateById_;
 
