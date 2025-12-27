@@ -1487,12 +1487,20 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
     const t = _typeSel ? (_typeSel.value || '') : '';
     switch(t){
       case "URL": {
-        const raw = val("urlData") || "https://example.org";
+        // NOTE: field IDs come from qr_type_manifest.json; support common variants
+        const raw =
+          val("urlData") ||
+          val("url") ||
+          val("href") ||
+          val("link") ||
+          val("destination") ||
+          val("targetUrl") ||
+          "https://example.org";
 
-        // read optional utm fields
-        const s = (val("utmSource")   || "").trim();
-        const m = (val("utmMedium")   || "").trim();
-        const c = (val("utmCampaign") || "").trim();
+        // read optional utm fields (support common variants)
+        const s = (val("utmSource")   || val("utm_source")   || "").trim();
+        const m = (val("utmMedium")   || val("utm_medium")   || "").trim();
+        const c = (val("utmCampaign") || val("utm_campaign") || "").trim();
 
         // If nothing extra was entered, return as-is
         if (!s && !m && !c) return raw;
