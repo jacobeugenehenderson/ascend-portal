@@ -49,9 +49,10 @@
   --ascend-grid-vignette-size: 55%;
   --ascend-grid-vignette-y: top;
 
-  /* QR / stage frame */
-  --ascend-stage-frame: var(--ascend-app-accent);
-  --ascend-stage-frame-w: 3px;
+
+  /* Compatibility tokens expected by theme.css */
+  --stage-frame: var(--ascend-stage-frame);
+  --stage-frame-w: var(--ascend-stage-frame-w);
 
   /* Card stroke cosmetics (filled mode) */
   --ascend-bg-card-stroke-color: color-mix(in oklab, var(--ascend-app-accent) 85%, white);
@@ -104,6 +105,10 @@
   /* QR / stage frame */
   --ascend-stage-frame: var(--ascend-app-accent);
   --ascend-stage-frame-w: 3px;
+
+  /* Compatibility tokens expected by theme.css */
+  --stage-frame: var(--ascend-stage-frame);
+  --stage-frame-w: var(--ascend-stage-frame-w);
 
   /* Card stroke cosmetics (filled mode) */
   --ascend-bg-card-stroke-color: color-mix(in oklab, var(--ascend-app-accent) 85%, white);

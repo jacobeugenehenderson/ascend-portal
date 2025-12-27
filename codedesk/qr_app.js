@@ -1854,8 +1854,7 @@ const host = document.getElementById('qrPreview');
 if (host) {
   const cs    = getComputedStyle(host);
   const w     = host.clientWidth || parseFloat(cs.width) || size;
-  const token = parseFloat(cs.getPropertyValue('--shape-corner-lg')) ||
-                parseFloat(cs.borderTopLeftRadius) || 0;
+  const token = parseFloat(cs.borderTopLeftRadius) || 0;
   if (w > 0 && token > 0) {
     const scale = size / w;
     cornerRadius = Math.round(token * scale);
