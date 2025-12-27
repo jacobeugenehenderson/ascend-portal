@@ -2811,10 +2811,28 @@ function render() {
 
   // One-time lightweight listeners that re-render
   if (!render._wired) {
-    document.addEventListener('input',  () => { clearTimeout(render._t); render._t = setTimeout(render, 30); });
-    document.addEventListener('change', () => render());
-    window.addEventListener('resize',  () => render());
-    document.getElementById('qrType')?.addEventListener('change', () => setTimeout(render, 0));
+    const _rerender = () => {
+      if (window.__CODEDESK_IMPORTING_STATE__ || window.__CODEDESK_APPLYING_TEMPLATE__) return;
+      clearTimeout(render._t);
+      render._t = setTimeout(render, 30);
+    };
+
+    // Live updates while typing (Mechanicals must regenerate QR immediately)
+    document.addEventListener('input',  _rerender, true);
+    document.addEventListener('change', _rerender, true);
+
+    // Safety net for any “non-input” controls / contenteditable / weird UI widgets
+    document.addEventListener('keyup', (e) => {
+      if (!e) return;
+      _rerender();
+    }, true);
+
+    window.addEventListener('resize', () => _rerender());
+    document.getElementById('qrType')?.addEventListener('change', () => setTimeout(_rerender, 0));
+
+    // Ensure we generate *something* immediately (even before the user blurs a field)
+    queueMicrotask(() => { try { _rerender(); } catch (e) {} });
+
     render._wired = true;
   }
 
