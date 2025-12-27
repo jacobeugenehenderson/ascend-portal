@@ -1381,59 +1381,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
     // Wire type-specific behaviors
 
-    // ========= Subtype (Preset) wiring =========
-const presetsByType = manifest.presets || {};
-const currentPresetIdx = new Map();
-
-
-function setValAndFire(id, value) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (el.type === 'checkbox') {
-    el.checked = !!value;
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  } else {
-    el.value = String(value ?? '');
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-}
-
-function applyPreset(type, index = 0) {
-  // CodeDesk no longer supports presets. Templates + working files are the only sources of truth.
-  // Keeping this symbol as a no-op prevents legacy call sites from overwriting state.
-  return;
-}
-
-function setCaptionFromPreset(preset, typeName) {
-  const head = document.getElementById('campaign');
-  const body = document.getElementById('captionBody');
-
-  // headline text from the preset (fall back to type name)
-  const headText =
-    preset?.campaign ??
-    preset?.caption ??
-    preset?.label ??
-    preset?.name ??
-    String(typeName || '');
-
-  if (head) {
-    head.value = headText;                       // 🔒 overwrite on subtype change
-    head.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-
-  // optional body text from the preset (if provided), otherwise clear
-  if (body) {
-    const bodyText =
-      preset?.body ??
-      preset?.captionBody ??
-      ''; // empty → placeholder shows, QR preview stays blank
-
-    body.value = bodyText;
-    body.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-}
-
-// After the existing type-change listener (form rebuild), apply last/first preset
+    // Type change = rebuild the type fields, then re-wire dynamic controls, then render.
 typeSel.addEventListener('change', () => {
   const t = typeSel.value;
 
@@ -1447,7 +1395,7 @@ typeSel.addEventListener('change', () => {
   if (typeof wireECCPill === 'function') wireECCPill();
   if (typeof wireECCLegacySelect === 'function') wireECCLegacySelect();
 
-  // 3) Never apply presets on type change. Just refresh + render using whatever state is already active.
+  // 3) refresh + render using whatever state is already active (templates/working files)
   if (typeof window.refreshBackground === 'function') window.refreshBackground();
   if (typeof refreshModulesMode === 'function') refreshModulesMode();
   if (typeof refreshCenter === 'function') refreshCenter();
@@ -1493,6 +1441,7 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
     }
     if(msgMode){
       msgMode.addEventListener('change', ()=>{
+        if (window.__CODEDESK_IMPORTING_STATE__ || window.__CODEDESK_APPLYING_TEMPLATE__) return;
         if(msgMode.value === 'Resistbot'){ applyResistbot(); }
         else { restorePersonalIfNeeded(); }
       });
