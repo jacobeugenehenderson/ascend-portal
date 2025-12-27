@@ -547,6 +547,15 @@ emojiGrid.appendChild(b); }); }
         // Normalize type keys
         if (!flat.type) flat.type = t.qrType || t.qr_type || t.type || "";
 
+        // Normalize id keys (canonical template_id support)
+        if (!flat.id) {
+          flat.id =
+            t.template_id ||
+            t.templateId ||
+            t.id ||
+            "";
+        }
+
         // Key alias helper
         const mapKey = (from, to) => {
           if (flat[to] == null && flat[from] != null) flat[to] = flat[from];
@@ -592,6 +601,8 @@ const _codedeskResolveTemplateById_ = function(id){
   return list.find(tpl => {
     if (!tpl) return false;
     if (String(tpl.id || '').toLowerCase() === want) return true;
+    if (String(tpl.template_id || '').toLowerCase() === want) return true;
+    if (String(tpl.templateId || '').toLowerCase() === want) return true;
     if (String(tpl.name || '').toLowerCase() === want) return true;
     return false;
   }) || null;
@@ -868,6 +879,9 @@ window.getTypeFields = (t) => {
 window.getPresets = (t) => {
   const want = String(t || "").trim().toLowerCase();
 
+  // Defensive: presets may not exist in template-first builds
+  const safePresets = (typeof presets === 'object' && presets !== null) ? presets : {};
+
   // IMPORTANT:
   // Templates are *not* presets. They are hydrated explicitly (hopper / URL template_id).
   // getPresets() must return only legacy presets unless you deliberately opt-in.
@@ -885,8 +899,8 @@ window.getPresets = (t) => {
   }
 
   // Fallback: legacy presets from the manifest
-  const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
-  return presets[key] || [];
+  const key = Object.keys(safePresets).find((k) => k.toLowerCase() === want) || t;
+  return safePresets[key] || [];
 };
 
  /* ====================================================================     
