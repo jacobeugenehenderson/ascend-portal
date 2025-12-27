@@ -715,7 +715,17 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
   const name =
     String(tpl.name || tpl.title || tpl.label || 'QR Template').trim();
 
-  const wfId = window.codedeskSaveWorkingFile(name);
+  // IMPORTANT: template selection must never reuse or reopen a stale working file id.
+  // Create a fresh working-file record for this template, then mark it active WITHOUT re-importing.
+  const wfId = window.codedeskSaveWorkingFile(name, {
+    id: 'wf_' + Date.now() + '_' + Math.random().toString(16).slice(2)
+  });
+
+  // Mark active (prevents reopen of prior sessions) and keep UI state as-imported.
+  if (wfId) {
+    try { _setActiveWorkingFileId(wfId); } catch (e) {}
+    try { window.__CODEDESK_CURRENT_WF_ID__ = String(wfId).trim(); } catch (e) {}
+  }
 
   // Persist the created working file id for URL template mode (idempotent reload)
   try {
@@ -728,7 +738,7 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
     }
   } catch (e) {}
 
-  if (wfId) window.codedeskOpenWorkingFile(wfId);
+  // DO NOT call codedeskOpenWorkingFile(wfId) here — it re-imports and can overwrite via presets.
 
   return true;
 };
@@ -1142,7 +1152,14 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
   _setActiveWorkingFileId(rec.id);
   try { window.__CODEDESK_CURRENT_WF_ID__ = String(rec.id || '').trim(); } catch(e){}
 
-  const ok = window.okqralImportState(rec.state);
+  // Guard imports: opening a working file must not trigger preset cycling overwrites.
+  window.__CODEDESK_APPLYING_TEMPLATE__ = true;
+  let ok = false;
+  try {
+    ok = window.okqralImportState(rec.state);
+  } finally {
+    window.__CODEDESK_APPLYING_TEMPLATE__ = false;
+  }
 
   // If this working file has been Finished before, opening it should trigger an update.
   // Debounced so the first render settles.
