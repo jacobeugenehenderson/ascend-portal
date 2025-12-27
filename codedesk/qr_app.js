@@ -579,29 +579,6 @@ emojiGrid.appendChild(b); }); }
   // Expose for debugging + Ascend/console introspection
 window.CODEDESK_TEMPLATES = templates;
 
-// ------------------------------------------------------------
-// Canonical template_id resolver + converter (shared by hopper + bootstrap)
-// ------------------------------------------------------------
-function _codedeskResolveTemplateById_(templateId){
-  const wantRaw = String(templateId || '').trim();
-  if (!wantRaw) return null;
-
-  const want = wantRaw.toLowerCase();
-  const list = window.CODEDESK_TEMPLATES || [];
-
-  return list.find(t => {
-    if (!t) return false;
-    return [
-      t.id, t.template_id, t.templateId, t.TemplateId,
-      t.slug, t.key, t.code
-    ].some(v => {
-      const s = String(v || '').trim();
-      if (!s) return false;
-      return s === wantRaw || s.toLowerCase() === want;
-    });
-  }) || null;
-}
-
 window.codedeskResolveTemplateById = _codedeskResolveTemplateById_;
 
 function _codedeskTemplateToState(tpl) {
@@ -646,6 +623,9 @@ function _codedeskTemplateToState(tpl) {
     }
   };
 }
+
+// allow other call sites (hopper / bootstrap / apply-by-id) to use it
+window.codedeskTemplateToState = _codedeskTemplateToState;
 
 /**
  * Apply a specific template by ID (used by hopper selection).
@@ -700,6 +680,7 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
     const entry = window.CODEDESK_ENTRY || {};
     const mode = String(entry.mode || '').toLowerCase();
     const templateId = String(entry.template_id || entry.templateId || '').trim();
+
 
     function _runTemplateBootstrap(attempt) {
       const a = attempt || 0;
@@ -861,6 +842,50 @@ window.getTypeFields = (t) => {
 };
 
 window.getPresets = (t) => {
+  const want = String(t || "").trim().toLowerCase();
+
+  // Prefer templates loaded from qr_templates.json (Ascend/CodeDesk templates)
+  const templates = Array.isArray(window.CODEDESK_TEMPLATES) ? window.CODEDESK_TEMPLATES : [];
+  if (templates.length) {
+    // If templates carry a type field, return only matches for the current type.
+    const byType = templates.filter((p) => {
+      const ty = (p.qrType || p.qr_type || p.type || "").toString().trim().toLowerCase();
+      return ty && ty === want;
+    });
+    if (byType.length) return byType;
+
+    // Otherwise, just return all templates (better than returning nothing).
+    return templates;
+  }
+
+  // Fallback: legacy presets from the manifest
+  const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
+  return presets[key] || [];
+};
+
+/* ------------------------------------------------------------------
+   CodeDesk template resolver (by id or name)
+   - Used by template_id entry points
+   - Intentionally tolerant (id OR name)
+------------------------------------------------------------------ */
+function codedeskResolveTemplateById(id){
+  if (!id) return null;
+  const want = String(id).trim().toLowerCase();
+
+  const list = Array.isArray(window.CODEDESK_TEMPLATES)
+    ? window.CODEDESK_TEMPLATES
+    : [];
+
+  return list.find(tpl => {
+    if (!tpl) return false;
+    if (String(tpl.id || '').toLowerCase() === want) return true;
+    if (String(tpl.name || '').toLowerCase() === want) return true;
+    return false;
+  }) || null;
+}
+
+// expose for Ascend / console / future callers
+window.codedeskResolveTemplateById = codedeskResolveTemplateById;
   const want = String(t || "").trim().toLowerCase();
 
   // Prefer templates loaded from qr_templates.json (Ascend/CodeDesk templates)
@@ -1595,6 +1620,9 @@ typeSel.addEventListener('change', () => {
   // 5) analytics
   sendEvent('type_change', currentUiState());
 });
+
+// First-load hydration: build Mechanical controls + preview for the default type immediately
+try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
 
     // Payment: toggle user vs link by mode
     const payMode = document.getElementById('payMode');

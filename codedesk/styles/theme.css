@@ -166,6 +166,9 @@ html.light, :root.light {
   /* Phone radius... */
   --phone-radius: 22px;
 
+  /* Keep all major card rounding on the same knob */
+  --shape-corner-lg: var(--phone-radius);
+
   /* Arrows placement... */
   --edge-gutter: clamp(24px, 2vw, 24px);
 
@@ -519,7 +522,7 @@ body{
   /* visuals (Ascend controls) */
   background: var(--ascend-control-bg, #ffffff);
   border: 1px solid var(--ascend-control-border, rgba(15, 23, 42, 0.10));
-  color: var(--ascend-control-text, var(--md-sys-color-on-surface));
+  color: var(--ascend-app-text-main, #0f172a);
   text-decoration: none !important;
 
   /* type + motion */
@@ -534,7 +537,7 @@ body{
 .ecc-btn[aria-pressed="true"] {
   outline: none; /* avoid default rectangular outline */
   background: var(--ascend-control-bg-active, #eef2f7);
-  color: var(--ascend-control-text, var(--md-sys-color-on-surface));
+  color: var(--md-sys-color-primary);
   border-color: var(--ascend-control-border, rgba(15, 23, 42, 0.10));
   /* thin, token-based ring so it matches Ascend focus visuals */
   box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
