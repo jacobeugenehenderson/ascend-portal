@@ -598,13 +598,19 @@ new MutationObserver(() => applyPickerTheme())
     const preview = document.getElementById('qrPreview');
     if (!preview) return;
 
-    const wantTransparent = (topA <= 0.001 && botA <= 0.001);
+    const topHex   = document.getElementById('bgTopHex')?.value?.trim()    || document.getElementById('bgTopColor')?.value || '#FFFFFF';
+    const botHex   = document.getElementById('bgBottomHex')?.value?.trim() || document.getElementById('bgBottomColor')?.value || topHex;
 
-    const topHex   = document.getElementById('bgTopHex')?.value?.trim()   || document.getElementById('bgTopColor')?.value || '#FFFFFF';
-    const botHex   = document.getElementById('bgBottomHex')?.value?.trim()|| document.getElementById('bgBottomColor')?.value || topHex;
+    const topA     = (parseFloat(document.getElementById('bgTopAlpha')?.value)     || 100) / 100;
+    const botA     = (parseFloat(document.getElementById('bgBottomAlpha')?.value)  || 100) / 100;
 
-    const topA     = (parseFloat(document.getElementById('bgTopAlpha')?.value)    || 100) / 100;
-    const botA     = (parseFloat(document.getElementById('bgBottomAlpha')?.value) || 100) / 100;
+    // "Transparent" if toggle is OFF OR both alphas are effectively 0
+    const tglChecked = !!document.getElementById('bgTransparent')?.checked; // checked = Background ON
+    const wantTransparent = (!tglChecked) || (topA <= 0.001 && botA <= 0.001);
+
+    // keep a single “frame color” token for any places that still use it
+    preview.style.setProperty('--frame-color', topHex);
+    preview.style.setProperty('--frame-w', '2px');
 
     // Build the paint: solid if both colors match, otherwise a vertical gradient
     let paint;
@@ -615,10 +621,6 @@ new MutationObserver(() => applyPickerTheme())
     }
     preview.style.setProperty('--bg-paint', paint);
 
-    // "Transparent mode" is now purely the sliders:
-    // if BOTH alphas are 0, show a stroke so the user can still see the card edge.
-    const wantTransparent = (topA <= 0 && botA <= 0);
-
     // Stroke vs Fill occupy the EXACT same box
     preview.classList.toggle('card--stroke', wantTransparent);
     preview.classList.toggle('card--fill', !wantTransparent);
@@ -626,7 +628,7 @@ new MutationObserver(() => applyPickerTheme())
 
   // run once to apply immediately
   window.render();
-})();
+ })();
 
 </script>
 

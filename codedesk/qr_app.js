@@ -3030,8 +3030,10 @@ async function downloadPng(filename = 'qr.png', scale = 3) {
   const ctx = canvas.getContext('2d');
 
   // Match preview background (gradient vs transparent) before drawing SVG
-  const tgl = document.getElementById('bgTransparent');
-  const isTransparent = !!tgl?.checked; // checked = background ON (fill)
+  // No toggle: transparency is determined by both gradient alphas.
+  const ta = (+document.getElementById('bgTopAlpha')?.value || 0) / 100;
+  const ba = (+document.getElementById('bgBottomAlpha')?.value || 0) / 100;
+  const isTransparent = (ta <= 0 && ba <= 0);
 
   if (!isTransparent) {
     // Read the same knobs used by updatePreviewBackground()
