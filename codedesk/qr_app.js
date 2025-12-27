@@ -590,19 +590,35 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
   // IMPORTANT: template selection must never reuse or reopen a stale working file id.
   // Create a fresh working-file record for this template, then mark it active WITHOUT re-importing.
   const name = (t.type || 'QR') + ' — ' + (t.name || t.id || 'Template');
-  const wfId = window.codedeskSaveWorkingFile(name, {
-    id: 'wf_' + Date.now() + '_' + Math.random().toString(16).slice(2),
-    template_id: t.id
+
+  // IMPORTANT: store the TEMPLATE STATE in the working-file record.
+  // Do NOT snapshot the current UI (which may still be preset #1).
+  const newId = 'wf_' + Date.now() + '_' + Math.random().toString(16).slice(2);
+
+  const wfId = window.codedeskSaveWorkingFile({
+    id: newId,
+    name: name,
+    kind: 'working',
+    indicator: 'working_orange_stack',
+    template_id: t.id,
+    state: t.state,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   });
 
   window.CODEDESK_ACTIVE_WORKING_FILE_ID = wfId;
   window.CODEDESK_ACTIVE_TEMPLATE_ID = t.id;
 
-  // This is the missing step: apply the template’s saved state to the live UI + preview.
-  if (typeof window.okqralImportState === 'function') {
-    window.okqralImportState(t.state);
+  // Apply the template’s saved state to the live UI + preview (guarded import).
+  window.__CODEDESK_APPLYING_TEMPLATE__ = true;
+  try {
+    if (typeof window.okqralImportState === 'function') {
+      window.okqralImportState(t.state);
+    }
+    if (typeof render === 'function') render();
+  } finally {
+    queueMicrotask(() => { window.__CODEDESK_APPLYING_TEMPLATE__ = false; });
   }
-  if (typeof render === 'function') render();
 
   try { localStorage.setItem('codedesk_active_working_file_v1', wfId); } catch (e) {}
   return true;
@@ -766,8 +782,8 @@ window.getPresets = (t) => {
     });
     if (byType.length) return byType;
 
-    // Otherwise, just return all templates (better than returning nothing).
-    return templates;
+        // If the type doesn't match any template, return empty (don't "show something" incorrectly).
+    return [];
   }
 
   // Fallback: legacy presets from the manifest
@@ -1383,77 +1399,9 @@ function setValAndFire(id, value) {
 }
 
 function applyPreset(type, index = 0) {
-  // Canonical guard: never allow presets to overwrite imported state (template/workfile).
-  if (window.__CODEDESK_IMPORTING_STATE__ === true) return;
-  if (window.__CODEDESK_APPLYING_TEMPLATE__ === true) return;
-  const list = getPresets(type);
-  if (!list.length) return;
-
-  // safe modulo
-  const idx = ((index % list.length) + list.length) % list.length;
-  currentPresetIdx.set(type, idx);
-
-  const p = list[idx] || {};
-
-  // font first so preview typography is correct before caption paint
-  if (p.fontFamily) setFont(p.fontFamily);
-
-  // always load caption from preset (or type name fallback inside helper)
-  setCaptionFromPreset(p, type);
-
-  // Map preset keys → control IDs (only set what’s present)
-  if (p.captionColor)     setValAndFire('captionColor', p.captionColor);
-  if (p.bodyColor)        setValAndFire('bodyColor', p.bodyColor);
-  if (p.eyeRingColor)     setValAndFire('eyeRingColor', p.eyeRingColor);
-  if (p.eyeCenterColor)   setValAndFire('eyeCenterColor', p.eyeCenterColor);
-
-  // Prefer new gradient knobs if present
-  if (p.bgTopColor)          setValAndFire('bgTopHex', p.bgTopColor);
-  if (p.bgBottomColor)       setValAndFire('bgBottomHex', p.bgBottomColor);
-  if (p.bgTopAlpha != null)  setValAndFire('bgTopAlpha', p.bgTopAlpha);
-  if (p.bgBottomAlpha != null) setValAndFire('bgBottomAlpha', p.bgBottomAlpha);
-
-  // Back-compat: single bgColor → mirror to both ends
-  if (p.bgColor && !p.bgTopColor && !p.bgBottomColor) {
-    const c = p.bgColor;
-    const topCol = document.getElementById('bgTopColor');
-    const botCol = document.getElementById('bgBottomColor');
-    const topHex = document.getElementById('bgTopHex');
-    const botHex = document.getElementById('bgBottomHex');
-
-    if (topCol) topCol.value = c;
-    if (botCol) botCol.value = c;
-    if (topHex) topHex.value = c;
-    if (botHex) botHex.value = c;
-
-    const ta = document.getElementById('bgTopAlpha');
-    const ba = document.getElementById('bgBottomAlpha');
-    if (ta) { ta.value = 100; ta.dispatchEvent(new Event('input')); }
-    if (ba) { ba.value = 100; ba.dispatchEvent(new Event('input')); }
-  }
-
-  // NOTE: your UI checkbox means "Background ON"
-  // preset key "bgTransparent: true" means "Background OFF"
-  if (typeof p.bgTransparent === 'boolean') {
-    setValAndFire('bgTransparent', !p.bgTransparent);
-  }
-
-  if (p.moduleShape)    setValAndFire('moduleShape', p.moduleShape);
-  if (p.eyeRingShape)   setValAndFire('eyeRingShape', p.eyeRingShape);
-  if (p.eyeCenterShape) setValAndFire('eyeCenterShape', p.eyeCenterShape);
-
-  if (p.modulesMode)          setValAndFire('modulesMode', p.modulesMode);
-  if (p.modulesEmoji)         setValAndFire('modulesEmoji', p.modulesEmoji);
-  if (p.modulesScale != null) setValAndFire('modulesScale', p.modulesScale);
-
-  if (p.centerMode)          setValAndFire('centerMode', p.centerMode);
-  if (p.centerEmoji)         setValAndFire('centerEmoji', p.centerEmoji);
-  if (p.centerScale != null) setValAndFire('centerScale', p.centerScale);
-
-  if (typeof window.refreshBackground === 'function') window.refreshBackground();
-  if (typeof refreshModulesMode === 'function') refreshModulesMode();
-  if (typeof refreshCenter === 'function') refreshCenter();
-  if (typeof render === 'function') render();
+  // CodeDesk no longer supports presets. Templates + working files are the only sources of truth.
+  // Keeping this symbol as a no-op prevents legacy call sites from overwriting state.
+  return;
 }
 
 function setCaptionFromPreset(preset, typeName) {
@@ -1492,35 +1440,21 @@ typeSel.addEventListener('change', () => {
   // 1) rebuild the form for this type
   renderTypeForm(t);
 
-  // 1.5) re-wire dynamic controls created by the rebuild (must be idempotent)
+  // 2) re-wire dynamic controls created by the rebuild (must be idempotent)
   if (typeof wireColorHexSync === 'function') wireColorHexSync();
   if (typeof wireSteppers === 'function') wireSteppers();
   if (typeof wireEmojiModal === 'function') wireEmojiModal();
   if (typeof wireECCPill === 'function') wireECCPill();
   if (typeof wireECCLegacySelect === 'function') wireECCLegacySelect();
 
-  // 🚫 Import guard: NEVER allow preset cycling to overwrite imported state
-  // (template apply OR working-file open OR any okqralImportState).
-  if (window.__CODEDESK_APPLYING_TEMPLATE__ === true || window.__CODEDESK_IMPORTING_STATE__ === true) {
-    if (typeof window.refreshBackground === 'function') window.refreshBackground();
-    if (typeof refreshModulesMode === 'function') refreshModulesMode();
-    if (typeof refreshCenter === 'function') refreshCenter();
-    if (typeof render === 'function') render();
-    return;
-  }
+  // 3) Never apply presets on type change. Just refresh + render using whatever state is already active.
+  if (typeof window.refreshBackground === 'function') window.refreshBackground();
+  if (typeof refreshModulesMode === 'function') refreshModulesMode();
+  if (typeof refreshCenter === 'function') refreshCenter();
+  if (typeof render === 'function') render();
 
-  // 2) preset index bookkeeping
-  if (!currentPresetIdx.has(t)) currentPresetIdx.set(t, 0);
-
-  // 3) apply the preset now that controls exist
-  applyPreset(t, currentPresetIdx.get(t));
-
-  // 4) force caption from the active preset (or type name)
-  const list = getPresets(t);
-  setCaptionFromPreset(list[currentPresetIdx.get(t)] || {}, t);
-
-  // 5) analytics
-  sendEvent('type_change', currentUiState());
+  // 4) analytics
+  try { typeof sendEvent === 'function' && sendEvent('type_change', (typeof currentUiState === 'function' ? currentUiState() : {})); } catch (e) {}
 });
 
 // First-load hydration: build Mechanical controls + preview for the default type immediately
@@ -2677,12 +2611,12 @@ function boot() {
     });
 
     document.getElementById('centerMode')?.addEventListener('change', () => {
-      sendEvent('center_mode', currentUiState());
+      try { typeof sendEvent === 'function' && sendEvent('center_mode', (typeof currentUiState === 'function' ? currentUiState() : {})); } catch (e) {}
     });
 
     document.getElementById('bgTransparent')?.addEventListener('change', () => {
       const transparent = !!document.getElementById('bgTransparent')?.checked;
-      sendEvent('bg_mode', { transparent, ...currentUiState() });
+      try { typeof sendEvent === 'function' && sendEvent('bg_mode', Object.assign({ transparent }, (typeof currentUiState === 'function' ? currentUiState() : {}))); } catch (e) {}
     });
 
     document.getElementById('bgColor')?.addEventListener('input', () => {
@@ -2694,7 +2628,7 @@ function boot() {
   }
 
   // Analytics (view = first meaningful paint session)
-  sendEvent('view', currentUiState());
+  try { typeof sendEvent === 'function' && sendEvent('view', (typeof currentUiState === 'function' ? currentUiState() : {})); } catch (e) {}
 
   // First render (next frame avoids layout thrash)
   requestAnimationFrame(() => {
