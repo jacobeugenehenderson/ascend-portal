@@ -1661,8 +1661,15 @@ typeSel.addEventListener('change', () => {
   sendEvent('type_change', currentUiState());
 });
 
-// First-load hydration: build Mechanical controls + preview for the default type immediately
-try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+// First-load hydration: build Mechanical controls + preview for the default type immediately.
+// IMPORTANT: In URL template mode, bootstrap imports state + renders; do NOT stomp it with preset #0.
+try {
+  const __e = window.CODEDESK_ENTRY || {};
+  const __m = String(__e.mode || '').toLowerCase();
+  if (__m !== 'template') {
+    typeSel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+} catch (e) {}
 
     // Payment: toggle user vs link by mode
     const payMode = document.getElementById('payMode');
