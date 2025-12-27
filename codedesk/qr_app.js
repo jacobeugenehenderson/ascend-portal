@@ -619,9 +619,9 @@ function _codedeskTemplateToState(tpl) {
       eyeRingColor: tpl.eyeRingColor,
       eyeCenterColor: tpl.eyeCenterColor,
 
-      bgTopColor: tpl.bgTopColor,
+      bgTopHex: tpl.bgTopColor,
       bgTopAlpha: tpl.bgTopAlpha,
-      bgBottomColor: tpl.bgBottomColor,
+      bgBottomHex: tpl.bgBottomColor,
       bgBottomAlpha: tpl.bgBottomAlpha,
 
       // UI checkbox id is bgTransparent (checked = Background ON)
@@ -722,9 +722,18 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
     queueMicrotask(function codedeskBootstrapFromEntryOnce(){
       if (window.__CODEDESK_BOOTSTRAP_DONE__) return;
 
+      // Session guard MUST be keyed to the actual entry payload, not a single "1",
+      // otherwise a second template click in the same tab never boots.
       try {
-        if (sessionStorage.getItem(CODEDESK_BOOTSTRAP_SESSION_KEY) === "1") return;
-        sessionStorage.setItem(CODEDESK_BOOTSTRAP_SESSION_KEY, "1");
+        const __sig = [
+          String((window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.mode) || '').toLowerCase(),
+          String((window.CODEDESK_ENTRY && (window.CODEDESK_ENTRY.template_id || window.CODEDESK_ENTRY.templateId)) || '').trim().toLowerCase(),
+          String((window.CODEDESK_ENTRY && (window.CODEDESK_ENTRY.working_file_id || window.CODEDESK_ENTRY.workingFileId)) || '').trim()
+        ].join('|');
+
+        const __prev = sessionStorage.getItem(CODEDESK_BOOTSTRAP_SESSION_KEY) || '';
+        if (__prev === __sig) return;
+        sessionStorage.setItem(CODEDESK_BOOTSTRAP_SESSION_KEY, __sig);
       } catch (e) {}
 
       const entry = window.CODEDESK_ENTRY || {};
@@ -856,52 +865,6 @@ window.getPresets = (t) => {
 
   // Fallback: legacy presets from the manifest
   const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
-  return presets[key] || [];
-};
-
-/* ------------------------------------------------------------------
-   CodeDesk template resolver (by id or name)
-   - Used by template_id entry points
-   - Intentionally tolerant (id OR name)
------------------------------------------------------------------- */
-function codedeskResolveTemplateById(id){
-  if (!id) return null;
-  const want = String(id).trim().toLowerCase();
-
-  const list = Array.isArray(window.CODEDESK_TEMPLATES)
-    ? window.CODEDESK_TEMPLATES
-    : [];
-
-  return list.find(tpl => {
-    if (!tpl) return false;
-    if (String(tpl.id || '').toLowerCase() === want) return true;
-    if (String(tpl.name || '').toLowerCase() === want) return true;
-    return false;
-  }) || null;
-}
-
-// expose for Ascend / console / future callers
-window.codedeskResolveTemplateById = codedeskResolveTemplateById;
-
-window.getPresets = (t) => {
-  const want = String(t || "").trim().toLowerCase();
-
-  // Prefer templates loaded from qr_templates.json (Ascend/CodeDesk templates)
-  const templates = Array.isArray(window.CODEDESK_TEMPLATES) ? window.CODEDESK_TEMPLATES : [];
-  if (templates.length) {
-    // If templates carry a type field, return only matches for the current type.
-    const byType = templates.filter((p) => {
-      const ty = (p.qrType || p.qr_type || p.type || "").toString().trim().toLowerCase();
-      return ty && ty === want;
-    });
-    if (byType.length) return byType;
-
-    // Otherwise, just return all templates (better than returning nothing).
-    return templates;
-  }
-
-  // Fallback: legacy presets from the manifest
-  const key = Object.keys(presets).find((k) => k.toLowerCase() === want);
   return presets[key] || [];
 };
 
