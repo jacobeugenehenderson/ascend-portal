@@ -52,13 +52,6 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
   // Working-file open path (from hopper)
   const workingFileId = (qs.get("working_file_id") || qs.get("workingFileId") || "").trim();
 
-  // If Ascend did not provide an explicit mode, infer it deterministically.
-  // This prevents falling through to the default type + preset #1.
-  if (!mode) {
-    if (workingFileId) mode = "working";
-    else if (templateId) mode = "template";
-  }
-
   // Carry-through identity (may be present when launched from Ascend)
   const token = (qs.get("token") || "").trim();
   const userEmail = (qs.get("user_email") || "").trim();
@@ -549,11 +542,6 @@ emojiGrid.appendChild(b); }); }
           Object.assign(flat, t.style);
         }
 
-        // Flatten fields block (critical: templates often store urlData/etc under tpl.fields)
-        if (t.fields && typeof t.fields === "object") {
-          Object.assign(flat, t.fields);
-        }
-
         // Normalize type keys
         if (!flat.type) flat.type = t.qrType || t.qr_type || t.type || "";
 
@@ -592,43 +580,19 @@ emojiGrid.appendChild(b); }); }
 window.CODEDESK_TEMPLATES = templates;
 
 const _codedeskResolveTemplateById_ = function(id){
-  if (id == null) return null;
-  const wantRaw = String(id).trim();
-  if (!wantRaw) return null;
-
-  const want = wantRaw.toLowerCase();
+  if (!id) return null;
+  const want = String(id).trim().toLowerCase();
 
   const list = Array.isArray(window.CODEDESK_TEMPLATES)
     ? window.CODEDESK_TEMPLATES
     : [];
 
-  if (!list.length) return null;
-
-  // --- 1) Direct match by canonical id or name ---
-  const direct =
-    list.find(tpl => {
-      if (!tpl) return false;
-      if (String(tpl.id || '').trim().toLowerCase() === want) return true;
-      if (String(tpl.name || '').trim().toLowerCase() === want) return true;
-      return false;
-    }) || null;
-
-  if (direct) return direct;
-
-  // --- 2) Support "Template 2" / "template-2" / "t2" / "#2" ---
-  const m = want.match(/^(?:template|tpl|t|#)\s*[-:]?\s*(\d+)$/i);
-  const nFromLabel = m ? parseInt(m[1], 10) : NaN;
-
-  // --- 3) Support bare numeric "2" (1-based index) ---
-  const nBare = /^[0-9]+$/.test(want) ? parseInt(want, 10) : NaN;
-
-  const n = Number.isFinite(nFromLabel) ? nFromLabel : nBare;
-
-  if (Number.isFinite(n) && n >= 1 && n <= list.length) {
-    return list[n - 1] || null; // 1-based -> 0-based
-  }
-
-  return null;
+  return list.find(tpl => {
+    if (!tpl) return false;
+    if (String(tpl.id || '').toLowerCase() === want) return true;
+    if (String(tpl.name || '').toLowerCase() === want) return true;
+    return false;
+  }) || null;
 };
 
 window.codedeskResolveTemplateById = _codedeskResolveTemplateById_;
@@ -655,11 +619,8 @@ function _codedeskTemplateToState(tpl) {
       eyeRingColor: tpl.eyeRingColor,
       eyeCenterColor: tpl.eyeCenterColor,
 
-      // Map semantic template keys → BOTH UI control IDs (color input + hex text)
-      bgTopColor: tpl.bgTopColor,
       bgTopHex: tpl.bgTopColor,
       bgTopAlpha: tpl.bgTopAlpha,
-      bgBottomColor: tpl.bgBottomColor,
       bgBottomHex: tpl.bgBottomColor,
       bgBottomAlpha: tpl.bgBottomAlpha,
 
@@ -690,28 +651,22 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
   const id = String(templateId || '').trim();
   if (!id) return false;
 
-    // Idempotent URL-template bootstrap: ONLY reopen the bootstrapped working file
-    // during the initial bootstrap pass. After bootstrap, template selection MUST
-    // re-hydrate state (no silent fallback to prior working file).
-    try {
-      const entry = window.CODEDESK_ENTRY || {};
-      const mode = String(entry.mode || '').toLowerCase();
-      const entryTpl = String(entry.template_id || entry.templateId || '').trim();
-
-      if (!window.__CODEDESK_BOOTSTRAP_DONE__ &&
-          mode === 'template' &&
-          entryTpl &&
-          entryTpl.toLowerCase() === id.toLowerCase()) {
-
-        const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
-        const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
-
-        if (existingWfId && typeof window.codedeskOpenWorkingFile === 'function') {
-          window.codedeskOpenWorkingFile(existingWfId);
-          return true;
-        }
+  // Idempotent: if we are in URL "template" mode and already bootstrapped this template,
+  // reopen the previously created working file instead of creating a new one.
+  try {
+    const entry = window.CODEDESK_ENTRY || {};
+    const mode = String(entry.mode || '').toLowerCase();
+    const entryTpl = String(entry.template_id || entry.templateId || '').trim();
+    if (mode === 'template' && entryTpl && entryTpl.toLowerCase() === id.toLowerCase()) {
+      const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
+      const existingWfId = String(localStorage.getItem(BOOT_KEY) || '').trim();
+      if (existingWfId && typeof window.codedeskOpenWorkingFile === 'function') {
+        window.codedeskOpenWorkingFile(existingWfId);
+        return true;
       }
-    } catch (e) {}
+    }
+  } catch (e) {}
+
   const tpl = window.codedeskResolveTemplateById(templateId);
 
   if (!tpl) {
@@ -729,39 +684,36 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
     _codedeskTemplateToState(tpl);
 
   if (!state) {
-    const msg = 'codedeskApplyTemplateById: no usable state for template: ' + (tpl && (tpl.id || tpl.name) ? (tpl.id || tpl.name) : 'UNKNOWN');
-    console.error(msg, tpl);
-    throw new Error(msg);
+    console.warn('codedeskApplyTemplateById: no usable state for template:', tpl);
+    return false;
   }
 
-  // Import → save → open (guard against preset cycling overwrite)
+  // ------------------------------------------------------------------
+  // Template hydration guard:
+  // Prevent qrType "change" handler from calling applyPreset() and
+  // overwriting the just-imported template state.
+  // ------------------------------------------------------------------
   window.__CODEDESK_APPLYING_TEMPLATE__ = true;
+
   try {
+    // Import → (typeSel change will fire inside here) → guard blocks presets
     window.okqralImportState(state);
   } finally {
-    window.__CODEDESK_APPLYING_TEMPLATE__ = false;
+    // Release guard after the import-triggered handlers have run
+    queueMicrotask(() => { window.__CODEDESK_APPLYING_TEMPLATE__ = false; });
   }
-
-  // Ensure immediate preview refresh after template hydration
-  if (typeof window.refreshBackground === 'function') window.refreshBackground();
-  if (typeof refreshModulesMode === 'function') refreshModulesMode();
-  if (typeof refreshCenter === 'function') refreshCenter();
-  if (typeof render === 'function') render();
 
   const name =
     String(tpl.name || tpl.title || tpl.label || 'QR Template').trim();
 
-  // IMPORTANT: template selection must never reuse or reopen a stale working file id.
-  // Create a fresh working-file record for this template, then mark it active WITHOUT re-importing.
-  const wfId = window.codedeskSaveWorkingFile(name, {
-    id: 'wf_' + Date.now() + '_' + Math.random().toString(16).slice(2)
-  });
+  // IMPORTANT: never let a template save re-use whatever "active" working file was open.
+  // Pass an explicit id so Template 2 can't overwrite Template 1 (or some stale file).
+  const now = Date.now();
+  const rand = Math.random().toString(16).slice(2);
+  const stableTplId = String(tpl.id || templateId || id || '').trim();
+  const explicitId = stableTplId ? ('wf_tpl_' + stableTplId) : ('wf_' + now + '_' + rand);
 
-  // Mark active (prevents reopen of prior sessions) and keep UI state as-imported.
-  if (wfId) {
-    try { _setActiveWorkingFileId(wfId); } catch (e) {}
-    try { window.__CODEDESK_CURRENT_WF_ID__ = String(wfId).trim(); } catch (e) {}
-  }
+  const wfId = window.codedeskSaveWorkingFile(name, { id: explicitId });
 
   // Persist the created working file id for URL template mode (idempotent reload)
   try {
@@ -774,7 +726,7 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
     }
   } catch (e) {}
 
-  // DO NOT call codedeskOpenWorkingFile(wfId) here — it re-imports and can overwrite via presets.
+  if (wfId) window.codedeskOpenWorkingFile(wfId);
 
   return true;
 };
@@ -917,34 +869,23 @@ window.getTypeFields = (t) => {
 window.getPresets = (t) => {
   const want = String(t || "").trim().toLowerCase();
 
-  // In template mode, templates must NEVER masquerade as presets.
-  // Preset cycling to index 0 is exactly what stomps the imported template state.
-  try {
-    const entry = window.CODEDESK_ENTRY || {};
-    const mode = String(entry.mode || "").trim().toLowerCase();
-        if (mode === "template") {
-      // In template mode, NEVER return presets OR templates here.
-      // Template hydration must be exclusively via codedeskApplyTemplateById().
-      return [];
-    }
-  } catch (e) {}
-
-  // Prefer templates loaded from qr_templates.json ONLY if there are no legacy presets for this type.
-  const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
-  const legacy = presets[key] || [];
-  if (legacy && legacy.length) return legacy;
-
+  // Prefer templates loaded from qr_templates.json (Ascend/CodeDesk templates)
   const templates = Array.isArray(window.CODEDESK_TEMPLATES) ? window.CODEDESK_TEMPLATES : [];
   if (templates.length) {
+    // If templates carry a type field, return only matches for the current type.
     const byType = templates.filter((p) => {
       const ty = (p.qrType || p.qr_type || p.type || "").toString().trim().toLowerCase();
       return ty && ty === want;
     });
     if (byType.length) return byType;
+
+    // Otherwise, just return all templates (better than returning nothing).
     return templates;
   }
 
-  return [];
+  // Fallback: legacy presets from the manifest
+  const key = Object.keys(presets).find((k) => k.toLowerCase() === want) || t;
+  return presets[key] || [];
 };
 
  /* ====================================================================     
@@ -1199,14 +1140,7 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
   _setActiveWorkingFileId(rec.id);
   try { window.__CODEDESK_CURRENT_WF_ID__ = String(rec.id || '').trim(); } catch(e){}
 
-  // Guard imports: opening a working file must not trigger preset cycling overwrites.
-  window.__CODEDESK_APPLYING_TEMPLATE__ = true;
-  let ok = false;
-  try {
-    ok = window.okqralImportState(rec.state);
-  } finally {
-    window.__CODEDESK_APPLYING_TEMPLATE__ = false;
-  }
+  const ok = window.okqralImportState(rec.state);
 
   // If this working file has been Finished before, opening it should trigger an update.
   // Debounced so the first render settles.
@@ -1677,18 +1611,8 @@ typeSel.addEventListener('change', () => {
   sendEvent('type_change', currentUiState());
 });
 
-// First-load hydration: build Mechanical controls + preview for the default type immediately.
-// IMPORTANT: In URL template mode, bootstrap imports state + renders; do NOT stomp it with preset #0.
-try {
-  const __e = window.CODEDESK_ENTRY || {};
-  const __m = String(__e.mode || '').toLowerCase();
-
-  // Only do the default type hydration when we are NOT about to open a working file
-  // and NOT about to apply a template via bootstrap.
-  if (__m !== 'template' && __m !== 'working' && __m !== 'new') {
-    typeSel.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-} catch (e) {}
+// First-load hydration: build Mechanical controls + preview for the default type immediately
+try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
 
     // Payment: toggle user vs link by mode
     const payMode = document.getElementById('payMode');
@@ -1728,6 +1652,15 @@ try {
       });
     
   }
+
+const _ts0 = document.getElementById('qrType');
+const t0 = _ts0 ? (_ts0.value || '') : '';
+if (t0 && getPresets(t0).length) {
+  currentPresetIdx.set(t0, 0);
+  applyPreset(t0, 0);
+  const list0 = getPresets(t0);
+  setCaptionFromPreset(list0[0] || {}, t0);
+}
 
 (function () {
   const $ = (id) => document.getElementById(id);
