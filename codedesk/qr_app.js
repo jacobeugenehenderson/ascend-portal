@@ -664,17 +664,12 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
   const id = String(templateId || '').trim();
   if (!id) return false;
 
-  // Idempotent: if we are in URL "template" mode and already bootstrapped this template,
+    // Idempotent: if we are in URL "template" mode and already bootstrapped this template,
   // reopen the previously created working file instead of creating a new one.
   try {
-    const u = new URL(window.location.href);
-    const mode = String(u.searchParams.get('mode') || '').toLowerCase();
-    const entryTpl = String(
-      u.searchParams.get('template_id') ||
-      u.searchParams.get('templateId') ||
-      u.searchParams.get('template') ||
-      ''
-    ).trim();
+    const entry = window.CODEDESK_ENTRY || {};
+    const mode = String(entry.mode || '').toLowerCase();
+    const entryTpl = String(entry.template_id || entry.templateId || '').trim();
 
     if (mode === 'template' && entryTpl && entryTpl.toLowerCase() === id.toLowerCase()) {
       const BOOT_KEY = 'codedesk_template_bootstrap_v1:' + entryTpl;
@@ -701,6 +696,14 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(templateId
     tpl.payload ||
     tpl.data ||
     _codedeskTemplateToState(tpl);
+
+    // ------------------------------------------------------------
+    // TEMPLATE TYPE NORMALIZATION
+    // Templates define type as "URL", but runtime expects "url"
+    // ------------------------------------------------------------
+    if (tpl.type && !state.type) {
+      state.type = String(tpl.type).trim().toLowerCase();
+    }
 
   if (!state) {
     console.warn('codedeskApplyTemplateById: no usable state for template:', tpl);
