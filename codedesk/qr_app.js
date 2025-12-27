@@ -1656,10 +1656,15 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
 const _ts0 = document.getElementById('qrType');
 const t0 = _ts0 ? (_ts0.value || '') : '';
 if (t0 && getPresets(t0).length) {
-  currentPresetIdx.set(t0, 0);
-  applyPreset(t0, 0);
-  const list0 = getPresets(t0);
-  setCaptionFromPreset(list0[0] || {}, t0);
+  // If a template is being applied (or just got applied), NEVER stomp it with preset #0.
+  if (window.__CODEDESK_APPLYING_TEMPLATE__ === true) {
+    // no-op
+  } else {
+    currentPresetIdx.set(t0, 0);
+    applyPreset(t0, 0);
+    const list0 = getPresets(t0);
+    setCaptionFromPreset(list0[0] || {}, t0);
+  }
 }
 
 (function () {
