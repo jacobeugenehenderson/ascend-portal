@@ -52,6 +52,13 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
   // Working-file open path (from hopper)
   const workingFileId = (qs.get("working_file_id") || qs.get("workingFileId") || "").trim();
 
+  // If Ascend did not provide an explicit mode, infer it deterministically.
+  // This prevents falling through to the default type + preset #1.
+  if (!mode) {
+    if (workingFileId) mode = "working";
+    else if (templateId) mode = "template";
+  }
+
   // Carry-through identity (may be present when launched from Ascend)
   const token = (qs.get("token") || "").trim();
   const userEmail = (qs.get("user_email") || "").trim();
