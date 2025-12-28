@@ -5,6 +5,38 @@
   'use strict';
 
 var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
+
+// ---------- Language / Translation (workspace dropdown) ----------
+var baseLanguage = 'EN';
+var activeLanguage = 'EN';
+var translationsDb = {};
+var langSelect = null;
+var langDot = null;
+
+function updateLangDot_() {
+  if (!langDot) return;
+  var entry = translationsDb && translationsDb[activeLanguage];
+  var human = !!(entry && entry.human);
+  langDot.style.opacity = human ? '1' : '.35';
+}
+
+function applyTranslatedFields_(f) {
+  if (!f) return;
+  var v;
+
+  v = document.getElementById('working-headline'); if (v) v.value = f.workingHeadline || '';
+  v = document.getElementById('working-subhead');  if (v) v.value = f.workingSubhead || '';
+  v = document.getElementById('working-cta');      if (v) v.value = f.workingCta || '';
+  v = document.getElementById('working-bullets');  if (v) v.value = f.workingBullets || '';
+
+  v = document.getElementById('working-website');  if (v) v.value = f.workingWebsite || '';
+  v = document.getElementById('working-email');    if (v) v.value = f.workingEmail || '';
+
+  v = document.getElementById('working-notes');    if (v) v.value = f.workingNotes || '';
+
+  syncCanvasTextFromFields();
+  autoscaleCanvasBands();
+}
   function getJobIdFromQuery() {
   var params = new URLSearchParams(window.location.search || '');
   // accept both spellings
@@ -737,6 +769,54 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     renderCanvasPreview(job, dimsForSize, mediaKind);
 
     // Working draft fields
+    baseLanguage = (job && job.languagePrimary) ? String(job.languagePrimary).trim() : 'EN';
+    activeLanguage = baseLanguage;
+
+    // Parse translations JSON
+    try {
+      translationsDb = job && job.workingTranslationsJson ? JSON.parse(job.workingTranslationsJson) : {};
+    } catch (e) {
+      translationsDb = {};
+    }
+
+    // Populate language dropdown
+    if (langSelect) {
+      langSelect.innerHTML = '';
+      // Base language first (muted label)
+      const optBase = document.createElement('option');
+      optBase.value = baseLanguage;
+      optBase.textContent = baseLanguage + ' (base)';
+      langSelect.appendChild(optBase);
+
+      // Pull supported languages from backend
+      try {
+        const url = apiBase + '?action=listLanguages';
+        fetch(url)
+          .then(r => r.json())
+          .then(payload => {
+            const langs = (payload && payload.languages) ? payload.languages : [];
+            langs.forEach(l => {
+              const code = String(l.code || '').trim();
+              const label = String(l.label || code).trim();
+              if (!code || code === baseLanguage) return;
+              const opt = document.createElement('option');
+              opt.value = code;
+              opt.textContent = label + ' (' + code + ')';
+              langSelect.appendChild(opt);
+            });
+            langSelect.value = baseLanguage;
+            updateLangDot_();
+          })
+          .catch(() => {
+            // If listLanguages fails, leave base only.
+            updateLangDot_();
+          });
+      } catch (e) {
+        updateLangDot_();
+      }
+    }
+
+    updateLangDot_();
     document.getElementById('working-headline').value = job.workingHeadline || '';
     document.getElementById('working-subhead').value = job.workingSubhead || '';
     document.getElementById('working-cta').value = job.workingCta || '';
@@ -833,7 +913,14 @@ function saveDraft(jobId) {
   var payload = buildDraftPayload(jobId);
   var params = new URLSearchParams();
 
-  params.append('action', 'updateArtStartDraftFields');
+  var isBase = (activeLanguage === baseLanguage);
+  params.append('action', isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields');
+
+  // Non-base writes must specify which language is being edited.
+  if (!isBase) {
+    params.append('lang', activeLanguage);
+  }
+
   Object.keys(payload).forEach(function (key) {
     var value = payload[key];
     if (value !== undefined && value !== null) {
@@ -849,6 +936,24 @@ function saveDraft(jobId) {
       if (!json || !json.ok) {
         throw new Error((json && json.error) || 'Unknown error');
       }
+
+      // Mark translation as human-edited locally (dot fills immediately)
+      if (!isBase) {
+        translationsDb = translationsDb || {};
+        translationsDb[activeLanguage] = translationsDb[activeLanguage] || {};
+        translationsDb[activeLanguage].human = true;
+        translationsDb[activeLanguage].fields = {
+          workingHeadline: payload.workingHeadline || '',
+          workingSubhead: payload.workingSubhead || '',
+          workingCta: payload.workingCta || '',
+          workingBullets: payload.workingBullets || '',
+          workingWebsite: payload.workingWebsite || '',
+          workingEmail: payload.workingEmail || '',
+          workingNotes: payload.workingNotes || ''
+        };
+        updateLangDot_();
+      }
+
       setSaveStatus('Saved');
     })
     .catch(function (err) {
@@ -901,7 +1006,11 @@ function saveDraft(jobId) {
         }
 
         var payload = buildDraftPayload(jobId);
-        var url = ARTSTART_API_BASE + '?action=updateArtStartDraftFields';
+        var isBase = (activeLanguage === baseLanguage);
+        var url =
+          ARTSTART_API_BASE +
+          '?action=' + (isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields') +
+          (isBase ? '' : ('&lang=' + encodeURIComponent(activeLanguage)));
         var data = JSON.stringify(payload);
 
         if (navigator && typeof navigator.sendBeacon === 'function') {
@@ -974,6 +1083,60 @@ function saveDraft(jobId) {
 
   function init() {
     setUserLabel();
+
+    // Cache language UI
+    langSelect = document.getElementById('artstartLanguage');
+    langDot = document.getElementById('artstartLangDot');
+
+    if (langSelect) {
+      langSelect.addEventListener('change', function () {
+        var jobIdNow = getJobIdFromQuery();
+        var next = String(langSelect.value || '').trim();
+        if (!jobIdNow || !next) return;
+
+        activeLanguage = next;
+
+        // Base language: reload canonical job fields from sheet
+        if (activeLanguage === baseLanguage) {
+          fetchJob(jobIdNow);
+          return;
+        }
+
+        // Existing translation in cache?
+        var entry = translationsDb && translationsDb[activeLanguage];
+        if (entry && entry.fields) {
+          applyTranslatedFields_(entry.fields);
+          updateLangDot_();
+          return;
+        }
+
+        // Otherwise request translation and persist server-side
+        setSaveStatus('Translating…');
+
+        fetch(
+          ARTSTART_API_BASE +
+          '?action=translateArtStartFields' +
+          '&jobId=' + encodeURIComponent(jobIdNow) +
+          '&targetLanguage=' + encodeURIComponent(activeLanguage)
+        )
+          .then(function (r) { return r.json(); })
+          .then(function (payload) {
+            if (!payload || payload.success === false) {
+              throw new Error((payload && payload.error) || 'Translate failed');
+            }
+
+            // Apply translated text immediately
+            applyTranslatedFields_(payload.fields || {});
+
+            // Refresh job payload so translationsDb + dot state are canonical
+            fetchJob(jobIdNow);
+          })
+          .catch(function (err) {
+            console.error(err);
+            setSaveStatus('Translate failed – try again');
+          });
+      });
+    }
 
     // Prime the Dave status card before we know anything else.
     setDaveStatusHeader('Dave (courier)');

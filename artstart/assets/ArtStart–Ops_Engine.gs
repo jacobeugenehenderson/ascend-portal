@@ -172,9 +172,9 @@ function enqueueDaveCreateSeedsTask_(ascendJobId, intakePayload, artStartDate, r
     materialsDueDate: intakePayload.materialsDueDate || '',
     runDate: effectiveRunDate,
     languagePrimary: intakePayload.languagePrimary || 'EN',
-    translationRequired: intakePayload.translationRequired || 'No',
-    translationTargetLanguage: intakePayload.translationTargetLanguage || '',
-    qrIncluded: intakePayload.qrIncluded || 'No',
+    translationRequired: 'No',
+    translationTargetLanguage: '',
+    qrIncluded: 'No',
     createdByContactId: createdByContactId || intakePayload.requestedByEmail || '',
     productLine: intakePayload.productLine || '',
     notes: intakePayload.notes || '',
@@ -365,11 +365,9 @@ function createJob(intakePayload) {
   const ascendJobId = generateDailyId_('ASC', projectsSheet, 'AscendJobId');
   const adScheduleId = generateDailyId_('ADS', adScheduleSheet, 'AdScheduleId');
 
-  // Optional translation job
+  // Translation jobs are no longer created at intake time.
+  // (Translation is handled inside the workspace UI when needed.)
   let translationJobId = '';
-  if (intakePayload.translationRequired === 'Yes') {
-    translationJobId = createTranslationJobRow_(ascendJobId, intakePayload);
-  }
 
   // Build Projects row in header order
   const projRow = [];
@@ -411,16 +409,16 @@ function createJob(intakePayload) {
         projRow.push(intakePayload.languagePrimary || 'EN');
         break;
       case 'TranslationRequired':
-        projRow.push(intakePayload.translationRequired || 'No');
+        projRow.push('No');
         break;
       case 'TranslationTargetLanguage':
-        projRow.push(intakePayload.translationTargetLanguage || '');
+        projRow.push('');
         break;
       case 'TranslationJobId':
-        projRow.push(translationJobId);
+        projRow.push('');
         break;
       case 'QRIncluded':
-        projRow.push(intakePayload.qrIncluded || 'No');
+        projRow.push('No');
         break;
       case 'CreatedByContactId':
         projRow.push(createdByContactId || '');
@@ -511,63 +509,9 @@ function createJob(intakePayload) {
 }
 
 function createTranslationJobRow_(ascendJobId, intakePayload) {
-  const sheet = getSheet_('TranslationJobs');
-  const header = getHeaderMap_(sheet);
-  const now = new Date();
-  const translationJobId = generateDailyId_('TRN', sheet, 'TranslationJobId');
-
-  const row = [];
-  const cols = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-
-  cols.forEach(function (colName) {
-    switch (String(colName)) {
-      case 'TranslationJobId':
-        row.push(translationJobId);
-        break;
-      case 'AscendJobId':
-        row.push(ascendJobId);
-        break;
-      case 'SourceLanguage':
-        row.push(intakePayload.languagePrimary || 'EN');
-        break;
-      case 'TargetLanguage':
-        row.push(intakePayload.translationTargetLanguage || '');
-        break;
-      case 'Needed':
-        row.push('Yes');
-        break;
-      case 'TranslatorContactId':
-        row.push('');
-        break;
-      case 'Status':
-        row.push('Needed');
-        break;
-      case 'SourceCopyUrl':
-        row.push('');
-        break;
-      case 'TranslatedCopyUrl':
-        row.push('');
-        break;
-      case 'WordCount':
-        row.push('');
-        break;
-      case 'DueDate':
-        row.push(intakePayload.materialsDueDate ? parseIsoDate_(intakePayload.materialsDueDate) : '');
-        break;
-      case 'CreatedAt':
-        row.push(now);
-        break;
-      case 'Notes':
-        row.push('');
-        break;
-      default:
-        row.push('');
-    }
-  });
-
-  const rowIdx = sheet.getLastRow() + 1;
-  sheet.getRange(rowIdx, 1, 1, row.length).setValues([row]);
-  return translationJobId;
+  // Deprecated: translation jobs are no longer created or tracked in Sheets.
+  // Translation is handled in the workspace UI on-demand.
+  throw new Error('createTranslationJobRow_ is deprecated (translation jobs removed).');
 }
 
 // ---------- Core: getJob ----------
