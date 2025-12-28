@@ -63,18 +63,6 @@
       </label>
 
       <label>
-        Translation Language
-        <select id="translationTargetLanguage">
-          <option value="">– Select target language –</option>
-          <option value="DE">German (DE)</option>
-          <option value="ES">Spanish (ES)</option>
-          <option value="FR">French (FR)</option>
-          <option value="PT">Portuguese (PT)</option>
-          <option value="ZH">Chinese (ZH)</option>
-        </select>
-      </label>
-
-      <label>
         QR Included?
         <select id="qrIncluded">
           <option value="No">No</option>
@@ -446,8 +434,6 @@ const notesEl           = document.getElementById('notes');
         materialsDueDate: (document.getElementById('materialsDueDate') || { value: '' }).value || '',
         runDate: (document.getElementById('runDate') || { value: '' }).value || '',
         mediaSpecId: (document.getElementById('mediaSpecId') || { value: '' }).value.trim(),
-        translationRequired: (document.getElementById('translationRequired') || { value: '' }).value,
-        translationTargetLanguage: (document.getElementById('translationTargetLanguage') || { value: '' }).value.trim(),
         qrIncluded: (document.getElementById('qrIncluded') || { value: '' }).value,
         topic: (document.getElementById('topic') || { value: '' }).value.trim(),
         notes: (document.getElementById('notes') || { value: '' }).value.trim(),
