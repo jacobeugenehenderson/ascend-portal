@@ -291,7 +291,9 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       }
 
       // Keep within a reasonable band so nothing gets absurdly big/small.
-      baseScale = Math.max(0.55, Math.min(baseScale, 1.25));
+      // Do not cap upper size here; autoscaleCanvas() will shrink-to-fit.
+      // Keep only a small floor to avoid degenerate values.
+      baseScale = Math.max(0.10, baseScale);
 
       safeEl.dataset.baseScale = String(baseScale);
       safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
@@ -394,9 +396,6 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       baseScale = 1;
     }
 
-    // Start from the baseline scale.
-    safe.style.setProperty('--artstart-scale', baseScale);
-
     // If the canvas hasn't been sized yet, bail quietly.
     if (!safe.clientWidth || !safe.clientHeight) {
       return;
@@ -417,17 +416,84 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       return true;
     }
 
-    // If everything fits at the baseline size, we're done.
+    // Compute a starting scale that is intentionally large (near-fill the cell height),
+    // then shrink-to-fit. This avoids tying the "baseline" to fixed px sizes in practice.
+    function startingScaleNearFill() {
+      var allRows = safe.querySelectorAll('.artstart-canvas-row');
+      if (!allRows || !allRows.length) return baseScale;
+
+      // Prefer rows that actually have content; fall back to all rows.
+      var active = [];
+      for (var i = 0; i < allRows.length; i++) {
+        var t = (allRows[i].textContent || '').trim();
+        if (t) active.push(allRows[i]);
+      }
+      var rows = active.length ? active : Array.prototype.slice.call(allRows);
+
+      // Map each row to its nominal "unit" font size (the px value before * scale).
+      // We keep this internal (no new knobs) and derive the start from cell height.
+      function unitPxForRow(row) {
+        if (row.classList.contains('artstart-row-headline')) return 22;
+        if (row.classList.contains('artstart-row-subhead')) return 15;
+        if (row.classList.contains('artstart-row-cta')) return 15;
+        if (row.classList.contains('artstart-row-body')) return 12;
+        if (row.classList.contains('artstart-row-meta')) return 9;
+        return 12;
+      }
+
+      function lineHeightForRow(row) {
+        // artstart-canvas-row sets 1.2; body overrides to 1.3
+        if (row.classList.contains('artstart-row-body')) return 1.3;
+        return 1.2;
+      }
+
+      // Choose the tightest scale implied by cell height across considered rows.
+      // Use a small padding factor so it doesn't slam exactly edge-to-edge.
+      var PAD = 0.92;
+      var best = Infinity;
+
+      for (var r = 0; r < rows.length; r++) {
+        var row = rows[r];
+        var cell = row && row.parentElement ? row.parentElement : null;
+        if (!cell) continue;
+
+        var cellH = cell.clientHeight || 0;
+        if (!cellH) continue;
+
+        var unit = unitPxForRow(row);
+        var lh = lineHeightForRow(row);
+
+        var s = (cellH * PAD) / (unit * lh);
+        if (isFinite(s) && s > 0) {
+          best = Math.min(best, s);
+        }
+      }
+
+      if (!isFinite(best) || best <= 0 || best === Infinity) return baseScale;
+
+      // Start from the larger of preview baseline and near-fill target.
+      return Math.max(baseScale, best);
+    }
+
+    var scale = startingScaleNearFill();
+
+    // Start big.
+    safe.style.setProperty('--artstart-scale', scale.toFixed(3));
+
+    // If it already fits at the large start, we're done.
     if (fits()) return;
 
-    var scale = baseScale;
-    var minScale = baseScale * 0.5; // don't shrink below half baseline
+    // Safeguard floor (termination guarantee; not a legibility judgement)
+    var minScale = 0.05;
 
-    // Gradually shrink until it fits or we hit the floor.
-    while (scale > minScale) {
+    // Shrink in bounded steps.
+    var steps = 0;
+    var MAX_STEPS = 250;
+
+    while (!fits() && scale > minScale && steps < MAX_STEPS) {
       scale -= 0.02;
       safe.style.setProperty('--artstart-scale', scale.toFixed(3));
-      if (fits()) break;
+      steps++;
     }
   }
 
