@@ -256,11 +256,29 @@
         background-color: #ffffff;
         border: 1px solid #ec4899; /* magenta trim stroke */
         padding: 6px 8px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+
+        /* Fixed allocation by pixel height: 15/15/20/40/10 */
+        display: grid;
+        grid-template-rows: 15% 15% 20% 40% 10%;
         gap: 4px;
         overflow: hidden;
+      }
+
+      .artstart-canvas-cell {
+        display: flex;
+        align-items: center;   /* centered vertical alignment in its cell */
+        overflow: hidden;
+        min-height: 0;         /* allow grid children to shrink */
+      }
+
+      .artstart-canvas-cell-meta {
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* centered vertical alignment in its cell */
+        align-items: flex-end;   /* right aligned */
+        overflow: hidden;
+        min-height: 0;
+        text-align: right;
       }
 
       /* Canvas text rows: single-line meters + multi-line body */
@@ -294,10 +312,10 @@
         font-size: calc(15px * var(--artstart-scale));
       }
 
-      /* Reading copy: stays constant, does NOT autoscale */
+      /* Reading copy: autoscale with the rest */
       .artstart-row-body {
         line-height: 1.3;
-        font-size: 12px;
+        font-size: calc(12px * var(--artstart-scale));
       }
 
       /* Quiet utility text */
@@ -509,13 +527,23 @@
               <div class="artstart-canvas-inner">
                 <div class="artstart-canvas-bleed"></div>
                 <div class="artstart-canvas-safe">
-                  <div class="artstart-canvas-main">
+                  <div class="artstart-canvas-cell">
                     <div id="canvas-headline" class="artstart-canvas-row artstart-row-headline"></div>
+                  </div>
+
+                  <div class="artstart-canvas-cell">
                     <div id="canvas-subhead" class="artstart-canvas-row artstart-row-subhead"></div>
+                  </div>
+
+                  <div class="artstart-canvas-cell">
                     <div id="canvas-cta" class="artstart-canvas-row artstart-row-cta"></div>
+                  </div>
+
+                  <div class="artstart-canvas-cell">
                     <div id="canvas-body" class="artstart-canvas-row artstart-row-body"></div>
                   </div>
-                  <div class="artstart-canvas-meta-block">
+
+                  <div class="artstart-canvas-cell-meta">
                     <div id="canvas-website" class="artstart-canvas-row artstart-row-meta"></div>
                     <div id="canvas-email" class="artstart-canvas-row artstart-row-meta"></div>
                   </div>

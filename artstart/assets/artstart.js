@@ -403,10 +403,18 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     }
 
     function fits() {
-      return (
-        safe.scrollWidth  <= safe.clientWidth &&
-        safe.scrollHeight <= safe.clientHeight
-      );
+      // With fixed grid rows + overflow hidden, safe.scrollHeight may not reflect
+      // per-cell overflow. Measure each canvas row against its parent cell.
+      var rows = safe.querySelectorAll('.artstart-canvas-row');
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var cell = row && row.parentElement ? row.parentElement : null;
+        if (!cell) continue;
+
+        if (row.scrollWidth > cell.clientWidth) return false;
+        if (row.scrollHeight > cell.clientHeight) return false;
+      }
+      return true;
     }
 
     // If everything fits at the baseline size, we're done.
