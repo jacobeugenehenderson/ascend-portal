@@ -11,6 +11,38 @@ const SHEET_NAME_EDITORIAL = 'EditorialSchedule';
 const SHEET_NAME_CONTACTS = 'Contacts';
 const SHEET_NAME_REQUIRED_ELEMENTS = 'RequiredElements';
 
+// ---------- Translation (ArtStart workspace) ----------
+// Keep this list small + explicit. Update whenever corp language support changes.
+const ASCEND_LANGUAGES = [
+  { code: 'EN', label: 'English' },
+  { code: 'DE', label: 'German' },
+  { code: 'FR', label: 'French' },
+  { code: 'ES', label: 'Spanish' },
+  { code: 'IT', label: 'Italian' },
+  { code: 'PT', label: 'Portuguese' },
+  { code: 'NL', label: 'Dutch' },
+  { code: 'PL', label: 'Polish' },
+  { code: 'JA', label: 'Japanese' },
+  { code: 'ZH', label: 'Chinese' }
+];
+
+// We store non-base language drafts in one JSON cell (single column; no extra sheets).
+// Add a Projects header when you’re ready: WorkingTranslationsJson
+// Shape:
+// {
+//   "DE": { "human": true|false, "at": "2025-12-28T...", "fields": { ... } },
+//   "FR": { ... }
+// }
+function parseTranslationsJson_(val) {
+  if (!val) return {};
+  try {
+    if (typeof val === 'string') return JSON.parse(val);
+    return val || {};
+  } catch (e) {
+    return {};
+  }
+}
+
 // Canonical Ascend front-end (GitHub Pages; proxied later via CF)
 const FRONTEND_BASE_URL = 'https://jacobeugenehenderson.github.io/ascend-portal';
 const DEFAULT_CLIENT_NAME = 'Nordson';
@@ -41,7 +73,12 @@ function getHeaderMap_(sheet) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   const map = {};
   headers.forEach(function (h, idx) {
-    map[String(h).trim()] = idx;
+    const key = String(h).trim();
+    if (!key) return;
+    // IMPORTANT: first occurrence wins (protects against accidental duplicate headers)
+    if (map[key] == null) {
+      map[key] = idx;
+    }
   });
   return map;
 }
@@ -884,7 +921,14 @@ function getArtStartJob_(jobId) {
     workingBullets: workingBullets,
     workingWebsite: workingWebsite,
     workingEmail: workingEmail,
-    workingNotes: workingNotes
+    workingNotes: workingNotes,
+
+    // Translation (workspace language dropdown)
+    languagePrimary: p.LanguagePrimary || 'EN',
+    workingTranslationsJson:
+      p.WorkingTranslationsJson ||
+      p['WorkingTranslationsJson'] ||
+      ''
   };
 }
 
@@ -1547,6 +1591,151 @@ function doGet(e) {
   if (action === 'getArtStartJob') {
     // Slim JSON view for the ArtStart workspace
     return handleGetArtStartJob_(e);
+  }
+
+  if (action === 'listLanguages') {
+    return jsonResponse_({ success: true, languages: ASCEND_LANGUAGES }, callback);
+  }
+
+  if (action === 'translateArtStartFields') {
+    try {
+      var jobIdT = (e.parameter && (e.parameter.jobId || e.parameter.jobid)) || '';
+      var targetLang = (e.parameter && (e.parameter.targetLanguage || e.parameter.targetLang)) || '';
+      if (!jobIdT || !targetLang) {
+        return jsonResponse_({ success: false, error: 'Missing jobId or targetLanguage' }, callback);
+      }
+
+      var infoT = findProjectRowByAscendJobId_(jobIdT);
+      if (!infoT) return jsonResponse_({ success: false, error: 'Job not found: ' + jobIdT }, callback);
+
+      var headersT = infoT.headers;
+      var rowT = infoT.row;
+
+      function getVal_(name) {
+        var idx = headersT.indexOf(name);
+        if (idx === -1) return '';
+        return rowT[idx] || '';
+      }
+
+      var baseLang = String(getVal_('LanguagePrimary') || 'EN').trim() || 'EN';
+
+      // Base fields
+      var fields = {
+        workingHeadline: String(getVal_('WorkingHeadline') || ''),
+        workingSubhead: String(getVal_('WorkingSubhead') || ''),
+        workingCta: String(getVal_('WorkingCTA') || ''),
+        workingBullets: String(getVal_('WorkingBullets') || ''),
+        workingWebsite: String(getVal_('WorkingWebsite') || ''),
+        workingEmail: String(getVal_('WorkingEmail') || ''),
+        workingNotes: String(getVal_('WorkingNotes') || '')
+      };
+
+      // Existing translations JSON
+      var existingJson = String(getVal_('WorkingTranslationsJson') || '');
+      var tdb = parseTranslationsJson_(existingJson);
+
+      // If we already have this language, return it (don’t re-machine-translate).
+      if (tdb[targetLang] && tdb[targetLang].fields) {
+        return jsonResponse_({
+          success: true,
+          jobId: jobIdT,
+          baseLanguage: baseLang,
+          targetLanguage: targetLang,
+          human: !!tdb[targetLang].human,
+          fields: tdb[targetLang].fields
+        }, callback);
+      }
+
+      // Otherwise: machine-translate on demand.
+      function tr_(text) {
+        if (!text) return '';
+        try {
+          return LanguageApp.translate(String(text), baseLang, targetLang);
+        } catch (errTr) {
+          // If baseLang is wrong, fall back to auto-detect.
+          try {
+            return LanguageApp.translate(String(text), '', targetLang);
+          } catch (errTr2) {
+            return String(text);
+          }
+        }
+      }
+
+      var translated = {
+        workingHeadline: tr_(fields.workingHeadline),
+        workingSubhead: tr_(fields.workingSubhead),
+        workingCta: tr_(fields.workingCta),
+        workingBullets: tr_(fields.workingBullets),
+        workingWebsite: tr_(fields.workingWebsite),
+        workingEmail: tr_(fields.workingEmail),
+        workingNotes: tr_(fields.workingNotes)
+      };
+
+      // Persist as machine translation (human=false)
+      var nowIsoT = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+      tdb[targetLang] = { human: false, at: nowIsoT, fields: translated };
+
+      setProjectFieldIfPresent_(infoT.sheet, headersT, infoT.rowIndex, 'WorkingTranslationsJson', JSON.stringify(tdb));
+
+      return jsonResponse_({
+        success: true,
+        jobId: jobIdT,
+        baseLanguage: baseLang,
+        targetLanguage: targetLang,
+        human: false,
+        fields: translated
+      }, callback);
+
+    } catch (errTA) {
+      return jsonResponse_({ success: false, error: String(errTA) }, callback);
+    }
+  }
+
+  if (action === 'updateArtStartTranslatedFields') {
+    try {
+      var jobIdU = (e.parameter && (e.parameter.jobId || e.parameter.jobid)) || '';
+      var langU = (e.parameter && (e.parameter.lang || e.parameter.language)) || '';
+      if (!jobIdU || !langU) {
+        return jsonResponse_({ success: false, error: 'Missing jobId or lang' }, callback);
+      }
+
+      var infoU = findProjectRowByAscendJobId_(jobIdU);
+      if (!infoU) return jsonResponse_({ success: false, error: 'Job not found: ' + jobIdU }, callback);
+
+      var headersU = infoU.headers;
+      var rowU = infoU.row;
+
+      function getValU_(name) {
+        var idx = headersU.indexOf(name);
+        if (idx === -1) return '';
+        return rowU[idx] || '';
+      }
+
+      var existingJsonU = String(getValU_('WorkingTranslationsJson') || '');
+      var tdbU = parseTranslationsJson_(existingJsonU);
+
+      var nowIsoU = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+      tdbU[langU] = {
+        human: true,
+        at: nowIsoU,
+        fields: {
+          workingHeadline: String(e.parameter.workingHeadline || ''),
+          workingSubhead: String(e.parameter.workingSubhead || ''),
+          workingCta: String(e.parameter.workingCta || ''),
+          workingBullets: String(e.parameter.workingBullets || ''),
+          workingWebsite: String(e.parameter.workingWebsite || ''),
+          workingEmail: String(e.parameter.workingEmail || ''),
+          workingNotes: String(e.parameter.workingNotes || '')
+        }
+      };
+
+      setProjectFieldIfPresent_(infoU.sheet, headersU, infoU.rowIndex, 'WorkingTranslationsJson', JSON.stringify(tdbU));
+
+      return jsonResponse_({ success: true, jobId: jobIdU, lang: langU, human: true }, callback);
+
+    } catch (errUT) {
+      return jsonResponse_({ success: false, error: String(errUT) }, callback);
+    }
   }
 
   if (action === 'updateArtStartDraftFields') {
