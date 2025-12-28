@@ -283,6 +283,18 @@
 
       /* Canvas text rows: single-line meters + multi-line body */
 
+      /* Each hard-returned line is a block */
+      .artstart-line{
+        display:block;
+        white-space:pre;
+      }
+
+      /* Meta: lines must occupy full width so text-align:right actually works */
+      .artstart-row-meta .artstart-line{
+        width:100%;
+        text-align:right;
+      }
+
       .artstart-canvas-row {
         /* Respect only hard returns; no browser-introduced soft wraps */
         white-space: pre;
@@ -355,6 +367,11 @@
       .artstart-checklist li {
         font-size: 13px;
         margin-bottom: 4px;
+      }
+
+      .artstart-textarea--tight{
+        min-height: 0;
+        resize: none;
       }
 
       .artstart-input,
@@ -587,12 +604,14 @@
                      placeholder="Working headline…">
 
               <label class="artstart-muted" for="working-subhead">Subhead</label>
-              <input id="working-subhead" class="artstart-input" type="text"
-                     placeholder="Optional subhead…">
+              <textarea id="working-subhead" class="artstart-textarea artstart-textarea--tight"
+                        rows="2"
+                        placeholder="Optional subhead…"></textarea>
 
               <label class="artstart-muted" for="working-cta">Primary call-to-action</label>
-              <input id="working-cta" class="artstart-input" type="text"
-                     placeholder="Primary CTA (e.g., URL or instruction)…">
+              <textarea id="working-cta" class="artstart-textarea artstart-textarea--tight"
+                        rows="4"
+                        placeholder="Primary CTA (e.g., URL or instruction)…"></textarea>
 
               <!-- Bullets renamed to Text, same ID for backend -->
               <label class="artstart-muted" for="working-bullets">Text</label>

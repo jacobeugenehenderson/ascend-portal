@@ -380,6 +380,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       // No transforms; true typographic fit uses font-size only.
       s.style.transform = '';
       s.style.display = 'block';
+      // Measure intrinsic width (override CSS temporarily)
       s.style.width = 'max-content';
       s.style.whiteSpace = 'pre';
     }
@@ -395,6 +396,10 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       // scrollWidth tracks intrinsic width (no transforms)
       var w = spans[i].scrollWidth || 0;
       if (w > maxW) maxW = w;
+    }
+    // Important: remove inline measurement width so CSS can right-align meta lines.
+    for (var k = 0; k < spans.length; k++) {
+      spans[k].style.width = '';
     }
     return maxW;
   }
