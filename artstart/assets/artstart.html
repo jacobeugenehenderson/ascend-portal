@@ -289,6 +289,35 @@
         overflow: hidden;
         text-overflow: clip;
         line-height: 1.2;
+
+        /* CRITICAL: constrain to the cell width so overflow is measurable + shrinkable */
+        width: 100%;
+        min-width: 0;
+      }
+
+      /* Horizontally justify all main text bands (not meta) */
+      .artstart-row-headline,
+      .artstart-row-subhead,
+      .artstart-row-cta,
+      .artstart-row-body {
+        text-align: justify;
+        text-align-last: justify;
+      }
+
+      /* Force single-line justification to take effect */
+      .artstart-row-headline::after,
+      .artstart-row-subhead::after,
+      .artstart-row-cta::after,
+      .artstart-row-body::after {
+        content: "";
+        display: inline-block;
+        width: 100%;
+      }
+
+      /* Meta stays right-aligned */
+      .artstart-row-meta {
+        text-align: right;
+        text-align-last: right;
       }
 
       /* Big, obvious display type */
@@ -360,6 +389,10 @@
         /* Explicit ink for light surfaces (do not inherit Ascend dark text) */
         color: #111827;
         background-color: #ffffff;
+
+        /* Safari / WebKit: color can be ignored if text-fill is set upstream */
+        -webkit-text-fill-color: #111827;
+        caret-color: #111827;
       }
 
       .artstart-textarea {
