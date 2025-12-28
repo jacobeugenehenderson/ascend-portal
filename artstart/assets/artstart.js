@@ -344,6 +344,83 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     }
   }
   
+    // --- Canvas line layout helpers ---
+  // Split text by hard returns and render each line as a span so we can scaleX per line.
+  function setCanvasLines(el, text, maxLines) {
+    if (!el) return;
+
+    var raw = (text || '');
+    var lines = raw.split('\n');
+
+    if (maxLines && maxLines > 0) {
+      lines = lines.slice(0, maxLines);
+    }
+
+    // Clear
+    while (el.firstChild) el.removeChild(el.firstChild);
+
+    for (var i = 0; i < lines.length; i++) {
+      var span = document.createElement('span');
+      span.className = 'artstart-line';
+      // Preserve empty lines as visible height.
+      span.textContent = lines[i] === '' ? '\u00A0' : lines[i];
+      el.appendChild(span);
+    }
+
+    // If there are no lines at all, keep it empty (no placeholder).
+  }
+
+  // Apply per-line horizontal scaling so each line fills its parent cell width.
+  // This is "justification" for single-line rows (headline/cta/etc) without complex typographic logic.
+  function applyLineJustify(safe) {
+    if (!safe) return;
+
+    var rows = safe.querySelectorAll('.artstart-canvas-row');
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var cell = row && row.parentElement ? row.parentElement : null;
+      if (!cell) continue;
+
+      var cellW = cell.clientWidth || 0;
+      if (!cellW) continue;
+
+      var lines = row.querySelectorAll('.artstart-line');
+      if (!lines || !lines.length) continue;
+
+      // Meta block is right-aligned; other bands are left-aligned.
+      var isMeta = row.classList.contains('artstart-row-meta');
+
+      for (var j = 0; j < lines.length; j++) {
+        var line = lines[j];
+
+        // Measure natural width (without transform)
+        line.style.transformOrigin = isMeta ? 'right center' : 'left center';
+        line.style.display = 'block';
+        line.style.width = 'max-content';
+        line.style.transform = '';
+
+        // scrollWidth is the untransformed intrinsic width we want.
+        var naturalW = line.scrollWidth || 0;
+        if (!naturalW) {
+          line.style.transform = '';
+          continue;
+        }
+
+        var s = cellW / naturalW;
+
+        // Cap extreme stretching so single short words don't become absurd.
+        // Still allows "justify" behavior for normal lines.
+        var MAX_STRETCH = 1.35;
+        if (s > MAX_STRETCH) s = MAX_STRETCH;
+
+        // Allow shrinking as much as needed.
+        if (s < 0.01) s = 0.01;
+
+        line.style.transform = 'scaleX(' + s.toFixed(3) + ')';
+      }
+    }
+  }
+
   function syncCanvasTextFromFields() {
     var box = document.getElementById('format-canvas-box');
     if (!box || box.getAttribute('data-has-dimensions') !== 'true') return;
@@ -373,14 +450,16 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var websiteEl = document.getElementById('canvas-website');
     var emailEl = document.getElementById('canvas-email');
 
-    if (headlineEl) headlineEl.textContent = headline;
-    if (subheadEl) subheadEl.textContent = subhead;
-    if (ctaEl) ctaEl.textContent = cta;
-    if (bodyEl) bodyEl.textContent = body;
-    if (websiteEl) websiteEl.textContent = website;
-    if (emailEl) emailEl.textContent = email;
+    // Render as explicit line spans so we can scaleX each line to "justify" horizontally.
+    setCanvasLines(headlineEl, headline, 1);
+    setCanvasLines(subheadEl, subhead, 2);
+    setCanvasLines(ctaEl, cta, 4);
+    setCanvasLines(bodyEl, body, 0); // 0 = unlimited
+    setCanvasLines(websiteEl, website, 1);
+    setCanvasLines(emailEl, email, 1);
 
-    // After mirroring text into the canvas, shrink-to-fit.
+    // After mirroring text into the canvas, shrink-to-fit (vertical/global),
+    // then justify horizontally (per-line scaleX).
     autoscaleCanvas();
   }
 
@@ -403,15 +482,28 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
     function fits() {
       // With fixed grid rows + overflow hidden, safe.scrollHeight may not reflect
-      // per-cell overflow. Measure each canvas row against its parent cell.
+      // per-cell overflow. Measure each line span against its parent cell.
       var rows = safe.querySelectorAll('.artstart-canvas-row');
       for (var i = 0; i < rows.length; i++) {
         var row = rows[i];
         var cell = row && row.parentElement ? row.parentElement : null;
         if (!cell) continue;
 
-        if (row.scrollWidth > cell.clientWidth) return false;
+        // Height check: row content must fit vertically in its cell.
         if (row.scrollHeight > cell.clientHeight) return false;
+
+        // Width check: each rendered line (including scaleX) must fit in cell.
+        var lines = row.querySelectorAll('.artstart-line');
+        if (lines && lines.length) {
+          var cellRect = cell.getBoundingClientRect();
+          for (var j = 0; j < lines.length; j++) {
+            var lr = lines[j].getBoundingClientRect();
+            if (lr.width > cellRect.width + 0.5) return false;
+          }
+        } else {
+          // Fallback if something didn't get line spans.
+          if (row.scrollWidth > cell.clientWidth) return false;
+        }
       }
       return true;
     }
@@ -479,6 +571,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
     // Start big.
     safe.style.setProperty('--artstart-scale', scale.toFixed(3));
+    applyLineJustify(safe);
 
     // If it already fits at the large start, we're done.
     if (fits()) return;
@@ -493,6 +586,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     while (!fits() && scale > minScale && steps < MAX_STEPS) {
       scale -= 0.02;
       safe.style.setProperty('--artstart-scale', scale.toFixed(3));
+      applyLineJustify(safe);
       steps++;
     }
   }
