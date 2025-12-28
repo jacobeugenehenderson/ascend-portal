@@ -344,8 +344,8 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     }
   }
   
-    // --- Canvas line layout helpers ---
-  // Split text by hard returns and render each line as a span so we can scaleX per line.
+  // --- Canvas line layout helpers ---
+  // Split text by hard returns and render each line as a span so we can measure widths precisely.
   function setCanvasLines(el, text, maxLines) {
     if (!el) return;
 
@@ -366,59 +366,176 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       span.textContent = lines[i] === '' ? '\u00A0' : lines[i];
       el.appendChild(span);
     }
-
-    // If there are no lines at all, keep it empty (no placeholder).
   }
 
-  // Apply per-line horizontal scaling so each line fills its parent cell width.
-  // This is "justification" for single-line rows (headline/cta/etc) without complex typographic logic.
-  function applyLineJustify(safe) {
+  function _getLineSpans(rowEl) {
+    if (!rowEl) return [];
+    var spans = rowEl.querySelectorAll('.artstart-line');
+    return spans && spans.length ? Array.prototype.slice.call(spans) : [];
+  }
+
+  function _prepareSpansForMeasure(spans) {
+    for (var i = 0; i < spans.length; i++) {
+      var s = spans[i];
+      // No transforms; true typographic fit uses font-size only.
+      s.style.transform = '';
+      s.style.display = 'block';
+      s.style.width = 'max-content';
+      s.style.whiteSpace = 'pre';
+    }
+  }
+
+  function _measureMaxLineWidthPx(rowEl) {
+    var spans = _getLineSpans(rowEl);
+    if (!spans.length) return 0;
+    _prepareSpansForMeasure(spans);
+
+    var maxW = 0;
+    for (var i = 0; i < spans.length; i++) {
+      // scrollWidth tracks intrinsic width (no transforms)
+      var w = spans[i].scrollWidth || 0;
+      if (w > maxW) maxW = w;
+    }
+    return maxW;
+  }
+
+  function _countLines(rowEl) {
+    var spans = _getLineSpans(rowEl);
+    return spans.length ? spans.length : 0;
+  }
+
+  // Fit a single band (rowEl) into its parent cell by font-size (no wrapping, no scaleX).
+  // Returns the chosen font-size in px.
+  function _fitRowToCellByFontSize(rowEl, cellEl, lineHeightMult, minPx, maxPx) {
+    if (!rowEl || !cellEl) return minPx;
+
+    var W = cellEl.clientWidth || 0;
+    var apparentH = cellEl.clientHeight || 0;
+
+    if (!W || !apparentH) return minPx;
+
+    var N = _countLines(rowEl);
+    if (!N) {
+      rowEl.style.fontSize = '';
+      return minPx;
+    }
+
+    var lh = lineHeightMult || 1.2;
+
+    // Height-constrained max size (one line = full band height / lh, multi-line shares it)
+    var byH = apparentH / (N * lh);
+
+    var size = Math.min(maxPx, Math.max(minPx, byH));
+
+    // Apply candidate size, then check width; reduce proportionally if needed.
+    rowEl.style.fontSize = size.toFixed(2) + 'px';
+
+    var maxLineW = _measureMaxLineWidthPx(rowEl);
+    if (maxLineW > 0 && maxLineW > W) {
+      var shrink = W / maxLineW;
+      size = size * shrink;
+      size = Math.min(maxPx, Math.max(minPx, size));
+      rowEl.style.fontSize = size.toFixed(2) + 'px';
+    }
+
+    // One more pass (fonts measure slightly non-linear across sizes).
+    maxLineW = _measureMaxLineWidthPx(rowEl);
+    if (maxLineW > 0 && maxLineW > W) {
+      var shrink2 = W / maxLineW;
+      size = size * shrink2;
+      size = Math.min(maxPx, Math.max(minPx, size));
+      rowEl.style.fontSize = size.toFixed(2) + 'px';
+    }
+
+    return size;
+  }
+
+  // Fit website + email together inside the meta band (shared 10% cell).
+  function _fitMetaBlock(cellEl, websiteRowEl, emailRowEl, lineHeightMult, minPx, maxPx) {
+    if (!cellEl) return;
+
+    var W = cellEl.clientWidth || 0;
+    var H = cellEl.clientHeight || 0;
+    if (!W || !H) return;
+
+    var spansW = _getLineSpans(websiteRowEl);
+    var spansE = _getLineSpans(emailRowEl);
+
+    var linesCount = 0;
+    if (spansW.length) linesCount += spansW.length;
+    if (spansE.length) linesCount += spansE.length;
+
+    // If nothing, clear inline sizes and exit.
+    if (!linesCount) {
+      if (websiteRowEl) websiteRowEl.style.fontSize = '';
+      if (emailRowEl) emailRowEl.style.fontSize = '';
+      return;
+    }
+
+    var lh = lineHeightMult || 1.2;
+
+    var byH = H / (linesCount * lh);
+    var size = Math.min(maxPx, Math.max(minPx, byH));
+
+    if (websiteRowEl) websiteRowEl.style.fontSize = size.toFixed(2) + 'px';
+    if (emailRowEl) emailRowEl.style.fontSize = size.toFixed(2) + 'px';
+
+    // Measure max line width across both rows and shrink if needed.
+    var maxW = 0;
+    if (websiteRowEl) maxW = Math.max(maxW, _measureMaxLineWidthPx(websiteRowEl));
+    if (emailRowEl) maxW = Math.max(maxW, _measureMaxLineWidthPx(emailRowEl));
+
+    if (maxW > 0 && maxW > W) {
+      var shrink = W / maxW;
+      size = size * shrink;
+      size = Math.min(maxPx, Math.max(minPx, size));
+      if (websiteRowEl) websiteRowEl.style.fontSize = size.toFixed(2) + 'px';
+      if (emailRowEl) emailRowEl.style.fontSize = size.toFixed(2) + 'px';
+    }
+
+    // One more pass.
+    maxW = 0;
+    if (websiteRowEl) maxW = Math.max(maxW, _measureMaxLineWidthPx(websiteRowEl));
+    if (emailRowEl) maxW = Math.max(maxW, _measureMaxLineWidthPx(emailRowEl));
+
+    if (maxW > 0 && maxW > W) {
+      var shrink2 = W / maxW;
+      size = size * shrink2;
+      size = Math.min(maxPx, Math.max(minPx, size));
+      if (websiteRowEl) websiteRowEl.style.fontSize = size.toFixed(2) + 'px';
+      if (emailRowEl) emailRowEl.style.fontSize = size.toFixed(2) + 'px';
+    }
+  }
+
+  function autoscaleCanvasBands() {
+    var safe = document.querySelector('.artstart-canvas-safe');
     if (!safe) return;
 
-    var rows = safe.querySelectorAll('.artstart-canvas-row');
-    for (var i = 0; i < rows.length; i++) {
-      var row = rows[i];
-      var cell = row && row.parentElement ? row.parentElement : null;
-      if (!cell) continue;
+    // Cells (bands) in order: 15/15/20/40/10
+    var cells = safe.querySelectorAll('.artstart-canvas-cell, .artstart-canvas-cell-meta');
+    if (!cells || cells.length < 5) return;
 
-      var cellW = cell.clientWidth || 0;
-      if (!cellW) continue;
+    var headlineCell = cells[0];
+    var subheadCell = cells[1];
+    var ctaCell = cells[2];
+    var bodyCell = cells[3];
+    var metaCell = cells[4];
 
-      var lines = row.querySelectorAll('.artstart-line');
-      if (!lines || !lines.length) continue;
+    var headlineEl = document.getElementById('canvas-headline');
+    var subheadEl = document.getElementById('canvas-subhead');
+    var ctaEl = document.getElementById('canvas-cta');
+    var bodyEl = document.getElementById('canvas-body');
+    var websiteEl = document.getElementById('canvas-website');
+    var emailEl = document.getElementById('canvas-email');
 
-      // Meta block is right-aligned; other bands are left-aligned.
-      var isMeta = row.classList.contains('artstart-row-meta');
+    // Fit each band by true font-size autoscale.
+    _fitRowToCellByFontSize(headlineEl, headlineCell, 1.2, 6, 999);
+    _fitRowToCellByFontSize(subheadEl, subheadCell, 1.2, 6, 999);
+    _fitRowToCellByFontSize(ctaEl, ctaCell, 1.2, 6, 999);
+    _fitRowToCellByFontSize(bodyEl, bodyCell, 1.3, 6, 999);
 
-      for (var j = 0; j < lines.length; j++) {
-        var line = lines[j];
-
-        // Measure natural width (without transform)
-        line.style.transformOrigin = isMeta ? 'right center' : 'left center';
-        line.style.display = 'block';
-        line.style.width = 'max-content';
-        line.style.transform = '';
-
-        // scrollWidth is the untransformed intrinsic width we want.
-        var naturalW = line.scrollWidth || 0;
-        if (!naturalW) {
-          line.style.transform = '';
-          continue;
-        }
-
-        var s = cellW / naturalW;
-
-        // Cap extreme stretching so single short words don't become absurd.
-        // Still allows "justify" behavior for normal lines.
-        var MAX_STRETCH = 1.35;
-        if (s > MAX_STRETCH) s = MAX_STRETCH;
-
-        // Allow shrinking as much as needed.
-        if (s < 0.01) s = 0.01;
-
-        line.style.transform = 'scaleX(' + s.toFixed(3) + ')';
-      }
-    }
+    // Meta: website + email share the same band and must both fit.
+    _fitMetaBlock(metaCell, websiteEl, emailEl, 1.2, 6, 999);
   }
 
   function syncCanvasTextFromFields() {
@@ -458,139 +575,14 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     setCanvasLines(websiteEl, website, 1);
     setCanvasLines(emailEl, email, 1);
 
-    // After mirroring text into the canvas, shrink-to-fit (vertical/global),
-    // then justify horizontally (per-line scaleX).
-    autoscaleCanvas();
+    // After mirroring text into the canvas, fit each band by true font-size autoscale.
+    autoscaleCanvasBands();
   }
 
   function autoscaleCanvas() {
-    var safe = document.querySelector('.artstart-canvas-safe');
-    if (!safe) return;
-
-    // Baseline scale is set in renderCanvasPreview (DPI-based for print,
-    // or 1.0 for digital). Fall back to 1 if missing.
-    var baseAttr = safe.dataset.baseScale;
-    var baseScale = baseAttr ? parseFloat(baseAttr) : 1;
-    if (!isFinite(baseScale) || baseScale <= 0) {
-      baseScale = 1;
-    }
-
-    // If the canvas hasn't been sized yet, bail quietly.
-    if (!safe.clientWidth || !safe.clientHeight) {
-      return;
-    }
-
-    function fits() {
-      // With fixed grid rows + overflow hidden, safe.scrollHeight may not reflect
-      // per-cell overflow. Measure each line span against its parent cell.
-      var rows = safe.querySelectorAll('.artstart-canvas-row');
-      for (var i = 0; i < rows.length; i++) {
-        var row = rows[i];
-        var cell = row && row.parentElement ? row.parentElement : null;
-        if (!cell) continue;
-
-        // Height check: row content must fit vertically in its cell.
-        if (row.scrollHeight > cell.clientHeight) return false;
-
-        // Width check: each rendered line (including scaleX) must fit in cell.
-        var lines = row.querySelectorAll('.artstart-line');
-        if (lines && lines.length) {
-          var cellRect = cell.getBoundingClientRect();
-          for (var j = 0; j < lines.length; j++) {
-            var lr = lines[j].getBoundingClientRect();
-            if (lr.width > cellRect.width + 0.5) return false;
-          }
-        } else {
-          // Fallback if something didn't get line spans.
-          if (row.scrollWidth > cell.clientWidth) return false;
-        }
-      }
-      return true;
-    }
-
-    // Compute a starting scale that is intentionally large (near-fill the cell height),
-    // then shrink-to-fit. This avoids tying the "baseline" to fixed px sizes in practice.
-    function startingScaleNearFill() {
-      var allRows = safe.querySelectorAll('.artstart-canvas-row');
-      if (!allRows || !allRows.length) return baseScale;
-
-      // Prefer rows that actually have content; fall back to all rows.
-      var active = [];
-      for (var i = 0; i < allRows.length; i++) {
-        var t = (allRows[i].textContent || '').trim();
-        if (t) active.push(allRows[i]);
-      }
-      var rows = active.length ? active : Array.prototype.slice.call(allRows);
-
-      // Map each row to its nominal "unit" font size (the px value before * scale).
-      // We keep this internal (no new knobs) and derive the start from cell height.
-      function unitPxForRow(row) {
-        if (row.classList.contains('artstart-row-headline')) return 22;
-        if (row.classList.contains('artstart-row-subhead')) return 15;
-        if (row.classList.contains('artstart-row-cta')) return 15;
-        if (row.classList.contains('artstart-row-body')) return 12;
-        if (row.classList.contains('artstart-row-meta')) return 9;
-        return 12;
-      }
-
-      function lineHeightForRow(row) {
-        // artstart-canvas-row sets 1.2; body overrides to 1.3
-        if (row.classList.contains('artstart-row-body')) return 1.3;
-        return 1.2;
-      }
-
-      // Choose the tightest scale implied by cell height across considered rows.
-      // Use a small padding factor so it doesn't slam exactly edge-to-edge.
-      var PAD = 0.92;
-      var best = Infinity;
-
-      for (var r = 0; r < rows.length; r++) {
-        var row = rows[r];
-        var cell = row && row.parentElement ? row.parentElement : null;
-        if (!cell) continue;
-
-        var cellH = cell.clientHeight || 0;
-        if (!cellH) continue;
-
-        var unit = unitPxForRow(row);
-        var lh = lineHeightForRow(row);
-
-        var s = (cellH * PAD) / (unit * lh);
-        if (isFinite(s) && s > 0) {
-          best = Math.min(best, s);
-        }
-      }
-
-      if (!isFinite(best) || best <= 0 || best === Infinity) return baseScale;
-
-      // Start from the larger of preview baseline and near-fill target.
-      return Math.max(baseScale, best);
-    }
-
-    var scale = startingScaleNearFill();
-
-    // Start big.
-    safe.style.setProperty('--artstart-scale', scale.toFixed(3));
-    applyLineJustify(safe);
-
-    // If it already fits at the large start, we're done.
-    if (fits()) return;
-
-    // Safeguard floor (termination guarantee; not a legibility judgement)
-    var minScale = 0.05;
-
-    // Shrink in bounded steps.
-    var steps = 0;
-    var MAX_STEPS = 250;
-
-    while (!fits() && scale > minScale && steps < MAX_STEPS) {
-      scale -= 0.02;
-      safe.style.setProperty('--artstart-scale', scale.toFixed(3));
-      applyLineJustify(safe);
-      steps++;
-    }
+    // Back-compat shim in case anything still calls autoscaleCanvas().
+    autoscaleCanvasBands();
   }
-
   function populateJob(job) {
     var gridEl = document.getElementById('artstart-grid');
     if (gridEl) {
@@ -989,6 +981,11 @@ function saveDraft(jobId) {
     }
 
     fetchJob(jobId);
+
+    // Refit text if layout changes (responsive, digital scrollbox, etc.)
+    window.addEventListener('resize', function () {
+      autoscaleCanvasBands();
+    });
   }
 
   if (document.readyState === 'loading') {

@@ -295,61 +295,43 @@
         min-width: 0;
       }
 
-      /* Horizontally justify all main text bands (not meta) */
+      /* Text alignment: normal bands left; meta right. */
       .artstart-row-headline,
       .artstart-row-subhead,
       .artstart-row-cta,
       .artstart-row-body {
-        text-align: justify;
-        text-align-last: justify;
+        text-align: left;
       }
 
-      /* Force single-line justification to take effect */
-      .artstart-row-headline::after,
-      .artstart-row-subhead::after,
-      .artstart-row-cta::after,
-      .artstart-row-body::after {
-        content: "";
-        display: inline-block;
-        width: 100%;
-      }
-
-      /* Meta stays right-aligned */
       .artstart-row-meta {
         text-align: right;
-        text-align-last: right;
       }
 
-      /* Big, obvious display type */
+      /* Preview Text Formatting */
       .artstart-row-headline {
         font-weight: 600;
         letter-spacing: 0.04em;
-        text-transform: uppercase;
-        font-size: calc(22px * var(--artstart-scale));
+        font-size: 22px; /* JS will override inline to fit */
       }
 
-      /* Secondary display */
       .artstart-row-subhead {
         font-weight: 500;
         opacity: 0.9;
-        font-size: calc(15px * var(--artstart-scale));
+        font-size: 15px; /* JS will override inline to fit */
       }
 
       .artstart-row-cta {
         font-weight: 600;
-        text-transform: uppercase;
-        font-size: calc(15px * var(--artstart-scale));
+        font-size: 15px; /* JS will override inline to fit */
       }
 
-      /* Reading copy: autoscale with the rest */
       .artstart-row-body {
         line-height: 1.3;
-        font-size: calc(12px * var(--artstart-scale));
+        font-size: 12px; /* JS will override inline to fit */
       }
 
-      /* Quiet utility text */
       .artstart-row-meta {
-        font-size: calc(9px * var(--artstart-scale));
+        font-size: 9px;  /* JS will override inline to fit */
         opacity: 0.85;
       }
 
