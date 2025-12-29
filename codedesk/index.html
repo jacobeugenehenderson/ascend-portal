@@ -377,7 +377,7 @@
   <button type="button"
           class="w-full step-header px-4 py-3 text-left font-medium"
           data-step-toggle>
-    Finish
+    Create working file
   </button>
 
   <div class="px-4 pb-4 space-y-3" data-step-panel>
@@ -765,6 +765,18 @@ new MutationObserver(() => applyPickerTheme())
   }
 })();
 </script>
+
+<!-- Finish overlay (blocking) -->
+<div id="finishOverlay"
+     class="hidden fixed inset-0 z-[999] bg-black/40 backdrop-blur-sm grid place-items-center p-4">
+  <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-lg px-6 py-5">
+    <div class="flex items-center gap-3">
+      <div class="h-5 w-5 rounded-full border-2 border-neutral-400 border-t-transparent animate-spin"></div>
+      <div class="text-sm font-medium">Creating working file + FileRoom PNG…</div>
+    </div>
+    <div class="mt-2 text-xs opacity-70">Do not close this tab.</div>
+  </div>
+</div>
 
 </body>
 </html>

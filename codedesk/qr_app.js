@@ -1311,10 +1311,9 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 
   const caption = String(document.getElementById('campaign')?.value || '').trim() || 'codedesk';
   const base = caption.replace(/[^\w\d-_]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40) || 'codedesk';
-  const fileName = `${base}.svg`;
+  const fileName = `${base}.png`;
 
-  const prevDriveId = String(rec.fileroom.drive_file_id || '').trim();
-  const svgText = new XMLSerializer().serializeToString(svgNode);
+  const pngDataUrl = await codedeskPngDataUrlFromCurrentSvg(3);
 
   const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
     method: 'POST',
@@ -1322,15 +1321,12 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
     redirect: 'follow',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({
-      action: 'upsertQrAsset',
+      action: 'upsertQrPngAsset',
       folder_id: folderId,
-      svg_text: svgText,
-      file_name: fileName,
-      drive_file_id: prevDriveId,
-      app: 'codedesk',
+      png_data_url: pngDataUrl,
       source_id: workingId,
       title: base || 'CODEDESK QR',
-      subtitle: 'CODEDESK — FLATTENED',
+      subtitle: 'CODEDESK — FLATTENED (PNG)',
       status: 'delivered',
       owner_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : ''
     })
@@ -3441,6 +3437,18 @@ window.CODEDESK_FILEROOM_FOLDER_ID = window.CODEDESK_FILEROOM_FOLDER_ID || '1x88
 window.__CODEDESK_DIRTY__ = window.__CODEDESK_DIRTY__ || false;
 
 document.getElementById('exportBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('exportBtn');
+  const finishOverlay = document.getElementById('finishOverlay');
+  let finishOk = false;
+
+  if (finishOverlay) finishOverlay.style.display = '';
+
+  if (btn) {
+    btn.dataset._label = btn.textContent || '';
+    btn.disabled = true;
+    btn.textContent = 'Working…';
+  }
+
   const wantPng = document.getElementById('wantPng')?.checked;
   const wantSvg = document.getElementById('wantSvg')?.checked;
 
@@ -3476,11 +3484,10 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
     if (!folderId) throw new Error('Finish: CODEDESK_FILEROOM_FOLDER_ID is missing');
 
-    const svgText = new XMLSerializer().serializeToString(svgNode);
-    const fileName = `${base || 'codedesk'}.svg`;
+    const pngDataUrl = await codedeskPngDataUrlFromCurrentSvg(3);
+    if (!pngDataUrl) throw new Error('Finish: could not rasterize PNG');
 
     const rec = window.codedeskGetWorkingFileRecord ? window.codedeskGetWorkingFileRecord(workingId) : null;
-    const prevDriveId = (rec && rec.fileroom && rec.fileroom.drive_file_id) ? String(rec.fileroom.drive_file_id) : '';
 
     const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
       method: 'POST',
@@ -3488,15 +3495,12 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
       redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
-        action: 'upsertQrAsset',
+        action: 'upsertQrPngAsset',
         folder_id: folderId,
-        svg_text: svgText,
-        file_name: fileName,
-        drive_file_id: prevDriveId || '',
-        app: 'codedesk',
+        png_data_url: pngDataUrl,
         source_id: workingId,
         title: base || 'CODEDESK QR',
-        subtitle: 'CODEDESK — FLATTENED',
+        subtitle: 'CODEDESK — FLATTENED (PNG)',
         status: 'delivered',
         owner_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : ''
       })
@@ -3525,9 +3529,39 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     // Immediately begin quiet lifecycle updates
     try { window.codedeskSyncFileRoomDebounced && window.codedeskSyncFileRoomDebounced('finish'); } catch(e){}
 
+    // Disable the Finish card tab after success (user should not need it again)
+    const finishCard = document.getElementById('finishCard');
+    const finishHdr = finishCard ? finishCard.querySelector('[data-step-toggle]') : null;
+    if (finishHdr) {
+      finishHdr.disabled = true;
+      finishHdr.setAttribute('aria-disabled', 'true');
+      finishHdr.textContent = 'Finished';
+    }
+    if (finishCard) {
+      finishCard.classList.add('is-finished');
+      // Lock any controls inside the card
+      finishCard.querySelectorAll('input,select,textarea,button').forEach((el) => {
+        if (el && el.id !== 'exportBtn') el.disabled = true;
+      });
+    }
+
+    finishOk = true;
     window.__CODEDESK_DIRTY__ = false;
   } catch (e) {
     alert(String(e && e.message ? e.message : e));
+  } finally {
+    if (finishOverlay) finishOverlay.style.display = 'none';
+
+    if (btn) {
+      if (finishOk) {
+        btn.disabled = true;
+        btn.textContent = 'Done';
+      } else {
+        btn.disabled = false;
+        if (btn.dataset && typeof btn.dataset._label === 'string') btn.textContent = btn.dataset._label;
+      }
+      if (btn.dataset) delete btn.dataset._label;
+    }
   }
 });
 
