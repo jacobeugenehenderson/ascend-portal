@@ -110,7 +110,7 @@
 <div class="preview-stage relative mx-auto overflow-visible">
     <div class="absolute inset-0 p-0" style="overflow:visible">
       <!-- Single card: stroke/fill live here; SVG stays transparent -->
-      <div id="qrPreview" class="w-full h-full overflow-visible flex flex-col">
+      <div id="qrPreview" class="w-full h-full overflow-visible flex flex-col relative">
         <!-- live SVG mounts here -->
         <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
       </div>
@@ -647,8 +647,12 @@ new MutationObserver(() => applyPickerTheme())
     preview.style.setProperty('--frame-w', '2px');
 
     // canonical stroke knobs used by the preview skin
+    preview.style.setProperty('--stage-frame', 'var(--ascend-app-accent)');
+    preview.style.setProperty('--stage-frame-w', '3px');
+
+    // keep older aliases too (harmless)
     preview.style.setProperty('--ascend-stage-frame', 'var(--ascend-app-accent)');
-    preview.style.setProperty('--ascend-stage-frame-w', '2px');
+    preview.style.setProperty('--ascend-stage-frame-w', '3px');
 
     // Build the paint: solid if both colors match, otherwise a vertical gradient
     let paint;
