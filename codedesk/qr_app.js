@@ -723,7 +723,7 @@ window.refreshBackground = function refreshBackground () {
   const card = document.getElementById('qrPreview');
   if (!card) return;
 
-  // IMPORTANT: do NOT treat missing/empty as 0 here (0 would incorrectly force stroke mode).
+  // IMPORTANT: do NOT use `|| 0` here; 0 is valid and must stay 0.
   const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
   const botRaw = parseFloat(document.getElementById('bgBottomAlpha')?.value);
   const topA = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
@@ -736,15 +736,11 @@ window.refreshBackground = function refreshBackground () {
   card.classList.toggle('card--stroke', isTransparent);
   card.classList.toggle('card--fill', !isTransparent);
 
-  // Theme CSS expects THESE vars for the stroke (not --ascend-stage-frame*)
+  // Theme stroke consumes these vars.
   card.style.setProperty('--stage-frame', 'var(--ascend-app-accent)');
   card.style.setProperty('--stage-frame-w', '3px');
 
-  // Keep aliases for any older skins/scripts
-  card.style.setProperty('--ascend-stage-frame', 'var(--ascend-app-accent)');
-  card.style.setProperty('--ascend-stage-frame-w', '3px');
-
-  // Fill mode uses gradient alphas directly; keep plate opacity at 1
+  // Keep plate opacity sane in fill mode (stroke mode overrides to 1 in CSS anyway).
   card.style.setProperty('--bg-alpha', '1');
 
   // paint the CSS gradient var used by ::before
@@ -765,9 +761,9 @@ function wireBackgroundKnobsOnce() {
   const topA = document.getElementById('bgTopAlpha');
   const botA = document.getElementById('bgBottomAlpha');
 
-  // The numeric inputs in the UI are currently the nextElementSibling of each range.
-  const topANum = topA ? topA.nextElementSibling : null;
-  const botANum = botA ? botA.nextElementSibling : null;
+  // Numeric alpha inputs are not adjacent anymore (layout moved).
+  const topANum = document.getElementById('bgTopAlphaNum');
+  const botANum = document.getElementById('bgBottomAlphaNum');
 
   const LINK_KEY = 'codedesk_bg_link_v1';
 
