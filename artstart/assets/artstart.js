@@ -4,6 +4,9 @@
 (function () {
   'use strict';
 
+// ---- Feature flags (intentionally boring, default-off) ----
+var ARTSTART_ENABLE_DAVE_STATUS = false;  
+
 var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
 
 // ---------- Language / Translation (workspace dropdown) ----------
@@ -1145,7 +1148,9 @@ function saveDraft(jobId) {
         populateJob(json.job);
         attachBlurListeners(effectiveJobId);
         if (window.ARTSTART_ENABLE_DAVE_STATUS === true) {
-          refreshDaveStatus(effectiveJobId);
+          if (ARTSTART_ENABLE_DAVE_STATUS) {
+            refreshDaveStatus(effectiveJobId);
+          }
 }
         setSaveStatus('Autosave ready.');
       })

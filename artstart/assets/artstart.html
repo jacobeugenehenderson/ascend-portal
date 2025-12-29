@@ -10,93 +10,21 @@
     <link rel="stylesheet" href="../../assets/ascend-apps.css">
 
     <style>
-      /* Page-scoped layout; rely on ascend.css for core tokens */
-      body {
-        margin: 0;
-        background-color: #f5f5f7;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: #111827;
-      }
-
-      .artstart-shell {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .artstart-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 20px;
-        background-color: #ffffff;
-        border-bottom: 1px solid #e5e7eb;
-      }
-
-      .artstart-header-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .artstart-mark {
-        width: 28px;
-        height: 28px;
-        border-radius: 9999px;
-        border: 1px solid #111827;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 15px;
-        font-weight: 600;
-      }
-
-      .artstart-title-block {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .artstart-title-main {
-        font-size: 14px;
-        font-weight: 600;
-      }
-
-      .artstart-title-sub {
-        font-size: 12px;
-        color: #6b7280;
-      }
-
-      .artstart-header-middle {
-        text-align: center;
-        max-width: 40%;
+      /* Top-level styling comes from ascend-apps.css (same as job intake). */
+      .artstart-jobbar {
+        padding: 12px 18px 0;
       }
 
       .artstart-job-name {
-        font-size: 14px;
+        font-size: 1.0rem;
         font-weight: 600;
+        color: var(--ascend-app-text-main);
       }
 
       .artstart-job-meta {
-        font-size: 12px;
-        color: #6b7280;
-      }
-
-      .artstart-header-right {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
-      }
-
-      .artstart-user-label {
-        font-size: 12px;
-        color: #4b5563;
-      }
-
-      .artstart-back-link {
-        font-size: 12px;
-        color: #2563eb;
-        text-decoration: none;
+        margin-top: 2px;
+        font-size: 0.82rem;
+        color: var(--ascend-app-text-muted);
       }
 
       .artstart-main {
@@ -130,9 +58,9 @@
       }
 
       .artstart-card {
-        background-color: #ffffff;
-        border-radius: 10px;
-        border: 1px solid #e5e7eb;
+        background: var(--ascend-app-surface);
+        border-radius: var(--ascend-app-radius-lg);
+        border: 1px solid var(--ascend-app-border);
         padding: 14px 16px 16px;
         margin-bottom: 12px;
       }
@@ -374,24 +302,10 @@
         resize: none;
       }
 
+      /* Inputs are skinned by ascend-apps.css inside .ascend-app-panel. */
       .artstart-input,
       .artstart-textarea {
-        width: 100%;
-        box-sizing: border-box;
-        font-family: inherit;
-        font-size: 13px;
-        padding: 7px 8px;
-        border-radius: 6px;
-        border: 1px solid var(--ascend-stroke, #d1d5db) !important;
         margin-bottom: 8px;
-
-        /* Explicit ink for light surfaces (do not inherit Ascend dark text) */
-        color: #111827;
-        background-color: #ffffff;
-
-        /* Safari / WebKit: color can be ignored if text-fill is set upstream */
-        -webkit-text-fill-color: #111827;
-        caret-color: #111827;
       }
 
       .artstart-textarea {
@@ -482,14 +396,10 @@
         color: #6b7280;
       }
 
-      .artstart-footer-strip {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ffffff;
-        border-top: 1px solid #e5e7eb;
-        padding: 8px 20px;
+      .artstart-footer {
+        margin-top: 16px;
+        padding: 12px 6px 2px;
+        border-top: 1px solid rgba(0,0,0,0.08);
       }
 
       .artstart-footer-grid {
@@ -552,27 +462,25 @@
 
     </style>
   </head>
-  <body>
-    <div class="artstart-shell">
-      <header class="artstart-header">
-        <div class="artstart-header-left">
-          <div class="artstart-mark">A</div>
-          <div class="artstart-title-block">
-            <div class="artstart-title-main">ArtStart – Job View</div>
-            <div class="artstart-title-sub">Ascend Visualization Studio for Nordson ICS</div>
+  <body class="ascend-app-body">
+    <div class="ascend-app-shell">
+      <div class="ascend-app-panel">
+        <header class="ascend-app-header">
+          <div class="ascend-app-title-block">
+            <div class="ascend-app-title">ArtStart</div>
+            <div class="ascend-app-subtitle">Job view</div>
           </div>
-        </div>
 
-        <div class="artstart-header-middle">
+          <div class="ascend-app-meta" id="ascend-app-meta">
+            <div id="artstart-user-label">Checking sign-in…</div>
+            <a href="../../index.html" class="ascend-app-meta-link">← Back to Ascend</a>
+          </div>
+        </header>
+
+        <div class="artstart-jobbar">
           <div id="job-title" class="artstart-job-name">Loading job…</div>
           <div id="job-meta" class="artstart-job-meta"></div>
         </div>
-
-        <div class="artstart-header-right">
-          <div id="artstart-user-label" class="artstart-user-label">Checking sign-in…</div>
-          <a href="../../index.html" class="artstart-back-link">← Back to Ascend</a>
-        </div>
-        </header>
 
       <main class="artstart-main">
         <div id="artstart-error" class="artstart-error" style="display:none;"></div>
@@ -699,29 +607,30 @@
         </div>      
       </main>
 
-      <footer class="artstart-footer-strip">
-        <div class="artstart-footer-grid">
-          <div>
-            <div class="artstart-footer-item-title">File setup (local)</div>
-            <div id="status-file-setup" class="artstart-footer-item-body">
-              Local files not yet created.
+        <footer class="artstart-footer">
+          <div class="artstart-footer-grid">
+            <div>
+              <div class="artstart-footer-item-title">File setup (local)</div>
+              <div id="status-file-setup" class="artstart-footer-item-body">
+                Local files not yet created.
+              </div>
+            </div>
+            <div>
+              <div class="artstart-footer-item-title">ArtStart working session</div>
+              <div id="status-session" class="artstart-footer-item-body">
+                Working session not yet scheduled. Suggested window will appear here.
+              </div>
+            </div>
+            <div>
+              <div class="artstart-footer-item-title">Materials delivery</div>
+              <div id="status-delivery" class="artstart-footer-item-body">
+                Delivery email draft not yet prepared.
+              </div>
             </div>
           </div>
-          <div>
-            <div class="artstart-footer-item-title">ArtStart working session</div>
-            <div id="status-session" class="artstart-footer-item-body">
-              Working session not yet scheduled. Suggested window will appear here.
-            </div>
-          </div>
-          <div>
-            <div class="artstart-footer-item-title">Materials delivery</div>
-            <div id="status-delivery" class="artstart-footer-item-body">
-              Delivery email draft not yet prepared.
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div> <!-- .ascend-app-panel -->
+    </div>   <!-- .ascend-app-shell -->
 
     <script src="../../assets/ascend.js"></script>
     <script src="./artstart.js"></script>
