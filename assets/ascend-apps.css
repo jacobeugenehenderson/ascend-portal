@@ -186,7 +186,15 @@ body.ascend-app-body {
 .ascend-app-panel {
   width: 100%;
   max-width: none; /* allow 2 lanes; inner cap is handled by .copydesk-content */
-  background: var(--ascend-app-surface);
+
+  /* Solid reading surface (not white) so text remains effortless. */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(239, 244, 255, 0.98),
+      rgba(231, 238, 252, 0.98)
+    );
+
   border-radius: var(--ascend-app-radius-xl);
   border: 1px solid var(--ascend-app-border);
   box-shadow: var(--ascend-app-shadow-soft);
@@ -204,10 +212,10 @@ body.ascend-app-body {
   border-radius: inherit;
   background: radial-gradient(
     circle at top right,
-    rgba(129, 230, 217, 0.30),
+    rgba(129, 230, 217, 0.22),
     transparent 55%
   );
-  opacity: 0.28;
+  opacity: 0.16;
 }
 
 /* Keep content above the wash */
