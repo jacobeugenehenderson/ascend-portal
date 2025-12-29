@@ -33,9 +33,10 @@
       }
 
       .artstart-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+        align-items: stretch;
       }
 
       .artstart-lower-grid {
@@ -58,11 +59,10 @@
       }
 
       .artstart-card {
-        background: var(--ascend-app-surface);
-        border-radius: var(--ascend-app-radius-lg);
-        border: 1px solid var(--ascend-app-border);
-        padding: 14px 16px 16px;
-        margin-bottom: 12px;
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 16px;
+        height: 100%;
       }
 
       /* Right column stack: Job overview + QR live as one grid child */
@@ -74,6 +74,19 @@
         min-height: 0;
       }
 
+      /* In the sidebar, cards must participate in the height contract */
+      .artstart-sidebar .artstart-card {
+        margin-bottom: 0; /* avoid extra bottom gap stacking */
+      }
+
+      /* QR card: take the remaining height, and become a flex column so the stage can flex */
+      .artstart-sidebar .artstart-card[aria-labelledby="qr-card-title"] {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
       /* QR placeholder stage: fills remaining vertical space to balance Working draft */
       .artstart-qr-stage {
         position: relative;
@@ -82,8 +95,12 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
+
+        /* Fill remaining height inside the QR card (now a flex column) */
         flex: 1;
-        min-height: 320px;
+        min-height: 0;
+        width: 100%;
+
         border: 1px dashed rgba(15,23,42,0.18);
         border-radius: 12px;
         color: #6b7280;
