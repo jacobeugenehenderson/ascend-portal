@@ -1296,6 +1296,82 @@ function _codedeskHasFinishedPairing(activeId){
   }
 }
 
+async function codedeskPngDataUrlFromCurrentSvg(scale = 3) {
+  const src = getCurrentSvgNode();
+  if (!src) return '';
+
+  const svg = src.cloneNode(true);
+  applyPhoneBackgroundForExport(svg);    // inject here before serialization
+
+  const xml = new XMLSerializer().serializeToString(svg);
+  const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' }));
+
+  const img = new Image();
+
+  // important for SVG-in-canvas
+  img.crossOrigin = 'anonymous';
+
+  await new Promise(res => { img.onload = res; img.src = url; });
+
+  const w = img.naturalWidth  || parseInt(svg.getAttribute('width'))  || 512;
+  const h = img.naturalHeight || parseInt(svg.getAttribute('height')) || 512;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(w * scale);
+  canvas.height = Math.round(h * scale);
+
+  const ctx = canvas.getContext('2d');
+
+    // Match preview background (gradient vs transparent) before drawing SVG
+  // “Transparent mode” is purely: both alphas are 0
+  const topA   = Number(document.getElementById('bgTopAlpha')?.value ?? 100);
+  const botA   = Number(document.getElementById('bgBottomAlpha')?.value ?? 100);
+  const transparent = (topA <= 0 && botA <= 0);
+
+  if (!transparent) {
+    // Read the same knobs used by updatePreviewBackground()
+    const topHex = document.getElementById('bgTopHex')?.value
+                || document.getElementById('bgTopColor')?.value || '#FFFFFF';
+    const botHex = document.getElementById('bgBottomHex')?.value
+                || document.getElementById('bgBottomColor')?.value || '#FFFFFF';
+    const topA   = Number(document.getElementById('bgTopAlpha')?.value ?? 100);
+    const botA   = Number(document.getElementById('bgBottomAlpha')?.value ?? 100);
+
+    // Convert hex + alpha → rgba
+    const rgba = (hex, aPct) => {
+      let h = String(hex || '#FFFFFF').trim();
+      if (!h) h = '#FFFFFF';
+      if (h[0] !== '#') h = '#' + h;
+      const m3 = /^#([0-9a-fA-F]{3})$/.exec(h);
+      if (m3) {
+        h = '#' + m3[1].split('').map(c => c + c).join('');
+      }
+      const m6 = /^#([0-9a-fA-F]{6})$/.exec(h);
+      const v = m6 ? m6[1] : 'FFFFFF';
+      const r = parseInt(v.slice(0,2),16);
+      const g = parseInt(v.slice(2,4),16);
+      const b = parseInt(v.slice(4,6),16);
+      const a = Math.max(0, Math.min(1, (Number(aPct) || 0) / 100));
+      return `rgba(${r},${g},${b},${a})`;
+    };
+
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    g.addColorStop(0, rgba(topHex, topA));
+    g.addColorStop(1, rgba(botHex, botA));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    // fully transparent background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  URL.revokeObjectURL(url);
+
+  return canvas.toDataURL('image/png');
+}
+
 window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const workingId = String(window.__CODEDESK_CURRENT_WF_ID__ || _getActiveWorkingFileId() || '').trim();
   if (!workingId) return false;
