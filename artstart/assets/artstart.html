@@ -76,17 +76,39 @@
 
       /* QR placeholder stage: fills remaining vertical space to balance Working draft */
       .artstart-qr-stage {
+        position: relative;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 10px;
         flex: 1;
-        min-height: 260px;
+        min-height: 320px;
         border: 1px dashed rgba(15,23,42,0.18);
         border-radius: 12px;
         color: #6b7280;
         font-size: 12px;
         text-align: center;
         padding: 16px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
+      }
+
+      .artstart-qr-stage::before {
+        content: "";
+        width: min(260px, 72%);
+        aspect-ratio: 1 / 1;
+        border-radius: 10px;
+        border: 1px solid rgba(15,23,42,0.14);
+        background:
+          linear-gradient(180deg, rgba(15,23,42,0.03), rgba(15,23,42,0.00)),
+          repeating-linear-gradient(
+            45deg,
+            rgba(148,163,184,0.25) 0px,
+            rgba(148,163,184,0.25) 6px,
+            rgba(255,255,255,0.0) 6px,
+            rgba(255,255,255,0.0) 12px
+          );
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
       }
 
       .artstart-card h2 {
@@ -150,14 +172,8 @@
         padding: 18px;
       }
 
-      /* Digital formats: let the canvas be its true pixel size */
-      .artstart-canvas-box[data-media-kind="digital"] {
-        width: auto;
-        max-width: none;
-        min-height: 0;
-        overflow: auto;      /* scroll if it's wider than the card */
-        align-self: center;
-      }
+      /* Digital formats share the exact same stage model as print.
+         Only difference allowed: print shows bleed; digital hides bleed. */
 
       .artstart-canvas-inner {
         position: relative;
@@ -178,14 +194,7 @@
         overflow: hidden;
       }
 
-      /* Digital canvas: don’t clamp to the box; use real px size */
-      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
-        max-width: none;
-        max-height: none;
-        /* Digital canvases: clean white, no mechanical pattern */
-        background-color: #ffffff;
-        background-image: none;
-      }
+      /* (Digital shares print inner styling; no per-media inner overrides.) */
 
       .artstart-canvas-bleed {
         position: absolute;
@@ -373,9 +382,6 @@
 
       .artstart-language-dot {
         order: -1;
-      }
-
-      .artstart-language-dot {
         width: 10px;
         height: 10px;
         border-radius: 9999px;
@@ -465,30 +471,6 @@
         padding: 12px 14px;
         border-radius: 8px;
         font-size: 13px;
-      }
-
-            /* Media-kind specific canvas tweaks */
-      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-bleed {
-        display: none;
-      }
-
-      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
-        inset: 8%;
-        border-radius: 0;
-        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
-      }
-
-            .artstart-canvas-main {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .artstart-canvas-meta-block {
-        margin-top: 6px;
-        text-align: right;
-        align-self: stretch;   /* use full safe width */
-        width: 100%;
       }
 
     </style>

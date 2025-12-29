@@ -251,8 +251,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var displayWidth;
     var displayHeight;
 
-    // DIGITAL: pixel-perfect, scrollable
-    // DIGITAL: pixel-based canvas, adjusted for source DPI
+    // DIGITAL: pixel-based canvas, staged like print (bleed hidden)
     if (mediaKind === 'digital') {
       // Optional: read a DPI value from the job (e.g., 144)
       var rawDpi =
@@ -263,9 +262,27 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       var dpiScale =
         isFinite(dpi) && dpi > 0 ? (TARGET_DPI / dpi) : 1;
 
-      // Example: 144 dpi → 72 dpi => scale = 0.5
+      // Source pixel dims (optionally DPI-normalized)
       displayWidth  = w * dpiScale;
       displayHeight = h * dpiScale;
+
+      // Fit to the same stage box model as print (no scroll-first drift)
+      var boxW = box.clientWidth || 0;
+      var boxH = box.clientHeight || 0;
+      var STAGE_MARGIN = 0.90; // match print's perceived breathing room
+      var maxW = boxW > 0 ? (boxW * STAGE_MARGIN) : displayWidth;
+      var maxH = boxH > 0 ? (boxH * STAGE_MARGIN) : displayHeight;
+
+      var scaleFitW = maxW > 0 ? (maxW / displayWidth) : 1;
+      var scaleFitH = maxH > 0 ? (maxH / displayHeight) : 1;
+      var scaleFit = Math.min(1, scaleFitW, scaleFitH);
+
+      if (isFinite(scaleFit) && scaleFit > 0 && scaleFit < 1) {
+        displayWidth  = displayWidth  * scaleFit;
+        displayHeight = displayHeight * scaleFit;
+      } else {
+        scaleFit = 1;
+      }
 
       if (inner) {
         inner.style.width  = displayWidth  + 'px';
@@ -281,15 +298,13 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       }
 
       if (safeEl) {
-        // Let CSS handle inset = 0 for digital
         safeEl.style.top = '';
         safeEl.style.right = '';
         safeEl.style.bottom = '';
         safeEl.style.left = '';
 
-        // Digital baseline scale for text
-        safeEl.dataset.baseScale = '1';
-        safeEl.style.setProperty('--artstart-scale', '1');
+        safeEl.dataset.baseScale = String(scaleFit);
+        safeEl.style.setProperty('--artstart-scale', String(scaleFit));
       }
 
       if (noInfoEl) {
