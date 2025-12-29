@@ -1002,6 +1002,7 @@ textarea::placeholder{
   inset:0;
   border-radius:inherit;
   background: transparent;
+  opacity: 1; /* ensure stroke stays visible even if card--fill leaves --bg-alpha at 0 */
   box-shadow:none;
   border: var(--stage-frame-w, 3px) solid var(--stage-frame, #1ff0ff);
 }
