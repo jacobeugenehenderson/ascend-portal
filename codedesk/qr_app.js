@@ -723,8 +723,11 @@ window.refreshBackground = function refreshBackground () {
   const card = document.getElementById('qrPreview');
   if (!card) return;
 
-  const topA = (+document.getElementById('bgTopAlpha')?.value || 0) / 100;
-  const botA = (+document.getElementById('bgBottomAlpha')?.value || 0) / 100;
+  // IMPORTANT: do NOT treat missing/empty as 0 here (0 would incorrectly force stroke mode).
+  const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
+  const botRaw = parseFloat(document.getElementById('bgBottomAlpha')?.value);
+  const topA = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
+  const botA = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
 
   // “Transparent background” = both alphas are 0
   const isTransparent = (topA <= 0.001 && botA <= 0.001);
@@ -732,6 +735,17 @@ window.refreshBackground = function refreshBackground () {
   // class gating (stroke vs fill)
   card.classList.toggle('card--stroke', isTransparent);
   card.classList.toggle('card--fill', !isTransparent);
+
+  // Theme CSS expects THESE vars for the stroke (not --ascend-stage-frame*)
+  card.style.setProperty('--stage-frame', 'var(--ascend-app-accent)');
+  card.style.setProperty('--stage-frame-w', '3px');
+
+  // Keep aliases for any older skins/scripts
+  card.style.setProperty('--ascend-stage-frame', 'var(--ascend-app-accent)');
+  card.style.setProperty('--ascend-stage-frame-w', '3px');
+
+  // Fill mode uses gradient alphas directly; keep plate opacity at 1
+  card.style.setProperty('--bg-alpha', '1');
 
   // paint the CSS gradient var used by ::before
   updatePreviewBackground();
