@@ -888,18 +888,21 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     }
 
     if (!usedTranslation) {
-      document.getElementById('working-headline').value = job.workingHeadline || '';
-      document.getElementById('working-subhead').value = job.workingSubhead || '';
-      document.getElementById('working-cta').value = job.workingCta || '';
-      document.getElementById('working-bullets').value = job.workingBullets || '';
+      // Only hydrate base-language fields when base language is active
+      if (activeLanguage === baseLanguage) {
+        document.getElementById('working-headline').value = job.workingHeadline || '';
+        document.getElementById('working-subhead').value  = job.workingSubhead || '';
+        document.getElementById('working-cta').value      = job.workingCta || '';
+        document.getElementById('working-bullets').value  = job.workingBullets || '';
 
-      var websiteEl = document.getElementById('working-website');
-      if (websiteEl) websiteEl.value = job.workingWebsite || '';
+        const websiteEl = document.getElementById('working-website');
+        if (websiteEl) websiteEl.value = job.workingWebsite || '';
 
-      var emailEl = document.getElementById('working-email');
-      if (emailEl) emailEl.value = job.workingEmail || '';
+        const emailEl = document.getElementById('working-email');
+        if (emailEl) emailEl.value = job.workingEmail || '';
 
-      document.getElementById('working-notes').value = job.workingNotes || '';
+        document.getElementById('working-notes').value = job.workingNotes || '';
+      }
     }
 
     // Mirror text into canvas for scale only
@@ -1141,7 +1144,9 @@ function saveDraft(jobId) {
 
         populateJob(json.job);
         attachBlurListeners(effectiveJobId);
-        refreshDaveStatus(effectiveJobId);
+        if (window.ARTSTART_ENABLE_DAVE_STATUS === true) {
+          refreshDaveStatus(effectiveJobId);
+}
         setSaveStatus('Autosave ready.');
       })
       .catch(function (err) {
