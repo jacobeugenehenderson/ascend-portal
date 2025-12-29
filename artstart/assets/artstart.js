@@ -834,18 +834,36 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
      }   
   
     updateLangDot_();
-    document.getElementById('working-headline').value = job.workingHeadline || '';
-    document.getElementById('working-subhead').value = job.workingSubhead || '';
-    document.getElementById('working-cta').value = job.workingCta || '';
-    document.getElementById('working-bullets').value = job.workingBullets || '';
 
-    var websiteEl = document.getElementById('working-website');
-    if (websiteEl) websiteEl.value = job.workingWebsite || '';
+    // Prevent "English snapback":
+    // If a non-base language is active and we have cached translation fields,
+    // populate the UI from that translation instead of overwriting with base fields.
+    var usedTranslation = false;
+    if (activeLanguage && baseLanguage && activeLanguage !== baseLanguage) {
+      var keyUpper = String(activeLanguage).trim();
+      var keyLower = keyUpper.toLowerCase();
+      var entry = translationsDb && (translationsDb[keyUpper] || translationsDb[keyLower]);
+      if (entry && entry.fields) {
+        applyTranslatedFields_(entry.fields);
+        usedTranslation = true;
+        updateLangDot_();
+      }
+    }
 
-    var emailEl = document.getElementById('working-email');
-    if (emailEl) emailEl.value = job.workingEmail || '';
+    if (!usedTranslation) {
+      document.getElementById('working-headline').value = job.workingHeadline || '';
+      document.getElementById('working-subhead').value = job.workingSubhead || '';
+      document.getElementById('working-cta').value = job.workingCta || '';
+      document.getElementById('working-bullets').value = job.workingBullets || '';
 
-    document.getElementById('working-notes').value = job.workingNotes || '';
+      var websiteEl = document.getElementById('working-website');
+      if (websiteEl) websiteEl.value = job.workingWebsite || '';
+
+      var emailEl = document.getElementById('working-email');
+      if (emailEl) emailEl.value = job.workingEmail || '';
+
+      document.getElementById('working-notes').value = job.workingNotes || '';
+    }
 
     // Mirror text into canvas for scale only
     syncCanvasTextFromFields();
