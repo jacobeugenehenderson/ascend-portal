@@ -296,16 +296,7 @@
 
     <!-- Background -->
     <div class="space-y-2">
-      <div class="flex items-center gap-2">
-        <div class="text-sm font-medium">Background</div>
-
-        <!-- Link (default ON; JS reads/writes localStorage key codedesk_bg_link_v1) -->
-        <button id="bgLink" type="button"
-                class="ml-auto px-2 py-1 rounded-md border border-neutral-200 dark:border-neutral-800 text-sm leading-none hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                aria-label="Link background controls"
-                aria-pressed="true"
-                title="Background linked">🔗</button>
-      </div>
+      <div class="text-sm font-medium">Background</div>
 
       <div class="flex flex-col gap-2">
         <!-- Top color + hex + opacity -->
@@ -316,6 +307,15 @@
           <input type="number" min="0" max="100" step="1" value="100"
                  class="w-16 rounded-md border px-2 py-2 text-sm"
                  aria-label="Top opacity (%)" />
+        </div>
+
+        <!-- Link control (between the two rows it links) -->
+        <div class="flex items-center justify-center py-1">
+          <button id="bgLink" type="button"
+                  class="px-2 py-1 rounded-md border border-neutral-200 dark:border-neutral-800 text-sm leading-none hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                  aria-label="Link background controls"
+                  aria-pressed="true"
+                  title="Background linked">🔗</button>
         </div>
 
         <!-- Bottom color + hex + opacity -->
@@ -650,6 +650,47 @@ new MutationObserver(() => applyPickerTheme())
   // run once to apply immediately
   window.render();
  })();
+
+  // Background link button: reflect & toggle localStorage key `codedesk_bg_link_v1`
+  (function wireBgLinkButton(){
+    const KEY = 'codedesk_bg_link_v1';
+    const btn = document.getElementById('bgLink');
+    if (!btn || btn.__bgLinkWired) return;
+    btn.__bgLinkWired = true;
+
+    function readLinked(){
+      try {
+        const v = localStorage.getItem(KEY);
+        if (v === null) return true;     // default ON
+        return v === '1';
+      } catch (e) {
+        return true;
+      }
+    }
+
+    function writeLinked(on){
+      try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {}
+    }
+
+    function paint(on){
+      btn.textContent = on ? '🔗' : '🔓';
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.setAttribute('title', on ? 'Background linked' : 'Background unlinked');
+      btn.setAttribute('aria-label', on ? 'Background linked' : 'Background unlinked');
+    }
+
+    // initial paint
+    paint(readLinked());
+
+    btn.addEventListener('click', () => {
+      const next = !readLinked();
+      writeLinked(next);
+      paint(next);
+
+      // nudge render so any link-aware wiring reacts immediately
+      if (typeof window.render === 'function') window.render();
+    });
+  })();
 
 </script>
 

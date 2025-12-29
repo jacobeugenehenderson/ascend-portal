@@ -773,13 +773,18 @@ function wireBackgroundKnobsOnce() {
   }
 
   function setLinked(on) {
-    try { localStorage.setItem(LINK_KEY, on ? '1' : '0'); } catch (_) {}
-    const btn = document.getElementById('bgLink');
-    if (btn) {
-      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      btn.classList.toggle('is-on', !!on);
-    }
+  try { localStorage.setItem(LINK_KEY, on ? '1' : '0'); } catch (_) {}
+  const btn = document.getElementById('bgLink');
+  if (btn) {
+    // Coupling metaphor (not locking):
+    // linked = 🔗, unlinked = broken chain
+    btn.textContent = on ? '🔗' : '⛓️‍💥';
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.setAttribute('title', on ? 'Background linked' : 'Background unlinked');
+    btn.setAttribute('aria-label', on ? 'Background linked' : 'Background unlinked');
+    btn.classList.toggle('is-on', !!on);
   }
+}
 
   // Optional: if you later add a link icon with id="bgLink", this will toggle it.
   (function wireLinkButtonOnce() {
