@@ -110,7 +110,7 @@
 <div class="preview-stage relative mx-auto overflow-visible">
     <div class="absolute inset-0 p-0" style="overflow:visible">
       <!-- Single card: stroke/fill live here; SVG stays transparent -->
-      <div id="qrPreview" class="card--fill w-full h-full overflow-visible flex flex-col">
+      <div id="qrPreview" class="w-full h-full overflow-visible flex flex-col">
         <!-- live SVG mounts here -->
         <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
       </div>
@@ -291,27 +291,32 @@
       </label>
     </div>
 
-    <!-- Background (gradient) -->
-    <div class="grid grid-cols-[auto,auto,1fr] items-start gap-3">
-      <div class="inline-flex items-center gap-2 leading-9">
-  <span class="text-sm">Background</span>
-</div>
+    <!-- Divider -->
+    <div class="border-t border-neutral-200 dark:border-neutral-800 my-2"></div>
 
-      <div class="flex flex-col gap-2 col-span-2">
+    <!-- Background -->
+    <div class="space-y-2">
+      <div class="text-sm font-medium">Background</div>
+
+      <div class="flex flex-col gap-2">
         <!-- Top color + hex + opacity -->
         <div class="flex items-center gap-2">
           <input id="bgTopColor" type="color" class="h-9 w-10 rounded-md border" value="#FFFFFF" />
           <input id="bgTopHex"   type="text"  class="w-28 rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
-          <input id="bgTopAlpha" type="range" min="0" max="100" step="1" class="w-36 h-6" oninput="this.nextElementSibling.value=this.value" value="100" />
-          <input type="number" min="0" max="100" step="1" value="100" class="w-16 rounded-md border px-2 py-2 text-sm" oninput="this.previousElementSibling.value=this.value" aria-label="Top opacity (%)" />
+          <input id="bgTopAlpha" type="range" min="0" max="100" step="1" class="w-36 h-6" value="100" />
+          <input type="number" min="0" max="100" step="1" value="100"
+                 class="w-16 rounded-md border px-2 py-2 text-sm"
+                 aria-label="Top opacity (%)" />
         </div>
 
         <!-- Bottom color + hex + opacity -->
         <div class="flex items-center gap-2">
           <input id="bgBottomColor" type="color" class="h-9 w-10 rounded-md border" value="#FFFFFF" />
           <input id="bgBottomHex"   type="text"  class="w-28 rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
-          <input id="bgBottomAlpha" type="range" min="0" max="100" step="1" class="w-36 h-6" oninput="this.nextElementSibling.value=this.value" value="100" />
-          <input type="number" min="0" max="100" step="1" value="100" class="w-16 rounded-md border px-2 py-2 text-sm" oninput="this.previousElementSibling.value=this.value" aria-label="Bottom opacity (%)" />
+          <input id="bgBottomAlpha" type="range" min="0" max="100" step="1" class="w-36 h-6" value="100" />
+          <input type="number" min="0" max="100" step="1" value="100"
+                 class="w-16 rounded-md border px-2 py-2 text-sm"
+                 aria-label="Bottom opacity (%)" />
         </div>
       </div>
     </div>

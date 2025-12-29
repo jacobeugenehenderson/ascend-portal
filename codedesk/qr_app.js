@@ -693,16 +693,29 @@ function _hexToRGBA(hex, a = 1) {
 function _bgGradientFromKnobs() {
   const top = document.getElementById('bgTopColor')?.value || '#FFFFFF';
   const bot = document.getElementById('bgBottomColor')?.value || '#FFFFFF';
-  const ta = (+document.getElementById('bgTopAlpha')?.value || 100) / 100;
-  const ba = (+document.getElementById('bgBottomAlpha')?.value || 100) / 100;
-  return `linear-gradient(180deg, ${_hexToRGBA(top, ta)}, ${_hexToRGBA(bot, ba)})`;
+
+  // IMPORTANT: do NOT use `|| 100` here; 0 is a valid value.
+  const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
+  const botRaw = parseFloat(document.getElementById('bgBottomAlpha')?.value);
+  const ta = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
+  const ba = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
+
+  // Solid when both colors+alphas match closely; otherwise gradient
+  const tHex = String(top || '#FFFFFF').trim();
+  const bHex = String(bot || '#FFFFFF').trim();
+  if (tHex.toLowerCase() === bHex.toLowerCase() && Math.abs(ta - ba) < 0.001) {
+    return _hexToRGBA(tHex, ta);
+  }
+  return `linear-gradient(180deg, ${_hexToRGBA(tHex, ta)} 0%, ${_hexToRGBA(bHex, ba)} 100%)`;
 }
 
 function updatePreviewBackground() {
   const card = document.getElementById('qrPreview');
   if (!card) return;
   const g = _bgGradientFromKnobs();
-  // single CSS var used by the preview skin (e.g., ::before)
+
+  // Paint BOTH vars: some skins use --bg-paint, some older code uses --frame-bg.
+  card.style.setProperty('--bg-paint', g);
   card.style.setProperty('--frame-bg', g);
 }
 
@@ -2817,6 +2830,17 @@ function render() {
   // Paint
   mount.innerHTML = '';
   mount.appendChild(svg);
+
+  // Ensure no opaque mount background blocks true transparency
+  try {
+    mount.style.background = 'transparent';
+    mount.style.backgroundColor = 'transparent';
+    const svgEl = mount.querySelector('svg');
+    if (svgEl) {
+      svgEl.style.background = 'transparent';
+      svgEl.style.backgroundColor = 'transparent';
+    }
+  } catch (e) {}
 }
 
 ;window.render = render;
@@ -2891,46 +2915,14 @@ function refreshModulesMode(){
 }
 
 // ----- Background gating (transparent toggle) -----
+// NOTE: Legacy shim. Background transparency is driven exclusively by the alpha sliders.
+// Delegate to the single canonical handler (window.refreshBackground) when available.
 function refreshBackground() {
-  // controls (be forgiving about the id spelling)
-  const tgl    = document.getElementById('bgTransparent');
-  const swatch = document.getElementById('bgColor');
-  const hex    = document.getElementById('bgColorHex')
-               || document.getElementById('bgHex')
-               || document.getElementById('bghex');
-
-  const isTransparent = !!tgl?.checked;
-
-  // 1) Disable inputs
-  // legacy single-field (safe no-ops if missing)
-if (hex)    hex.disabled    = isTransparent;
-if (swatch) swatch.disabled = isTransparent;
-
-// new gradient fields
-const hexes   = [...document.querySelectorAll('#bgTopHex,#bgBottomHex')];
-const swatchs = [...document.querySelectorAll('#bgTopColor,#bgBottomColor')];
-const sliders = [...document.querySelectorAll('#bgTopAlpha,#bgBottomAlpha')];
-[...hexes, ...swatchs, ...sliders].forEach(el => { if (el) el.disabled = isTransparent; });
-
-// mute the two gradient rows visually
-document.querySelectorAll('#bgTopHex,#bgBottomHex')
-  .forEach(el => el.closest('label')?.classList.toggle('field-muted', isTransparent));
-
-  // 2) Find the row that contains BOTH the color controls and the checkbox
-  let row = swatch?.parentElement || hex?.parentElement || null;
-  while (row && !row.querySelector?.('#bgTransparent')) row = row.parentElement;
-
-  // 3) Mute just the left label and the color/hex pair (not the checkbox cell)
-  const nameEl = row?.children?.[0] || null;
-  const pairEl = (hex && swatch && hex.parentElement === swatch.parentElement)
-    ? hex.parentElement
-    : (hex?.parentElement || swatch?.parentElement || null);
-
-  if (nameEl) nameEl.classList.toggle('field-muted', isTransparent);
-  if (pairEl) pairEl.classList.toggle('field-muted', isTransparent);
-
-  // 4) Update the preview card (fills vs stroke outline)
-  updatePreviewBackground();
+  if (typeof window.refreshBackground === 'function') {
+    window.refreshBackground();
+    return;
+  }
+  try { updatePreviewBackground(); } catch (e) {}
 }
 
 function refreshCenter(){
