@@ -770,8 +770,12 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     renderCanvasPreview(job, dimsForSize, mediaKind);
 
     // Working draft fields
+    var prevActiveLanguage = activeLanguage;
     baseLanguage = (job && job.languagePrimary) ? String(job.languagePrimary).trim() : 'EN';
-    activeLanguage = baseLanguage;
+
+    // Preserve user selection across fetchJob() refreshes.
+    // Only snap to base if we have no prior selection.
+    activeLanguage = prevActiveLanguage ? prevActiveLanguage : baseLanguage;
 
     // Parse translations JSON
     try {
@@ -788,6 +792,9 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       optBase.value = baseLanguage;
       optBase.textContent = baseLanguage + ' (base)';
       langSelect.appendChild(optBase);
+
+      // Keep current language selected (even before listLanguages returns).
+      langSelect.value = activeLanguage;
 
       // Pull supported languages from backend
       try {
@@ -807,14 +814,18 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
               langSelect.appendChild(opt);
             });
 
+            // listLanguages arrives async; re-assert current selection.
+            langSelect.value = activeLanguage;
             updateLangDot_();
           })
           .catch(function () {
             // If listLanguages fails, leave base only.
+            langSelect.value = activeLanguage;
             updateLangDot_();
           });
       } catch (e) {
-        updateLangDot_();
+            if (langSelect) langSelect.value = activeLanguage;
+            updateLangDot_();
       }
      }   
   
