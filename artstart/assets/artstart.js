@@ -252,13 +252,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var displayWidth;
     var displayHeight;
 
-    // DIGITAL: must share the exact same sizing + text pipeline as print.
-    // Only difference allowed: bleed visibility (handled via hideBleed).
-    if (mediaKind === 'digital') {
-      // Intentionally no digital-only sizing logic.
-    }
-
-    // PRINT MODE BELOW
+    // PRINT MODE BELOW (digital shares the same stage model; only bleed behavior differs)
 
     // 1) Bleed in same units as trim (e.g., inches)
     var bleedAmount = 0;
@@ -272,7 +266,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       }
     }
 
-    // Digital must not include bleed in sizing math (only print shows bleed).
+    // Digital must not include bleed in sizing math (and must place trim on the edge).
     if (mediaKind === 'digital') {
       bleedAmount = 0;
     }
@@ -304,7 +298,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       inner.style.height = displayHeight + 'px';
     }
 
-        // Establish a baseline typography scale based on preview DPI.
+    // Establish a baseline typography scale based on preview DPI.
     if (safeEl) {
       var BASE_PX_PER_INCH = 72; // reference "dpi" for type
       var baseScale = pxPerUnit / BASE_PX_PER_INCH;
@@ -313,18 +307,29 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         baseScale = 1;
       }
 
-      // Keep within a reasonable band so nothing gets absurdly big/small.
-      // Do not cap upper size here; autoscaleCanvas() will shrink-to-fit.
-      // Keep only a small floor to avoid degenerate values.
       baseScale = Math.max(0.10, baseScale);
 
       safeEl.dataset.baseScale = String(baseScale);
       safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
     }
 
-    // 3) Position trim (magenta stroke + dashed teal) based on bleed
+    // 3) Position trim (magenta stroke) and bleed (dashed teal) correctly.
     if (safeEl) {
-      if (bleedAmount > 0) {
+      if (mediaKind === 'digital') {
+        // DIGITAL: trim is the document border (no bleed zone).
+        safeEl.style.top = '0';
+        safeEl.style.bottom = '0';
+        safeEl.style.left = '0';
+        safeEl.style.right = '0';
+
+        if (bleedEl) {
+          bleedEl.style.display = 'none';
+          bleedEl.style.top = '';
+          bleedEl.style.bottom = '';
+          bleedEl.style.left = '';
+          bleedEl.style.right = '';
+        }
+      } else if (bleedAmount > 0) {
         var bleedX = (bleedAmount / totalWidth) * displayWidth;
         var bleedY = (bleedAmount / totalHeight) * displayHeight;
 
@@ -346,7 +351,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
           bleedEl.style.right = insetRight;
         }
       } else {
-        // No bleed configured: simple proportional inset
+        // PRINT with no bleed configured: proportional inset
         safeEl.style.top = '6%';
         safeEl.style.bottom = '6%';
         safeEl.style.left = '6%';
@@ -365,8 +370,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     if (noInfoEl) {
       noInfoEl.style.display = 'none';
     }
-  }
-  
+  }  
   // --- Canvas line layout helpers ---
   // Split text by hard returns and render each line as a span so we can measure widths precisely.
   function setCanvasLines(el, text, maxLines) {
