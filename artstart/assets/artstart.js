@@ -13,6 +13,28 @@ var translationsDb = {};
 var langSelect = null;
 var langDot = null;
 
+// Persist per-job language choice so async refreshes can't snap back to base.
+var currentJobId = '';
+var LANG_STORAGE_PREFIX = 'artstart_active_lang_v1:';
+
+function loadActiveLanguage_(jobId) {
+  try {
+    if (!jobId || !window.localStorage) return '';
+    return String(window.localStorage.getItem(LANG_STORAGE_PREFIX + jobId) || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+
+function saveActiveLanguage_(jobId, lang) {
+  try {
+    if (!jobId || !lang || !window.localStorage) return;
+    window.localStorage.setItem(LANG_STORAGE_PREFIX + jobId, String(lang));
+  } catch (e) {
+    // ignore
+  }
+}
+
 function updateLangDot_() {
   if (!langDot) return;
   var entry = translationsDb && translationsDb[activeLanguage];
@@ -788,14 +810,29 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       translationsDb = {};
     }
 
+    // Restore saved language selection for this job (prevents snap-back during async refreshes)
+    var jobKey = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+    var savedLang = loadActiveLanguage_(jobKey);
+    if (savedLang) {
+      activeLanguage = savedLang;
+    }
+
     // Populate language dropdown
     if (langSelect) {
       langSelect.innerHTML = '';
       // Base language first (muted label)
-      const optBase = document.createElement('option');
+      var optBase = document.createElement('option');
       optBase.value = baseLanguage;
       optBase.textContent = baseLanguage + ' (base)';
       langSelect.appendChild(optBase);
+
+      // Ensure the current selection exists immediately so the UI never snaps to base.
+      if (activeLanguage && activeLanguage !== baseLanguage) {
+        var optKeep = document.createElement('option');
+        optKeep.value = activeLanguage;
+        optKeep.textContent = activeLanguage + ' (' + activeLanguage + ')';
+        langSelect.appendChild(optKeep);
+      }
 
       // Keep current language selected (even before listLanguages returns).
       langSelect.value = activeLanguage;
@@ -1074,6 +1111,7 @@ function saveDraft(jobId) {
   }
 
   function fetchJob(jobId) {
+    currentJobId = jobId || '';
     clearError();
     setSaveStatus('Loading job…');
 
@@ -1131,6 +1169,7 @@ function saveDraft(jobId) {
         if (!jobIdNow || !next) return;
 
         activeLanguage = next;
+        saveActiveLanguage_(jobIdNow, activeLanguage);
 
         // Base language: reload canonical job fields from sheet
         if (activeLanguage === baseLanguage) {
@@ -1182,6 +1221,7 @@ function saveDraft(jobId) {
     setDaveStatusBody('Waiting for job…');
 
     var jobId = getJobIdFromQuery();
+    currentJobId = jobId || '';
     if (!jobId) {
       setError('We couldn’t find that job (missing jobId).');
       return;
