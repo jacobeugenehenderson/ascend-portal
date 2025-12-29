@@ -771,11 +771,15 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
     // Working draft fields
     var prevActiveLanguage = activeLanguage;
-    baseLanguage = (job && job.languagePrimary) ? String(job.languagePrimary).trim() : 'EN';
+    baseLanguage = (job && job.languagePrimary)
+      ? String(job.languagePrimary).trim().toUpperCase()
+      : 'EN';
 
     // Preserve user selection across fetchJob() refreshes.
     // Only snap to base if we have no prior selection.
-    activeLanguage = prevActiveLanguage ? prevActiveLanguage : baseLanguage;
+    activeLanguage = prevActiveLanguage
+      ? String(prevActiveLanguage).trim().toUpperCase()
+      : baseLanguage;
 
     // Parse translations JSON
     try {
@@ -804,7 +808,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
           .then(function (payload) {
             var langs = (payload && payload.languages) ? payload.languages : [];
             langs.forEach(function (l) {
-              var code = String((l && l.code) || '').trim();
+              var code = String((l && l.code) || '').trim().toUpperCase();
               var label = String((l && l.label) || code).trim();
               if (!code || code === baseLanguage) return;
 
@@ -1105,7 +1109,7 @@ function saveDraft(jobId) {
     if (langSelect) {
       langSelect.addEventListener('change', function () {
         var jobIdNow = getJobIdFromQuery();
-        var next = String(langSelect.value || '').trim();
+        var next = String(langSelect.value || '').trim().toUpperCase();
         if (!jobIdNow || !next) return;
 
         activeLanguage = next;
