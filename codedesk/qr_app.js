@@ -700,6 +700,12 @@ function _bgGradientFromKnobs() {
   const ta = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
   const ba = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
 
+  const preview = document.getElementById('qrPreview');
+if (preview) {
+  const isTransparent = ta === 0 && ba === 0;
+  preview.classList.toggle('is-transparent', isTransparent);
+}
+
   // Solid when both colors+alphas match closely; otherwise gradient
   const tHex = String(top || '#FFFFFF').trim();
   const bHex = String(bot || '#FFFFFF').trim();
