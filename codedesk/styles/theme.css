@@ -1041,6 +1041,31 @@ textarea::placeholder{
   background: transparent !important; /* never add a host fill */
 }
 
+/* Circular color tiles: add a visible ring around the CIRCLE (not the cell) */
+input[type="color"].color-dot{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 9999px;
+  background: transparent;
+  border: 1px solid color-mix(in oklab, var(--ascend-app-text-main) 18%, transparent);
+}
+
+input[type="color"].color-dot::-webkit-color-swatch-wrapper{
+  padding: 0;
+  border-radius: 9999px;
+}
+input[type="color"].color-dot::-webkit-color-swatch{
+  border: 0;
+  border-radius: 9999px;
+}
+input[type="color"].color-dot::-moz-color-swatch{
+  border: 0;
+  border-radius: 9999px;
+}
+
 #qrMount > svg{
   display: block;
   width: 100%;

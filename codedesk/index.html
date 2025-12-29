@@ -304,31 +304,43 @@
            3) link (auto, row-span)
            4) slider (flex)
            5) number (auto) -->
-            <div class="grid grid-cols-[auto_auto_auto_minmax(0,420px)_auto] items-center gap-2">
-        <!-- Top -->
-        <input id="bgTopColor" type="color" class="h-9 w-10" value="#FFFFFF" />
-        <input id="bgTopHex"   type="text"  class="w-28 rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+            <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] grid-rows-2 items-center gap-2">
 
-        <!-- Link icon (hex→slider seam), centered between the two rows -->
-        <button id="bgLink" type="button"
-                class="row-span-2 self-center"
-                aria-label="Background linked"
-                aria-pressed="true"
-                title="Background linked">🔗</button>
+              <!-- Col 1 (row 1): swatch + hex -->
+              <div class="flex items-center gap-2">
+                <input id="bgTopColor" type="color" class="color-dot h-9 w-9" value="#FFFFFF" />
+                <input id="bgTopHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+              </div>
 
-        <input id="bgTopAlpha" type="range" min="0" max="100" step="1" class="w-full h-6" value="100" />
-        <input type="number" min="0" max="100" step="1" value="100"
-               class="w-16 rounded-md border px-2 py-2 text-sm"
-               aria-label="Top opacity (%)" />
+              <!-- Col 2 (rows 1–2): link + both sliders -->
+              <div class="grid grid-cols-[auto_minmax(0,1fr)] grid-rows-2 items-center gap-2 row-span-2">
+                <button id="bgLink" type="button"
+                        class="row-span-2 self-center"
+                        aria-label="Background linked"
+                        aria-pressed="true"
+                        title="Background linked">🔗</button>
 
-        <!-- Bottom -->
-        <input id="bgBottomColor" type="color" class="h-9 w-10" value="#FFFFFF" />
-        <input id="bgBottomHex"   type="text"  class="w-28 rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
-        <input id="bgBottomAlpha" type="range" min="0" max="100" step="1" class="w-full h-6" value="100" />
-        <input type="number" min="0" max="100" step="1" value="100"
-               class="w-16 rounded-md border px-2 py-2 text-sm"
-               aria-label="Bottom opacity (%)" />
-      </div>
+                <input id="bgTopAlpha" type="range" min="0" max="100" step="1" class="w-full h-6" value="100" />
+                <input id="bgBottomAlpha" type="range" min="0" max="100" step="1" class="w-full h-6" value="100" />
+              </div>
+
+              <!-- Col 3 (row 1): numeric -->
+              <input id="bgTopAlphaNum" type="number" min="0" max="100" step="1" value="100"
+                    class="w-16 rounded-md border px-2 py-2 text-sm justify-self-start"
+                    aria-label="Top opacity (%)" />
+
+              <!-- Col 1 (row 2): swatch + hex -->
+              <div class="flex items-center gap-2">
+                <input id="bgBottomColor" type="color" class="color-dot h-9 w-9" value="#FFFFFF" />
+                <input id="bgBottomHex" type="text" class="w-full rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
+              </div>
+
+              <!-- Col 3 (row 2): numeric -->
+              <input id="bgBottomAlphaNum" type="number" min="0" max="100" step="1" value="100"
+                    class="w-16 rounded-md border px-2 py-2 text-sm justify-self-start"
+                    aria-label="Bottom opacity (%)" />
+
+            </div>
     </div>
   </div>
 </div>
