@@ -154,9 +154,9 @@
         position: relative;
         margin-top: 16px;
         width: 100%;
-        max-width: 720px;
+        max-width: none;
         min-height: 420px; /* more vertical room so print can be big */
-        align-self: center;
+        align-self: stretch;
         border-radius: 12px;
         border: 1px solid #d1d5db;
         background-image:
@@ -194,7 +194,11 @@
         overflow: hidden;
       }
 
-      /* (Digital shares print inner styling; no per-media inner overrides.) */
+      /* DIGITAL: no bleed zone; inner surface must be plain white. */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-inner {
+        background-image: none;
+        background-color: #ffffff;
+      }
 
       .artstart-canvas-bleed {
         position: absolute;
