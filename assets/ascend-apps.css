@@ -7,6 +7,11 @@
   /* App-level mappings derived from ascend.css tokens */
   --ascend-app-bg: #e7ecf5;
   --ascend-app-surface: #ffffff;
+
+  /* App desk slab (panel behind cards) */
+  --ascend-app-desk-top: rgba(232, 249, 248, 0.98);
+  --ascend-app-desk-bottom: rgba(227, 241, 252, 0.98);
+  --ascend-app-desk-wash: rgba(80, 190, 255, 0.20);
   --ascend-app-border: rgba(15, 23, 42, 0.12);
   --ascend-app-shadow-soft: 0 26px 70px rgba(15, 23, 42, 0.22);
 
@@ -192,8 +197,8 @@ body.ascend-app-body {
   background:
     linear-gradient(
       180deg,
-      rgba(232, 249, 248, 0.98),
-      rgba(227, 241, 252, 0.98)
+      var(--ascend-app-desk-top),
+      var(--ascend-app-desk-bottom)
     );
 
   border-radius: var(--ascend-app-radius-xl);
@@ -213,7 +218,7 @@ body.ascend-app-body {
   border-radius: inherit;
   background: radial-gradient(
     circle at top right,
-    rgba(80, 190, 255, 0.20),
+    var(--ascend-app-desk-wash),
     transparent 58%
   );
   opacity: 0.16;
