@@ -2409,68 +2409,9 @@ function composeCardSvg({
   svg.setAttribute('viewBox', `0 0 ${cardWidth} ${cardHeight}`);
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-  // Background or stroke-only frame
-  const frame = document.createElementNS(NS, 'rect');
-  frame.setAttribute('class', 'qr-frame');
-  frame.setAttribute('x', String(OUTER_PAD));
-  frame.setAttribute('y', String(OUTER_PAD));
-  frame.setAttribute('width',  String(cardWidth  - OUTER_PAD*2));
-  frame.setAttribute('height', String(cardHeight - OUTER_PAD*2));
-  frame.setAttribute('rx', String(RADIUS));
-  frame.setAttribute('ry', String(RADIUS));
-
-  // Card paint: paint inside the SVG so preview/export stay in sync (Ascend does not guarantee #qrPreview::before).
-  if (!transparentBg) {
-    const defs = document.createElementNS(NS, "defs");
-
-    const grad = document.createElementNS(NS, "linearGradient");
-    grad.setAttribute("id", "cd_bg");
-    grad.setAttribute("x1", "0");
-    grad.setAttribute("y1", "0");
-    grad.setAttribute("x2", "0");
-    grad.setAttribute("y2", "1");
-
-    const _aTopN = Number(bgTopAlpha);
-    const _aBotN = Number(bgBottomAlpha);
-    const aTop = Math.max(0, Math.min(1, (isFinite(_aTopN) ? _aTopN : 100) / 100));
-    const aBot = Math.max(0, Math.min(1, (isFinite(_aBotN) ? _aBotN : 100) / 100));
-
-    const stop1 = document.createElementNS(NS, "stop");
-    stop1.setAttribute("offset", "0%");
-    stop1.setAttribute("stop-color", String(bgTopColor || "#0b1020"));
-    stop1.setAttribute("stop-opacity", String(aTop));
-
-    const stop2 = document.createElementNS(NS, "stop");
-    stop2.setAttribute("offset", "100%");
-    stop2.setAttribute("stop-color", String(bgBottomColor || "#070a14"));
-    stop2.setAttribute("stop-opacity", String(aBot));
-
-    grad.appendChild(stop1);
-    grad.appendChild(stop2);
-    defs.appendChild(grad);
-    svg.appendChild(defs);
-
-    const bg = document.createElementNS(NS, "rect");
-
-    // Match the stroke-only reference: the filled background must use the same radius
-    // as the card/stage, not "radius + padding".
-    const OUTER_R = Math.max(0, (Number(RADIUS) || 0));
-
-    bg.setAttribute("x", "0");
-    bg.setAttribute("y", "0");
-    bg.setAttribute("width", String(cardWidth));
-    bg.setAttribute("height", String(cardHeight));
-    bg.setAttribute("rx", String(OUTER_R));
-    bg.setAttribute("ry", String(OUTER_R));
-    bg.setAttribute("fill", "url(#cd_bg)");
-    svg.appendChild(bg);
-  }
-
-  // Only add a frame rect when transparent mode is active.
-if (transparentBg) {
-  frame.setAttribute('fill', 'none');
-  svg.appendChild(frame);
-}
+  // Card paint is owned by CSS (#qrPreview::before in theme.css).
+  // Do NOT emit any background rects or frame strokes from the generator;
+  // the mounted SVG must remain transparent so the stroke-at-0% can show.
 
 const qrSize = Math.round(cardWidth * QR_FRACTION);
 const qrX = Math.round((cardWidth - qrSize) / 2);
