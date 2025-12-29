@@ -382,7 +382,7 @@
         font-size: 13px;
         padding: 7px 8px;
         border-radius: 6px;
-        border: 1px solid #d1d5db;
+        border: 1px solid var(--ascend-stroke, #d1d5db);
         margin-bottom: 8px;
 
         /* Explicit ink for light surfaces (do not inherit Ascend dark text) */
@@ -402,6 +402,41 @@
       .artstart-input::placeholder,
       .artstart-textarea::placeholder {
         color: #9ca3af;
+      }
+
+      /* Working draft — language selector */
+      .artstart-language-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 6px 0 10px;
+      }
+
+      .artstart-language-label {
+        min-width: 90px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .artstart-language-control {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .artstart-language-dot {
+        order: -1;
+      }
+
+      .artstart-language-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 9999px;
+        background: #2563eb;
+        opacity: 0; /* JS will turn on only for edited translations */
+        flex: 0 0 auto;
       }
 
       .artstart-working-row-grid {
@@ -621,6 +656,17 @@
           <div class="artstart-lower-grid">
             <section class="artstart-card">
               <h2>Working draft</h2>
+
+              <!-- Language selector (translation draft) -->
+              <div class="artstart-language-row" aria-label="Language">
+                <div class="artstart-language-label">Language</div>
+                <div class="artstart-language-control">
+                  <span id="working-language-dot" class="artstart-language-dot" aria-hidden="true"></span>
+                  <select id="working-language" class="artstart-input" aria-label="Working draft language">
+                    <option value="EN" selected>EN (base)</option>
+                  </select>
+                </div>
+              </div>
 
             <div class="artstart-row artstart-lang-row">
               <div class="artstart-lang-label">Language</div>

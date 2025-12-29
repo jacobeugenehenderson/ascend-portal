@@ -16,9 +16,9 @@ var langDot = null;
 function updateLangDot_() {
   if (!langDot) return;
   var entry = translationsDb && translationsDb[activeLanguage];
-  var human = !!(entry && entry.human);
-  langDot.classList.toggle('is-human', human);
-langDot.style.opacity = human ? '1' : '.35';
+  var humanEdited = !!(entry && entry.human && entry.edited === true);
+  langDot.classList.toggle('is-human', humanEdited);
+  langDot.style.opacity = humanEdited ? '1' : '0';
 }
 
 function applyTranslatedFields_(f) {
@@ -807,7 +807,6 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
               langSelect.appendChild(opt);
             });
 
-            langSelect.value = baseLanguage;
             updateLangDot_();
           })
           .catch(function () {
