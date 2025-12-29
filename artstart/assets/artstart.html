@@ -202,17 +202,24 @@
 
       .artstart-canvas-safe {
         position: absolute;
-        inset: 6%; /* JS overwrites for print */
+
+        /* Preview breathing room — single source of truth */
+        inset: 8%;
+
         box-sizing: border-box;
         border-radius: 0;
         background-color: #ffffff;
-        border: 1px solid #ec4899; /* magenta trim stroke */
-        padding: 6px 8px;
 
-        /* Fixed allocation by pixel height: 15/15/20/40/10 */
+        /* Keep trim stroke */
+        border: 1px solid #ec4899;
+
+        /* NO internal padding — composition handled by grid */
+        padding: 0;
+
         display: grid;
         grid-template-rows: 15% 15% 20% 40% 10%;
-        gap: 4px;
+        gap: 6px; /* slightly increased to compensate */
+
         overflow: hidden;
       }
 
@@ -617,30 +624,42 @@
               </div>
             </section>
 
-            <div class="artstart-sidebar">
-              <section class="artstart-card">
-                <h2>Job overview</h2>
-                <p><span class="label">Filename:</span> <span id="job-overview-title">—</span></p>
-                <p><span class="label">Requested by:</span> <span id="job-overview-requester">—</span></p>
-                <p><span class="label">Created:</span> <span id="job-overview-created">—</span></p>
-                <p><span class="label">Run / go-live:</span> <span id="job-overview-run">—</span></p>
-                <p><span class="label">Materials deadline:</span> <span id="job-overview-deadline">—</span></p>
-                <p><span class="label">Editorial notes:</span> <span id="job-overview-topic">—</span></p>
-                <p><span class="label">Notes:</span> <span id="job-overview-notes">—</span></p>
-              </section>
+            <section class="artstart-card">
+              <h2>Job overview</h2>
+              <p><span class="label">Filename:</span> <span id="job-overview-title">—</span></p>
+              <p><span class="label">Requested by:</span> <span id="job-overview-requester">—</span></p>
+              <p><span class="label">Created:</span> <span id="job-overview-created">—</span></p>
+              <p><span class="label">Run / go-live:</span> <span id="job-overview-run">—</span></p>
+              <p><span class="label">Materials deadline:</span> <span id="job-overview-deadline">—</span></p>
+              <p><span class="label">Editorial notes:</span> <span id="job-overview-topic">—</span></p>
+              <p><span class="label">Notes:</span> <span id="job-overview-notes">—</span></p>
+            </section>
 
-              <!-- QR CODE (Phase 2 — placeholder workstation) -->
-              <section class="artstart-card" aria-labelledby="qr-card-title" style="flex:1; min-height:0;">
-                <h2 id="qr-card-title">QR code</h2>
+            <!-- QR CODE (Phase 2 — placeholder workstation) -->
+            <section class="artstart-card" aria-labelledby="qr-card-title">
+              <h2 id="qr-card-title">QR code</h2>
 
-                <div class="artstart-qr-stage">
-                  QR CODE<br>
-                  <span style="opacity:0.7;">
-                    (Attach from FileRoom)
-                  </span>
-                </div>
-              </section>
-            </div>
+              <div
+                style="
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  height:100%;
+                  min-height:260px;
+                  border:1px dashed rgba(15,23,42,0.18);
+                  border-radius:12px;
+                  color:#6b7280;
+                  font-size:12px;
+                  text-align:center;
+                  padding:16px;
+                "
+              >
+                QR CODE<br>
+                <span style="opacity:0.7;">
+                  (Attach from FileRoom)
+                </span>
+              </div>
+            </section>
           </div>
         </div>      
       </main>
