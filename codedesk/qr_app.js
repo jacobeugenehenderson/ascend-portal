@@ -2883,7 +2883,13 @@ function render() {
   }
 
   // Toggle visual style (stroke vs fill card)
-  const isTransparent = !!document.getElementById('bgTransparent')?.checked;
+  // “Transparent background” = both gradient alphas are 0
+  const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
+  const botRaw = parseFloat(document.getElementById('bgBottomAlpha')?.value);
+  const topA = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
+  const botA = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
+  const isTransparent = (topA <= 0.001 && botA <= 0.001);
+
   preview.classList.toggle('card--stroke', isTransparent);
   preview.classList.toggle('card--fill',  !isTransparent);
 
