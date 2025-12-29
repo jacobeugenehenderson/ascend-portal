@@ -42,7 +42,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
         gap: 16px;
-        align-items: flex-start;
+        align-items: stretch; /* allow right column to match left column height */
       }
 
       @media (max-width: 900px) {
@@ -63,6 +63,30 @@
         border: 1px solid var(--ascend-app-border);
         padding: 14px 16px 16px;
         margin-bottom: 12px;
+      }
+
+      /* Right column stack: Job overview + QR live as one grid child */
+      .artstart-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        height: 100%;
+        min-height: 0;
+      }
+
+      /* QR placeholder stage: fills remaining vertical space to balance Working draft */
+      .artstart-qr-stage {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        min-height: 260px;
+        border: 1px dashed rgba(15,23,42,0.18);
+        border-radius: 12px;
+        color: #6b7280;
+        font-size: 12px;
+        text-align: center;
+        padding: 16px;
       }
 
       .artstart-card h2 {
@@ -593,42 +617,30 @@
               </div>
             </section>
 
-            <section class="artstart-card">
-              <h2>Job overview</h2>
-              <p><span class="label">Filename:</span> <span id="job-overview-title">—</span></p>
-              <p><span class="label">Requested by:</span> <span id="job-overview-requester">—</span></p>
-              <p><span class="label">Created:</span> <span id="job-overview-created">—</span></p>
-              <p><span class="label">Run / go-live:</span> <span id="job-overview-run">—</span></p>
-              <p><span class="label">Materials deadline:</span> <span id="job-overview-deadline">—</span></p>
-              <p><span class="label">Editorial notes:</span> <span id="job-overview-topic">—</span></p>
-              <p><span class="label">Notes:</span> <span id="job-overview-notes">—</span></p>
-            </section>
+            <div class="artstart-sidebar">
+              <section class="artstart-card">
+                <h2>Job overview</h2>
+                <p><span class="label">Filename:</span> <span id="job-overview-title">—</span></p>
+                <p><span class="label">Requested by:</span> <span id="job-overview-requester">—</span></p>
+                <p><span class="label">Created:</span> <span id="job-overview-created">—</span></p>
+                <p><span class="label">Run / go-live:</span> <span id="job-overview-run">—</span></p>
+                <p><span class="label">Materials deadline:</span> <span id="job-overview-deadline">—</span></p>
+                <p><span class="label">Editorial notes:</span> <span id="job-overview-topic">—</span></p>
+                <p><span class="label">Notes:</span> <span id="job-overview-notes">—</span></p>
+              </section>
 
-            <!-- QR CODE (Phase 2 — placeholder workstation) -->
-            <section class="artstart-card" aria-labelledby="qr-card-title">
-              <h2 id="qr-card-title">QR code</h2>
+              <!-- QR CODE (Phase 2 — placeholder workstation) -->
+              <section class="artstart-card" aria-labelledby="qr-card-title" style="flex:1; min-height:0;">
+                <h2 id="qr-card-title">QR code</h2>
 
-              <div
-                style="
-                  display:flex;
-                  align-items:center;
-                  justify-content:center;
-                  height:100%;
-                  min-height:260px;
-                  border:1px dashed rgba(15,23,42,0.18);
-                  border-radius:12px;
-                  color:#6b7280;
-                  font-size:12px;
-                  text-align:center;
-                  padding:16px;
-                "
-              >
-                QR CODE<br>
-                <span style="opacity:0.7;">
-                  (Attach from FileRoom)
-                </span>
-              </div>
-            </section>
+                <div class="artstart-qr-stage">
+                  QR CODE<br>
+                  <span style="opacity:0.7;">
+                    (Attach from FileRoom)
+                  </span>
+                </div>
+              </section>
+            </div>
           </div>
         </div>      
       </main>
