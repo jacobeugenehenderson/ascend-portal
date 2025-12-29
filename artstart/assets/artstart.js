@@ -217,6 +217,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var hasDims = !!dims;
 
     var mediaKind = mediaKindOverride || (hasDims ? dims.kind : null);
+    var hideBleed = (mediaKind === 'digital');
 
     box.setAttribute('data-has-dimensions', hasDims ? 'true' : 'false');
     box.setAttribute('data-media-kind', mediaKind || '');
@@ -227,7 +228,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         inner.style.height = '';
       }
       if (bleedEl) {
-        bleedEl.style.display = '';
+        bleedEl.style.display = hideBleed ? 'none' : '';
         bleedEl.style.top = '';
         bleedEl.style.right = '';
         bleedEl.style.bottom = '';
@@ -251,66 +252,10 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var displayWidth;
     var displayHeight;
 
-    // DIGITAL: pixel-based canvas, staged like print (bleed hidden)
+    // DIGITAL: must share the exact same sizing + text pipeline as print.
+    // Only difference allowed: bleed visibility (handled via hideBleed).
     if (mediaKind === 'digital') {
-      // Optional: read a DPI value from the job (e.g., 144)
-      var rawDpi =
-        (job && (job.PixelDPI || job.pixelDpi || job.pixel_dpi || job.dpi)) || '';
-      var dpi = parseFloat(rawDpi);
-
-      var TARGET_DPI = 72; // CSS "native" feel
-      var dpiScale =
-        isFinite(dpi) && dpi > 0 ? (TARGET_DPI / dpi) : 1;
-
-      // Source pixel dims (optionally DPI-normalized)
-      displayWidth  = w * dpiScale;
-      displayHeight = h * dpiScale;
-
-      // Fit to the same stage box model as print (no scroll-first drift)
-      var boxW = box.clientWidth || 0;
-      var boxH = box.clientHeight || 0;
-      var STAGE_MARGIN = 0.90; // match print's perceived breathing room
-      var maxW = boxW > 0 ? (boxW * STAGE_MARGIN) : displayWidth;
-      var maxH = boxH > 0 ? (boxH * STAGE_MARGIN) : displayHeight;
-
-      var scaleFitW = maxW > 0 ? (maxW / displayWidth) : 1;
-      var scaleFitH = maxH > 0 ? (maxH / displayHeight) : 1;
-      var scaleFit = Math.min(1, scaleFitW, scaleFitH);
-
-      if (isFinite(scaleFit) && scaleFit > 0 && scaleFit < 1) {
-        displayWidth  = displayWidth  * scaleFit;
-        displayHeight = displayHeight * scaleFit;
-      } else {
-        scaleFit = 1;
-      }
-
-      if (inner) {
-        inner.style.width  = displayWidth  + 'px';
-        inner.style.height = displayHeight + 'px';
-      }
-
-      if (bleedEl) {
-        bleedEl.style.display = 'none';
-        bleedEl.style.top = '';
-        bleedEl.style.right = '';
-        bleedEl.style.bottom = '';
-        bleedEl.style.left = '';
-      }
-
-      if (safeEl) {
-        safeEl.style.top = '';
-        safeEl.style.right = '';
-        safeEl.style.bottom = '';
-        safeEl.style.left = '';
-
-        safeEl.dataset.baseScale = String(scaleFit);
-        safeEl.style.setProperty('--artstart-scale', String(scaleFit));
-      }
-
-      if (noInfoEl) {
-        noInfoEl.style.display = 'none';
-      }
-      return;
+      // Intentionally no digital-only sizing logic.
     }
 
     // PRINT MODE BELOW
@@ -325,6 +270,11 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
           bleedAmount = parsed;
         }
       }
+    }
+
+    // Digital must not include bleed in sizing math (only print shows bleed).
+    if (mediaKind === 'digital') {
+      bleedAmount = 0;
     }
 
     // Total artboard = trim + bleed on all four sides
@@ -389,7 +339,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         safeEl.style.right = insetRight;
 
         if (bleedEl) {
-          bleedEl.style.display = '';
+          bleedEl.style.display = hideBleed ? 'none' : '';
           bleedEl.style.top = insetTop;
           bleedEl.style.bottom = insetBottom;
           bleedEl.style.left = insetLeft;
@@ -403,7 +353,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         safeEl.style.right = '6%';
 
         if (bleedEl) {
-          bleedEl.style.display = '';
+          bleedEl.style.display = hideBleed ? 'none' : '';
           bleedEl.style.top = '6%';
           bleedEl.style.bottom = '6%';
           bleedEl.style.left = '6%';
