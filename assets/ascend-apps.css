@@ -5,10 +5,10 @@
 
 :root {
   /* App-level mappings derived from ascend.css tokens */
-  --ascend-app-bg: #f3f4f6;
+  --ascend-app-bg: #e7ecf5;
   --ascend-app-surface: #ffffff;
-  --ascend-app-border: rgba(15, 23, 42, 0.10);
-  --ascend-app-shadow-soft: 0 26px 70px rgba(15, 23, 42, 0.18);
+  --ascend-app-border: rgba(15, 23, 42, 0.12);
+  --ascend-app-shadow-soft: 0 26px 70px rgba(15, 23, 42, 0.22);
 
   --ascend-app-accent: var(--ascend-color-accent, #4fd1c5);
   --ascend-app-accent-soft: rgba(79, 209, 197, 0.12);
@@ -26,15 +26,15 @@
      ========================================================= */
 
   /* Backdrop/grid */
-  --ascend-grid-bg: #e5edf7;
+  --ascend-grid-bg: #dbe3f0;
 
   --ascend-grid-major: 48px;
   --ascend-grid-minor: 12px;
 
-  --ascend-grid-line-color: rgba(0, 81, 255, 0.35);
-  --ascend-grid-line-color-soft: rgba(79, 209, 197, 0.22);
+  --ascend-grid-line-color: rgba(0, 81, 255, 0.20);
+  --ascend-grid-line-color-soft: rgba(79, 209, 197, 0.14);
 
-  --ascend-grid-wash-color: rgba(79, 209, 197, 0.20);
+  --ascend-grid-wash-color: rgba(79, 209, 197, 0.12);
   --ascend-grid-wash-stop: 55%;
 
   /* Compatibility tokens expected by theme.css (unification layer) */
