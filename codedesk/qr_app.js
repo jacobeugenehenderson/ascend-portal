@@ -738,18 +738,171 @@ window.refreshBackground = function refreshBackground () {
 };
 
 // Live re-paint when user moves any background knob
-['bgTopColor','bgBottomColor','bgTopHex','bgBottomHex','bgTopAlpha','bgBottomAlpha'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('input', () => {
-    window.refreshBackground();
-    if (typeof window.render === 'function') requestAnimationFrame(window.render);
-  });
-});
+// Also: default-link top/bottom (alpha + color), and prevent 0% → 100% snapback
+let _bg_knobs_wired = false;
+function wireBackgroundKnobsOnce() {
+  if (_bg_knobs_wired) return;
 
-// Default: background mode is determined by the alpha sliders (0 = transparent)
-try {
-  if (typeof window.refreshBackground === 'function') window.refreshBackground();
-} catch (e) {}
+  const topColor = document.getElementById('bgTopColor');
+  const botColor = document.getElementById('bgBottomColor');
+  const topHex   = document.getElementById('bgTopHex');
+  const botHex   = document.getElementById('bgBottomHex');
+
+  const topA = document.getElementById('bgTopAlpha');
+  const botA = document.getElementById('bgBottomAlpha');
+
+  // The numeric inputs in the UI are currently the nextElementSibling of each range.
+  const topANum = topA ? topA.nextElementSibling : null;
+  const botANum = botA ? botA.nextElementSibling : null;
+
+  const LINK_KEY = 'codedesk_bg_link_v1';
+
+  function clampPct(v, fallback) {
+    // IMPORTANT: do NOT coerce '' (empty) to 100 — that's the snapback bug.
+    if (v === '' || v === null || v === undefined) return fallback;
+    const n = Number(v);
+    if (!isFinite(n)) return fallback;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  }
+
+  function isLinked() {
+    const raw = (() => { try { return localStorage.getItem(LINK_KEY); } catch (_) { return null; } })();
+    // default: linked ON
+    if (raw === null) return true;
+    return raw === '1';
+  }
+
+  function setLinked(on) {
+    try { localStorage.setItem(LINK_KEY, on ? '1' : '0'); } catch (_) {}
+    const btn = document.getElementById('bgLink');
+    if (btn) {
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.classList.toggle('is-on', !!on);
+    }
+  }
+
+  // Optional: if you later add a link icon with id="bgLink", this will toggle it.
+  (function wireLinkButtonOnce() {
+    const btn = document.getElementById('bgLink');
+    if (!btn || btn.__bg_link_wired) return;
+    btn.__bg_link_wired = true;
+    btn.addEventListener('click', () => setLinked(!isLinked()));
+    // init state
+    setLinked(isLinked());
+  })();
+
+  function syncAlpha(from /* 'top' | 'bot' */) {
+    if (!topA || !botA) return;
+
+    const t = clampPct(topA.value, 100);
+    const b = clampPct(botA.value, 100);
+
+    const v = (from === 'top') ? t : b;
+
+    // Always normalize the driver side
+    if (from === 'top') topA.value = String(v);
+    if (from === 'bot') botA.value = String(v);
+
+    if (topANum && topANum.tagName === 'INPUT') topANum.value = String(clampPct(topA.value, v));
+    if (botANum && botANum.tagName === 'INPUT') botANum.value = String(clampPct(botA.value, v));
+
+    // If linked, mirror to the other side
+    if (isLinked()) {
+      if (from === 'top') {
+        botA.value = String(v);
+        if (botANum && botANum.tagName === 'INPUT') botANum.value = String(v);
+      } else {
+        topA.value = String(v);
+        if (topANum && topANum.tagName === 'INPUT') topANum.value = String(v);
+      }
+    }
+  }
+
+  function syncColor(from /* 'top' | 'bot' */) {
+    if (!isLinked()) return;
+
+    // Prefer hex fields as canonical if they exist; otherwise use the color pickers.
+    if (from === 'top') {
+      const h = (topHex && typeof topHex.value === 'string' && topHex.value.trim())
+        ? topHex.value.trim()
+        : (topColor && typeof topColor.value === 'string' ? topColor.value : '');
+      if (h) {
+        if (botHex)   botHex.value   = h;
+        if (botColor) botColor.value = h;
+      }
+    } else {
+      const h = (botHex && typeof botHex.value === 'string' && botHex.value.trim())
+        ? botHex.value.trim()
+        : (botColor && typeof botColor.value === 'string' ? botColor.value : '');
+      if (h) {
+        if (topHex)   topHex.value   = h;
+        if (topColor) topColor.value = h;
+      }
+    }
+  }
+
+  function repaint() {
+    if (typeof window.refreshBackground === 'function') window.refreshBackground();
+    if (typeof window.render === 'function') requestAnimationFrame(window.render);
+  }
+
+  // ---- Kill inline oninput snapback by intercepting at capture phase ----
+  if (topA) {
+    topA.addEventListener('input', (e) => {
+      e.stopImmediatePropagation();
+      syncAlpha('top');
+      repaint();
+    }, true);
+  }
+  if (botA) {
+    botA.addEventListener('input', (e) => {
+      e.stopImmediatePropagation();
+      syncAlpha('bot');
+      repaint();
+    }, true);
+  }
+
+  if (topANum && topANum.tagName === 'INPUT') {
+    topANum.addEventListener('input', (e) => {
+      e.stopImmediatePropagation();
+      // ignore empty transient states (do not force defaults)
+      if (topANum.value === '') return;
+      const v = clampPct(topANum.value, clampPct(topA ? topA.value : 100, 100));
+      if (topA) topA.value = String(v);
+      topANum.value = String(v);
+      syncAlpha('top');
+      repaint();
+    }, true);
+  }
+
+  if (botANum && botANum.tagName === 'INPUT') {
+    botANum.addEventListener('input', (e) => {
+      e.stopImmediatePropagation();
+      if (botANum.value === '') return;
+      const v = clampPct(botANum.value, clampPct(botA ? botA.value : 100, 100));
+      if (botA) botA.value = String(v);
+      botANum.value = String(v);
+      syncAlpha('bot');
+      repaint();
+    }, true);
+  }
+
+  // Colors / hex
+  if (topColor) topColor.addEventListener('input', () => { syncColor('top'); repaint(); });
+  if (botColor) botColor.addEventListener('input', () => { syncColor('bot'); repaint(); });
+  if (topHex)   topHex.addEventListener('input',   () => { syncColor('top'); repaint(); });
+  if (botHex)   botHex.addEventListener('input',   () => { syncColor('bot'); repaint(); });
+
+  // If you *don't* add a link icon yet, this keeps behavior linked by default.
+  setLinked(isLinked());
+
+  // Initial paint/class gating
+  try { repaint(); } catch (e) {}
+
+  _bg_knobs_wired = true;
+}
+
+try { wireBackgroundKnobsOnce(); } catch (e) {}
 
 // optional helpers (put them right here too)
 window.getTypeFields = (t) => {
@@ -2484,12 +2637,8 @@ let _bg_wired = false;
 function wireBackgroundBindingsOnce() {
   if (_bg_wired) return;
 
-  const pick  = document.getElementById('bgColor');
-  const check = document.getElementById('bgTransparent');
-
-  pick?.addEventListener('input',  updatePreviewBackground);
-  pick?.addEventListener('change', updatePreviewBackground);
-  check?.addEventListener('change', updatePreviewBackground);
+  // Canon wiring lives in wireBackgroundKnobsOnce() (gradient + alpha + stroke gating).
+  try { wireBackgroundKnobsOnce(); } catch (e) {}
 
   _bg_wired = true;
 }

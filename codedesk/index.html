@@ -296,7 +296,16 @@
 
     <!-- Background -->
     <div class="space-y-2">
-      <div class="text-sm font-medium">Background</div>
+      <div class="flex items-center gap-2">
+        <div class="text-sm font-medium">Background</div>
+
+        <!-- Link (default ON; JS reads/writes localStorage key codedesk_bg_link_v1) -->
+        <button id="bgLink" type="button"
+                class="ml-auto px-2 py-1 rounded-md border border-neutral-200 dark:border-neutral-800 text-sm leading-none hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                aria-label="Link background controls"
+                aria-pressed="true"
+                title="Background linked">🔗</button>
+      </div>
 
       <div class="flex flex-col gap-2">
         <!-- Top color + hex + opacity -->
