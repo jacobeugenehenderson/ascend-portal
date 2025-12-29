@@ -944,6 +944,7 @@ function saveDraft(jobId) {
         translationsDb = translationsDb || {};
         translationsDb[activeLanguage] = translationsDb[activeLanguage] || {};
         translationsDb[activeLanguage].human = true;
+        translationsDb[activeLanguage].edited = true;
         translationsDb[activeLanguage].fields = {
           workingHeadline: payload.workingHeadline || '',
           workingSubhead: payload.workingSubhead || '',
@@ -1087,8 +1088,8 @@ function saveDraft(jobId) {
     setUserLabel();
 
     // Cache language UI
-    langSelect = document.getElementById('artstartLanguage');
-    langDot = document.getElementById('artstartLangDot');
+    langSelect = document.getElementById('working-language');
+    langDot = document.getElementById('working-language-dot');
 
     if (langSelect) {
       langSelect.addEventListener('change', function () {
@@ -1131,7 +1132,10 @@ function saveDraft(jobId) {
             applyTranslatedFields_(payload.fields || {});
 
             // Refresh job payload so translationsDb + dot state are canonical
+            // BUT keep the user’s selected language from snapping back to base.
+            var keep = activeLanguage;
             fetchJob(jobIdNow);
+            activeLanguage = keep;
           })
           .catch(function (err) {
             console.error(err);
