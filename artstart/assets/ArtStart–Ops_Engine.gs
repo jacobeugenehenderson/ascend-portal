@@ -454,6 +454,15 @@ function createJob(intakePayload) {
       case 'TranslationJobId':
         projRow.push('');
         break;
+
+      // New Projects headers (AA–AE) for translation workflow
+      case 'SourceLanguage':
+        projRow.push((intakePayload.languagePrimary || 'EN') + '');
+        break;
+      case 'TargetLanguage':
+        projRow.push((intakePayload.translationTargetLanguage || '') + '');
+        break;
+
       case 'QRIncluded':
         projRow.push('No');
         break;
@@ -546,9 +555,37 @@ function createJob(intakePayload) {
 }
 
 function createTranslationJobRow_(ascendJobId, intakePayload) {
-  // Deprecated: translation jobs are no longer created or tracked in Sheets.
-  // Translation is handled in the workspace UI on-demand.
-  throw new Error('createTranslationJobRow_ is deprecated (translation jobs removed).');
+  var p = findProjectRowByAscendJobId_(ascendJobId);
+  if (!p || !p.sheet || !p.rowIndex) {
+    throw new Error('Could not locate Projects row for AscendJobId=' + ascendJobId);
+  }
+
+  var sheet = p.sheet;
+  var rowIndex = p.rowIndex;
+  var h = p.headers || {};
+
+  var translationJobId = 'T' + Utilities.getUuid().slice(0, 8).toUpperCase();
+
+  var sourceLang = (intakePayload && intakePayload.languagePrimary) ? String(intakePayload.languagePrimary).trim() : 'EN';
+
+  // Support both legacy intake key and your new header naming
+  var targetLang =
+    (intakePayload && intakePayload.translationTargetLanguage) ? String(intakePayload.translationTargetLanguage).trim() :
+    (intakePayload && intakePayload.targetLanguage) ? String(intakePayload.targetLanguage).trim() :
+    '';
+
+  // Write into Projects AA–AE columns if present
+  if (h.TranslationJobId != null) sheet.getRange(rowIndex, h.TranslationJobId + 1).setValue(translationJobId);
+  if (h.SourceLanguage != null) sheet.getRange(rowIndex, h.SourceLanguage + 1).setValue(sourceLang);
+  if (h.TargetLanguage != null) sheet.getRange(rowIndex, h.TargetLanguage + 1).setValue(targetLang);
+
+  // IMPORTANT:
+  // You added a header named "Status" at AE, but Projects already has a "Status" used for job status.
+  // To avoid overwriting the job’s Status, we do NOT write any translation status here unless you rename it
+  // (e.g., "TranslationStatus").
+  if (h.TranslationStatus != null) sheet.getRange(rowIndex, h.TranslationStatus + 1).setValue('Queued');
+
+  return translationJobId;
 }
 
 // ---------- Core: getJob ----------

@@ -424,7 +424,33 @@
         }
       }
 
-            
+      /* Language row */
+      .artstart-lang-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0 14px 0;
+      }
+
+      .artstart-lang-label {
+        font-size: 12px;
+        font-weight: 600;
+        opacity: .75;
+        min-width: 84px;
+      }
+
+      .artstart-lang-select {
+        min-width: 220px;
+      }
+
+      .artstart-lang-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+        opacity: .35; /* JS will raise this when "human" exists */
+        display: inline-block;
+      }      
 
       .artstart-save-row {
         display: flex;
@@ -596,11 +622,10 @@
             <section class="artstart-card">
               <h2>Working draft</h2>
 
-            <div class="artstart-row" style="display:flex; align-items:center; gap:10px; margin: 10px 0 14px 0;">
-              <div style="font-size:12px; font-weight:600; opacity:.75; min-width:84px;">Language</div>
-              <select id="artstartLanguage" style="min-width:220px;"></select>
-              <span id="artstartLangDot" title="Human-edited translation"
-                    style="width:10px; height:10px; border-radius:999px; border:1px solid currentColor; opacity:.6; display:inline-block;"></span>
+            <div class="artstart-row artstart-lang-row">
+              <div class="artstart-lang-label">Language</div>
+              <select id="artstartLanguage" class="artstart-input artstart-lang-select"></select>
+              <span id="artstartLangDot" class="artstart-lang-dot" title="Human-edited translation"></span>
             </div>
               <p class="artstart-muted">
                 Use this space to rough in the words that need to fit. Text is mirrored into the canvas to show scale only – final layout still happens in design tools.

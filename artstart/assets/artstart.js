@@ -17,7 +17,8 @@ function updateLangDot_() {
   if (!langDot) return;
   var entry = translationsDb && translationsDb[activeLanguage];
   var human = !!(entry && entry.human);
-  langDot.style.opacity = human ? '1' : '.35';
+  langDot.classList.toggle('is-human', human);
+langDot.style.opacity = human ? '1' : '.35';
 }
 
 function applyTranslatedFields_(f) {
@@ -790,32 +791,34 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
       // Pull supported languages from backend
       try {
-        const url = apiBase + '?action=listLanguages';
+        var url = ARTSTART_API_BASE + '?action=listLanguages';
         fetch(url)
-          .then(r => r.json())
-          .then(payload => {
-            const langs = (payload && payload.languages) ? payload.languages : [];
-            langs.forEach(l => {
-              const code = String(l.code || '').trim();
-              const label = String(l.label || code).trim();
+          .then(function (r) { return r.json(); })
+          .then(function (payload) {
+            var langs = (payload && payload.languages) ? payload.languages : [];
+            langs.forEach(function (l) {
+              var code = String((l && l.code) || '').trim();
+              var label = String((l && l.label) || code).trim();
               if (!code || code === baseLanguage) return;
-              const opt = document.createElement('option');
+
+              var opt = document.createElement('option');
               opt.value = code;
               opt.textContent = label + ' (' + code + ')';
               langSelect.appendChild(opt);
             });
+
             langSelect.value = baseLanguage;
             updateLangDot_();
           })
-          .catch(() => {
+          .catch(function () {
             // If listLanguages fails, leave base only.
             updateLangDot_();
           });
       } catch (e) {
         updateLangDot_();
       }
-    }
-
+     }   
+  
     updateLangDot_();
     document.getElementById('working-headline').value = job.workingHeadline || '';
     document.getElementById('working-subhead').value = job.workingSubhead || '';
