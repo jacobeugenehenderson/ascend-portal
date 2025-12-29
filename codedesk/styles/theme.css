@@ -1479,3 +1479,58 @@ label.text-sm.block{
   z-index: 9999 !important; /* ensure it's above all sticky and preview layers */
   pointer-events: auto !important;
 }
+
+/* ------------------------------------------------------------
+   Background controls: branded link + clean color tiles + blue sliders
+------------------------------------------------------------ */
+
+/* No squares around circular color tiles (override any utility borders) */
+input[type="color"] {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 9999px !important;
+  padding: 0 !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  cursor: pointer;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 9999px !important;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: none !important;
+  border-radius: 9999px !important;
+}
+
+/* Ascend-blue sliders (kills any lingering okQRal yellow) */
+input[type="range"] {
+  accent-color: var(--ascend-app-accent) !important;
+}
+
+/* Branded link button */
+#bgLink {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 0.75rem;
+  border: 1px solid var(--ascend-app-border);
+  background: var(--ascend-app-surface);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+#bgLink:hover {
+  background: color-mix(in oklab, var(--ascend-app-surface), var(--ascend-app-accent) 6%);
+}
+#bgLink:active {
+  transform: translateY(1px);
+}

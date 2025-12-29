@@ -304,14 +304,14 @@
            3) link (auto, row-span)
            4) slider (flex)
            5) number (auto) -->
-      <div class="grid grid-cols-[auto_auto_auto_1fr_auto] items-center gap-2">
+            <div class="grid grid-cols-[auto_auto_auto_minmax(0,420px)_auto] items-center gap-2">
         <!-- Top -->
-        <input id="bgTopColor" type="color" class="h-9 w-10 rounded-md border" value="#FFFFFF" />
+        <input id="bgTopColor" type="color" class="h-9 w-10" value="#FFFFFF" />
         <input id="bgTopHex"   type="text"  class="w-28 rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
 
         <!-- Link icon (hex→slider seam), centered between the two rows -->
         <button id="bgLink" type="button"
-                class="row-span-2 self-center px-2 py-1 rounded-md border border-neutral-200 dark:border-neutral-800 text-sm leading-none hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                class="row-span-2 self-center"
                 aria-label="Background linked"
                 aria-pressed="true"
                 title="Background linked">🔗</button>
@@ -322,7 +322,7 @@
                aria-label="Top opacity (%)" />
 
         <!-- Bottom -->
-        <input id="bgBottomColor" type="color" class="h-9 w-10 rounded-md border" value="#FFFFFF" />
+        <input id="bgBottomColor" type="color" class="h-9 w-10" value="#FFFFFF" />
         <input id="bgBottomHex"   type="text"  class="w-28 rounded-md border px-3 py-2 text-sm truncate" placeholder="#RRGGBB" />
         <input id="bgBottomAlpha" type="range" min="0" max="100" step="1" class="w-full h-6" value="100" />
         <input type="number" min="0" max="100" step="1" value="100"
@@ -633,6 +633,10 @@ new MutationObserver(() => applyPickerTheme())
     // keep a single “frame color” token for any places that still use it
     preview.style.setProperty('--frame-color', topHex);
     preview.style.setProperty('--frame-w', '2px');
+
+    // canonical stroke knobs used by the preview skin
+    preview.style.setProperty('--ascend-stage-frame', 'var(--ascend-app-accent)');
+    preview.style.setProperty('--ascend-stage-frame-w', '2px');
 
     // Build the paint: solid if both colors match, otherwise a vertical gradient
     let paint;
