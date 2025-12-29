@@ -2430,8 +2430,10 @@ function composeCardSvg({
     grad.setAttribute("x2", "0");
     grad.setAttribute("y2", "1");
 
-    const aTop = Math.max(0, Math.min(1, (Number(bgTopAlpha) || 100) / 100));
-    const aBot = Math.max(0, Math.min(1, (Number(bgBottomAlpha) || 100) / 100));
+    const _aTopN = Number(bgTopAlpha);
+    const _aBotN = Number(bgBottomAlpha);
+    const aTop = Math.max(0, Math.min(1, (isFinite(_aTopN) ? _aTopN : 100) / 100));
+    const aBot = Math.max(0, Math.min(1, (isFinite(_aBotN) ? _aBotN : 100) / 100));
 
     const stop1 = document.createElementNS(NS, "stop");
     stop1.setAttribute("offset", "0%");
