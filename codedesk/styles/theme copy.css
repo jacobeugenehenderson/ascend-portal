@@ -36,8 +36,34 @@
    ======================================================================= */
 
 /* =========================
-   1. CONTROL PANEL — BASE
+   1. CONTROL PANEL — BASE (dark by default)
 ========================= */
+/* Ensure both selector styles respond to the same classes */
+html.dark { color-scheme: dark; }
+html.light { color-scheme: light; }
+
+/* Mirror tokens whether the class is on <html> (html.light) or :root.light */
+/* LIGHT MODE */
+html.light, :root.light {
+  /* Light overrides — keep in sync with your existing values */
+  --md-sys-color-background:      var(--ascend-app-bg, #f3f4f6);
+  --md-sys-color-on-background:   var(--ascend-app-text-main, #020617);
+  --md-sys-color-surface:         var(--ascend-app-surface, #ffffff);
+  --md-sys-color-on-surface:      var(--ascend-app-text-main, #020617);
+  --md-sys-color-surface-variant: var(--ascend-control-bg, #ffffff);
+  --md-sys-color-outline:         var(--ascend-app-border, rgba(15, 23, 42, 0.18));
+  --md-sys-color-outline-variant: color-mix(in oklab, var(--md-sys-color-outline) 70%, var(--md-sys-color-primary) 30%);
+
+  --ui-surface:         var(--md-sys-color-surface);
+  --ui-surface-variant: var(--md-sys-color-surface-variant);
+  --ui-stroke:          var(--md-sys-color-outline);
+  --ui-stroke-hover:    var(--md-sys-color-outline-variant);
+  --ui-focus-ring:      var(--md-sys-color-primary);
+  --ui-glow-color:      var(--md-sys-color-primary);
+
+  --md-sys-color-on-primary: #0B0715;  /* single authoritative light-mode ink */
+}
+
 :root{
 
   /* ----- Header ----- */
