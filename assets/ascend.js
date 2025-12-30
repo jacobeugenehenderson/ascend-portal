@@ -558,6 +558,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
     function listWorking_() {
       try {
+        const apiList = window.__ASCEND_CODEDESK_WORKING_ITEMS__;
+        if (Array.isArray(apiList) && apiList.length) return apiList;
+
         const list = JSON.parse(localStorage.getItem(CODEDESK_STORE_KEY) || "[]");
         return Array.isArray(list) ? list : [];
       } catch (e) {
@@ -937,6 +940,8 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         origin === "artstart" || origin === "art start" || origin === "art";
       const isCopydesk =
         origin === "copydesk" || origin === "copy desk" || origin === "copy";
+      const isCodeDesk =
+        origin === "codedesk" || origin === "code desk" || origin === "qr";
 
       const title =
         item.title ||
@@ -1008,9 +1013,10 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
       if (isArtStart) prov.className += " is-artstart";
       if (isCopydesk) prov.className += " is-copydesk";
+      if (isCodeDesk) prov.className += " is-codedesk";
 
       const provText = document.createElement("span");
-      provText.textContent = isCopydesk ? "C" : "A";
+      provText.textContent = isCopydesk ? "C" : (isCodeDesk ? "Q" : "A");
       prov.appendChild(provText);
 
       const textStack = document.createElement("div");
@@ -1482,21 +1488,36 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
         // API spine: CodeDesk working files live in the FileRoom registry.
         try {
-          window.__ASCEND_CODEDESK_WORKING_ITEMS__ = (items || []).filter((j) => {
-            const app = String((j && (j.App || j.app)) || "").toLowerCase();
-            const kind = String((j && (j.Kind || j.kind)) || "").toLowerCase();
+          window.__ASCEND_CODEDESK_WORKING_ITEMS__ = (items || [])
+            .filter((j) => {
+              const app = String((j && (j.App || j.app)) || "").toLowerCase();
+              const kind = String((j && (j.Kind || j.kind)) || "").toLowerCase();
 
-            // Back-compat: accept alternate fields used by earlier rows.
-            const assetType = String((j && (j.AssetType || j.asset_type || j.assetType)) || "").toLowerCase();
-            const indicator = String((j && (j.Indicator || j.indicator)) || "").toLowerCase();
+              // Back-compat: accept alternate fields used by earlier rows.
+              const assetType = String((j && (j.AssetType || j.asset_type || j.assetType)) || "").toLowerCase();
+              const indicator = String((j && (j.Indicator || j.indicator)) || "").toLowerCase();
 
-            const isWorking =
-              kind === "working" ||
-              assetType === "working" ||
-              indicator === "working_orange_stack";
+              const isWorking =
+                kind === "working" ||
+                assetType === "working" ||
+                indicator === "working_orange_stack";
 
-            return app === "codedesk" && isWorking;
-          });
+              return app === "codedesk" && isWorking;
+            })
+            .map((j) => {
+              const id = String((j && (j.SourceId || j.sourceId || j.Id || j.id)) || "").trim();
+              const name = String((j && (j.Title || j.title || j.Name || j.name)) || "QR Working File");
+              const templateId = String((j && (j.TemplateId || j.template_id || j.templateId)) || "").trim();
+
+              return {
+                id: id,
+                name: name,
+                kind: "working",
+                indicator: "working_orange_stack",
+                template_id: templateId
+              };
+            })
+            .filter((x) => x && x.id);
         } catch (e) {
           window.__ASCEND_CODEDESK_WORKING_ITEMS__ = [];
         }
