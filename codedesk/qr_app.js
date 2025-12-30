@@ -626,7 +626,19 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
 
 // force UI refresh now that templates are in memory
 try { if (typeof render === "function") render(); } catch (e) {}
-try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } catch (e) {}
+try {
+  // If launched from Ascend (new tab/window), ask the opener to refresh hoppers now.
+  // This is same-origin (github.io) so it can directly call Ascend functions.
+  if (window.opener && !window.opener.closed) {
+    if (typeof window.opener.requestCodeDeskTemplates === "function") {
+      window.opener.requestCodeDeskTemplates();
+    } else if (window.opener.AscendDebug && typeof window.opener.AscendDebug.requestCodeDeskTemplates === "function") {
+      window.opener.AscendDebug.requestCodeDeskTemplates();
+    } else if (typeof window.opener.renderCodeDeskHopper === "function") {
+      window.opener.renderCodeDeskHopper();
+    }
+  }
+} catch (e) {}
 
   // --- URL bootstrap (idempotent; no polling loops) ---
   // Runs once per page-load (and once per session via sessionStorage key).
@@ -661,7 +673,8 @@ try { if (typeof window.refreshHopper === "function") window.refreshHopper(); } 
 }
 
       // 1) Working-file open path wins (hopper open)
-      if ((mode === 'working' || mode === 'new') && wfId && typeof window.codedeskOpenWorkingFile === 'function') {
+      // Treat presence of wfId as authoritative even if `mode` is missing.
+      if (wfId && typeof window.codedeskOpenWorkingFile === 'function') {
         window.codedeskOpenWorkingFile(wfId);
         return;
       }
