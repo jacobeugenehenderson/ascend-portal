@@ -1651,12 +1651,15 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   // Mandatory filename capture: keep it centered/clickable; disable Finish until non-empty
   function ensureFilenameUi(){
-    const wrap = document.getElementById('codedeskFilenameSection');
+    const wrap = document.getElementById('codedeskFilenameSection') || document.getElementById('codedeskFilenameWrap');
     const inp  = document.getElementById('codedeskFilename');
     if (!wrap || !inp) return;
 
     // Do NOT touch the QR preview/mount; only stabilize this UI strip.
+    wrap.style.position = 'relative';
+    wrap.style.zIndex = '60';
     wrap.style.pointerEvents = 'auto';
+
     inp.style.pointerEvents = 'auto';
     inp.disabled = false;
     inp.removeAttribute('disabled');
@@ -1748,38 +1751,6 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   syncFinishEnabled();
   document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
   document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
-
-  function _codedeskSyncFinishEnabled(){
-    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
-    const ok = !!fname;
-
-    document.querySelectorAll('button').forEach(b => {
-      if (!isFinishButton(b)) return;
-
-      // never stomp busy/done states
-      if (b.classList.contains('is-busy')) return;
-      if (b.classList.contains('is-setup-done')) return;
-
-      if (!ok) {
-        try { b.disabled = true; } catch(e){}
-        try { b.textContent = 'Filename required to finish'; } catch(e){}
-      } else {
-        try { b.disabled = false; } catch(e){}
-        relabel(b);
-      }
-    });
-  }
-
-  // Keep finish enabled state in sync with filename typing
-  document.addEventListener('input', (e) => {
-    if (e && e.target && e.target.id === 'codedeskFilename') _codedeskSyncFinishEnabled();
-  }, true);
-  document.addEventListener('change', (e) => {
-    if (e && e.target && e.target.id === 'codedeskFilename') _codedeskSyncFinishEnabled();
-  }, true);
-
-  // run once at boot (after relabel pass)
-  _codedeskSyncFinishEnabled();
 
     // capture click for finish/setup
   document.addEventListener('click', async (e) => {
@@ -3800,7 +3771,7 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     .replace(/^_+|_+$/g, '')       // trim leading/trailing _
     .substring(0, 40);             // max 40 chars
 
-  const base = safeName || 'okQRal';
+  const base = safeName || 'QR';
 
   // log to Sheets (non-blocking)
   reportExport().catch(() => { /* silent */ });
