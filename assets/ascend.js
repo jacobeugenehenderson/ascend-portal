@@ -1485,7 +1485,17 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
           window.__ASCEND_CODEDESK_WORKING_ITEMS__ = (items || []).filter((j) => {
             const app = String((j && (j.App || j.app)) || "").toLowerCase();
             const kind = String((j && (j.Kind || j.kind)) || "").toLowerCase();
-            return app === "codedesk" && kind === "working";
+
+            // Back-compat: accept alternate fields used by earlier rows.
+            const assetType = String((j && (j.AssetType || j.asset_type || j.assetType)) || "").toLowerCase();
+            const indicator = String((j && (j.Indicator || j.indicator)) || "").toLowerCase();
+
+            const isWorking =
+              kind === "working" ||
+              assetType === "working" ||
+              indicator === "working_orange_stack";
+
+            return app === "codedesk" && isWorking;
           });
         } catch (e) {
           window.__ASCEND_CODEDESK_WORKING_ITEMS__ = [];
