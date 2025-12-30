@@ -1709,8 +1709,45 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     return false;
   }
 
+  // Mandatory filename gate: keep filename input enabled; disable Finish until non-empty
+  function ensureFilenameUi(){
+    const inp = document.getElementById('codedeskFilename');
+    if (!inp) return;
+    try { inp.disabled = false; } catch(e){}
+    try { inp.removeAttribute('disabled'); } catch(e){}
+    try { inp.style.pointerEvents = 'auto'; } catch(e){}
+  }
+
+  function syncFinishEnabled(){
+    ensureFilenameUi();
+
+    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+    const ok = !!fname;
+
+    document.querySelectorAll('button').forEach(b => {
+      if (!isFinishButton(b)) return;
+
+      // don't stomp busy/done states
+      if (b.classList.contains('is-busy')) return;
+      if (b.classList.contains('is-setup-done')) return;
+
+      if (!ok) {
+        b.disabled = true;
+        b.textContent = 'Filename required to finish';
+      } else {
+        b.disabled = false;
+        relabel(b);
+      }
+    });
+  }
+
   // initial relabel pass
   document.querySelectorAll('button').forEach(b => { if (isFinishButton(b)) relabel(b); });
+
+  // live sync
+  syncFinishEnabled();
+  document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
+  document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
 
   function _codedeskSyncFinishEnabled(){
     const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
@@ -1744,17 +1781,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   // run once at boot (after relabel pass)
   _codedeskSyncFinishEnabled();
 
-  // capture click for finish/setup
+    // capture click for finish/setup
   document.addEventListener('click', async (e) => {
   const btn = e.target && e.target.closest && e.target.closest('button');
   if (!isFinishButton(btn)) return;
 
-  // Mandatory filename gate (required to enable Finish)
+  // Mandatory filename gate
   const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
   if (!fname) {
-    try { e && e.preventDefault && e.preventDefault(); } catch(err){}
-    try { e && e.stopPropagation && e.stopPropagation(); } catch(err){}
-    _codedeskSyncFinishEnabled();
+    try { document.getElementById('codedeskFilename')?.focus(); } catch(e){}
+    try { e && e.preventDefault && e.preventDefault(); } catch(e){}
+    try { e && e.stopPropagation && e.stopPropagation(); } catch(e){}
+    syncFinishEnabled();
     return;
   }
 
@@ -1774,15 +1812,16 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   } catch(e){}
 
   // “Setup complete” visual state (does NOT change lifecycle logic)
-  btn.classList.remove('is-busy');
+    btn.classList.remove('is-busy');
   btn.classList.add('is-setup-done');
   btn.textContent = 'Setup complete';
   btn.disabled = false;
 
-    try {
-      const w = document.getElementById('codedeskFilenameSection');
-      if (w) w.style.display = 'none';
-    } catch(e){}
+  // Post-finish UI cleanup: filename input disappears (identity persists via hopper/FileRoom only)
+  try {
+    const s = document.getElementById('codedeskFilenameSection') || document.getElementById('codedeskFilenameWrap');
+    if (s) s.style.display = 'none';
+  } catch(e){}
 
   relabel(btn);
 
