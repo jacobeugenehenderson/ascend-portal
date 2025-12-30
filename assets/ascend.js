@@ -707,7 +707,15 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         openCodeDeskFromTemplate_(tpl, "");
       });
 
+      const spacerBtn = document.createElement("button");
+      spacerBtn.type = "button";
+      spacerBtn.className = "ascend-job-card-delete is-spacer";
+      spacerBtn.textContent = "×";
+      spacerBtn.setAttribute("aria-hidden", "true");
+      spacerBtn.tabIndex = -1;
+
       card.appendChild(mainBtn);
+      card.appendChild(spacerBtn);
       lane.appendChild(card);
     });
   }

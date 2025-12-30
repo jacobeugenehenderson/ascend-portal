@@ -1193,7 +1193,11 @@ textarea:focus {
 .ascend-job-card-delete:hover {
   background-color: rgba(255, 255, 255, 0.08);
   color: var(--ascend-color-text-main);
-  opacity: 0.95;
+}
+
+.ascend-job-card-delete.is-spacer {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Empty-state text inside a lane */
