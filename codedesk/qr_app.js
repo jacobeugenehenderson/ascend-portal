@@ -2829,35 +2829,6 @@ function wireBackgroundBindingsOnce() {
 
 let _right_wired = false;
 
-function applySectionThemeFromMode(mode) {
-  const body = document.body;
-  if (!body) return;
-
-  const classes = [
-    'theme--caption',
-    'theme--design',
-    'theme--mechanical',
-    'theme--finish'
-  ];
-  body.classList.remove(...classes);
-
-  switch (mode) {
-    case 'design':
-      body.classList.add('theme--design');
-      break;
-    case 'mechanicals':
-      body.classList.add('theme--mechanical');
-      break;
-    case 'finish':
-      body.classList.add('theme--finish');
-      break;
-    case 'caption':
-    default:
-      body.classList.add('theme--caption');
-      break;
-  }
-}
-
 function wireRightAccordionBehaviorOnce() {
 
   if (_right_wired) return;
@@ -2879,8 +2850,6 @@ function wireRightAccordionBehaviorOnce() {
     right.classList.toggle('finish-active', mode === 'finish');
     if (mode === 'design') right.classList.remove('mech-active', 'finish-active');
 
-    // Sync global color theme with the active section
-    applySectionThemeFromMode(mode);
   }
 
   const isOpen = (card) => {
@@ -2910,8 +2879,6 @@ function boot() {
   wireECCPill();
   wireECCLegacySelect();
   wireFontSelect();
-  wireCaptionInputs();
-  wireSectionThemes();
   
   // First-pass UI state (so fields/labels enable/disable correctly)
   try { refreshModulesMode?.(); } catch {}
