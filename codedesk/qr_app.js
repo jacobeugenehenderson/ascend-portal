@@ -1146,6 +1146,18 @@ function _writeWorkingFiles(arr){
   try { localStorage.setItem(CODEDESK_STORE_KEY, JSON.stringify(arr || [])); } catch(e){}
 }
 
+function codedeskNotifyAscendWorkingSave(rec){
+  // Best-effort ping so Ascend can refresh its hopper UI (same-origin only).
+  try { localStorage.setItem('ascend_codedesk_hopper_ping_v1', String(Date.now())); } catch(e){}
+  try {
+    // If CodeDesk was opened from Ascend, ask the opener to refresh immediately.
+    if (window.opener && typeof window.opener.refreshHopper === 'function') {
+      window.opener.refreshHopper();
+    }
+  } catch(e){}
+  return rec;
+}
+
 function _getActiveWorkingFileId(){
   try { return String(localStorage.getItem(CODEDESK_ACTIVE_WF_KEY) || '').trim(); } catch(e){ return ''; }
 }
@@ -3598,6 +3610,9 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     const openUrl = String(data.open_url || '').trim();
     const jobKey  = String(data.ascend_job_key || '').trim();
 
+    // Surface result for UI post-success (button becomes a link)
+    window.__CODEDESK_LAST_FILEROOM_OPEN_URL__ = openUrl || '';
+
     // Persist pairing into the working file record (Finish is repeatable)
     // IMPORTANT: pairing is NOT completion — do not set finishedAt (that can evict from the hopper)
     const _rec =
@@ -3638,8 +3653,15 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
 
     if (btn) {
       if (finishOk) {
-        btn.disabled = true;
-        btn.textContent = 'Done';
+        const url = String(window.__CODEDESK_LAST_FILEROOM_OPEN_URL__ || '').trim();
+        if (url) {
+          btn.disabled = false;
+          btn.textContent = 'Open FileRoom PNG';
+          btn.onclick = () => { try { window.open(url, '_blank', 'noopener'); } catch(e){} };
+        } else {
+          btn.disabled = true;
+          btn.textContent = 'Done';
+        }
       } else {
         btn.disabled = false;
         if (btn.dataset && typeof btn.dataset._label === 'string') btn.textContent = btn.dataset._label;
