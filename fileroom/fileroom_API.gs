@@ -224,12 +224,16 @@ function upsertQrPngAsset_(p) {
   //  - source_id
   //
   // Optional:
+  //  - drive_png_file_id  (if you want to overwrite an existing Drive file IN PLACE)
   //  - title, subtitle, status, owner_email, ascend_job_key
+  //  - kind, asset_type, template_id, state_json, destination_url
   //
-  // Behavior:
-  //  - Stable Drive file identity by stable filename CODEDESK_<source_id>.png
-  //  - Overwrites the same Drive file (same ID) on every call
-  //  - Upserts a FileRoom JOB pointing at the Drive URL
+  // Behavior (current):
+  //  - Default: CREATE a new Drive PNG each call (no accidental overwrites).
+  //  - If drive_png_file_id is provided: overwrite that exact Drive file id.
+  //  - Upserts TWO registry rows:
+  //      1) OUTPUT row  -> Kind=output  (shows in FileRoom lane)
+  //      2) WORKING row -> Kind=working (shows in CodeDesk working lane in Ascend)
   //
   const folderId = String(p.folder_id || '').trim();
   const dataUrl  = String(p.png_data_url || '').trim();
@@ -243,27 +247,35 @@ function upsertQrPngAsset_(p) {
   if (!m) throw new Error('upsertQrPngAsset: png_data_url must be data:image/png;base64,...');
 
   const bytes = Utilities.base64Decode(m[1]);
-  const stableName = 'CODEDESK_' + sourceId + '.png';
-  const blob = Utilities.newBlob(bytes, 'image/png', stableName);
 
-  // Find or create in the target folder by name
-  const folder = DriveApp.getFolderById(folderId);
-  const it = folder.getFilesByName(stableName);
+  // Build a helpful filename.
+  // If the caller doesn't pass a title yet, we still guarantee uniqueness.
+  const rawTitle = String(p.title || '').trim();
+  const safeTitle = rawTitle
+    ? rawTitle.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 48)
+    : 'CODEDESK_QR';
+
+  const stamp = (new Date()).toISOString().replace(/[:.]/g, '-');
+  const fileName = safeTitle + '_' + sourceId + '_' + stamp + '.png';
+
+  const blob = Utilities.newBlob(bytes, 'image/png', fileName);
+
+  // If we were given a specific Drive file id, overwrite IN PLACE.
+  // Otherwise, always create a new file (prevents "everything overwrote the previous QR").
+  const overwriteId = String(p.drive_png_file_id || '').trim();
 
   let fileId = '';
-  if (it.hasNext()) {
-    fileId = it.next().getId();
-
-    // Overwrite binary content IN PLACE (same Drive file ID)
+  if (overwriteId) {
+    fileId = overwriteId;
     Drive.Files.update(
-      { title: stableName, mimeType: 'image/png' },
+      { title: fileName, mimeType: 'image/png' },
       fileId,
       blob
     );
   } else {
     const created = Drive.Files.insert(
       {
-        title: stableName,
+        title: fileName,
         mimeType: 'image/png',
         parents: [{ id: folderId }]
       },
@@ -271,6 +283,8 @@ function upsertQrPngAsset_(p) {
     );
     fileId = created && created.id ? String(created.id) : '';
   }
+
+  if (!fileId) throw new Error('upsertQrPngAsset: failed to obtain Drive file id');
 
   // Prefer Drive API webViewLink/alternateLink if available
   let openUrl = '';
@@ -282,14 +296,17 @@ function upsertQrPngAsset_(p) {
     openUrl = DriveApp.getFileById(fileId).getUrl();
   }
 
-  const jobTitle = String(p.title || 'CODEDESK QR').trim();
+  const jobTitle = String(p.title || safeTitle).trim();
   const jobSubtitle = String(p.subtitle || 'CODEDESK — FLATTENED (PNG)').trim();
   const jobStatus = String(p.status || 'delivered').trim();
   const ownerEmail = String(p.owner_email || '').trim();
 
-  const ascendJobKey = String(p.ascend_job_key || ('CODEDESK_FLAT:' + sourceId)).trim();
+  // IMPORTANT: output rows must be unique per export so they don't overwrite each other.
+  // If you need stable identity, pass ascend_job_key explicitly.
+  const ascendJobKey = String(p.ascend_job_key || ('CODEDESK_FLAT:' + sourceId + ':' + fileId)).trim();
 
-  const upsert = upsertJob_({
+  // 1) OUTPUT row (FileRoom lane)
+  const upsertOutput = upsertJob_({
     ascend_job_key: ascendJobKey,
     app: 'codedesk',
     source_id: sourceId,
@@ -309,11 +326,34 @@ function upsertQrPngAsset_(p) {
     lane: 'FILEROOM'
   });
 
+  // 2) WORKING row (Ascend CodeDesk working lane)
+  // This is the thing Ascend uses to paint orange "working file" cards.
+  const workingKey = 'CODEDESK_WF:' + sourceId;
+
+  const upsertWorking = upsertJob_({
+    ascend_job_key: workingKey,
+    app: 'codedesk',
+    source_id: sourceId,
+    kind: 'working',
+    asset_type: 'working',
+    template_id: String(p.template_id || ''),
+    state_json: String(p.state_json || ''),
+    drive_folder_id: folderId,
+    title: String(p.working_title || jobTitle || 'QR Working File'),
+    subtitle: String(p.working_subtitle || 'CODEDESK — WORKING'),
+    status: String(p.working_status || 'open'),
+    open_url: '',
+    owner_email: ownerEmail,
+    lane: 'HOPPER'
+  });
+
   return {
     drive_file_id: fileId,
     open_url: openUrl,
     ascend_job_key: ascendJobKey,
-    upsert_job: upsert
+    upsert_job: upsertOutput,
+    working_ascend_job_key: workingKey,
+    upsert_working_job: upsertWorking
   };
 }
 
