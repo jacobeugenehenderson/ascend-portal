@@ -630,7 +630,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       title.textContent = wfName;
 
       const meta = document.createElement("div");
-      meta.className = "ascend-job-card-subtitle";
+      meta.className = "ascend-job-card-meta";
       meta.textContent = "WORKING FILE";
       textStack.appendChild(title);
       textStack.appendChild(meta);
