@@ -131,6 +131,19 @@
   </div>
 </section>
 
+<!-- Mandatory filename capture (under preview, above flippers) -->
+<section id="codedeskFilenameSection"
+  class="stage-stick w-full max-w-[560px] mx-auto justify-self-center">
+  <label class="block text-sm">
+    <span class="sr-only">Filename</span>
+    <input id="codedeskFilename"
+      type="text"
+      maxlength="60"
+      class="w-full rounded-md border px-3 py-2"
+      placeholder="Filename (required to Finish)">
+  </label>
+</section>
+
 <!-- RIGHT: Stepper (controls) -->
 <section id="stepper"
   class="stage-stick space-y-4 w-full max-w-[560px] mx-auto justify-self-center">
@@ -404,7 +417,7 @@
         <span class="text-sm">SVG</span>
       </label>
 
-      <button id="exportBtn" type="button"
+      <button id="exportBtn" type="button" data-action="finish"
               class="ml-auto px-4 py-2 rounded-lg bg-black text-white text-sm">
         ✨
       </button>

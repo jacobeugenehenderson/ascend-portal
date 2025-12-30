@@ -809,6 +809,9 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 0;
+
+  /* IMPORTANT: clip zebra/hover row fills to the drawer radius */
+  overflow: hidden;
   overflow-y: auto;
 
   /* crisp perimeter so the drawer reads as a container */

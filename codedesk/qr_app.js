@@ -1684,6 +1684,38 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   // initial relabel pass
   document.querySelectorAll('button').forEach(b => { if (isFinishButton(b)) relabel(b); });
 
+  function _codedeskSyncFinishEnabled(){
+    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+    const ok = !!fname;
+
+    document.querySelectorAll('button').forEach(b => {
+      if (!isFinishButton(b)) return;
+
+      // never stomp busy/done states
+      if (b.classList.contains('is-busy')) return;
+      if (b.classList.contains('is-setup-done')) return;
+
+      if (!ok) {
+        try { b.disabled = true; } catch(e){}
+        try { b.textContent = 'Filename required to finish'; } catch(e){}
+      } else {
+        try { b.disabled = false; } catch(e){}
+        relabel(b);
+      }
+    });
+  }
+
+  // Keep finish enabled state in sync with filename typing
+  document.addEventListener('input', (e) => {
+    if (e && e.target && e.target.id === 'codedeskFilename') _codedeskSyncFinishEnabled();
+  }, true);
+  document.addEventListener('change', (e) => {
+    if (e && e.target && e.target.id === 'codedeskFilename') _codedeskSyncFinishEnabled();
+  }, true);
+
+  // run once at boot (after relabel pass)
+  _codedeskSyncFinishEnabled();
+
   // capture click for finish/setup
   document.addEventListener('click', async (e) => {
   const btn = e.target && e.target.closest && e.target.closest('button');
@@ -1692,7 +1724,9 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   // Mandatory filename gate (required to enable Finish)
   const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
   if (!fname) {
-    try { btn && (btn.disabled = true); } catch(e){}
+    try { e && e.preventDefault && e.preventDefault(); } catch(err){}
+    try { e && e.stopPropagation && e.stopPropagation(); } catch(err){}
+    _codedeskSyncFinishEnabled();
     return;
   }
 
@@ -3687,8 +3721,9 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
   const wantPng = document.getElementById('wantPng')?.checked;
   const wantSvg = document.getElementById('wantSvg')?.checked;
 
-  // get caption or default
-  const caption = document.getElementById('campaign')?.value?.trim() || 'okQRal';
+  // get filename (required identity)
+  const caption =
+    document.getElementById('codedeskFilename')?.value?.trim();
 
   // sanitize filename
   const safeName = caption
