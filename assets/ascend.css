@@ -872,13 +872,16 @@ textarea:focus {
   top: 50%;
   transform: translateY(-50%);
 
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.25);
-  color: rgba(255, 255, 255, 0.82);
+  border: none;
+  background: transparent;
+  color: var(--ascend-color-text-muted);
+  opacity: 0.70;
 
   width: 28px;
   height: 28px;
-  border-radius: 999px;
+  padding: 0;
+
+  border-radius: 10px;
 
   display: inline-flex;
   align-items: center;
@@ -888,12 +891,15 @@ textarea:focus {
   font-size: 18px;
   line-height: 1;
 
-  transition: background-color var(--ascend-transition-fast), border-color var(--ascend-transition-fast);
+  transition: background-color var(--ascend-transition-fast),
+    color var(--ascend-transition-fast),
+    opacity var(--ascend-transition-fast);
 }
 
 .ascend-job-card-cancel:hover {
-  background: rgba(255, 255, 255, 0.10);
-  border-color: rgba(255, 255, 255, 0.26);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--ascend-color-text-main);
+  opacity: 0.95;
 }
 
 /* =========================================================
@@ -1162,18 +1168,32 @@ textarea:focus {
   border: none;
   background: transparent;
   color: var(--ascend-color-text-muted);
-  font-size: 0.8rem;
-  padding: 0.2rem 0.55rem;
+  opacity: 0.70;
+
+  width: 28px;
+  height: 28px;
+  padding: 0;
+
   border-radius: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   align-self: center;
   cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+
   transition: background-color var(--ascend-transition-fast),
-    color var(--ascend-transition-fast);
+    color var(--ascend-transition-fast),
+    opacity var(--ascend-transition-fast);
 }
 
 .ascend-job-card-delete:hover {
   background-color: rgba(255, 255, 255, 0.08);
   color: var(--ascend-color-text-main);
+  opacity: 0.95;
 }
 
 /* Empty-state text inside a lane */
