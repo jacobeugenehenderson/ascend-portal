@@ -1083,14 +1083,31 @@ textarea:focus {
   );
 }
 
-/* CodeDesk subheading: match FileRoom’s lighter, smaller, airier meta */
-.ascend-codedesk-template .ascend-job-card-meta,
-.ascend-codedesk-working .ascend-job-card-meta {
+/* CodeDesk template subheading: match FileRoom’s lighter, smaller, airier meta */
+.ascend-codedesk-template .ascend-job-card-meta {
   margin-top: 0.22rem;
   font-size: 0.62rem;
   color: color-mix(in srgb, var(--ascend-color-text-muted) 52%, transparent);
   text-transform: uppercase;
   letter-spacing: 0.22em;
+  font-weight: var(--ascend-weight-regular);
+}
+
+/* CodeDesk lane typography MUST match the other portal slots (FileRoom/ArtStart/Copydesk) */
+#ascend-codedesk-list .ascend-job-card-title {
+  font-weight: var(--ascend-weight-bold);
+  letter-spacing: 0.01em;
+  font-size: 0.90rem;
+  line-height: 1.15;
+  color: color-mix(in srgb, var(--ascend-color-text-main) 94%, white 6%);
+}
+
+#ascend-codedesk-list .ascend-job-card-meta {
+  margin-top: 0.18rem;
+  font-size: 0.66rem;
+  color: color-mix(in srgb, var(--ascend-color-text-muted) 65%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
   font-weight: var(--ascend-weight-regular);
 }
 
