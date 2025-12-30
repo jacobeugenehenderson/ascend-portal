@@ -1540,6 +1540,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     window.codedeskSaveWorkingFile(name, { id: activeId });
   }
 
+  // IMPORTANT: after Finish, lock the URL to this working file.
+  // Otherwise a refresh on mode=new/template will clear the active id during bootstrap.
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('working_file_id', String(activeId || ''));
+    u.searchParams.delete('mode');
+    u.searchParams.delete('template_id');
+    u.searchParams.delete('templateId');
+    u.searchParams.delete('template');
+    history.replaceState(null, '', u.toString());
+  } catch(e){}
+
   try { typeof window.refreshHopper === 'function' && window.refreshHopper(); } catch(e){}
 
   return activeId;
@@ -1599,6 +1611,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   btn.disabled = false;
 
   relabel(btn);
+
+  // Clean finish moment: CodeDesk was opened from Ascend (noopener),
+  // so we close this tab/window and the user lands back in Ascend.
+  try { window.close(); } catch(e){}
 }, true);
 })();
 
