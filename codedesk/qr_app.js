@@ -668,7 +668,7 @@ try {
 
       // Canonical rule: non-working entry must not inherit an old active working file.
       if (mode === 'template' || mode === 'new') {
-        try { localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
+        try { localStorage.removeItem('codedesk_active_working_file_v1'); } catch(e){}
         try { window.__CODEDESK_CURRENT_WF_ID__ = ''; } catch(e){}
 }
 
@@ -1493,7 +1493,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
     })
   });
 
-  const j = await res.json();
+    const j = await res.json();
   if (!j || !j.ok) return false;
 
   const data = j.data || {};
@@ -1501,10 +1501,41 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const openUrl = String(data.open_url || '').trim();
   const jobKey  = String(data.ascend_job_key || '').trim();
 
-  // Persist any updated metadata
+  // Persist any updated metadata (e.g., file name changes)
   rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
   rec.updatedAt = Date.now();
   window.codedeskSaveWorkingFile(rec);
+
+  // ALSO: upsert a "working file" row so Ascend can show it in the hopper.
+  try {
+    const entry = window.CODEDESK_ENTRY || {};
+    const ownerEmail = String(entry.user_email || '').trim();
+    const wfKey = 'CODEDESK_WORKING:' + workingId;
+    const baseUrl = String(window.CODEDESK_FILEROOM_API_BASE || '').trim();
+    const codedeskUrl = window.location.origin + window.location.pathname + '?working_file_id=' + encodeURIComponent(workingId);
+
+    if (baseUrl) {
+      const u =
+        baseUrl +
+        '?action=upsertJob' +
+        '&ascend_job_key=' + encodeURIComponent(wfKey) +
+        '&app=codedesk' +
+        '&source_id=' + encodeURIComponent(workingId) +
+        '&kind=working' +
+        '&asset_type=qr' +
+        '&title=' + encodeURIComponent(rec.title || ('CODEDESK — Working File ' + workingId)) +
+        '&subtitle=' + encodeURIComponent(rec.subtitle || 'CODEDESK — WORKING FILE') +
+        '&status=' + encodeURIComponent('open') +
+        '&open_url=' + encodeURIComponent(codedeskUrl) +
+        '&owner_email=' + encodeURIComponent(ownerEmail) +
+        '&template_id=' + encodeURIComponent(rec.template_id || '') +
+        '&state_json=' + encodeURIComponent(JSON.stringify(rec.state || {})) +
+        '&drive_folder_id=' + encodeURIComponent(String(entry.folder_id || '')) +
+        '&drive_png_file_id=' + encodeURIComponent('') +
+        '&drive_png_open_url=' + encodeURIComponent('');
+      fetch(u, { method: 'GET', credentials: 'omit' }).catch(function () {});
+    }
+  } catch (e) {}
 
   return true;
 };
