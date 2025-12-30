@@ -650,6 +650,43 @@ select{
     background-color var(--motion-duration-1) var(--motion-ease);
 }
 
+/* =========================================================
+   CodeDesk — Mandatory filename capture (under preview)
+   ========================================================= */
+#codedeskFilenameSection{
+  display:flex;
+  justify-content:center;
+  width:100%;
+  margin-top: 10px;
+}
+
+#codedeskFilenameSection > label{
+  width: min(360px, calc(100% - 24px));
+}
+
+#codedeskFilename{
+  width:100%;
+  background: var(--ui-surface-variant);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+  height: var(--density-control-h);
+  padding: 0 12px;
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset;
+}
+
+#codedeskFilename::placeholder{
+  color: color-mix(in oklab, var(--md-sys-color-on-surface) 45%, transparent);
+}
+
+#codedeskFilename:focus{
+  outline: none;
+  border-color: color-mix(in oklab, var(--ascend-app-accent, var(--ui-focus-ring)) 55%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--ascend-app-accent, var(--ui-focus-ring)) 55%, transparent) inset,
+    0 0 0 3px color-mix(in oklab, var(--ascend-app-accent, var(--ui-focus-ring)) 25%, transparent);
+}
+
 input:hover,
 textarea:hover,
 select:hover{

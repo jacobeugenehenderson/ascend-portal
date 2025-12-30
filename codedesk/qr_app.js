@@ -1674,11 +1674,32 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       if (b.classList.contains('is-busy')) return;
       if (b.classList.contains('is-setup-done')) return;
 
+      // preserve original label (do NOT overwrite icon buttons)
+      try {
+        if (b.dataset && typeof b.dataset._label !== 'string') {
+          b.dataset._label = b.textContent || '';
+        }
+      } catch(e){}
+
       if (!ok) {
         b.disabled = true;
-        b.textContent = 'Filename required to finish';
+        try { b.setAttribute('title', 'Filename required to finish'); } catch(e){}
+
+        // Only overwrite text labels (never icon-only buttons like ✨)
+        try {
+          const t = (b.textContent || '').trim();
+          if (t.length > 2) b.textContent = 'Filename required to finish';
+        } catch(e){}
       } else {
         b.disabled = false;
+        try { b.removeAttribute('title'); } catch(e){}
+
+        // restore label if we previously preserved it
+        try {
+          if (b.dataset && typeof b.dataset._label === 'string') b.textContent = b.dataset._label;
+          if (b.dataset) delete b.dataset._label;
+        } catch(e){}
+
         relabel(b);
       }
     });
