@@ -1213,7 +1213,13 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(a, b){
     if (!('state' in a)) {
       try { a.state = window.okqralExportState(); } catch(e){}
     }
-    return (_upsertWorkingFileRecord(a) || {}).id || '';
+
+    const out = _upsertWorkingFileRecord(a);
+
+    // Notify Ascend (optional): keep orange working file + FileRoom PNG linked
+    try { codedeskNotifyAscendWorkingSave(out); } catch(e){}
+
+    return (out || {}).id || '';
   }
 
   // Name + id form: codedeskSaveWorkingFile(name, {id})
