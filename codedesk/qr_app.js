@@ -1651,19 +1651,15 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   // Mandatory filename capture: keep it centered/clickable; disable Finish until non-empty
   function ensureFilenameUi(){
-    const wrap = document.getElementById('codedeskFilenameWrap');
+    const wrap = document.getElementById('codedeskFilenameSection');
     const inp  = document.getElementById('codedeskFilename');
     if (!wrap || !inp) return;
 
     // Do NOT touch the QR preview/mount; only stabilize this UI strip.
-    wrap.style.position = 'relative';
-    wrap.style.zIndex = '60';
-    wrap.style.width = '100%';
-    wrap.style.maxWidth = '560px';
-    wrap.style.margin = '12px auto 0';
     wrap.style.pointerEvents = 'auto';
-
     inp.style.pointerEvents = 'auto';
+    inp.disabled = false;
+    inp.removeAttribute('disabled');
   }
 
   function syncFinishEnabled(){
@@ -1784,7 +1780,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   btn.disabled = false;
 
     try {
-      const w = document.getElementById('codedeskFilenameWrap');
+      const w = document.getElementById('codedeskFilenameSection');
       if (w) w.style.display = 'none';
     } catch(e){}
 
