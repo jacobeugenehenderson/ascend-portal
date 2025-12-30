@@ -1705,11 +1705,6 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     });
   }
 
-  syncFinishEnabled();
-
-  document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
-  document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
-
   function relabel(btn){
     try {
       const txt = (btn.textContent || '').trim().toLowerCase();
@@ -1739,7 +1734,17 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
   document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
 
-    // capture click for finish/setup
+  // Accept mechanism: Enter commits the filename gate and moves focus off the field.
+  document.getElementById('codedeskFilename')?.addEventListener('keydown', function(e){
+    if (!e) return;
+    if (e.key !== 'Enter') return;
+    try { e.preventDefault(); } catch(_e){}
+    try { e.stopPropagation(); } catch(_e){}
+    try { syncFinishEnabled(); } catch(_e){}
+    try { e.target && e.target.blur && e.target.blur(); } catch(_e){}
+  }, true);
+
+  // capture click for finish/setup
   document.addEventListener('click', async (e) => {
   const btn = e.target && e.target.closest && e.target.closest('button');
   if (!isFinishButton(btn)) return;
