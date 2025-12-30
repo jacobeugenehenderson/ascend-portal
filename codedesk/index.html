@@ -113,6 +113,18 @@
       <div id="qrPreview" class="w-full h-full overflow-visible flex flex-col relative">
         <!-- live SVG mounts here -->
         <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
+
+        <!-- Mandatory filename capture (CodeDesk) -->
+        <div id="codedeskFilenameWrap" class="w-full px-4 pt-3">
+          <label class="block text-sm">
+            <span class="sr-only">Filename</span>
+            <input id="codedeskFilename"
+              type="text"
+              maxlength="60"
+              class="w-full rounded-md border px-3 py-2"
+              placeholder="Filename (required to Finish)"/>
+          </label>
+        </div>
       </div>
 
     </div>
