@@ -1052,14 +1052,14 @@ textarea:focus {
 }
 
 /* Zebra striping (rows are siblings inside the lane list) */
-.ascend-job-card:nth-child(odd) {
+.ascend-job-card:nth-child(odd) .ascend-job-card-main {
   background: rgba(255, 255, 255, 0.03);
 }
-.ascend-job-card:nth-child(even) {
+.ascend-job-card:nth-child(even) .ascend-job-card-main {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.ascend-job-card:hover {
+.ascend-job-card:hover .ascend-job-card-main {
   background: rgba(79, 209, 197, 0.10);
 }
 
