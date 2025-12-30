@@ -105,32 +105,34 @@
          items-start gap-10">
 
 <!-- LEFT: Preview Stage -->
-<section class="stage-stick justify-self-center w-full flex justify-center">
-  <!-- Own the iPhone aspect ratio here -->
-<div class="preview-stage relative mx-auto overflow-visible">
-    <div class="absolute inset-0 p-0" style="overflow:visible">
-      <!-- Single card: stroke/fill live here; SVG stays transparent -->
-      <div id="qrPreview" class="w-full h-full overflow-visible flex flex-col relative">
-        <!-- live SVG mounts here -->
-        <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
+<div class="stage-stick w-full flex flex-col items-center gap-3 justify-self-center">
+  <section class="w-full flex justify-center">
+    <!-- Own the iPhone aspect ratio here -->
+    <div class="preview-stage relative mx-auto overflow-visible">
+      <div class="absolute inset-0 p-0" style="overflow:visible">
+        <!-- Single card: stroke/fill live here; SVG stays transparent -->
+        <div id="qrPreview" class="w-full h-full overflow-visible flex flex-col relative">
+          <!-- live SVG mounts here -->
+          <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
+        </div>
+
       </div>
-
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Mandatory filename capture (under preview, above flippers) -->
-<section id="codedeskFilenameSection"
-  class="stage-stick w-full max-w-[560px] mx-auto justify-self-center">
-  <label class="block text-sm">
-    <span class="sr-only">Filename</span>
-    <input id="codedeskFilename"
-      type="text"
-      maxlength="60"
-      class="w-full rounded-md border px-3 py-2"
-      placeholder="Filename (required to Finish)">
-  </label>
-</section>
+  <!-- Mandatory filename capture (under preview, above flippers) -->
+  <section id="codedeskFilenameSection"
+    class="w-full max-w-[560px] mx-auto">
+    <label class="block text-sm">
+      <span class="sr-only">Filename</span>
+      <input id="codedeskFilename"
+        type="text"
+        maxlength="60"
+        class="w-full rounded-md border px-3 py-2"
+        placeholder="Filename (required to Finish)">
+    </label>
+  </section>
+</div>
 
 <!-- RIGHT: Stepper (controls) -->
 <section id="stepper"

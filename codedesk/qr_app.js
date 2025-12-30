@@ -1651,18 +1651,13 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   // Mandatory filename capture: keep it centered/clickable; disable Finish until non-empty
   function ensureFilenameUi(){
-    const wrap = document.getElementById('codedeskFilenameSection') || document.getElementById('codedeskFilenameWrap');
-    const inp  = document.getElementById('codedeskFilename');
-    if (!wrap || !inp) return;
+    const inp = document.getElementById('codedeskFilename');
+    if (!inp) return;
 
-    // Do NOT touch the QR preview/mount; only stabilize this UI strip.
-    wrap.style.position = 'relative';
-    wrap.style.zIndex = '60';
-    wrap.style.pointerEvents = 'auto';
-
-    inp.style.pointerEvents = 'auto';
+    // Filename input must always be editable if it exists
     inp.disabled = false;
     inp.removeAttribute('disabled');
+    inp.style.pointerEvents = 'auto';
   }
 
   function syncFinishEnabled(){
@@ -1689,6 +1684,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   }
 
   syncFinishEnabled();
+
+  // Ensure filename input is usable (some global gates / prior flows may disable controls)
+  try { const _f = document.getElementById('codedeskFilename'); if (_f){ _f.disabled = false; _f.removeAttribute('disabled'); } } catch(e){}
+
   document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
   document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
 
@@ -1749,6 +1748,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   // live sync
   syncFinishEnabled();
+
+  // Ensure filename input is usable (some global gates / prior flows may disable controls)
+  try { const _f = document.getElementById('codedeskFilename'); if (_f){ _f.disabled = false; _f.removeAttribute('disabled'); } } catch(e){}
+
   document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
   document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
 
@@ -1760,13 +1763,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   // Mandatory filename gate
   const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
   if (!fname) {
+    // Ensure the filename input is editable (some flows may disable it)
+    try {
+      const f = document.getElementById('codedeskFilename');
+      if (f) { f.disabled = false; f.removeAttribute('disabled'); f.style.pointerEvents = 'auto'; }
+    } catch(e){}
+
     try { document.getElementById('codedeskFilename')?.focus(); } catch(e){}
     try { e && e.preventDefault && e.preventDefault(); } catch(e){}
     try { e && e.stopPropagation && e.stopPropagation(); } catch(e){}
     syncFinishEnabled();
     return;
   }
-
   const prevText = (btn.textContent || '').trim();
   btn.disabled = true;
   btn.classList.add('is-busy');
