@@ -1071,6 +1071,11 @@ textarea:focus {
   box-shadow: none;
 }
 
+.ascend-codedesk-template {
+  /* Make template rows read as discrete “slots” (inset + rounded) */
+  margin: 0.45rem 0.55rem;
+}
+
 .ascend-codedesk-template .ascend-job-card-main {
   background:
     linear-gradient(
@@ -1079,6 +1084,12 @@ textarea:focus {
       rgba(78, 134, 223, 0.04) 70%,
       transparent
     );
+
+  /* Slot geometry: not full-width, rounded exposed corners */
+  border-radius: 10px;
+
+  /* Templates should not carry the drawer divider rule */
+  border-bottom: none;
 }
 
 .ascend-codedesk-template .ascend-job-card-title {
