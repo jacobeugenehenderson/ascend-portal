@@ -1611,15 +1611,16 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   let activeId = _getActiveWorkingFileId();
 
   // Name source (canonical CodeDesk UI): Filename (required)
-  // Fallbacks kept for older/alternate shells.
   const fname =
     String(document.getElementById('codedeskFilename')?.value || '').trim();
 
-  const head =
-    String(document.getElementById('headline')?.value || '').trim() ||
-    String(document.getElementById('campaign')?.value || '').trim();
+  // HARD GATE: no filename, no Finish.
+  if (!fname) {
+    try { document.getElementById('codedeskFilename')?.focus(); } catch(e){}
+    return '';
+  }
 
-  const name = fname || head || 'Working file';
+  const name = fname;
 
   // Finish must be allowed to establish the working file exactly once.
   if (!activeId) {
@@ -1685,9 +1686,6 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   syncFinishEnabled();
 
-  // Ensure filename input is usable (some global gates / prior flows may disable controls)
-  try { const _f = document.getElementById('codedeskFilename'); if (_f){ _f.disabled = false; _f.removeAttribute('disabled'); } } catch(e){}
-
   document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
   document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
 
@@ -1711,46 +1709,11 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     return false;
   }
 
-  // Mandatory filename gate: keep filename input enabled; disable Finish until non-empty
-  function ensureFilenameUi(){
-    const inp = document.getElementById('codedeskFilename');
-    if (!inp) return;
-    try { inp.disabled = false; } catch(e){}
-    try { inp.removeAttribute('disabled'); } catch(e){}
-    try { inp.style.pointerEvents = 'auto'; } catch(e){}
-  }
-
-  function syncFinishEnabled(){
-    ensureFilenameUi();
-
-    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
-    const ok = !!fname;
-
-    document.querySelectorAll('button').forEach(b => {
-      if (!isFinishButton(b)) return;
-
-      // don't stomp busy/done states
-      if (b.classList.contains('is-busy')) return;
-      if (b.classList.contains('is-setup-done')) return;
-
-      if (!ok) {
-        b.disabled = true;
-        b.textContent = 'Filename required to finish';
-      } else {
-        b.disabled = false;
-        relabel(b);
-      }
-    });
-  }
-
   // initial relabel pass
   document.querySelectorAll('button').forEach(b => { if (isFinishButton(b)) relabel(b); });
 
   // live sync
   syncFinishEnabled();
-
-  // Ensure filename input is usable (some global gates / prior flows may disable controls)
-  try { const _f = document.getElementById('codedeskFilename'); if (_f){ _f.disabled = false; _f.removeAttribute('disabled'); } } catch(e){}
 
   document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
   document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
@@ -3747,7 +3710,7 @@ async function reportExport() {
 // =====================================================
 // CodeDesk → FileRoom pairing config
 // =====================================================
-window.CODEDESK_FILEROOM_API_BASE = 'https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec';
+window.CODEDESK_FILEROOM_API_BASE = window.CODEDESK_FILEROOM_API_BASE || '';
 window.CODEDESK_FILEROOM_FOLDER_ID = window.CODEDESK_FILEROOM_FOLDER_ID || '1x882jC2h_2YJsIXQrV1K56nqKvCPzJ4N';
 
 // Dirty tracking for navigation safety + autosync
@@ -3773,13 +3736,25 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
   const caption =
     document.getElementById('codedeskFilename')?.value?.trim();
 
+  // HARD GATE: no filename, no Finish.
+  if (!caption) {
+    try { document.getElementById('codedeskFilename')?.focus(); } catch(e){}
+    if (btn) {
+      btn.disabled = false;
+      if (btn.dataset && typeof btn.dataset._label === 'string') btn.textContent = btn.dataset._label;
+      if (btn.dataset) delete btn.dataset._label;
+    }
+    if (finishOverlay) finishOverlay.style.display = 'none';
+    return;
+  }
+
   // sanitize filename
   const safeName = caption
     .replace(/[^\w\d-_]+/g, '_')   // replace spaces/punct with _
     .replace(/^_+|_+$/g, '')       // trim leading/trailing _
     .substring(0, 40);             // max 40 chars
 
-  const base = safeName || 'QR';
+  const base = safeName;
 
   // log to Sheets (non-blocking)
   reportExport().catch(() => { /* silent */ });
