@@ -630,7 +630,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       title.textContent = wfName;
 
       const meta = document.createElement("div");
-      meta.className = "ascend-job-card-meta";
+      meta.className = "ascend-job-card-context";
       meta.textContent = "WORKING FILE";
       textStack.appendChild(title);
       textStack.appendChild(meta);
@@ -653,9 +653,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
       const xBtn = document.createElement("button");
       xBtn.type = "button";
-      xBtn.className = "ascend-job-card-cancel";
+      xBtn.className = "ascend-job-card-delete";
       xBtn.textContent = "×";
-      xBtn.setAttribute("aria-label", "Cancel working file");
+      xBtn.setAttribute("aria-label", "Dismiss working file");
       xBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
