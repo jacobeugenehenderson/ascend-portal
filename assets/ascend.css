@@ -1083,16 +1083,6 @@ textarea:focus {
   );
 }
 
-/* CodeDesk template subheading: match FileRoom’s lighter, smaller, airier meta */
-.ascend-codedesk-template .ascend-job-card-meta {
-  margin-top: 0.22rem;
-  font-size: 0.62rem;
-  color: color-mix(in srgb, var(--ascend-color-text-muted) 52%, transparent);
-  text-transform: uppercase;
-  letter-spacing: 0.22em;
-  font-weight: var(--ascend-weight-regular);
-}
-
 /* CodeDesk lane typography MUST match the other portal slots (FileRoom/ArtStart/Copydesk) */
 #ascend-codedesk-list .ascend-job-card-title {
   font-weight: var(--ascend-weight-bold);
