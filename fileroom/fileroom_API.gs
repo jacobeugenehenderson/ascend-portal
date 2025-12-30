@@ -27,6 +27,17 @@ const DASHBOARD_SHEET_NAME = 'DASHBOARD';
 // Bump to bust caches if you want.
 const FILEROOM_API_VERSION = 'fileroom_v0_2025-12-19';
 
+function authorizeDrive_() {
+  // 1) proves Drive scope + authorization prompt works
+  DriveApp.getRootFolder().getName();
+
+  // 2) validates the *exact* folder you plan to write into
+  var folderId = '1x882jC2h_2YJsIXQrV1K56nqKvCPzJ4N';
+  var name = DriveApp.getFolderById(folderId).getName();
+
+  Logger.log('OK folder: ' + name);
+}
+
 /** =========================
  * ENTRYPOINT
  * ======================= */
