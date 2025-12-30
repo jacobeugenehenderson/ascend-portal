@@ -30,6 +30,9 @@
   // Relative so it works on jacobhenderson.studio/ascend/ (and any mirrored host).
   const CODEDESK_MANIFEST_URL = "codedesk/qr_templates.json";
 
+  // CodeDesk working-file registry key (shared contract with CodeDesk)
+  const CODEDESK_STORE_KEY = "codedesk_working_files_v1";
+
   // FileRoom (output / delivery layer)
   const FILEROOM_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/fileroom/frontend/index.html";
@@ -335,6 +338,16 @@
     requestCopydeskJobs();
     requestCodeDeskTemplates(); // templates are static; still refresh on login
     requestFileRoomOutput();
+
+    // When user returns from a CodeDesk tab, refresh working + output lanes immediately.
+    // Guard so we don't add multiple focus listeners across logins.
+    if (!window.__ASCEND_FOCUS_REFRESH__) {
+      window.__ASCEND_FOCUS_REFRESH__ = true;
+      window.addEventListener("focus", () => {
+        try { requestCodeDeskTemplates(); } catch (e) {}
+        try { requestFileRoomOutput(); } catch (e2) {}
+      });
+    }
   }
 
   function startPollingForLogin() {
@@ -543,8 +556,6 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
     lane.innerHTML = "";
 
-    const CODEDESK_STORE_KEY = "codedesk_working_files_v1";
-
     function listWorking_() {
       try {
         const list = JSON.parse(localStorage.getItem(CODEDESK_STORE_KEY) || "[]");
@@ -567,7 +578,17 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       } catch (e) {}
     }
 
-    const working = listWorking_();
+    // Prefer API-spine working items (FileRoom registry projection), fall back to localStorage.
+    let working = [];
+    try {
+      if (Array.isArray(window.__ASCEND_CODEDESK_WORKING_ITEMS__)) {
+        working = window.__ASCEND_CODEDESK_WORKING_ITEMS__;
+      } else {
+        working = listWorking_();
+      }
+    } catch (e) {
+      working = listWorking_();
+    }
 
     const hasAnything = (working && working.length) || (items && items.length);
     if (!hasAnything) {
@@ -711,6 +732,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         if (Array.isArray(manifest)) arr = manifest;
         else if (manifest && Array.isArray(manifest.templates)) arr = manifest.templates;
 
+        window.__ASCEND_CODEDESK_TEMPLATES__ = arr;
         renderCodeDeskHopper(arr);
       })
       .catch((e) => {
@@ -1457,7 +1479,36 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
           (payload && payload.jobs) ||
           (payload && payload.data && payload.data.jobs) ||
           [];
-        renderFileRoomHopper(items);
+
+        // API spine: CodeDesk working files live in the FileRoom registry.
+        try {
+          window.__ASCEND_CODEDESK_WORKING_ITEMS__ = (items || []).filter((j) => {
+            const app = String((j && (j.App || j.app)) || "").toLowerCase();
+            const kind = String((j && (j.Kind || j.kind)) || "").toLowerCase();
+            return app === "codedesk" && kind === "working";
+          });
+        } catch (e) {
+          window.__ASCEND_CODEDESK_WORKING_ITEMS__ = [];
+        }
+
+        // Back-compat: if Kind isn't present, keep showing everything in FileRoom.
+        let fileRoomItems = items || [];
+        try {
+          const anyKind = (items || []).some((j) => String((j && (j.Kind || j.kind)) || "").trim());
+          if (anyKind) {
+            fileRoomItems = (items || []).filter((j) => {
+              const kind = String((j && (j.Kind || j.kind)) || "").toLowerCase();
+              return kind === "output";
+            });
+          }
+        } catch (e) {}
+
+        renderFileRoomHopper(fileRoomItems);
+
+        // Repaint CodeDesk lane using the latest cached templates + the working items we just fetched.
+        try {
+          renderCodeDeskHopper(window.__ASCEND_CODEDESK_TEMPLATES__ || []);
+        } catch (e) {}
       } catch (e) {
         console.warn("Ascend: error in FileRoom output callback", e);
       }

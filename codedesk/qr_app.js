@@ -1416,10 +1416,58 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const svgNode = (typeof getCurrentSvgNode === 'function') ? getCurrentSvgNode() : null;
   if (!svgNode) return false;
 
-  const caption = String(document.getElementById('campaign')?.value || '').trim() || 'codedesk';
+  // --- Canonical state blob (includes all styling knobs) ---
+  let stateObj = null;
+  try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
+  const stateJson = stateObj ? JSON.stringify(stateObj) : '';
+
+  // --- Canonical working open URL (Ascend uses this for the orange working lane) ---
+  let workingOpenUrl = '';
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('mode', 'working');
+    u.searchParams.set('working_file_id', workingId);
+    u.searchParams.set('workingFileId', workingId); // legacy alias
+    workingOpenUrl = u.toString();
+  } catch (e) {}
+
+  const caption = String(document.getElementById('campaign')?.value || '').trim() || String(rec.name || '').trim() || 'codedesk';
   const base = caption.replace(/[^\w\d-_]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40) || 'codedesk';
   const fileName = `${base}.png`;
 
+  const ownerEmail = (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '';
+  const templateId = (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '';
+
+  // 1) Upsert WORKING row (persistent editor state)
+  try {
+    const wr = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+      method: 'POST',
+      credentials: 'omit',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'upsertJob',
+        ascend_job_key: 'CODEDESK_WORKING:' + workingId,
+        app: 'codedesk',
+        source_id: workingId,
+        title: String(rec.name || base || 'CODEDESK QR').trim(),
+        subtitle: 'CODEDESK — WORKING',
+        status: 'open',
+        open_url: workingOpenUrl,
+        owner_email: ownerEmail,
+        kind: 'working',
+        asset_type: 'qr',
+        template_id: templateId,
+        state_json: stateJson
+      })
+    });
+    const wj = await wr.json();
+    if (!wj || !wj.ok) return false;
+  } catch (e) {
+    return false;
+  }
+
+  // 2) Upsert OUTPUT row + overwrite-in-place PNG
   const pngDataUrl = await codedeskPngDataUrlFromCurrentSvg(3);
 
   const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
@@ -1431,11 +1479,17 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
       action: 'upsertQrPngAsset',
       folder_id: folderId,
       png_data_url: pngDataUrl,
+      file_name: fileName,
       source_id: workingId,
+      ascend_job_key: 'CODEDESK_PNG:' + workingId,
       title: base || 'CODEDESK QR',
       subtitle: 'CODEDESK — FLATTENED (PNG)',
       status: 'delivered',
-      owner_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : ''
+      owner_email: ownerEmail,
+      kind: 'output',
+      asset_type: 'qr',
+      template_id: templateId,
+      state_json: stateJson
     })
   });
 
@@ -1447,7 +1501,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const openUrl = String(data.open_url || '').trim();
   const jobKey  = String(data.ascend_job_key || '').trim();
 
-  // Persist any updated metadata (e.g., file name changes)
+  // Persist any updated metadata
   rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
   rec.updatedAt = Date.now();
   window.codedeskSaveWorkingFile(rec);
