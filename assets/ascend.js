@@ -674,7 +674,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       const titleText = (tpl && (tpl.name || tpl.title || tpl.label || tpl.Name)) || "QR Template";
 
       const card = document.createElement("div");
-      card.className = "ascend-job-card";
+      card.className = "ascend-job-card ascend-codedesk-template";
       card.dataset.codedesk = "template";
       if (templateId) card.dataset.templateId = String(templateId);
 
@@ -694,7 +694,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       title.textContent = titleText;
 
       const meta = document.createElement("div");
-      meta.className = "ascend-job-card-subtitle";
+      meta.className = "ascend-job-card-meta";
       meta.textContent = "TEMPLATE";
       textStack.appendChild(title);
       textStack.appendChild(meta);
