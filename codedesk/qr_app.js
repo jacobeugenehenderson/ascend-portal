@@ -1649,11 +1649,43 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   if (window.__CODEDESK_FINISH_SETUP_WIRED__) return;
   window.__CODEDESK_FINISH_SETUP_WIRED__ = true;
 
-  // Mandatory filename capture: disables all Finish buttons until non-empty
+  // Mandatory filename capture: keep it centered/clickable; disable Finish until non-empty
+  function ensureFilenameUi(){
+    const wrap = document.getElementById('codedeskFilenameWrap');
+    const inp  = document.getElementById('codedeskFilename');
+    if (!wrap || !inp) return;
+
+    // Do NOT touch the QR preview/mount; only stabilize this UI strip.
+    wrap.style.position = 'relative';
+    wrap.style.zIndex = '60';
+    wrap.style.width = '100%';
+    wrap.style.maxWidth = '560px';
+    wrap.style.margin = '12px auto 0';
+    wrap.style.pointerEvents = 'auto';
+
+    inp.style.pointerEvents = 'auto';
+  }
+
   function syncFinishEnabled(){
+    ensureFilenameUi();
+
     const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+    const ok = !!fname;
+
     document.querySelectorAll('button').forEach(b => {
-      if (isFinishButton(b)) b.disabled = !fname;
+      if (!isFinishButton(b)) return;
+
+      // don't stomp busy/done
+      if (b.classList.contains('is-busy')) return;
+      if (b.classList.contains('is-setup-done')) return;
+
+      if (!ok) {
+        b.disabled = true;
+        b.textContent = 'Filename required to finish';
+      } else {
+        b.disabled = false;
+        relabel(b);
+      }
     });
   }
 
@@ -1751,8 +1783,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   btn.textContent = 'Setup complete';
   btn.disabled = false;
 
-  // Post-finish UI cleanup: filename input disappears (identity persists via hopper/FileRoom only)
-  try { document.getElementById('codedeskFilenameWrap') && (document.getElementById('codedeskFilenameWrap').style.display = 'none'); } catch(e){}
+    try {
+      const w = document.getElementById('codedeskFilenameWrap');
+      if (w) w.style.display = 'none';
+    } catch(e){}
 
   relabel(btn);
 
