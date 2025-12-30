@@ -1383,7 +1383,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   if (!workingId) return false;
 
   const rec = window.codedeskGetWorkingFileRecord && window.codedeskGetWorkingFileRecord(workingId);
-  if (!rec || !rec.fileroom || !String(rec.fileroom.drive_file_id || '').trim()) return false;
+  if (!rec) return false;
 
   const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
   if (!folderId) return false;
@@ -1514,6 +1514,8 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   } else {
     window.codedeskSaveWorkingFile(name, { id: activeId });
   }
+
+  try { typeof window.refreshHopper === 'function' && window.refreshHopper(); } catch(e){}
 
   return activeId;
 };
