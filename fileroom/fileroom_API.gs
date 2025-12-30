@@ -293,6 +293,14 @@ function upsertQrPngAsset_(p) {
     ascend_job_key: ascendJobKey,
     app: 'codedesk',
     source_id: sourceId,
+    kind: String(p.kind || 'output'),
+    asset_type: String(p.asset_type || 'qr'),
+    template_id: String(p.template_id || ''),
+    state_json: String(p.state_json || ''),
+    drive_folder_id: folderId,
+    drive_png_file_id: fileId,
+    drive_png_open_url: openUrl,
+    destination_url: String(p.destination_url || ''),
     title: jobTitle,
     subtitle: jobSubtitle,
     status: jobStatus,
@@ -328,8 +336,8 @@ function upsertJob_(p) {
 
     const header = getHeaderMap_(sh);
     ensureHeaders_(header, [
-      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','DestinationUrl','OwnerEmail',
-      'Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted'
+      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
+      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl'
     ]);
 
     const app = req_(p, 'app');
@@ -358,7 +366,14 @@ function upsertJob_(p) {
       LastTouchedBy: opt_(p, 'last_touched_by', ''),
       Tags: opt_(p, 'tags', ''),
       ParentAscendJobKey: opt_(p, 'parent_ascend_job_key', ''),
-      IsDeleted: toBoolStr_(opt_(p, 'is_deleted', 'FALSE'))
+      IsDeleted: toBoolStr_(opt_(p, 'is_deleted', 'FALSE')),
+      Kind: opt_(p, 'kind', ''),
+      AssetType: opt_(p, 'asset_type', ''),
+      TemplateId: opt_(p, 'template_id', ''),
+      StateJson: opt_(p, 'state_json', ''),
+      DriveFolderId: opt_(p, 'drive_folder_id', ''),
+      DrivePngFileId: opt_(p, 'drive_png_file_id', ''),
+      DrivePngOpenUrl: opt_(p, 'drive_png_open_url', '')
     };
 
     // Find existing row by AscendJobKey
@@ -416,8 +431,8 @@ function listJobsForUser_(p) {
 
   const jobsHeader = getHeaderMap_(jobsSh);
   ensureHeaders_(jobsHeader, [
-    'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','DestinationUrl','OwnerEmail',
-    'Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted'
+    'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
+    'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl'
   ]);
 
   const dashHeader = getHeaderMap_(dashSh);
@@ -463,6 +478,13 @@ function listJobsForUser_(p) {
       Status: job.Status,
       OpenUrl: job.OpenUrl,
       DestinationUrl: job.DestinationUrl || '',
+      Kind: job.Kind || '',
+      AssetType: job.AssetType || '',
+      TemplateId: job.TemplateId || '',
+      StateJson: job.StateJson || '',
+      DriveFolderId: job.DriveFolderId || '',
+      DrivePngFileId: job.DrivePngFileId || '',
+      DrivePngOpenUrl: job.DrivePngOpenUrl || '',
       UpdatedAt: job.UpdatedAt,
       Pinned: pinned,
       Hidden: hidden,
