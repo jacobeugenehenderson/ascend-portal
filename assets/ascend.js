@@ -719,6 +719,22 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       });
   }
 
+  // ------------------------------------------------------------
+  // Live refresh: update CodeDesk hopper when working files change
+  // ------------------------------------------------------------
+  window.addEventListener("storage", function (e) {
+    if (!e) return;
+
+    // Only react to CodeDesk working file updates
+    if (e.key === CODEDESK_STORE_KEY) {
+      try {
+        requestCodeDeskTemplates();
+      } catch (err) {
+        console.warn("Failed to refresh CodeDesk hopper:", err);
+      }
+    }
+  });
+
   function initPrimaryButtons() {
     
     const artstartBtn = document.getElementById("ascend-artstart-new");
