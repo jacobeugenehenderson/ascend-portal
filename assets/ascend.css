@@ -1049,14 +1049,14 @@ textarea:focus {
 }
 
 /* Zebra striping (rows are siblings inside the lane list) */
-.ascend-job-card:nth-child(odd) .ascend-job-card-main {
+.ascend-job-card:nth-child(odd) {
   background: rgba(255, 255, 255, 0.03);
 }
-.ascend-job-card:nth-child(even) .ascend-job-card-main {
+.ascend-job-card:nth-child(even) {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.ascend-job-card-main:hover {
+.ascend-job-card:hover {
   background: rgba(79, 209, 197, 0.10);
 }
 
@@ -1071,7 +1071,7 @@ textarea:focus {
   box-shadow: none;
 }
 
-.ascend-codedesk-template .ascend-job-card-main {
+.ascend-codedesk-template {
   background:
     linear-gradient(
       90deg,
@@ -1079,6 +1079,10 @@ textarea:focus {
       rgba(78, 134, 223, 0.04) 70%,
       transparent
     );
+}
+
+.ascend-codedesk-template .ascend-job-card-main {
+  background: transparent;
 }
 
 .ascend-codedesk-template .ascend-job-card-title {
