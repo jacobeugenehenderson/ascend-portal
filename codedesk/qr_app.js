@@ -1682,24 +1682,47 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     syncFinishEnabled();
   }
 
-  // live sync
-  codedeskRefreshFilenameGate();
+    // live sync (wire once, even if this script loads before the DOM nodes exist)
+  (function wireFilenameGateOnce(){
+    if (window.__CODEDESK_FILENAME_GATE_WIRED__) return;
 
-  document.getElementById('codedeskFilename')?.addEventListener('input', codedeskRefreshFilenameGate, { passive: true });
-  document.getElementById('codedeskFilename')?.addEventListener('change', codedeskRefreshFilenameGate, { passive: true });
+    function wire(){
+      const inp = document.getElementById('codedeskFilename');
+      if (!inp) return false;
 
-  // Accept mechanism: Enter unlocks the page and opens Finish (since Finish is inside the accordion)
-  document.getElementById('codedeskFilename')?.addEventListener('keydown', function(e){
-    if (!e) return;
-    if (e.key !== 'Enter') return;
-    try { e.preventDefault(); } catch(_e){}
-    try { e.stopPropagation(); } catch(_e){}
+      // initial state
+      codedeskRefreshFilenameGate();
 
-    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
-    if (!fname) return;
+      inp.addEventListener('input', codedeskRefreshFilenameGate, { passive: true });
 
-    codedeskUnlockAndOpenFinish();
-  }, true);
+      // Enter commits name, unlocks the stepper, and opens Finish.
+      inp.addEventListener('keydown', function(e){
+        if (!e) return;
+        if (e.key !== 'Enter') return;
+        try { e.preventDefault(); } catch(_e){}
+        try { e.stopPropagation(); } catch(_e){}
+
+        const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+        if (!fname) return;
+
+        try { syncFinishEnabled(); } catch(_e){}
+        codedeskUnlockAndOpenFinish();
+        try { e.target && e.target.blur && e.target.blur(); } catch(_e){}
+      }, true);
+
+      window.__CODEDESK_FILENAME_GATE_WIRED__ = true;
+      return true;
+    }
+
+    // Try now; if DOM isn't ready yet, try again on DOMContentLoaded.
+    if (!wire()) {
+      document.addEventListener('DOMContentLoaded', function(){
+        try { wire(); } catch(e){}
+      }, { once: true });
+      // Also a tiny async retry as a safety net for late-mounted nodes.
+      setTimeout(function(){ try { wire(); } catch(e){} }, 0);
+    }
+  })();
 
   // Accept mechanism: Enter commits the filename gate and moves focus off the field.
   document.getElementById('codedeskFilename')?.addEventListener('keydown', function(e){
@@ -4037,6 +4060,7 @@ window.addEventListener('resize', applyClickThroughForMobile, { passive: true })
   } else {
     ready();
   }
+
 })();
 
-})(); // end main async bootstrap IIFE (opened near Ln ~489)
+})();
