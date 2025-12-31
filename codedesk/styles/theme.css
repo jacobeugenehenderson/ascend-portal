@@ -1625,3 +1625,11 @@ input[type="range"] {
 #bgLink:active {
   transform: translateY(1px);
 }
+
+/* Anchor filename under QR preview column */
+#codedeskFilenameSection{
+  grid-column: 1;
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
