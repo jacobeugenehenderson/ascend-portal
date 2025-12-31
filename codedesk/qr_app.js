@@ -1790,19 +1790,33 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   }
 
   function codedeskUnlockAndOpenFinish(){
-  // Unlock + immediately reveal Finish (Create working file) so ✨ is reachable
+  // Unlock + reveal Finish (Create working file) so ✨ is reachable
   codedeskSetLocked(false);
 
-  try {
-    const stepper = document.getElementById('stepper');
-    if (!stepper) return;
+  // IMPORTANT: in narrow mode, unlock + layout reflow can lag by a tick/frame.
+  // Defer the auto-open click so the step header is truly enabled and the lock
+  // class/attributes are settled before the handler runs.
+  const _openFinish = () => {
+    try {
+      const stepper = document.getElementById('stepper');
+      if (!stepper) return;
 
-    // Prefer a stable selector: the Finish card should be data-step="finish"
-    const finishCard = stepper.querySelector('.step-card[data-step="finish"]');
-    const finishBtn  = finishCard ? finishCard.querySelector('[data-step-toggle]') : null;
+      const finishCard = stepper.querySelector('.step-card[data-step="finish"]');
+      const finishBtn  = finishCard ? finishCard.querySelector('[data-step-toggle]') : null;
 
-    if (finishBtn) finishBtn.click();
-  } catch(e){}
+      if (!finishBtn) return;
+
+      // If still disabled, try again next frame (covers slow/mobile reflow)
+      if (finishBtn.disabled) return requestAnimationFrame(_openFinish);
+      if (finishBtn.getAttribute('aria-disabled') === 'true') return requestAnimationFrame(_openFinish);
+      if (document.body && document.body.classList && document.body.classList.contains('codedesk-locked')) return requestAnimationFrame(_openFinish);
+
+      finishBtn.click();
+    } catch(e){}
+  };
+
+  // two-phase defer: next tick + next paint
+  setTimeout(() => requestAnimationFrame(_openFinish), 0);
 }
 
   function codedeskRefreshFilenameGate(){
