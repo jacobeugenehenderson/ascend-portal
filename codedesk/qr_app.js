@@ -1724,13 +1724,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     }
   })();
 
-  // Accept mechanism: Enter commits the filename gate and moves focus off the field.
+  // Accept mechanism: Enter commits the filename gate, unlocks the stepper, and opens Finish.
   document.getElementById('codedeskFilename')?.addEventListener('keydown', function(e){
     if (!e) return;
     if (e.key !== 'Enter') return;
     try { e.preventDefault(); } catch(_e){}
     try { e.stopPropagation(); } catch(_e){}
+
+    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+    if (!fname) return;
+
     try { syncFinishEnabled(); } catch(_e){}
+    try { codedeskUnlockAndOpenFinish(); } catch(_e){}
     try { e.target && e.target.blur && e.target.blur(); } catch(_e){}
   }, true);
 
@@ -3578,7 +3583,6 @@ async function sendEvent(name, extra = {}) {
       utm: getUtm(),
 
       // runtime prefs
-      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
       prefs: accPrefs(),
       pwa: pwaState(),
 
@@ -3632,7 +3636,6 @@ async function reportExport() {
       utm: getUtm(),
 
       // theme + a11y prefs + runtime theme
-      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
       prefs: accPrefs(),
       pwa: pwaState(),
 
