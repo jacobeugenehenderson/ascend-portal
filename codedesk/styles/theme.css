@@ -1099,10 +1099,7 @@ input[type="color"].color-dot::-moz-color-swatch{
 
 /* Make the WHOLE sticky preview block "glass" on mobile/stacked */
 @media (max-width: 1279px){
-  /* the sticky section that holds the phone */
-  main > section.stage-stick:first-of-type { pointer-events: none !important; }
-
-  /* everything inside the preview stack also glass */
+  /* Make only the phone preview "glass" on mobile; never mute the stepper controls */
   .preview-stage,
   .preview-stage > .absolute,
   #qrPreview,
@@ -1110,8 +1107,7 @@ input[type="color"].color-dot::-moz-color-swatch{
   #qrMount > svg { pointer-events: none !important; }
 
   /* …but keep the L/R arrows on the phone clickable */
-  .preview-stage .nav-arrow,
-  main > section.stage-stick:first-of-type .nav-arrow {
+  .preview-stage .nav-arrow {
     pointer-events: auto !important;
   }
 }
