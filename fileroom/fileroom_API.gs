@@ -121,6 +121,10 @@ function doPost(e) {
 
     let data;
     switch (action) {
+      case 'upsertJob':
+        data = upsertJob_(body);
+        break;
+
       case 'upsertQrAsset':
         data = upsertQrAsset_(body, raw);
         break;

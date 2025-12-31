@@ -1790,9 +1790,20 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   }
 
   function codedeskUnlockAndOpenFinish(){
-    // Keep for compatibility, but do NOT auto-open anything.
-    codedeskSetLocked(false);
-  }
+  // Unlock + immediately reveal Finish (Create working file) so ✨ is reachable
+  codedeskSetLocked(false);
+
+  try {
+    const stepper = document.getElementById('stepper');
+    if (!stepper) return;
+
+    // Prefer a stable selector: the Finish card should be data-step="finish"
+    const finishCard = stepper.querySelector('.step-card[data-step="finish"]');
+    const finishBtn  = finishCard ? finishCard.querySelector('[data-step-toggle]') : null;
+
+    if (finishBtn) finishBtn.click();
+  } catch(e){}
+}
 
   function codedeskRefreshFilenameGate(){
     // Gate is ceremony-based: ONLY Enter unlocks (typing does not).
@@ -4189,6 +4200,35 @@ window.__okqr_park_handler__ = function (e) {
   const btn  = e.target.closest?.('[data-step-toggle]');
   const card = btn?.closest?.('.step-card');
   if (!card) return;
+
+  // Respect lock state: buttons are disabled while locked, but we also guard here.
+  try {
+    if (btn.disabled) return;
+    if (btn.getAttribute && btn.getAttribute('aria-disabled') === 'true') return;
+    if (document.body && document.body.classList && document.body.classList.contains('codedesk-locked')) return;
+  } catch (e) {}
+
+  // --- Accordion behavior: panels ship as display:none in HTML, so we must toggle them here ---
+  try {
+    const stepper = document.getElementById('stepper') || card.closest('#stepper');
+    if (stepper) {
+      const panel = card.querySelector('[data-step-panel]');
+
+      const isOpen = !!(panel && panel.offsetParent !== null && getComputedStyle(panel).display !== 'none');
+
+      // Close all drawers first (true accordion)
+      stepper.querySelectorAll('[data-step-panel]').forEach((p) => { p.style.display = 'none'; });
+      stepper.querySelectorAll('[data-step-toggle]').forEach((b) => {
+        try { b.setAttribute('aria-expanded', 'false'); } catch(e){}
+      });
+
+      // If it was closed, open it; if it was open, leave everything closed.
+      if (panel && !isOpen) {
+        panel.style.display = '';
+        try { btn.setAttribute('aria-expanded', 'true'); } catch(e){}
+      }
+    }
+  } catch (e) {}
 
   // Wait one microtask so header pills can expand before measuring
   setTimeout(() => {
