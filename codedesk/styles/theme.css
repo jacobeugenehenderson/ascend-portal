@@ -316,6 +316,52 @@ body{
   margin-top: -1px;
 }
 
+/* ------------------------------------------------------------
+   Mandatory filename gate (under preview)
+   Make it feel like the only "alive" thing on arrival.
+------------------------------------------------------------ */
+#codedeskFilenameSection{
+  margin-top: 6px;
+}
+
+#codedeskFilenameSection label{
+  width: min(360px, 92vw);
+}
+
+#codedeskFilename{
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--md-sys-color-primary) 25%, var(--ui-stroke));
+  background: color-mix(in oklab, var(--ui-surface) 92%, white 8%);
+  color: var(--md-sys-color-on-surface);
+
+  box-shadow:
+    0 10px 26px rgba(0,0,0,.10),
+    0 0 0 1px color-mix(in oklab, var(--md-sys-color-primary) 18%, transparent) inset;
+}
+
+#codedeskFilename::placeholder{
+  color: color-mix(in oklab, var(--md-sys-color-on-surface) 55%, transparent);
+}
+
+#codedeskFilename:focus{
+  outline: none;
+  border-color: color-mix(in oklab, var(--md-sys-color-primary) 55%, transparent);
+  box-shadow:
+    0 14px 36px rgba(0,0,0,.14),
+    0 0 0 4px color-mix(in oklab, var(--md-sys-color-primary) 22%, transparent);
+}
+
+/* Optional: when locked, keep the filename fully vivid even if other UI dims */
+body.codedesk-locked #codedeskFilename{
+  opacity: 1 !important;
+  filter: none !important;
+}
+
 /* The stepper is the scroll container + the gap owner */
 #stepper{
   display:flex;
