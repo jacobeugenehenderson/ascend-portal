@@ -1646,11 +1646,67 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   // initial relabel pass
   document.querySelectorAll('button').forEach(b => { if (isFinishButton(b)) relabel(b); });
 
-  // live sync
-  syncFinishEnabled();
+  // --- Filename-first lock: everything else inert until filename exists ---
+  function codedeskSetLocked(locked){
+    // Close Caption accordion on arrival (confusing default otherwise)
+    try {
+      const cap = document.querySelector('.step-card[data-step="caption"]');
+      if (cap) {
+        if ('open' in cap) cap.open = false;
+        cap.removeAttribute('open');
+      }
+    } catch(e){}
 
-  document.getElementById('codedeskFilename')?.addEventListener('input', syncFinishEnabled, { passive: true });
-  document.getElementById('codedeskFilename')?.addEventListener('change', syncFinishEnabled, { passive: true });
+    // Lock/unlock the accordion stack (Finish lives inside here)
+    try {
+      const stepper = document.getElementById('stepper');
+      if (stepper) {
+        // Prefer native inert if available; fallback to pointer-events.
+        if ('inert' in stepper) stepper.inert = !!locked;
+        stepper.style.pointerEvents = locked ? 'none' : '';
+      }
+    } catch(e){}
+  }
+
+  function codedeskUnlockAndOpenFinish(){
+    codedeskSetLocked(false);
+    try {
+      const fin = document.querySelector('.step-card[data-step="finish"]');
+      if (fin) {
+        if ('open' in fin) fin.open = true;
+        fin.setAttribute('open', '');
+        fin.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        // Focus a real control inside Finish if present
+        const first = fin.querySelector('button,[role="button"],a,input,select,textarea');
+        if (first) first.focus();
+      }
+    } catch(e){}
+  }
+
+  function codedeskRefreshFilenameGate(){
+    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+    codedeskSetLocked(!fname);
+    syncFinishEnabled();
+  }
+
+  // live sync
+  codedeskRefreshFilenameGate();
+
+  document.getElementById('codedeskFilename')?.addEventListener('input', codedeskRefreshFilenameGate, { passive: true });
+  document.getElementById('codedeskFilename')?.addEventListener('change', codedeskRefreshFilenameGate, { passive: true });
+
+  // Accept mechanism: Enter unlocks the page and opens Finish (since Finish is inside the accordion)
+  document.getElementById('codedeskFilename')?.addEventListener('keydown', function(e){
+    if (!e) return;
+    if (e.key !== 'Enter') return;
+    try { e.preventDefault(); } catch(_e){}
+    try { e.stopPropagation(); } catch(_e){}
+
+    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+    if (!fname) return;
+
+    codedeskUnlockAndOpenFinish();
+  }, true);
 
   // Accept mechanism: Enter commits the filename gate and moves focus off the field.
   document.getElementById('codedeskFilename')?.addEventListener('keydown', function(e){
