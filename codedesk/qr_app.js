@@ -1330,15 +1330,15 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   // --- Canonical state blob (includes all styling knobs) ---
   let stateObj = null;
   try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
-  const stateJson = stateObj ? JSON.stringify(stateObj) : '';
+  let stateJson = '';
+  try { stateJson = (typeof stateObj === 'string') ? stateObj : JSON.stringify(stateObj || {}); } catch(e){ stateJson = ''; }
 
-  // --- Canonical working open URL (Ascend uses this for the orange working lane) ---
+  // OpenUrl (best-effort): allow Ascend to “open this working state”
   let workingOpenUrl = '';
   try {
-    const u = new URL(window.location.href);
-    u.searchParams.set('mode', 'working');
-    u.searchParams.set('working_file_id', workingId);
-    u.searchParams.set('workingFileId', workingId); // legacy alias
+    const u = new URL(location.href);
+    // Ensure we have a stable id param if you later choose to add one
+    u.searchParams.set('wf', workingId); // legacy alias
     workingOpenUrl = u.toString();
   } catch (e) {}
 
@@ -1365,89 +1365,94 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
         ascend_job_key: 'CODEDESK_WORKING:' + workingId,
         app: 'codedesk',
         source_id: workingId,
-        title: String(rec.name || base || 'CODEDESK QR').trim(),
-        subtitle: 'CODEDESK — WORKING',
+        title: base || 'CODEDESK QR',
+        subtitle: 'CODEDESK — WORKING (STATE)',
         status: 'open',
-        open_url: workingOpenUrl,
+        open_url: workingOpenUrl || String(location && location.href ? location.href : ''),
         owner_email: ownerEmail,
         kind: 'working',
         asset_type: 'qr',
         template_id: templateId,
-        state_json: stateJson
+        state_json: stateJson,
+        tags: 'codedesk,working'
       })
     });
-    const wj = await wr.json();
-    if (!wj || !wj.ok) return false;
-  } catch (e) {
-    return false;
-  }
+    await wr.json().catch(()=>null);
+  } catch(e){}
 
-  // 2) Upsert OUTPUT row + overwrite-in-place PNG
-  const pngDataUrl = await codedeskPngDataUrlFromCurrentSvg(3);
-
-  const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
-    method: 'POST',
-    credentials: 'omit',
-    redirect: 'follow',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({
-      action: 'upsertQrPngAsset',
-      folder_id: folderId,
-      png_data_url: pngDataUrl,
-      file_name: fileName,
-      source_id: workingId,
-      ascend_job_key: 'CODEDESK_PNG:' + workingId,
-      title: base || 'CODEDESK QR',
-      subtitle: 'CODEDESK — FLATTENED (PNG)',
-      status: 'delivered',
-      owner_email: ownerEmail,
-      kind: 'output',
-      asset_type: 'qr',
-      template_id: templateId,
-      state_json: stateJson
-    })
-  });
-
-    const j = await res.json();
-  if (!j || !j.ok) return false;
-
-  const data = j.data || {};
-  const driveId = String(data.drive_file_id || '').trim();
-  const openUrl = String(data.open_url || '').trim();
-  const jobKey  = String(data.ascend_job_key || '').trim();
-
-  // Persist any updated metadata (e.g., file name changes)
-  rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
-  rec.updatedAt = Date.now();
-  window.codedeskSaveWorkingFile(rec);
-
-  // ALSO: upsert a "working file" row so Ascend can show it in the hopper.
+  // 2) Upload PNG to Drive + upsert delivered row
   try {
-    const entry = window.CODEDESK_ENTRY || {};
-    const ownerEmail = String(entry.user_email || '').trim();
-    const wfKey = 'CODEDESK_WORKING:' + workingId;
-    const baseUrl = String(window.CODEDESK_FILEROOM_API_BASE || '').trim();
-    const codedeskUrl = window.location.origin + window.location.pathname + '?working_file_id=' + encodeURIComponent(workingId);
+    const pngDataUrl = await codedeskPngDataUrlFromCurrentSvg(3);
+    if (pngDataUrl) {
+      const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+        method: 'POST',
+        credentials: 'omit',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'uploadPngToDrive',
+          folder_id: folderId,
+          png_data_url: pngDataUrl,
+          file_name: fileName,
+          source_id: workingId,
+          ascend_job_key: 'CODEDESK_PNG:' + workingId,
+          title: base || 'CODEDESK QR',
+          subtitle: 'CODEDESK — FLATTENED (PNG)',
+          status: 'delivered',
+          owner_email: ownerEmail,
+          kind: 'output',
+          asset_type: 'qr',
+          template_id: templateId,
+          state_json: stateJson
+        })
+      });
 
-    if (baseUrl) {
-      const u =
-        baseUrl +
-        '?action=upsertJob' +
-        '&ascend_job_key=' + encodeURIComponent(wfKey) +
-        '&app=codedesk' +
-        '&source_id=' + encodeURIComponent(workingId) +
-        '&kind=working' +
-        '&asset_type=qr' +
-        '&title=' + encodeURIComponent(rec.title || ('CODEDESK — Working File ' + workingId)) +
-        '&subtitle=' + encodeURIComponent(rec.subtitle || 'CODEDESK — WORKING FILE') +
-        '&status=' + encodeURIComponent('open') +
-        '&open_url=' + encodeURIComponent(codedeskUrl) +
-        '&owner_email=' + encodeURIComponent(ownerEmail) +
-        '&template_id=' + encodeURIComponent(rec.template_id || '') +
-        '&state_json=' + encodeURIComponent(JSON.stringify(rec.state || {})) +
-        '&drive_folder_id=' + encodeURIComponent(String(entry.folder_id || '')) +
-        '&drive_png_file_id=' + encodeURIComponent('') +
-        '&drive_png_open_url=' + encodeURIComponent('');
+      const j = await res.json();
+      if (!j || !j.ok) return false;
+
+      const data = j.data || {};
+      const driveId = String(data.drive_file_id || '').trim();
+      const openUrl = String(data.open_url || '').trim();
+      const jobKey  = String(data.ascend_job_key || '').trim();
+
+      // Persist any updated metadata (e.g., file name changes)
+      rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
+      rec.updatedAt = Date.now();
+      window.codedeskSaveWorkingFile(rec);
+
+      // ALSO: upsert a "working file" row so Ascend can show it in the hopper.
+      try {
+        await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+          method: 'POST',
+          credentials: 'omit',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'upsertJob',
+            ascend_job_key: 'CODEDESK_WORKFILE:' + workingId,
+            app: 'codedesk',
+            source_id: workingId,
+            title: base || 'CODEDESK QR',
+            subtitle: 'CODEDESK — WORKING FILE',
+            status: 'open',
+            open_url: workingOpenUrl || String(location && location.href ? location.href : ''),
+            owner_email: ownerEmail,
+            kind: 'workfile',
+            asset_type: 'qr',
+            template_id: templateId,
+            state_json: stateJson,
+            tags: 'codedesk,workfile'
+          })
+        });
+      } catch(e){}
+    }
+  } catch(e){}
+
+  // Notify Ascend to refresh (best-effort)
+  try {
+    const u = new URL(String(workingOpenUrl || location.href || ''));
+    u.searchParams.set('ascend_ping', String(Date.now()));
+    if (window.opener) {
       fetch(u, { method: 'GET', credentials: 'omit' }).catch(function () {});
     }
   } catch (e) {}
@@ -1455,10 +1460,99 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   return true;
 };
 
-window.codedeskSyncFileRoomDebounced = function codedeskSyncFileRoomDebounced(reason){
+window.codedeskPushWorkingDebounced = function codedeskPushWorkingDebounced(reason){
   if (_codedeskFileRoomTimer) clearTimeout(_codedeskFileRoomTimer);
   _codedeskFileRoomTimer = setTimeout(() => {
-    try { window.codedeskSyncFileRoomNow && window.codedeskSyncFileRoomNow(reason || 'debounced'); } catch(e){}
+    try { window.codedeskPushWorkingNow && window.codedeskPushWorkingNow(reason || 'debounced'); } catch(e){}
+  }, CODEDESK_AUTOSAVE_DEBOUNCE_MS);
+};
+
+window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
+  const workingId = String(window.__CODEDESK_CURRENT_WF_ID__ || _getActiveWorkingFileId() || '').trim();
+  if (!workingId) return false;
+
+  const rec = window.codedeskGetWorkingFileRecord && window.codedeskGetWorkingFileRecord(workingId);
+  if (!rec) return false;
+
+  // If the filename gate has not been accepted yet, do not push anything server-side.
+  if (window.__CODEDESK_FILENAME_ACCEPTED__ !== true) return false;
+
+  const ownerEmail = (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '';
+  const templateId = (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '';
+
+  // Canonical display name: CodeDesk filename (live), falling back to record name
+  const caption =
+    String(document.getElementById('codedeskFilename')?.value || '').trim() ||
+    String(rec.name || '').trim() ||
+    'codedesk';
+  const base = caption.replace(/[^\w\d-_]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40) || 'codedesk';
+
+  // --- Canonical state blob (includes all styling knobs) ---
+  let stateObj = null;
+  try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
+  let stateJson = '';
+  try { stateJson = (typeof stateObj === 'string') ? stateObj : JSON.stringify(stateObj || {}); } catch(e){ stateJson = ''; }
+
+  // Upsert WORKING row (persistent editor state) — NO PNG
+  try {
+    await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+      method: 'POST',
+      credentials: 'omit',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'upsertJob',
+        ascend_job_key: 'CODEDESK_WORKING:' + workingId,
+        app: 'codedesk',
+        source_id: workingId,
+        title: base || 'CODEDESK QR',
+        subtitle: 'CODEDESK — WORKING (STATE)',
+        status: 'open',
+        open_url: String(location && location.href ? location.href : ''),
+        owner_email: ownerEmail,
+        kind: 'working',
+        asset_type: 'qr',
+        template_id: templateId,
+        state_json: stateJson,
+        tags: 'codedesk,working'
+      })
+    });
+  } catch(e){}
+
+  // Upsert WORKFILE row (orange hopper lane) — NO PNG
+  try {
+    await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+      method: 'POST',
+      credentials: 'omit',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'upsertJob',
+        ascend_job_key: 'CODEDESK_WORKFILE:' + workingId,
+        app: 'codedesk',
+        source_id: workingId,
+        title: base || 'CODEDESK QR',
+        subtitle: 'CODEDESK — WORKING FILE',
+        status: 'open',
+        open_url: String(location && location.href ? location.href : ''),
+        owner_email: ownerEmail,
+        kind: 'workfile',
+        asset_type: 'qr',
+        template_id: templateId,
+        state_json: stateJson,
+        tags: 'codedesk,workfile'
+      })
+    });
+  } catch(e){}
+
+  return true;
+};
+
+window.codedeskSyncFileRoomDebounced = function codedeskSyncFileRoomDebounced(reason){
+  // Compatibility alias: "debounced FileRoom sync" now means a lightweight push (NO PNG).
+  if (_codedeskFileRoomTimer) clearTimeout(_codedeskFileRoomTimer);
+  _codedeskFileRoomTimer = setTimeout(() => {
+    try { window.codedeskPushWorkingNow && window.codedeskPushWorkingNow(reason || 'debounced'); } catch(e){}
   }, CODEDESK_AUTOSAVE_DEBOUNCE_MS);
 };
 
@@ -1474,17 +1568,19 @@ function codedeskAutosaveKick(){
   if (_codedeskAutosaveTimer) clearTimeout(_codedeskAutosaveTimer);
   _codedeskAutosaveTimer = setTimeout(() => {
     try {
-      // Use current headline as name fallback; keep existing name if possible
+      // Live filename (workspace): prefer CodeDesk filename as the working-file display name
       const rec = window.codedeskGetWorkingFileRecord && window.codedeskGetWorkingFileRecord(activeId);
+      const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
       const head = String(document.getElementById('campaign')?.value || '').trim();
       const keepName = rec?.name || '';
-      const nextName = keepName || head || 'Working file';
+      const nextName = fname || keepName || head || 'Working file';
 
+      // Local autosave (never creates files; activeId must already exist)
       window.codedeskSaveWorkingFile(nextName, { id: activeId });
 
-      // If finished, autosave should also update the paired FileRoom deliverable (quietly).
-      if (_codedeskHasFinishedPairing(activeId)) {
-        window.codedeskSyncFileRoomDebounced && window.codedeskSyncFileRoomDebounced('autosave');
+      // Throttled server push (NO PNG) after idle
+      if (window.codedeskPushWorkingDebounced) {
+        window.codedeskPushWorkingDebounced('autosave');
       }
     } catch(e){}
   }, CODEDESK_AUTOSAVE_DEBOUNCE_MS);
@@ -1580,7 +1676,9 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     ensureFilenameUi();
 
     const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
-    const ok = !!fname;
+    const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
+    const hasWf = !!_getActiveWorkingFileId();
+    const ok = (accepted && !!fname && !hasWf);
 
     document.querySelectorAll('button').forEach(b => {
       if (!isFinishButton(b)) return;
@@ -1607,6 +1705,11 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         } catch(e){}
       } else {
         b.disabled = false;
+        // Setup button is the ✨ (keep it icon-only when enabled)
+        try {
+          const t = (b.textContent || '').trim();
+          if (t.length > 2) b.textContent = '✨';
+        } catch(e){}
         try { b.removeAttribute('title'); } catch(e){}
 
         // restore label if we previously preserved it
@@ -1676,12 +1779,61 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   }
 
   function codedeskRefreshFilenameGate(){
-    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
-    codedeskSetLocked(!fname);
+    // Gate is ceremony-based: ONLY Enter unlocks (typing does not).
+    const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
+
+    // Keep filename editable at all times
+    try { ensureFilenameUi && ensureFilenameUi(); } catch(e){}
+
+    // Lock/unlock the rest of the UI strictly by accepted flag
+    codedeskSetLocked(!accepted);
+
+    // Setup (✨) should be hidden on load, visible only after Enter (and only if no working file exists yet)
+    try {
+      const hasWf = !!_getActiveWorkingFileId();
+      codedeskSetSetupSparkleVisible(accepted && !hasWf);
+    } catch(e){}
+
     syncFinishEnabled();
   }
 
-    // live sync (wire once, even if this script loads before the DOM nodes exist)
+  function codedeskSetSetupSparkleVisible(visible){
+    // The setup affordance is the Finish/Setup action button (icon-only ✨ in the UI).
+    // Hide it on load; reveal it only after Enter accepts the filename; remove it forever after setup.
+    try {
+      document.querySelectorAll('button').forEach((b) => {
+        if (!isFinishButton(b)) return;
+        b.style.display = visible ? '' : 'none';
+      });
+    } catch(e){}
+  }
+
+  function codedeskRemoveSetupStep(){
+    // Remove the entire setup accordion step (flipper + panel) if it exists.
+    try {
+      const stepper = document.getElementById('stepper');
+      if (stepper) {
+        stepper.querySelectorAll('[data-step-toggle]').forEach((t) => {
+          const key = (t.getAttribute('data-step-toggle') || '').trim();
+          const txt = (t.textContent || '').trim().toLowerCase();
+          const isSetup = (key && key.toLowerCase().indexOf('finish') !== -1) || (txt === 'finish' || txt === 'finish setup');
+          if (!isSetup) return;
+          try {
+            const p = key ? stepper.querySelector('[data-step-panel="' + CSS.escape(key) + '"]') : null;
+            if (p) p.remove();
+          } catch(e){}
+          try { t.remove(); } catch(e){}
+        });
+      }
+    } catch(e){}
+
+    // Also remove any remaining setup action button (✨) in case it is not inside the stepper.
+    try {
+      document.querySelectorAll('button').forEach((b) => { if (isFinishButton(b)) b.remove(); });
+    } catch(e){}
+  }
+
+  // live sync (wire once, even if this script loads before the DOM nodes exist)
   (function wireFilenameGateOnce(){
     if (window.__CODEDESK_FILENAME_GATE_WIRED__) return;
 
@@ -1689,12 +1841,19 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       const inp = document.getElementById('codedeskFilename');
       if (!inp) return false;
 
-      // initial state
-      codedeskRefreshFilenameGate();
+      // initial state: locked + ✨ hidden
+      if (window.__CODEDESK_FILENAME_ACCEPTED__ !== true) {
+        try { codedeskSetLocked(true); } catch(e){}
+        try { codedeskSetSetupSparkleVisible(false); } catch(e){}
+      }
+      try { syncFinishEnabled(); } catch(e){}
 
-      inp.addEventListener('input', codedeskRefreshFilenameGate, { passive: true });
+      // Keep lock state stable while typing (Enter is the only ceremony)
+      inp.addEventListener('input', function(){
+        try { syncFinishEnabled(); } catch(e){}
+      }, { passive: true });
 
-      // Enter commits name and unlocks the screen (makes the accordion stack clickable).
+      // Ceremony: Enter commits the filename gate and unlocks the workspace (drawers remain closed).
       inp.addEventListener('keydown', function(e){
         if (!e) return;
         const isEnter = (e.key === 'Enter' || e.keyCode === 13);
@@ -1703,13 +1862,41 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         try { e.preventDefault(); } catch(_e){}
         try { e.stopPropagation(); } catch(_e){}
 
-        const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+        const fname = String(inp.value || '').trim();
         if (!fname) return;
 
-        try { syncFinishEnabled(); } catch(_e){}
+        try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
         try { codedeskSetLocked(false); } catch(_e){}
-        try { e.target && e.target.blur && e.target.blur(); } catch(_e){}
+        try { codedeskSetSetupSparkleVisible(true); } catch(_e){}
+        try { syncFinishEnabled(); } catch(_e){}
+
+        try { inp.blur(); } catch(_e){}
       }, true);
+
+      // Cmd/Ctrl+S: push working metadata/state (NO PNG) if a working file exists.
+      document.addEventListener('keydown', function(e){
+        if (!e) return;
+        const key = String(e.key || '').toLowerCase();
+        const isSave = (key === 's' && (e.metaKey || e.ctrlKey));
+        if (!isSave) return;
+
+        const activeId = _getActiveWorkingFileId();
+        if (!activeId) return;
+
+        try { e.preventDefault(); } catch(_e){}
+        try { e.stopPropagation(); } catch(_e){}
+
+        try {
+          if (window.codedeskPushWorkingNow) window.codedeskPushWorkingNow('hotkey');
+        } catch(_e){}
+      }, true);
+
+      // Blur: push working metadata/state (debounced) if a working file exists.
+      inp.addEventListener('blur', function(){
+        const activeId = _getActiveWorkingFileId();
+        if (!activeId) return;
+        try { window.codedeskPushWorkingDebounced && window.codedeskPushWorkingDebounced('filename-blur'); } catch(e){}
+      }, { passive: true });
 
       window.__CODEDESK_FILENAME_GATE_WIRED__ = true;
       return true;
@@ -1725,86 +1912,68 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     }
   })();
 
-  // Accept mechanism: Enter commits the filename gate and unlocks the stepper (drawers remain closed).
-  document.getElementById('codedeskFilename')?.addEventListener('keydown', function(e){
-    if (!e) return;
-    const isEnter = (e.key === 'Enter' || e.keyCode === 13);
-    if (!isEnter) return;
-
-    try { e.preventDefault(); } catch(_e){}
-    try { e.stopPropagation(); } catch(_e){}
-
-    const inp = document.getElementById('codedeskFilename');
-    const fname = String(inp?.value || '').trim();
-    if (!fname) return;
-
-    // Mark accepted + unlock UI
-    try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
-    try { syncFinishEnabled(); } catch(_e){}
-    try { codedeskSetLocked(false); } catch(_e){}
-
-    // Freeze the identity so the rest of the UI is stable
-    try {
-      if (inp) {
-        inp.setAttribute('data-accepted', 'true');
-        inp.blur();
-      }
-    } catch(_e){}
-  }, true);
-
   // capture click for finish/setup
   document.addEventListener('click', async (e) => {
   const btn = e.target && e.target.closest && e.target.closest('button');
   if (!isFinishButton(btn)) return;
 
-  // Mandatory filename gate
-  const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
-  if (!fname) {
-    // Ensure the filename input is editable (some flows may disable it)
-    try {
-      const f = document.getElementById('codedeskFilename');
-      if (f) { f.disabled = false; f.removeAttribute('disabled'); f.style.pointerEvents = 'auto'; }
-    } catch(e){}
+  // Ceremony contract:
+  // - Enter unlocks the workspace (no server writes)
+  // - ✨ creates the working file + Drive/FileRoom artifacts (one-time), then disappears forever
+  const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
 
-    try { document.getElementById('codedeskFilename')?.focus(); } catch(e){}
+  const inp = document.getElementById('codedeskFilename');
+  const fname = String(inp?.value || '').trim();
+
+  if (!accepted || !fname) {
+    try { inp && (inp.disabled = false); } catch(e){}
+    try { inp && inp.removeAttribute && inp.removeAttribute('disabled'); } catch(e){}
+    try { inp && (inp.style.pointerEvents = 'auto'); } catch(e){}
+    try { inp && inp.focus && inp.focus(); } catch(e){}
     try { e && e.preventDefault && e.preventDefault(); } catch(e){}
     try { e && e.stopPropagation && e.stopPropagation(); } catch(e){}
     syncFinishEnabled();
     return;
   }
+
+  // One-time setup: if we already have a working file id, the setup step should be gone.
+  const existingId = _getActiveWorkingFileId();
+  if (existingId) {
+    try { codedeskRemoveSetupStep && codedeskRemoveSetupStep(); } catch(e){}
+    return;
+  }
+
   const prevText = (btn.textContent || '').trim();
   btn.disabled = true;
   btn.classList.add('is-busy');
-  btn.textContent = 'Saving…';
+  if (prevText.length > 2) btn.textContent = 'Saving…';
 
   let id = '';
   try { id = window.codedeskFinishSetup(); } catch(err){}
 
-  // After Finish, ensure FileRoom pairing exists or is updated
+  // Full one-time pairing: creates/updates the Drive PNG + FileRoom rows
   try {
     if (id && window.codedeskSyncFileRoomNow) {
-      await window.codedeskSyncFileRoomNow('finish');
+      await window.codedeskSyncFileRoomNow('setup');
     }
   } catch(e){}
 
-  // “Setup complete” visual state (does NOT change lifecycle logic)
-    btn.classList.remove('is-busy');
+  btn.classList.remove('is-busy');
   btn.classList.add('is-setup-done');
-  btn.textContent = 'Setup complete';
   btn.disabled = false;
 
-  // Post-finish UI cleanup: filename input disappears (identity persists via hopper/FileRoom only)
-  try {
-    const s = document.getElementById('codedeskFilenameSection') || document.getElementById('codedeskFilenameWrap');
-    if (s) s.style.display = 'none';
-  } catch(e){}
+  // Remove setup step forever: after setup, CodeDesk is autosave + push-only (no re-clicking)
+  try { codedeskRemoveSetupStep && codedeskRemoveSetupStep(); } catch(e){}
+
+  // Keep filename editable (live label) — do NOT hide or freeze it
+  try { ensureFilenameUi && ensureFilenameUi(); } catch(e){}
+
+  // Restore label if still visible (should be removed, but this is safe)
+  try { if (prevText.length > 2) btn.textContent = prevText; } catch(e){}
 
   relabel(btn);
-
-  // Clean finish moment: CodeDesk was opened from Ascend (noopener),
-  // so we close this tab/window and the user lands back in Ascend.
-  try { window.close(); } catch(e){}
 }, true);
+
 })();
 
 /* === END CODEDESK WORKING FILES ===================================== */
