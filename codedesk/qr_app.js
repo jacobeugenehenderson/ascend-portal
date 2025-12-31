@@ -1543,12 +1543,19 @@ window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
         tags: 'codedesk,workfile'
       })
     });
+    } catch (e) {}
+
+  // Successful full export (includes PNG) — clear dirty
+  try {
+    window.__CODEDESK_DIRTY__ = false;
+    window.__CODEDESK_LAST_EXPORT_AT__ = Date.now();
   } catch(e){}
 
   return true;
 };
 
 window.codedeskSyncFileRoomDebounced = function codedeskSyncFileRoomDebounced(reason){
+  
   // Compatibility alias: "debounced FileRoom sync" now means a lightweight push (NO PNG).
   if (_codedeskFileRoomTimer) clearTimeout(_codedeskFileRoomTimer);
   _codedeskFileRoomTimer = setTimeout(() => {
@@ -1577,6 +1584,9 @@ function codedeskAutosaveKick(){
 
       // Local autosave (never creates files; activeId must already exist)
       window.codedeskSaveWorkingFile(nextName, { id: activeId });
+
+      // Mark dirty (we have changes since last explicit export)
+      try { window.__CODEDESK_DIRTY__ = true; } catch(e){}
 
       // Throttled server push (NO PNG) after idle
       if (window.codedeskPushWorkingDebounced) {
@@ -1887,7 +1897,9 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         try { e.stopPropagation(); } catch(_e){}
 
         try {
-          if (window.codedeskPushWorkingNow) window.codedeskPushWorkingNow('hotkey');
+          if (window.codedeskSyncFileRoomNow) {
+            Promise.resolve(window.codedeskSyncFileRoomNow('hotkey')).catch(function(){});
+          }
         } catch(_e){}
       }, true);
 
@@ -1897,6 +1909,36 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         if (!activeId) return;
         try { window.codedeskPushWorkingDebounced && window.codedeskPushWorkingDebounced('filename-blur'); } catch(e){}
       }, { passive: true });
+
+      // Warn on navigation away if:
+      // - filename accepted but working file not created yet, OR
+      // - working file exists and there are unexported changes
+      if (!window.__CODEDESK_BEFOREUNLOAD_WIRED__) {
+        window.__CODEDESK_BEFOREUNLOAD_WIRED__ = true;
+        window.addEventListener('beforeunload', function(e){
+          try {
+            const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
+            const hasWf = !!_getActiveWorkingFileId();
+            const dirty = (window.__CODEDESK_DIRTY__ === true);
+
+            // If they accepted a name but never created the working file, warn.
+            if (accepted && !hasWf) {
+              e.preventDefault();
+              e.returnValue = '';
+              return '';
+            }
+
+            // If they have a working file and have changes since last export, warn.
+            if (hasWf && dirty) {
+              e.preventDefault();
+              e.returnValue = '';
+              return '';
+            }
+          } catch(err){}
+
+          return undefined;
+        }, true);
+      }
 
       window.__CODEDESK_FILENAME_GATE_WIRED__ = true;
       return true;
