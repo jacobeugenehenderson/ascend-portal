@@ -1935,6 +1935,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
             if (finishPanel) finishPanel.style.display = '';
             if (finishBtn) finishBtn.setAttribute('aria-expanded', 'true');
+
+            // Ensure Finish is truly "live" (parity with wide-mode setMode('finish'))
+            try { stepper.classList.remove('mech-active'); } catch(e){}
+            try { stepper.classList.add('finish-active'); } catch(e){}
           }
         } catch(_e){}
 
@@ -4248,12 +4252,12 @@ window.__okqr_park_handler__ = function (e) {
     if (document.body && document.body.classList && document.body.classList.contains('codedesk-locked')) return;
   } catch (e) {}
 
-  // --- Accordion behavior: panels ship as display:none in HTML, so we must toggle them here ---
+      // --- Accordion behavior: panels ship as display:none in HTML, so we must toggle them here ---
   try {
     const stepper = document.getElementById('stepper') || card.closest('#stepper');
     if (stepper) {
       const panel = card.querySelector('[data-step-panel]');
-      const step  = (card.getAttribute && card.getAttribute('data-step')) ? String(card.getAttribute('data-step')) : '';
+      const step = String(card.getAttribute('data-step') || '');
 
       const isOpen = !!(panel && panel.offsetParent !== null && getComputedStyle(panel).display !== 'none');
 
@@ -4267,12 +4271,19 @@ window.__okqr_park_handler__ = function (e) {
       if (panel && !isOpen) {
         panel.style.display = '';
         try { btn.setAttribute('aria-expanded', 'true'); } catch(e){}
-      }
 
-      // Mode styling must follow the active/opened step (especially in narrow mode)
-      stepper.classList.toggle('mech-active',   step === 'mechanicals');
-      stepper.classList.toggle('finish-active', step === 'finish');
-      if (step !== 'mechanicals' && step !== 'finish') {
+        // Mode styling parity with wide-mode setMode()
+        if (step === 'finish') {
+          stepper.classList.remove('mech-active');
+          stepper.classList.add('finish-active');
+        } else if (step === 'mechanicals') {
+          stepper.classList.remove('finish-active');
+          stepper.classList.add('mech-active');
+        } else {
+          stepper.classList.remove('mech-active', 'finish-active');
+        }
+      } else {
+        // Closing (or clicking an already-open drawer) returns to neutral
         stepper.classList.remove('mech-active', 'finish-active');
       }
     }
