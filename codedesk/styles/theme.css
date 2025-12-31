@@ -653,6 +653,12 @@ select:hover{
   pointer-events:none;
 }
 
+/* Finish mode must keep the export sparkle clickable */
+#stepper.finish-active #exportBtn{
+  pointer-events:auto !important;
+  opacity: 1 !important;
+}
+
 /* === TOP BAR — text styling (only) =================================== */
 /* Restore heavier label for the pills and keep baselines consistent */
 #qrType,
