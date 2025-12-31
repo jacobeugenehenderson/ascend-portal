@@ -1626,10 +1626,43 @@ input[type="range"] {
   transform: translateY(1px);
 }
 
-/* Anchor filename under QR preview column */
+/* CodeDesk — Mandatory filename capture (under preview) */
 #codedeskFilenameSection{
-  grid-column: 1;
   display: flex;
   justify-content: center;
+  width: 100%;
   margin-top: 12px;
+}
+
+#codedeskFilenameSection > label{
+  width: min(360px, calc(100% - 24px));
+  margin: 0 auto;
+}
+
+/* Make the field read as a real, opaque input */
+#codedeskFilename{
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+
+  background: var(--md-sys-color-surface); /* more opaque than surface-variant */
+  color: var(--md-sys-color-on-surface);
+
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--shape-corner-md);
+
+  box-shadow: 0 0 0 1px var(--ui-stroke) inset, var(--elevation-1);
+}
+
+#codedeskFilename::placeholder{
+  opacity: .65;
+}
+
+#codedeskFilename:focus{
+  outline: none;
+  border-color: var(--ascend-app-accent, var(--ui-focus-ring));
+  box-shadow:
+    0 0 0 1px var(--ascend-app-accent, var(--ui-focus-ring)) inset,
+    0 0 0 3px color-mix(in oklab, var(--ascend-app-accent, var(--ui-focus-ring)) 22%, transparent);
 }
