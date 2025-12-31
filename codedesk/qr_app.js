@@ -1791,7 +1791,9 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
         // Prefer native inert if available; fallback to pointer-events.
         if ('inert' in stepper) stepper.inert = !!locked;
-        stepper.style.pointerEvents = locked ? 'none' : '';
+
+        // IMPORTANT: when unlocking, force interactivity back on (do not rely on empty-string restore).
+        stepper.style.pointerEvents = locked ? 'none' : 'auto';
       }
     } catch(e){}
   }
