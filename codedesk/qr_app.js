@@ -1563,6 +1563,9 @@ window.codedeskSyncFileRoomDebounced = function codedeskSyncFileRoomDebounced(re
 };
 
 function codedeskAutosaveKick(){
+  // HARD GATE: autosave/push is only allowed after ✨ (Finish setup).
+  if (window.__CODEDESK_SETUP_DONE__ !== true) return;
+
   let activeId = _getActiveWorkingFileId();
 
   // Canonical rule: autosave never creates working files.
@@ -1642,12 +1645,16 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   const name = fname;
 
-  // Finish must be allowed to establish the working file exactly once.
+    // Finish must be allowed 
+  // to establish the working file exactly once.
   if (!activeId) {
     activeId = window.codedeskSaveWorkingFile(name);
   } else {
     window.codedeskSaveWorkingFile(name, { id: activeId });
   }
+
+  // ✨ has created/confirmed the working file: autosave/push is now allowed.
+  try { window.__CODEDESK_SETUP_DONE__ = true; } catch(e){}
 
   // IMPORTANT: after Finish, lock the URL to this working file.
   // Otherwise a refresh on mode=new/template will clear the active id during bootstrap.
