@@ -1342,7 +1342,11 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
     workingOpenUrl = u.toString();
   } catch (e) {}
 
-  const caption = String(document.getElementById('campaign')?.value || '').trim() || String(rec.name || '').trim() || 'codedesk';
+  const caption =
+    String(document.getElementById('codedeskFilename')?.value || '').trim() ||
+    String(document.getElementById('campaign')?.value || '').trim() ||
+    String(rec.name || '').trim() ||
+    'codedesk';
   const base = caption.replace(/[^\w\d-_]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40) || 'codedesk';
   const fileName = `${base}.png`;
 
@@ -1641,6 +1645,9 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   // --- Filename-first lock: everything else inert until filename exists ---
   function codedeskSetLocked(locked){
+    // Reflect lock state on <body> (styling + debugging sanity)
+    try { document.body && document.body.classList && document.body.classList.toggle('codedesk-locked', !!locked); } catch(e){}
+
     // Close Caption accordion on arrival (confusing default otherwise)
     try {
       const cap = document.querySelector('.step-card[data-step="caption"]');
@@ -1695,10 +1702,12 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
       inp.addEventListener('input', codedeskRefreshFilenameGate, { passive: true });
 
-      // Enter commits name, unlocks the stepper, and opens Finish.
+      // Enter commits name and unlocks the screen (makes the accordion stack clickable).
       inp.addEventListener('keydown', function(e){
         if (!e) return;
-        if (e.key !== 'Enter') return;
+        const isEnter = (e.key === 'Enter' || e.keyCode === 13);
+        if (!isEnter) return;
+
         try { e.preventDefault(); } catch(_e){}
         try { e.stopPropagation(); } catch(_e){}
 
@@ -1706,7 +1715,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         if (!fname) return;
 
         try { syncFinishEnabled(); } catch(_e){}
-        codedeskUnlockAndOpenFinish();
+        try { codedeskSetLocked(false); } catch(_e){}
         try { e.target && e.target.blur && e.target.blur(); } catch(_e){}
       }, true);
 

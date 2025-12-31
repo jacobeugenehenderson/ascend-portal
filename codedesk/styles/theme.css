@@ -322,12 +322,19 @@ body{
 ------------------------------------------------------------ */
 #codedeskFilenameSection{
   margin-top: 6px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #codedeskFilenameSection label{
   width: min(360px, 92vw);
+  margin: 0 auto;
 }
 
+/* NOTE: Avoid color-mix() here so the field stays opaque/styled even in browsers
+   that don’t fully support it (transparent “ghost input” symptom). */
 #codedeskFilename{
   appearance: none;
   width: 100%;
@@ -335,25 +342,27 @@ body{
   padding: 0 14px;
 
   border-radius: 999px;
-  border: 1px solid color-mix(in oklab, var(--md-sys-color-primary) 25%, var(--ui-stroke));
-  background: color-mix(in oklab, var(--ui-surface) 92%, white 8%);
+  border: 1px solid var(--ui-stroke);
+  background: var(--ui-surface);
   color: var(--md-sys-color-on-surface);
 
-  box-shadow:
-    0 10px 26px rgba(0,0,0,.10),
-    0 0 0 1px color-mix(in oklab, var(--md-sys-color-primary) 18%, transparent) inset;
+  box-shadow: 0 10px 26px rgba(0,0,0,.10);
 }
 
 #codedeskFilename::placeholder{
-  color: color-mix(in oklab, var(--md-sys-color-on-surface) 55%, transparent);
+  opacity: 0.72;
 }
 
 #codedeskFilename:focus{
-  outline: none;
-  border-color: color-mix(in oklab, var(--md-sys-color-primary) 55%, transparent);
-  box-shadow:
-    0 14px 36px rgba(0,0,0,.14),
-    0 0 0 4px color-mix(in oklab, var(--md-sys-color-primary) 22%, transparent);
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+/* Keep it “alive” even if something disables it */
+#codedeskFilename:disabled{
+  opacity: 1;
+  -webkit-text-fill-color: currentColor;
+  cursor: text;
 }
 
 /* Optional: when locked, keep the filename fully vivid even if other UI dims */
