@@ -509,22 +509,21 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
   // Create a fresh working-file record for this template, then mark it active WITHOUT re-importing.
   const name = (t.type || 'QR') + ' — ' + (t.name || t.id || 'Template');
 
-  // IMPORTANT: store the TEMPLATE STATE in the working-file record.
-  // Do NOT snapshot the current UI (which may still be preset #1).
-  const newId = 'wf_' + Date.now() + '_' + Math.random().toString(16).slice(2);
+  // IMPORTANT: selecting a template must NOT create a working file record.
+  // It only seeds the live UI so the user can preview, then ✨ creates the working file.
+  try {
+    window.__CODEDESK_PENDING_TEMPLATE__ = {
+      id: String(t.id || '').trim(),
+      name: name,
+      state: t.state
+    };
+  } catch(e){}
 
-  const wfId = window.codedeskSaveWorkingFile({
-    id: newId,
-    name: name,
-    kind: 'working',
-    indicator: 'working_orange_stack',
-    template_id: t.id,
-    state: t.state,
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  });
+  // Clear any previously active working file id so Enter cannot upsert anything.
+  try { localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
+  try { window.CODEDESK_ACTIVE_WORKING_FILE_ID = ''; } catch(e){}
+  try { window.__CODEDESK_CURRENT_WF_ID__ = ''; } catch(e){}
 
-  window.CODEDESK_ACTIVE_WORKING_FILE_ID = wfId;
   window.CODEDESK_ACTIVE_TEMPLATE_ID = t.id;
 
   // Apply the template’s saved state to the live UI + preview (guarded import).
