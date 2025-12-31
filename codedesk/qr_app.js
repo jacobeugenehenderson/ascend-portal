@@ -1676,9 +1676,17 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         if ('open' in fin) fin.open = true;
         fin.setAttribute('open', '');
         fin.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        // Focus a real control inside Finish if present
-        const first = fin.querySelector('button,[role="button"],a,input,select,textarea');
-        if (first) first.focus();
+
+        // IMPORTANT:
+        // Do NOT focus buttons here. If Enter triggered this path, the keyup can land on a focused
+        // button (✨) and fire an implicit click, accidentally starting the finish/upsert sequence.
+        // If we want focus, only focus a text input—and defer it so it cannot steal the Enter keyup.
+        setTimeout(function(){
+          try {
+            const focusEl = fin.querySelector('input,textarea,select');
+            if (focusEl) focusEl.focus();
+          } catch(e){}
+        }, 0);
       }
     } catch(e){}
   }
