@@ -4253,6 +4253,7 @@ window.__okqr_park_handler__ = function (e) {
     const stepper = document.getElementById('stepper') || card.closest('#stepper');
     if (stepper) {
       const panel = card.querySelector('[data-step-panel]');
+      const step  = (card.getAttribute && card.getAttribute('data-step')) ? String(card.getAttribute('data-step')) : '';
 
       const isOpen = !!(panel && panel.offsetParent !== null && getComputedStyle(panel).display !== 'none');
 
@@ -4266,6 +4267,13 @@ window.__okqr_park_handler__ = function (e) {
       if (panel && !isOpen) {
         panel.style.display = '';
         try { btn.setAttribute('aria-expanded', 'true'); } catch(e){}
+      }
+
+      // Mode styling must follow the active/opened step (especially in narrow mode)
+      stepper.classList.toggle('mech-active',   step === 'mechanicals');
+      stepper.classList.toggle('finish-active', step === 'finish');
+      if (step !== 'mechanicals' && step !== 'finish') {
+        stepper.classList.remove('mech-active', 'finish-active');
       }
     }
   } catch (e) {}
