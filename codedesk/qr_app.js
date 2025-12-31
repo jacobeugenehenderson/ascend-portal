@@ -1912,6 +1912,25 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         // If the stepper was late-mounted, ensure the right-side controls are actually wired.
         try { wireRightAccordionBehaviorOnce(); } catch(_e){}
 
+        // Immediately open Finish / Create working file so ✨ is reachable (viewport-agnostic).
+        try {
+          const stepper = document.getElementById('stepper');
+          if (stepper) {
+            // Close all drawers first (accordion truth)
+            stepper.querySelectorAll('[data-step-panel]').forEach((p) => { p.style.display = 'none'; });
+            stepper.querySelectorAll('[data-step-toggle]').forEach((b) => {
+              try { b.setAttribute('aria-expanded', 'false'); } catch(e){}
+            });
+
+            const finishCard = stepper.querySelector('.step-card[data-step="finish"]') || document.getElementById('finishCard');
+            const finishBtn  = finishCard ? finishCard.querySelector('[data-step-toggle]') : null;
+            const finishPanel = finishCard ? finishCard.querySelector('[data-step-panel]') : null;
+
+            if (finishPanel) finishPanel.style.display = '';
+            if (finishBtn) finishBtn.setAttribute('aria-expanded', 'true');
+          }
+        } catch(_e){}
+
         try { codedeskSetSetupSparkleVisible(true); } catch(_e){}
         try { syncFinishEnabled(); } catch(_e){}
 
