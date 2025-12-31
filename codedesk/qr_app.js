@@ -383,32 +383,35 @@ emojiGrid.appendChild(b); }); }
     }
 
     if (!window._stepperBound) {
-      document.addEventListener('click', (e) => {
-        const btn = e.target && e.target.closest && e.target.closest('[data-stepper]');
-        if (!btn) return;
+          const __codedeskStepperHandler__ = (e) => {
+            const btn = e.target && e.target.closest && e.target.closest('[data-stepper]');
+            if (!btn) return;
 
-        // Narrow mode: prevent accordion/tap handlers from swallowing the click.
-        e.preventDefault();
-        e.stopPropagation();
+            // Capture-phase handler: prevent other UI layers from hijacking the interaction.
+            try { e.preventDefault(); } catch(_e){}
+            try { e.stopPropagation(); } catch(_e){}
 
-        const targetId = btn.getAttribute('data-stepper');
-        const delta = parseFloat(btn.getAttribute('data-delta')||'0');
+            const targetId = btn.getAttribute('data-stepper');
+            const delta = parseFloat(btn.getAttribute('data-delta')||'0');
 
-        const input = document.getElementById(targetId);
-        if (!input) return;
+            const input = document.getElementById(targetId);
+            if (!input) return;
 
-        const v = parseFloat(input.value||'0') || 0;
-        const step = parseFloat(input.step||'0.05') || 0.05;
-        const min = parseFloat(input.min||'0.1') || 0.1;
-        const max = parseFloat(input.max||'1') || 1;
+            const v = parseFloat(input.value||'0') || 0;
+            const step = parseFloat(input.step||'0.05') || 0.05;
+            const min = parseFloat(input.min||'0.1') || 0.1;
+            const max = parseFloat(input.max||'1') || 1;
 
-        const next = clamp((Math.round((v + (delta||step))*100)/100), min, max);
-        input.value = next.toFixed(2);
-        input.dispatchEvent(new Event('input', {bubbles:true}));
-      });
+            const next = clamp((Math.round((v + (delta||step))*100)/100), min, max);
+            input.value = next.toFixed(2);
+            input.dispatchEvent(new Event('input', {bubbles:true}));
+          };
 
-      window._stepperBound = true;
-    }
+          // IMPORTANT: use capture so narrow-mode accordion/tap handlers can't swallow it.
+          document.addEventListener('click', __codedeskStepperHandler__, true);
+
+          window._stepperBound = true;
+        }
 
 ;(async function () {
 
