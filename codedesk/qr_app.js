@@ -1876,6 +1876,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
         try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
         try { codedeskSetLocked(false); } catch(_e){}
+
+        // If the stepper was late-mounted, ensure the right-side controls are actually wired.
+        try { wireRightAccordionBehaviorOnce(); } catch(_e){}
+
         try { codedeskSetSetupSparkleVisible(true); } catch(_e){}
         try { syncFinishEnabled(); } catch(_e){}
 
@@ -3144,7 +3148,31 @@ function wireRightAccordionBehaviorOnce() {
   if (_right_wired) return;
 
   const right = document.getElementById('stepper');
-  if (!right) return;
+  if (!right) {
+    // Stepper may be late-mounted; retry a few times.
+    if (!wireRightAccordionBehaviorOnce._retrying) {
+      wireRightAccordionBehaviorOnce._retrying = true;
+      let tries = 0;
+      const maxTries = 40; // ~10s @ 250ms
+      const iv = setInterval(function(){
+        tries++;
+        try {
+          const r = document.getElementById('stepper');
+          if (r) {
+            clearInterval(iv);
+            wireRightAccordionBehaviorOnce._retrying = false;
+            try { wireRightAccordionBehaviorOnce(); } catch(e){}
+            return;
+          }
+        } catch(e){}
+        if (tries >= maxTries) {
+          clearInterval(iv);
+          wireRightAccordionBehaviorOnce._retrying = false;
+        }
+      }, 250);
+    }
+    return;
+  }
 
   const captionCard     = right.querySelector('.step-card[data-step="caption"]');
   const designCard      = right.querySelector('.step-card[data-step="design"]');
