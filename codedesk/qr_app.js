@@ -520,7 +520,8 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
   } catch(e){}
 
   // Clear any previously active working file id so Enter cannot upsert anything.
-  try { localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
+  try { localStorage.removeItem('codedesk_active_working_file_v1'); } catch(e){}
+  try { typeof CODEDESK_ACTIVE_WF_KEY !== 'undefined' && localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
   try { window.CODEDESK_ACTIVE_WORKING_FILE_ID = ''; } catch(e){}
   try { window.__CODEDESK_CURRENT_WF_ID__ = ''; } catch(e){}
 
@@ -537,7 +538,6 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
     queueMicrotask(() => { window.__CODEDESK_APPLYING_TEMPLATE__ = false; });
   }
 
-  try { localStorage.setItem('codedesk_active_working_file_v1', wfId); } catch (e) {}
   return true;
 };
 
