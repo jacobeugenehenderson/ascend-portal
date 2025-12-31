@@ -1648,19 +1648,21 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     // Reflect lock state on <body> (styling + debugging sanity)
     try { document.body && document.body.classList && document.body.classList.toggle('codedesk-locked', !!locked); } catch(e){}
 
-    // Close Caption accordion on arrival (confusing default otherwise)
-    try {
-      const cap = document.querySelector('.step-card[data-step="caption"]');
-      if (cap) {
-        if ('open' in cap) cap.open = false;
-        cap.removeAttribute('open');
-      }
-    } catch(e){}
-
-    // Lock/unlock the accordion stack (Finish lives inside here)
+    // Always start with all drawers closed (Caption/Design/Mechanicals/Finish)
     try {
       const stepper = document.getElementById('stepper');
       if (stepper) {
+        stepper.querySelectorAll('[data-step-panel]').forEach((p) => { p.style.display = 'none'; });
+        stepper.querySelectorAll('[data-step-toggle]').forEach((b) => {
+          try { b.setAttribute('aria-expanded', 'false'); } catch(e){}
+        });
+
+        // Disable/enable the accordion buttons (they must feel inert until filename is accepted)
+        stepper.querySelectorAll('[data-step-toggle]').forEach((b) => {
+          try { b.disabled = !!locked; } catch(e){}
+          try { b.setAttribute('aria-disabled', locked ? 'true' : 'false'); } catch(e){}
+        });
+
         // Prefer native inert if available; fallback to pointer-events.
         if ('inert' in stepper) stepper.inert = !!locked;
         stepper.style.pointerEvents = locked ? 'none' : '';
@@ -1669,26 +1671,8 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   }
 
   function codedeskUnlockAndOpenFinish(){
+    // Keep for compatibility, but do NOT auto-open anything.
     codedeskSetLocked(false);
-    try {
-      const fin = document.querySelector('.step-card[data-step="finish"]');
-      if (fin) {
-        if ('open' in fin) fin.open = true;
-        fin.setAttribute('open', '');
-        fin.scrollIntoView({ block: 'center', behavior: 'smooth' });
-
-        // IMPORTANT:
-        // Do NOT focus buttons here. If Enter triggered this path, the keyup can land on a focused
-        // button (✨) and fire an implicit click, accidentally starting the finish/upsert sequence.
-        // If we want focus, only focus a text input—and defer it so it cannot steal the Enter keyup.
-        setTimeout(function(){
-          try {
-            const focusEl = fin.querySelector('input,textarea,select');
-            if (focusEl) focusEl.focus();
-          } catch(e){}
-        }, 0);
-      }
-    } catch(e){}
   }
 
   function codedeskRefreshFilenameGate(){
@@ -1741,19 +1725,31 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     }
   })();
 
-  // Accept mechanism: Enter commits the filename gate, unlocks the stepper, and opens Finish.
+  // Accept mechanism: Enter commits the filename gate and unlocks the stepper (drawers remain closed).
   document.getElementById('codedeskFilename')?.addEventListener('keydown', function(e){
     if (!e) return;
-    if (e.key !== 'Enter') return;
+    const isEnter = (e.key === 'Enter' || e.keyCode === 13);
+    if (!isEnter) return;
+
     try { e.preventDefault(); } catch(_e){}
     try { e.stopPropagation(); } catch(_e){}
 
-    const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
+    const inp = document.getElementById('codedeskFilename');
+    const fname = String(inp?.value || '').trim();
     if (!fname) return;
 
+    // Mark accepted + unlock UI
+    try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
     try { syncFinishEnabled(); } catch(_e){}
-    try { codedeskUnlockAndOpenFinish(); } catch(_e){}
-    try { e.target && e.target.blur && e.target.blur(); } catch(_e){}
+    try { codedeskSetLocked(false); } catch(_e){}
+
+    // Freeze the identity so the rest of the UI is stable
+    try {
+      if (inp) {
+        inp.setAttribute('data-accepted', 'true');
+        inp.blur();
+      }
+    } catch(_e){}
   }, true);
 
   // capture click for finish/setup
