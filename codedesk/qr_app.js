@@ -1555,7 +1555,7 @@ window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
 };
 
 window.codedeskSyncFileRoomDebounced = function codedeskSyncFileRoomDebounced(reason){
-  
+
   // Compatibility alias: "debounced FileRoom sync" now means a lightweight push (NO PNG).
   if (_codedeskFileRoomTimer) clearTimeout(_codedeskFileRoomTimer);
   _codedeskFileRoomTimer = setTimeout(() => {
@@ -1949,8 +1949,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       document.addEventListener('DOMContentLoaded', function(){
         try { wire(); } catch(e){}
       }, { once: true });
-      // Also a tiny async retry as a safety net for late-mounted nodes.
-      setTimeout(function(){ try { wire(); } catch(e){} }, 0);
+      // Also a retry ladder as a safety net for late-mounted nodes / async render.
+      (function retryWire(){
+        let tries = 0;
+        const maxTries = 20;   // ~5 seconds @ 250ms
+        const iv = setInterval(function(){
+          tries++;
+          try {
+            if (wire()) { clearInterval(iv); return; }
+          } catch(e){}
+          if (tries >= maxTries) { clearInterval(iv); }
+        }, 250);
+      })();
     }
   })();
 
