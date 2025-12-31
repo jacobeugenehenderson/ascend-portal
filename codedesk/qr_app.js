@@ -387,6 +387,10 @@ emojiGrid.appendChild(b); }); }
         const btn = e.target && e.target.closest && e.target.closest('[data-stepper]');
         if (!btn) return;
 
+        // Narrow mode: prevent accordion/tap handlers from swallowing the click.
+        e.preventDefault();
+        e.stopPropagation();
+
         const targetId = btn.getAttribute('data-stepper');
         const delta = parseFloat(btn.getAttribute('data-delta')||'0');
 
