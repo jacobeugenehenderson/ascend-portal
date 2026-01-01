@@ -53,7 +53,7 @@
   <!-- HEADER (full-width, sticky) -->
   <header class="header-bar sticky top-0 z-30 bg-white/90 dark:bg-neutral-900/90 backdrop-blur border-b border-neutral-200 dark:border-neutral-800">
     <div class="mx-auto max-w-6xl px-4 py-3 flex items-center gap-8">
-      <h1 class="text-lg font-semibold tracking-tight">
+      <h1 class="text-lg font-semibold tracking-tight codedesk-mark">
         <a href="./index.html" class="hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500">
     🔵 CODEDESK
   </a>
@@ -74,10 +74,6 @@
             <option value="Map">Map</option>
           </select>
         </label>
-
-        <!-- Header buttons (restored) -->
-        <button id="appMenuBtn" type="button" aria-label="Menu">Menu</button>
-        <button id="themeToggle" type="button" aria-label="Theme">Theme</button>
       </div>
     </div>
   </header>
@@ -370,24 +366,24 @@
   </div>
 </div>
 
-<!-- Finish -->
+<!-- Finish (header-only action row; no accordion panel) -->
 <div id="finishCard"
      class="step-card"
      data-step="finish">
-  <button type="button"
-          class="w-full step-header px-4 py-3 text-left font-medium"
-          data-step-toggle>
-    Create working file
-  </button>
 
-    <div class="px-4 pb-4 space-y-3" data-step-panel style="display:none">
-    <div class="flex flex-wrap items-center gap-3">
-      <button id="exportBtn" type="button" data-action="finish"
-              class="ml-auto px-4 py-2 rounded-lg bg-black text-white text-sm">
-        ✨
-      </button>
+  <div class="step-header-wrap flex items-center gap-3">
+    <div class="flex-1 step-header px-4 py-3 text-left font-medium">
+      Create working file
     </div>
+
+    <button id="exportBtn"
+            type="button"
+            data-action="finish"
+            class="px-4 py-2 rounded-lg bg-black text-white text-sm">
+      ✨
+    </button>
   </div>
+
 </div>
 
   <!-- Emoji Modal -->

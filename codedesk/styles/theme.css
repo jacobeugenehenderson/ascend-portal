@@ -282,11 +282,16 @@ body{
   color: color-mix(in oklab, var(--md-sys-color-on-surface) 86%, var(--step-color-primary) 14%);
 }
 
-/* Mechanicals (open): unified stripe and no duplicate borders */
+/* Mechanicals (open): unified stripe, full-bleed to card edge */
 .step-card[data-step="mechanicals"].is-open .step-header-wrap {
   background: var(--step-header-open-bg);
   border-bottom: 0 !important;
   position: relative;
+
+  /* harden full-bleed geometry */
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 .step-card[data-step="mechanicals"].is-open .step-header {
@@ -550,7 +555,20 @@ body.kbd .ecc-btn[aria-pressed="true"] {
   .step-card[data-step="mechanicals"]:not(.is-open) .step-header { padding-bottom: 1rem; }
 }
 
-/* Make the header a flex row so the pill can live on the right */
+/* Make header wraps true edge-to-edge slabs (Design/Mechanicals/Finish) */
+.step-header-wrap{
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+
+  /* slab geometry */
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Keep the existing mechanials selector for specificity parity */
 .step-card[data-step="mechanicals"] .step-header-wrap {
   position: relative;
   display: flex;
@@ -582,11 +600,16 @@ body.kbd .ecc-btn[aria-pressed="true"] {
   outline: none;
 }
 
-/* Design (open): unified stripe and no duplicate borders (mirror of Mechanicals) */
+/* Design (open): unified stripe, full-bleed to card edge */
 .step-card[data-step="design"].is-open .step-header-wrap{
   background: var(--step-header-open-bg);
   border-bottom: 0 !important;
   position: relative;
+
+  /* harden full-bleed geometry */
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
 .step-card[data-step="design"].is-open .step-header{ background: transparent !important; border-bottom: 0 !important; }
@@ -624,6 +647,13 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 /* =========================
    4. CONTROLS (inputs/selects/Menu)
 ========================= */
+
+/* CODEDESK header mark (contrast + crisp) */
+.codedesk-mark a{
+  color: var(--md-sys-color-on-surface);
+  text-decoration: none;
+}
+.codedesk-mark a:hover{ text-decoration: underline; }
 
 input[type="text"],
 input[type="email"],
@@ -670,16 +700,14 @@ select:hover{
 
 /* === TOP BAR — text styling (only) =================================== */
 /* Restore heavier label for the pills and keep baselines consistent */
-#qrType,
-#appMenuBtn{
+#qrType{
   font: 600 var(--typo-input-size)/1 var(--font-family);
   letter-spacing: .01em;
   color: var(--md-sys-color-on-surface);
 }
 
 /* === TOP BAR — pill layout =========================================== */
-#qrType,
-#appMenuBtn{
+#qrType{
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1092,13 +1120,27 @@ input[type="color"].color-dot::-moz-color-swatch{
     z-index: 1;                       /* below the raised preview section */
   }
 
-/* Stop pinning/parallax on Finish; let it flow like others */
+/* Finish: header-only row; let it flow like others */
 .step-card[data-step="finish"]{
   position: static !important;
   bottom: auto !important;
   z-index: auto !important;
   backdrop-filter: none !important;
   border-top: 1px solid var(--ui-stroke);
+}
+
+/* Finish header row should look like the other header slabs */
+.step-card[data-step="finish"] .step-header-wrap{
+  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
+  border-bottom: 1px solid var(--stepper-stroke-closed);
+  box-shadow:
+    0 0 0 1px var(--stepper-stroke-closed) inset,
+    0 1px 0 rgba(0,0,0,.06);
+}
+
+/* When finish card is "open" (if JS ever adds .is-open), use the open slab */
+.step-card[data-step="finish"].is-open .step-header-wrap{
+  background: var(--step-header-open-bg);
 }
 
 /* …but keep the on-phone UI (arrows) interactive */
@@ -1338,27 +1380,6 @@ label.text-sm.block{
   pointer-events: none;
 }
 
-/* === Circular Theme Toggle Button === */
-#themeToggle {
-  width: 2.25rem;              /* equal width/height keeps it round */
-  height: 2.25rem;
-  display: inline-grid;
-  place-items: center;         /* centers the emoji perfectly */
-  border-radius: 50%;          /* makes it a circle */
-  border: 1px solid var(--ui-stroke, #4b5563);
-  background: var(--md-sys-color-surface, transparent);
-  cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
-}
-
-#themeToggle:hover {
-  background: color-mix(in oklab, var(--md-sys-color-primary) 15%, transparent);
-}
-
-#themeToggle:active {
-  transform: scale(0.95);
-}
-
 /* === QR Types: show the custom chevron === */
 #qrType {
   -webkit-appearance: none;
@@ -1371,8 +1392,7 @@ label.text-sm.block{
 }
 
 /* Types Hover for Pills (shared) */
-#qrType:hover,
-#appMenuBtn:hover {
+#qrType:hover {
   box-shadow:
     0 0 0 1px var(--ui-stroke-hover) inset,
     0 0 var(--hover-glow-blur) var(--hover-glow-color);

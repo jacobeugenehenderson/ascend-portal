@@ -1799,33 +1799,22 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   }
 
   function codedeskUnlockAndOpenFinish(){
-  // Unlock + reveal Finish (Create working file) so ✨ is reachable
+  // Unlock + reveal Finish (Create working file) without opening a drawer (Finish does not fold down).
   codedeskSetLocked(false);
 
-  // IMPORTANT: in narrow mode, unlock + layout reflow can lag by a tick/frame.
-  // Defer the auto-open click so the step header is truly enabled and the lock
-  // class/attributes are settled before the handler runs.
-  const _openFinish = () => {
-    try {
-      const stepper = document.getElementById('stepper');
-      if (!stepper) return;
+  try {
+    const stepper = document.getElementById('stepper');
+    if (stepper) {
+      stepper.classList.remove('mech-active');
+      stepper.classList.add('finish-active');
 
       const finishCard = stepper.querySelector('.step-card[data-step="finish"]');
-      const finishBtn  = finishCard ? finishCard.querySelector('[data-step-toggle]') : null;
-
-      if (!finishBtn) return;
-
-      // If still disabled, try again next frame (covers slow/mobile reflow)
-      if (finishBtn.disabled) return requestAnimationFrame(_openFinish);
-      if (finishBtn.getAttribute('aria-disabled') === 'true') return requestAnimationFrame(_openFinish);
-      if (document.body && document.body.classList && document.body.classList.contains('codedesk-locked')) return requestAnimationFrame(_openFinish);
-
-      finishBtn.click();
-    } catch(e){}
-  };
-
-  // two-phase defer: next tick + next paint
-  setTimeout(() => requestAnimationFrame(_openFinish), 0);
+      if (finishCard) {
+        const preferSmooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        finishCard.scrollIntoView({ block: 'start', behavior: preferSmooth ? 'smooth' : 'auto' });
+      }
+    }
+  } catch(e){}
 }
 
   function codedeskRefreshFilenameGate(){
@@ -1859,21 +1848,12 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   }
 
   function codedeskRemoveSetupStep(){
-    // Remove the entire setup accordion step (flipper + panel) if it exists.
+    // Remove the entire setup accordion step (Finish) if it exists.
     try {
       const stepper = document.getElementById('stepper');
       if (stepper) {
-        stepper.querySelectorAll('[data-step-toggle]').forEach((t) => {
-          const key = (t.getAttribute('data-step-toggle') || '').trim();
-          const txt = (t.textContent || '').trim().toLowerCase();
-          const isSetup = (key && key.toLowerCase().indexOf('finish') !== -1) || (txt === 'finish' || txt === 'finish setup');
-          if (!isSetup) return;
-          try {
-            const p = key ? stepper.querySelector('[data-step-panel="' + CSS.escape(key) + '"]') : null;
-            if (p) p.remove();
-          } catch(e){}
-          try { t.remove(); } catch(e){}
-        });
+        const finishCard = stepper.querySelector('.step-card[data-step="finish"]');
+        if (finishCard) finishCard.remove();
       }
     } catch(e){}
 
@@ -4259,7 +4239,7 @@ window.__okqr_park_handler__ = function (e) {
     const stepper = document.getElementById('stepper') || card.closest('#stepper');
     if (stepper) {
       const panel = card.querySelector('[data-step-panel]');
-      const step = String(card.getAttribute('data-step') || '');
+      const step  = String(card.getAttribute('data-step') || '');
 
       const isOpen = !!(panel && panel.offsetParent !== null && getComputedStyle(panel).display !== 'none');
 
@@ -4269,16 +4249,24 @@ window.__okqr_park_handler__ = function (e) {
         try { b.setAttribute('aria-expanded', 'false'); } catch(e){}
       });
 
+      // Clear open state tracking (needed for pill visibility + header paint rules)
+      stepper.querySelectorAll('.step-card').forEach((c) => { try { c.classList.remove('is-open'); } catch(e){} });
+
+      // Finish should NOT fold down: it never opens a panel; it only toggles finish-active styling.
+      if (step === 'finish') {
+        stepper.classList.remove('mech-active');
+        stepper.classList.add('finish-active');
+        return;
+      }
+
       // If it was closed, open it; if it was open, leave everything closed.
       if (panel && !isOpen) {
         panel.style.display = '';
         try { btn.setAttribute('aria-expanded', 'true'); } catch(e){}
+        try { card.classList.add('is-open'); } catch(e){}
 
         // Mode styling parity with wide-mode setMode()
-        if (step === 'finish') {
-          stepper.classList.remove('mech-active');
-          stepper.classList.add('finish-active');
-        } else if (step === 'mechanicals') {
+        if (step === 'mechanicals') {
           stepper.classList.remove('finish-active');
           stepper.classList.add('mech-active');
         } else {
