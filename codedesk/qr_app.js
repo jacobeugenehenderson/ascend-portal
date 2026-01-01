@@ -316,8 +316,141 @@ function wireFontSelect(){
       syncBody();
     }
 
+    // === Emoji picker (HTML modal-driven; no fallback) =======================
+    function wireEmojiPickerOnce(){
+      if (window.__CODEDESK_EMOJI_PICKER_WIRED__) return;
+      window.__CODEDESK_EMOJI_PICKER_WIRED__ = true;
+
+      const modal = document.getElementById('emojiModal');
+      const grid  = document.getElementById('emojiGrid');
+      const search= document.getElementById('emojiSearch');
+      const close = document.getElementById('emojiClose');
+
+      if (!modal || !grid || !search || !close) return;
+
+      // Curated set (fast, lightweight, good coverage for QR captioning)
+      const EMOJIS = [
+        "✨","✅","⚠️","❗","❓","📌","📎","🔗","📣","📢","🧠","💡","🛠️","⚙️","🧾","📄","🗂️","📦","🧩","🧪",
+        "🎯","📍","🧭","🗺️","⏱️","⏳","🕒","📅","🗓️","🧷",
+        "❤️","🖤","💙","💚","💛","🧡","💜","🤍","🤎","💖",
+        "🙂","😎","🤝","🙏","👏","🔥","💥","⭐","🌈","⚡",
+        "⬆️","⬇️","➡️","⬅️","↗️","↘️","↙️","↖️","🔼","🔽",
+        "➕","➖","✖️","➗","∞","≈","≠","≤","≥",
+        "🏳️‍🌈","🏳️‍⚧️"
+      ];
+
+      let activeTargetId = '';
+
+      function setActiveTarget(id){
+        activeTargetId = String(id || '').trim();
+      }
+
+      function openModal(){
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        try { search.focus(); } catch(e){}
+      }
+
+      function closeModal(){
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        setActiveTarget('');
+      }
+
+      function paint(filterText){
+        const q = String(filterText || '').trim().toLowerCase();
+        grid.innerHTML = '';
+
+        const list = q
+          ? EMOJIS.filter(e => e.toLowerCase().includes(q))
+          : EMOJIS;
+
+        list.forEach((emo) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'emoji-btn';
+          b.textContent = emo;
+          b.setAttribute('aria-label', emo);
+
+          b.addEventListener('click', function(ev){
+            try { ev.preventDefault(); } catch(_e){}
+            try { ev.stopPropagation(); } catch(_e){}
+
+            if (!activeTargetId) return;
+            const inp = document.getElementById(activeTargetId);
+            if (!inp) return;
+
+            inp.value = emo;
+            inp.dispatchEvent(new Event('input',  { bubbles:true }));
+            inp.dispatchEvent(new Event('change', { bubbles:true }));
+            try { if (typeof render === 'function') render(); } catch(e){}
+
+            closeModal();
+          }, { passive:false });
+
+          grid.appendChild(b);
+        });
+      }
+
+      // Delegate: any button with data-emoji-target opens modal
+      document.addEventListener('click', function(e){
+        const btn = e.target && e.target.closest && e.target.closest('button[data-emoji-target]');
+        if (!btn) return;
+
+        try { e.preventDefault(); } catch(_e){}
+        try { e.stopPropagation(); } catch(_e){}
+
+        const tid = btn.getAttribute('data-emoji-target') || '';
+        if (!tid) return;
+
+        setActiveTarget(tid);
+        search.value = '';
+        paint('');
+        openModal();
+      }, true);
+
+      // Search
+      search.addEventListener('input', function(){
+        paint(search.value || '');
+      });
+
+      // Close button
+      close.addEventListener('click', function(e){
+        try { e.preventDefault(); } catch(_e){}
+        try { e.stopPropagation(); } catch(_e){}
+        closeModal();
+      });
+
+      // Click backdrop to close
+      modal.addEventListener('click', function(e){
+        if (e.target === modal) closeModal();
+      });
+
+      // ESC to close
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+      });
+
+      // initial paint (so the grid is ready on first open)
+      paint('');
+    }
+
     // run after DOM loads
-    
+    (function wireCaptionAndEmojiOnce(){
+      if (window.__CODEDESK_CAPTION_EMOJI_WIRED__) return;
+      window.__CODEDESK_CAPTION_EMOJI_WIRED__ = true;
+
+      const run = function(){
+        try { wireCaptionInputs(); } catch(e){}
+        try { wireEmojiPickerOnce(); } catch(e){}
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run, { once: true });
+      } else {
+        run();
+      }
+    })();
     // -------- Scale clickers (delegated; safe across form rebuilds) --------
     function clamp(val, min, max) {
       return Math.min(max, Math.max(min, val));
