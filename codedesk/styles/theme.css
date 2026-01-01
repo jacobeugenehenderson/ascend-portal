@@ -251,8 +251,14 @@ body{
 
 #stepper>div.is-open .step-header {
   border-bottom: var(--featured-stroke-width) solid var(--featured-stroke-color);
-  background: var(--step-header-open-bg);
+  background: var(--step-header-open-bg); /* ✅ selected = light blue */
   backdrop-filter: saturate(1.1) blur(6px);
+}
+
+/* ✅ Open header slab: same height as closed, flat bottom corners */
+#stepper > div.is-open .step-header-wrap{
+  min-height: 3.6rem;
+  border-radius: var(--phone-radius) var(--phone-radius) 0 0;
 }
 
 /* When a step is open, its outer shell adopts the local step color story */
@@ -498,7 +504,7 @@ body.codedesk-locked #codedeskFilename{
     0 1px 0 rgba(0,0,0,.06);
 
   /* ✅ match the older, roomier “Caption” pill */
-  min-height: 4.25rem;
+  min-height: 3.6rem;
   display: flex;
   align-items: center;
 }
@@ -919,7 +925,9 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   font-weight: var(--typo-display-weight, 700);
   letter-spacing: var(--typo-display-track, .01em);
   color: var(--md-sys-color-on-surface);
-  padding: 0; /* slab is full-bleed; padding belongs to the title */
+
+  /* ✅ Header content padding (so Caption matches everything else) */
+  padding: 0 1.25rem;
 
   /* ✅ Content-only: NEVER paint the slab (wrap owns bg/border/radius) */
   background: transparent !important;
@@ -929,7 +937,9 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
 
   /* Ensure the clickable area fills the wrap */
   width: 100%;
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 3.6rem; /* keep header body height consistent */
 }
 
 .step-header .title{
@@ -939,9 +949,7 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   letter-spacing: inherit;
   color: inherit;
   display: block;
-
-  /* ✅ roomier title padding (matches “correct” pill) */
-  padding: 1.1rem 1.25rem;
+  padding: 0; /* ✅ padding now lives on .step-header so Caption matches */
 }
 
 /* LABELS: field labels like “Module Fill”, “Background” */
