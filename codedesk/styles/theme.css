@@ -245,7 +245,14 @@ body{
   border: 0;
   box-shadow: none;
 }
-#stepper > .step-card:not(.is-open) .step-header:hover{
+
+/* Hover tint must hit the FULL header shell (wrap), not just the left button chunk */
+#stepper > div:not(.is-open) .step-header-wrap:hover{
+  background: color-mix(in oklab, var(--ui-surface) 88%, var(--step-color-primary) 12%);
+}
+
+/* Caption has no wrap — tint the button itself */
+#stepper > div[data-step="caption"]:not(.is-open) > .step-header:hover{
   background: color-mix(in oklab, var(--ui-surface) 88%, var(--step-color-primary) 12%);
 }
 
@@ -499,7 +506,8 @@ body.codedesk-locked #codedeskFilename{
 }
 
 /* Closed accordion buttons: navy stroke */
-#stepper > div:not(.is-open) .step-header-wrap{
+#stepper > div:not(.is-open) .step-header-wrap,
+#stepper > div[data-step="caption"]:not(.is-open) > .step-header{
   background: var(--ui-surface); /* ✅ load state = white/light */
   border: 1px solid color-mix(in oklab, var(--md-sys-color-on-surface) 22%, transparent); /* ✅ darker/crisper */
   border-radius: var(--phone-radius);
