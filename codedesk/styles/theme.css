@@ -496,6 +496,11 @@ body.codedesk-locked #codedeskFilename{
   box-shadow:
     0 0 0 1px var(--stepper-stroke-closed) inset,
     0 1px 0 rgba(0,0,0,.06);
+
+  /* ✅ match the older, roomier “Caption” pill */
+  min-height: 4.25rem;
+  display: flex;
+  align-items: center;
 }
 
 /* Buttons — CANONICAL */
@@ -934,7 +939,9 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   letter-spacing: inherit;
   color: inherit;
   display: block;
-  padding: .75rem 1rem; /* header text padding lives HERE */
+
+  /* ✅ roomier title padding (matches “correct” pill) */
+  padding: 1.1rem 1.25rem;
 }
 
 /* LABELS: field labels like “Module Fill”, “Background” */
