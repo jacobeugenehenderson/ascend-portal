@@ -442,8 +442,19 @@
   window.openEmoji  = openEmoji;
   window.closeEmoji = closeEmoji;
 
-  document.querySelectorAll('[data-emoji-target]')
-    .forEach(btn => btn.addEventListener('click', () => openEmoji(btn.getAttribute('data-emoji-target'))));
+  // Delegate so dynamically-added emoji buttons also work
+  document.addEventListener('click', function(e){
+    const btn = e.target && e.target.closest && e.target.closest('button[data-emoji-target]');
+    if (!btn) return;
+
+    try { e.preventDefault(); } catch(_e){}
+    try { e.stopPropagation(); } catch(_e){}
+
+    const tid = btn.getAttribute('data-emoji-target') || '';
+    if (!tid) return;
+
+    openEmoji(tid);
+  }, true);
   emojiClose?.addEventListener('click', closeEmoji);
   emojiModal?.addEventListener('click', (e) => { if (e.target === emojiModal) closeEmoji(); });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !emojiModal.classList.contains('hidden')) closeEmoji(); });
