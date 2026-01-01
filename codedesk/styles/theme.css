@@ -427,9 +427,9 @@ body.codedesk-locked #codedeskFilename{
   box-shadow: none;
 }
 
-/* Nudge the text down inside each step-card */
+/* Header slab must be full-bleed; padding moves to title only */
 .step-card .step-header {
-  padding-top: 1.0rem;   /* was py-3 (~0.75rem) from the HTML */
+  padding: 0;
 }
 
 .step-card [data-step-panel]{
@@ -618,7 +618,9 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 }
 .step-card[data-step="design"] #fontPill{ display:flex !important; }
 
-.step-card[data-step="design"]:has([data-step-panel][style*="display:none"]) #fontPill{
+.step-card[data-step="design"]:has([data-step-panel][style*="display:none"]) #fontPill,
+.step-card[data-step="mechanicals"]:has([data-step-panel][style*="display:none"]) #eccPill,
+.step-card[data-step="finish"]:not(.is-open) #exportBtn{
   visibility: hidden;
   pointer-events: none;
 }
@@ -774,7 +776,15 @@ select.rounded-md,
   border: 1px solid var(--ui-stroke);
   border-radius: var(--shape-corner-sm);
   box-shadow: 0 0 0 1px var(--ui-stroke) inset;
-  height: calc(var(--density-control-h) * .9);
+
+  /* emoji = square glyph buttons, not form controls */
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-grid;
+  place-items: center;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
 }
 
 #emojiGrid button:hover{
@@ -887,6 +897,7 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   font-weight: var(--typo-display-weight);
   letter-spacing: var(--typo-display-track);
   color: var(--md-sys-color-on-surface);
+  padding: 1rem 1.25rem; /* ⬅ header text padding lives HERE */
 }
 
 /* LABELS: field labels like “Module Fill”, “Background” */
