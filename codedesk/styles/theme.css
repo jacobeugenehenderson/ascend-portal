@@ -960,36 +960,56 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   padding-right: 1.25rem !important;
 }
 
-/* ✅ Caption step does NOT use header-wrap padding the same way — force it */
+/* ✅ Caption step does NOT use .step-header-wrap in the HTML.
+   So: treat the .step-header itself as the header slab. */
+
 /* Caption — parity with other steps (stowed stroke + open header slab) */
 .step-card[data-step="caption"]{
-  /* ensure collapsed pill stroke matches other steps */
   border: 1px solid var(--ui-stroke);
   border-radius: var(--phone-radius);
   background: var(--ui-surface);
   overflow: hidden;
 }
 
-/* keep your caption header padding */
+/* Closed: subtle tint + crisp edge (match your OKQRAL collapsed feel) */
+#stepper > .step-card[data-step="caption"]:not(.is-open) .step-header{
+  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
+  border-bottom: 1px solid var(--ui-stroke);
+  box-shadow:
+    0 0 0 1px var(--ui-stroke) inset,
+    0 1px 0 rgba(0,0,0,.06);
+}
+
+/* Caption header padding (since there is no .step-header-wrap) */
 .step-card[data-step="caption"] .step-header{
   padding-left: 1.25rem !important;
   padding-right: 1.25rem !important;
+  border-radius: 0 !important; /* keep the slab geometry clean */
 }
 
-/* OPEN: force the same header slab treatment you see on Mechanicals */
+/* Open: header slab styling (applied to .step-header directly) */
 #stepper .step-card[data-step="caption"].is-open .step-header{
-  border-bottom: var(--featured-stroke-width) solid var(--featured-stroke-color);
   background: var(--step-header-open-bg);
   backdrop-filter: saturate(1.1) blur(6px);
-}
-
-/* OPEN: same height + flat bottom corners on the header slab */
-#stepper .step-card[data-step="caption"].is-open .step-header-wrap{
+  border-bottom: 0 !important; /* we paint the rule via ::after for parity */
   min-height: 3.4rem;
   border-radius: var(--phone-radius) var(--phone-radius) 0 0;
+  position: relative;
 }
 
-/* OPEN: tuck panel under the header divider line (no “step”) */
+/* Open: single thin rule at bottom of header slab */
+#stepper .step-card[data-step="caption"].is-open .step-header::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:1px;
+  background: var(--ui-stroke);
+  pointer-events:none;
+}
+
+/* Open: tuck the panel under the header rule (no step) */
 #stepper .step-card[data-step="caption"].is-open [data-step-panel]{
   margin-top: -1px;
   background: var(--ui-surface-variant);
