@@ -637,6 +637,17 @@ body.kbd .ecc-btn[aria-pressed="true"] {
   padding-inline: 1.25rem;
 }
 
+/* Caption has NO .step-header-wrap — tint the button itself when open */
+.step-card[data-step="caption"].is-open > .step-header{
+  background: var(--step-header-open-bg) !important;
+  border-bottom: var(--featured-stroke-width) solid var(--featured-stroke-color);
+  backdrop-filter: saturate(1.1) blur(6px);
+  min-height: 3.4rem;
+  border-radius: var(--phone-radius) var(--phone-radius) 0 0;
+  padding-inline: 1.25rem;
+}
+
+/* Design uses the wrap slab, not the button */
 .step-card[data-step="design"].is-open .step-header{ background: transparent !important; border-bottom: 0 !important; }
 .step-card[data-step="design"].is-open .step-header-wrap::after{
   content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ui-stroke); pointer-events:none;
