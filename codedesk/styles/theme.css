@@ -266,7 +266,8 @@ body{
   --ui-stroke: color-mix(in oklab, var(--step-color-primary) 40%, transparent);
   --ui-stroke-hover: color-mix(in oklab, var(--step-color-primary) 60%, transparent);
 
-  background: var(--step-card-open-bg);
+  /* ✅ card stays white; only the header stripe gets the blue */
+  background: var(--ui-surface);
   border-color: var(--featured-stroke-color);
   box-shadow: var(--featured-stroke-glow);
 }
@@ -461,7 +462,8 @@ body.codedesk-locked #codedeskFilename{
   --ui-stroke: color-mix(in oklab, var(--step-color-primary) 40%, transparent);
   --ui-stroke-hover: color-mix(in oklab, var(--step-color-primary) 60%, transparent);
 
-  background: var(--step-card-open-bg);
+  /* ✅ card stays white; only the header stripe gets the blue */
+  background: var(--ui-surface);
   border-color: var(--featured-stroke-color);
   box-shadow: var(--featured-stroke-glow);
 }
@@ -953,6 +955,17 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   min-height: 3.4rem; /* matches your updated value */
 }
 
+.step-card[data-step="caption"] [data-step-panel]{
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
+/* ✅ Caption step does NOT use header-wrap padding the same way — force it */
+.step-card[data-step="caption"] .step-header{
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
 .step-header .title{
   font-family: inherit;
   font-size: inherit;
@@ -1055,7 +1068,7 @@ textarea::placeholder{
   border-bottom: 0;
 }
 
-#emojiSearch { display: none !important; }
+#emojiSearch { display: block !important; }
 
 /* There should be no "Details" step in CodeDesk */
 .step-card[data-step="details"]{
@@ -1442,9 +1455,25 @@ label.text-sm.block{
 
 /* Backdrop polish + allow dismissal clicks */
 .modal-bg {
-  background: var(--ascend-modal-backdrop, rgba(0,0,0,.25));
+  /* ✅ light modal backdrop (no dark theme vibes) */
+  background: rgba(255,255,255,.70);
   backdrop-filter: blur(var(--ascend-modal-blur, 3px));
   pointer-events: auto;
+}
+
+/* ✅ force emoji dialog to light, even if any dark classes exist */
+#emojiModal > div{
+  background: #fff !important;
+  color: #0b0b0b !important;
+  border: 1px solid rgba(15, 23, 42, .18) !important;
+}
+
+/* ✅ make the emoji picker a real, full-width grid */
+#emojiGrid{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr)) !important;
+  gap: .5rem !important;
+  width: 100% !important;
 }
 
 /* When hidden, backdrop ignores all input */
