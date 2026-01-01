@@ -48,7 +48,7 @@
   <link rel="stylesheet" href="./styles/theme.css">
 </head>
 
-<body class="min-h-screen text-neutral-900 dark:text-neutral-100">
+<body class="min-h-screen text-neutral-900 ascend-app-body">
 
   <!-- HEADER (full-width, sticky) -->
   <header class="header-bar sticky top-0 z-30 bg-white/90 dark:bg-neutral-900/90 backdrop-blur border-b border-neutral-200 dark:border-neutral-800">
@@ -74,13 +74,17 @@
             <option value="Map">Map</option>
           </select>
         </label>
+
+        <!-- Header buttons (restored) -->
+        <button id="appMenuBtn" type="button" aria-label="Menu">Menu</button>
+        <button id="themeToggle" type="button" aria-label="Theme">Theme</button>
       </div>
     </div>
   </header>
 
   <!-- Main -->
   <main
-  class="mx-auto max-w-7xl px-6 py-8 grid
+  class="ascend-app-panel mx-auto max-w-7xl px-6 py-8 grid
          grid-cols-1
          xl:grid-cols-2
          justify-items-center xl:justify-items-start
