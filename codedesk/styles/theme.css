@@ -618,17 +618,19 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 }
 .step-card[data-step="design"] #fontPill{ display:flex !important; }
 
-.step-card[data-step="design"]:has([data-step-panel][style*="display:none"]) #fontPill,
-.step-card[data-step="mechanicals"]:has([data-step-panel][style*="display:none"]) #eccPill,
-.step-card[data-step="finish"]:not(.is-open) #exportBtn{
+/* Pills: hide when their flipper is not active */
+.step-card[data-step="design"]:not(.is-open) #fontPill,
+.step-card[data-step="mechanicals"]:not(.is-open) #eccPill{
   visibility: hidden;
   pointer-events: none;
 }
 
-.step-card[data-step="design"]:not(:has([data-step-panel][style*="display:none"])) #fontPill{
+.step-card[data-step="design"].is-open #fontPill,
+.step-card[data-step="mechanicals"].is-open #eccPill{
   visibility: visible;
   pointer-events: auto;
 }
+
 .step-card[data-step="design"] .step-header-wrap #fontPill.ecc-pill{
   align-items:center; flex-wrap:nowrap; gap:var(--density-gap); margin-left:auto; padding-right:var(--edge-gutter);
 }
@@ -698,6 +700,20 @@ select:hover{
 #stepper.finish-active #exportBtn{
   pointer-events:auto !important;
   opacity: 1 !important;
+
+  /* Match header pills (icon-only circle) */
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 999px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--ascend-control-bg, #ffffff);
+  border: 1px solid var(--ascend-control-border, rgba(148, 163, 184, 0.85));
+  color: var(--ascend-app-text-main, #020617);
+  font: 600 0.85rem/1 var(--font-family, system-ui);
 }
 
 /* === TOP BAR — text styling (only) =================================== */
@@ -890,14 +906,23 @@ button[data-emoji-target]:hover{
 button[data-emoji-target]::-moz-focus-inner{ border: 0; }
 
 /* DISPLAY: section headers (Caption / Design / Mechanicals / Finish) */
-.step-header,
-.step-header .title{
+.step-header{
   font-family: var(--font-family);
-  font-size: var(--typo-display-size);
-  font-weight: var(--typo-display-weight);
-  letter-spacing: var(--typo-display-track);
+  font-size: var(--typo-display-size, 1rem);
+  font-weight: var(--typo-display-weight, 700);
+  letter-spacing: var(--typo-display-track, .01em);
   color: var(--md-sys-color-on-surface);
-  padding: 1rem 1.25rem; /* ⬅ header text padding lives HERE */
+  padding: 0; /* slab is full-bleed; padding belongs to the title */
+}
+
+.step-header .title{
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  display: block;
+  padding: .75rem 1rem; /* header text padding lives HERE */
 }
 
 /* LABELS: field labels like “Module Fill”, “Background” */
@@ -977,12 +1002,12 @@ textarea::placeholder{
 }
 
 /* Stowed vs open: never remove from layout (prevents “gone” states) */
-.step-card[data-step="mechanicals"]:has([data-step-panel][style*="display:none"]) #eccPill {
+.step-card[data-step="mechanicals"]:not(.is-open) #eccPill{
   visibility: hidden;                   /* keeps header geometry stable */
   pointer-events: none;
 }
 
-.step-card[data-step="mechanicals"]:not(:has([data-step-panel][style*="display:none"])) #eccPill {
+.step-card[data-step="mechanicals"].is-open #eccPill{
   visibility: visible;
   pointer-events: auto;
 }
