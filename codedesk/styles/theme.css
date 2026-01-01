@@ -1720,3 +1720,9 @@ input[type="range"] {
     0 0 0 1px var(--ascend-app-accent, var(--ui-focus-ring)) inset,
     0 0 0 3px color-mix(in oklab, var(--ascend-app-accent, var(--ui-focus-ring)) 22%, transparent);
 }
+
+/* Emoji picker should own its layout */
+#emojiModal emoji-picker{
+  max-height: none !important;
+  height: auto !important;
+}
