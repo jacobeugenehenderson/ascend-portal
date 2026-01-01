@@ -595,12 +595,12 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 }
 .step-card[data-step="design"] #fontPill{ display:flex !important; }
 
-.step-card[data-step="design"]:not(.is-open) #fontPill{
+.step-card[data-step="design"]:has([data-step-panel][style*="display:none"]) #fontPill{
   visibility: hidden;
   pointer-events: none;
 }
 
-.step-card[data-step="design"].is-open #fontPill{
+.step-card[data-step="design"]:not(:has([data-step-panel][style*="display:none"])) #fontPill{
   visibility: visible;
   pointer-events: auto;
 }
@@ -938,12 +938,12 @@ textarea::placeholder{
 }
 
 /* Stowed vs open: never remove from layout (prevents “gone” states) */
-.step-card[data-step="mechanicals"]:not(.is-open) #eccPill {
+.step-card[data-step="mechanicals"]:has([data-step-panel][style*="display:none"]) #eccPill {
   visibility: hidden;                   /* keeps header geometry stable */
   pointer-events: none;
 }
 
-.step-card[data-step="mechanicals"].is-open #eccPill {
+.step-card[data-step="mechanicals"]:not(:has([data-step-panel][style*="display:none"])) #eccPill {
   visibility: visible;
   pointer-events: auto;
 }
