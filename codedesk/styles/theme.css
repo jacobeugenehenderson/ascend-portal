@@ -63,7 +63,7 @@
   --md-sys-color-muted:            var(--ascend-app-text-muted, #64748b);
 
   /* Strokes (inherit Ascend app shell) */
-  --md-sys-color-outline:          var(--ascend-app-border);
+  --md-sys-color-outline:          var(--ascend-app-border, rgba(15, 23, 42, 0.22));
   --md-sys-color-outline-variant:  color-mix(in oklab, var(--md-sys-color-outline) 70%, var(--md-sys-color-primary) 30%);
 
   /* ---------------------------------------------------------
@@ -955,10 +955,10 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   /* horizontal padding lives on .step-header-wrap */
   padding: 0;
 
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
 
   width: 100%;
   display: flex;
