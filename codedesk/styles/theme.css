@@ -1009,7 +1009,16 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
 .step-card[data-step="caption"] .step-header{
   padding-left: 1.25rem !important;
   padding-right: 1.25rem !important;
-  border-radius: 0 !important; /* keep the slab geometry clean */
+}
+
+/* CLOSED: the header IS the pill — keep full rounding */
+#stepper > .step-card[data-step="caption"]:not(.is-open) > .step-header{
+  border-radius: var(--phone-radius) !important;
+}
+
+/* OPEN: header becomes the slab — round only the top corners */
+#stepper > .step-card[data-step="caption"].is-open > .step-header{
+  border-radius: var(--phone-radius) var(--phone-radius) 0 0 !important;
 }
 
 /* Open: header slab styling (applied to .step-header directly) */
