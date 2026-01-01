@@ -1169,9 +1169,10 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(a, b){
   const opts = b || {};
   const now = Date.now();
 
+  const __aid = _getActiveWorkingFileId();
   const nextId =
     (opts && opts.id) ||
-    _getActiveWorkingFileId() ||
+    ((__aid && _getWorkingFileRecordById(__aid)) ? __aid : null) ||
     ('wf_' + now + '_' + Math.random().toString(16).slice(2));
 
   const state = window.okqralExportState();
@@ -1639,6 +1640,16 @@ function codedeskAutosaveKick(){
 */
 window.codedeskFinishSetup = function codedeskFinishSetup(){
   let activeId = _getActiveWorkingFileId();
+  try {
+    if (activeId && !_getWorkingFileRecordById(activeId)) {
+      // stale pointer: treat as no working file yet
+      try { localStorage.removeItem('codedesk_active_working_file_v1'); } catch(e){}
+      try { typeof CODEDESK_ACTIVE_WF_KEY !== 'undefined' && localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
+      try { window.CODEDESK_ACTIVE_WORKING_FILE_ID = ''; } catch(e){}
+      try { window.__CODEDESK_CURRENT_WF_ID__ = ''; } catch(e){}
+      activeId = '';
+    }
+  } catch(e){}
 
   // Name source (canonical CodeDesk UI): Filename (required)
   const fname =
@@ -1906,12 +1917,22 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         // If the stepper was late-mounted, ensure the right-side controls are actually wired.
         try { wireRightAccordionBehaviorOnce(); } catch(_e){}
 
-                // Do NOT auto-open Finish on Enter. Unlock only; user chooses what to open.
+                // New filename ceremony = new job. Clear any prior active working-file pointer so ✨ can run once.
+        try {
+          const __aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+          if (__aid) {
+            try { localStorage.removeItem('codedesk_active_working_file_v1'); } catch(e){}
+            try { typeof CODEDESK_ACTIVE_WF_KEY !== 'undefined' && localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
+            try { window.CODEDESK_ACTIVE_WORKING_FILE_ID = ''; } catch(e){}
+            try { window.__CODEDESK_CURRENT_WF_ID__ = ''; } catch(e){}
+          }
+        } catch(_e){}
+
+        // Do NOT auto-open Finish on Enter. Stay neutral.
         try {
           const stepper = document.getElementById('stepper');
           if (stepper) {
-            try { stepper.classList.remove('mech-active'); } catch(e){}
-            try { stepper.classList.add('finish-active'); } catch(e){}
+            try { stepper.classList.remove('mech-active', 'finish-active'); } catch(e){}
           }
         } catch(_e){}
 
@@ -1929,7 +1950,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         if (!isSave) return;
 
         const activeId = _getActiveWorkingFileId();
-        if (!activeId) return;
+        const activeRec = activeId && (typeof window.codedeskGetWorkingFileRecord === 'function'
+          ? window.codedeskGetWorkingFileRecord(activeId)
+          : null);
+        if (!activeRec) return;
 
         try { e.preventDefault(); } catch(_e){}
         try { e.stopPropagation(); } catch(_e){}
@@ -1944,7 +1968,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       // Blur: push working metadata/state (debounced) if a working file exists.
       inp.addEventListener('blur', function(){
         const activeId = _getActiveWorkingFileId();
-        if (!activeId) return;
+        const activeRec = activeId && (typeof window.codedeskGetWorkingFileRecord === 'function'
+          ? window.codedeskGetWorkingFileRecord(activeId)
+          : null);
+        if (!activeRec) return;
         try { window.codedeskPushWorkingDebounced && window.codedeskPushWorkingDebounced('filename-blur'); } catch(e){}
       }, { passive: true });
 
