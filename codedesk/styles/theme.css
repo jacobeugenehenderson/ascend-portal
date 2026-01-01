@@ -593,8 +593,17 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 .step-card[data-step="design"].is-open .step-header-wrap::after{
   content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--ui-stroke); pointer-events:none;
 }
-.step-card[data-step="design"]:not(.is-open) #fontPill{ display:none !important; }
-.step-card[data-step="design"].is-open       #fontPill{ display:flex !important; }
+.step-card[data-step="design"] #fontPill{ display:flex !important; }
+
+.step-card[data-step="design"]:not(.is-open) #fontPill{
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.step-card[data-step="design"].is-open #fontPill{
+  visibility: visible;
+  pointer-events: auto;
+}
 .step-card[data-step="design"] .step-header-wrap #fontPill.ecc-pill{
   align-items:center; flex-wrap:nowrap; gap:var(--density-gap); margin-left:auto; padding-right:var(--edge-gutter);
 }
@@ -918,8 +927,9 @@ textarea::placeholder{
 }
 .step-card[data-step="mechanicals"].is-open [data-step-panel]::-webkit-scrollbar { display: none; }
 
-/* Base pill styles (no display here) */
+/* Base pill styles (authoritative) */
 .step-card[data-step="mechanicals"] .step-header-wrap #eccPill.ecc-pill {
+  display: inline-flex;                 /* ✅ always participates in header layout */
   align-items: center;
   flex-wrap: nowrap;
   gap: var(--density-gap);
@@ -927,14 +937,15 @@ textarea::placeholder{
   padding-right: var(--edge-gutter);
 }
 
-/* Hide when stowed */
+/* Stowed vs open: never remove from layout (prevents “gone” states) */
 .step-card[data-step="mechanicals"]:not(.is-open) #eccPill {
-  display: none !important;
+  visibility: hidden;                   /* keeps header geometry stable */
+  pointer-events: none;
 }
 
-/* Show when open */
 .step-card[data-step="mechanicals"].is-open #eccPill {
-  display: flex !important;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 /* Kill any competing header paint so the wrap shows through */
