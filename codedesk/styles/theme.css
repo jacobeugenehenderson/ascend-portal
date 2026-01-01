@@ -976,18 +976,24 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
 
 /* Caption — parity with other steps (stowed stroke + open header slab) */
 .step-card[data-step="caption"]{
-  border: 1px solid var(--ui-stroke);
+  /* dedicated closed-stroke token (never “disappears”) */
+  --stepper-stroke-closed: var(--md-sys-color-outline, rgba(15, 23, 42, 0.22));
+
+  border: 1px solid var(--stepper-stroke-closed);
   border-radius: var(--phone-radius);
   background: var(--ui-surface);
   overflow: hidden;
+
+  /* reinforce the edge even when the border blends into the page */
+  box-shadow: 0 0 0 1px var(--stepper-stroke-closed) inset;
 }
 
-/* Closed: subtle tint + crisp edge (match your OKQRAL collapsed feel) */
+/* Closed: subtle tint + crisp edge (match OKQRAL) */
 #stepper > .step-card[data-step="caption"]:not(.is-open) .step-header{
   background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
-  border-bottom: 1px solid var(--ui-stroke);
+  border-bottom: 1px solid var(--stepper-stroke-closed);
   box-shadow:
-    0 0 0 1px var(--ui-stroke) inset,
+    0 0 0 1px var(--stepper-stroke-closed) inset,
     0 1px 0 rgba(0,0,0,.06);
 }
 
