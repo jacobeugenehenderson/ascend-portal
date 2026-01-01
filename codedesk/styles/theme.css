@@ -294,8 +294,10 @@ body{
 
   /* harden full-bleed geometry */
   margin: 0;
-  padding: 0;
   width: 100%;
+
+  /* ✅ match closed indentation */
+  padding-inline: 1.25rem;
 }
 
 .step-card[data-step="mechanicals"].is-open .step-header {
@@ -496,14 +498,13 @@ body.codedesk-locked #codedeskFilename{
 
 /* Closed accordion buttons: navy stroke */
 #stepper > div:not(.is-open) .step-header-wrap{
-  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
-  border: 1px solid var(--stepper-stroke-closed);
+  background: var(--ui-surface); /* ✅ load state = white/light */
+  border: 1px solid color-mix(in oklab, var(--md-sys-color-on-surface) 22%, transparent); /* ✅ darker/crisper */
   border-radius: var(--phone-radius);
-  box-shadow:
-    0 0 0 1px var(--stepper-stroke-closed) inset,
-    0 1px 0 rgba(0,0,0,.06);
 
-  /* ✅ match the older, roomier “Caption” pill */
+  /* ✅ kill the fuzzy “double stroke” */
+  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+
   min-height: 3.4rem;
   display: flex;
   align-items: center;
@@ -583,6 +584,11 @@ body.kbd .ecc-btn[aria-pressed="true"] {
   padding-inline: 1.25rem;
 }
 
+/* ✅ Caption must match the same inset, always */
+.step-card[data-step="caption"] .step-header-wrap{
+  padding-inline: 1.25rem;
+}
+
 /* Keep the existing mechanials selector for specificity parity */
 .step-card[data-step="mechanicals"] .step-header-wrap {
   position: relative;
@@ -601,10 +607,10 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 .step-card[data-step="mechanicals"] .step-header-wrap #eccPill.ecc-pill {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;                /* keep buttons on one line */
-  gap: var(--density-gap);          /* consistent inter-button spacing */
-  margin-left: auto;                /* push to the right */
-  padding-right: var(--edge-gutter);/* use your existing layout knob */
+  flex-wrap: nowrap;
+  gap: var(--density-gap);
+  margin-left: auto;
+  padding-right: 0; /* ✅ header-wrap owns the inset */
 }
 
 /* Remove underline and focus outline in all states */
@@ -623,8 +629,10 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 
   /* harden full-bleed geometry */
   margin: 0;
-  padding: 0;
   width: 100%;
+
+  /* ✅ match closed indentation */
+  padding-inline: 1.25rem;
 }
 
 .step-card[data-step="design"].is-open .step-header{ background: transparent !important; border-bottom: 0 !important; }
