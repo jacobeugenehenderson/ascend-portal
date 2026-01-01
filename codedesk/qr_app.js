@@ -328,16 +328,19 @@ function wireFontSelect(){
 
       if (!modal || !grid || !search || !close) return;
 
-      // Curated set (fast, lightweight, good coverage for QR captioning)
-      const EMOJIS = [
-        "✨","✅","⚠️","❗","❓","📌","📎","🔗","📣","📢","🧠","💡","🛠️","⚙️","🧾","📄","🗂️","📦","🧩","🧪",
-        "🎯","📍","🧭","🗺️","⏱️","⏳","🕒","📅","🗓️","🧷",
-        "❤️","🖤","💙","💚","💛","🧡","💜","🤍","🤎","💖",
-        "🙂","😎","🤝","🙏","👏","🔥","💥","⭐","🌈","⚡",
-        "⬆️","⬇️","➡️","⬅️","↗️","↘️","↙️","↖️","🔼","🔽",
-        "➕","➖","✖️","➗","∞","≈","≠","≤","≥",
-        "🏳️‍🌈","🏳️‍⚧️"
-      ];
+      // Emoji corpus: prefer the full okQRal set if present
+      const EMOJIS =
+        (typeof EMOJI_BIG !== 'undefined' && Array.isArray(EMOJI_BIG) && EMOJI_BIG.length)
+          ? EMOJI_BIG
+          : [
+              "✨","✅","⚠️","❗","❓","📌","📎","🔗","📣","📢","🧠","💡","🛠️","⚙️","🧾","📄","🗂️","📦","🧩","🧪",
+              "🎯","📍","🧭","🗺️","⏱️","⏳","🕒","📅","🗓️","🧷",
+              "❤️","🖤","💙","💚","💛","🧡","💜","🤍","🤎","💖",
+              "🙂","😎","🤝","🙏","👏","🔥","💥","⭐","🌈","⚡",
+              "⬆️","⬇️","➡️","⬅️","↗️","↘️","↙️","↖️","🔼","🔽",
+              "➕","➖","✖️","➗","∞","≈","≠","≤","≥",
+              "🏳️‍🌈","🏳️‍⚧️"
+            ];
 
       let activeTargetId = '';
 
@@ -442,7 +445,16 @@ function wireFontSelect(){
 
       const run = function(){
         try { wireCaptionInputs(); } catch(e){}
-        try { wireEmojiPickerOnce(); } catch(e){}
+
+        // If the HTML emoji-picker-element wiring is present, do NOT run the JS fallback.
+        // The HTML module defines window.openEmoji/window.closeEmoji and mounts <emoji-picker>.
+        try {
+          const hasHtmlPicker =
+            (typeof window.openEmoji === 'function') ||
+            !!document.querySelector('emoji-picker');
+
+          if (!hasHtmlPicker) wireEmojiPickerOnce();
+        } catch(e){}
       };
 
       if (document.readyState === 'loading') {
