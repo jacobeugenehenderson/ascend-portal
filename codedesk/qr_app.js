@@ -1695,12 +1695,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     inp.style.pointerEvents = 'auto';
   }
 
-  function syncFinishEnabled(){
+    function syncFinishEnabled(){
     ensureFilenameUi();
 
     const fname = String(document.getElementById('codedeskFilename')?.value || '').trim();
     const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
-    const hasWf = !!_getActiveWorkingFileId();
+
+    const aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+    const rec = aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
+      ? window.codedeskGetWorkingFileRecord(aid)
+      : null);
+    const hasWf = !!rec;
+
     const ok = (accepted && !!fname && !hasWf);
 
     document.querySelectorAll('button').forEach(b => {
@@ -1728,11 +1734,6 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         } catch(e){}
       } else {
         b.disabled = false;
-        // Setup button is the ✨ (keep it icon-only when enabled)
-        try {
-          const t = (b.textContent || '').trim();
-          if (t.length > 2) b.textContent = '✨';
-        } catch(e){}
         try { b.removeAttribute('title'); } catch(e){}
 
         // restore label if we previously preserved it
@@ -1829,7 +1830,11 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
     // Setup (✨) should be hidden on load, visible only after Enter (and only if no working file exists yet)
     try {
-      const hasWf = !!_getActiveWorkingFileId();
+      const aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+      const rec = aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
+        ? window.codedeskGetWorkingFileRecord(aid)
+        : null);
+      const hasWf = !!rec;
       codedeskSetSetupSparkleVisible(accepted && !hasWf);
     } catch(e){}
 
@@ -1901,24 +1906,10 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         // If the stepper was late-mounted, ensure the right-side controls are actually wired.
         try { wireRightAccordionBehaviorOnce(); } catch(_e){}
 
-        // Immediately open Finish / Create working file so ✨ is reachable (viewport-agnostic).
+                // Do NOT auto-open Finish on Enter. Unlock only; user chooses what to open.
         try {
           const stepper = document.getElementById('stepper');
           if (stepper) {
-            // Close all drawers first (accordion truth)
-            stepper.querySelectorAll('[data-step-panel]').forEach((p) => { p.style.display = 'none'; });
-            stepper.querySelectorAll('[data-step-toggle]').forEach((b) => {
-              try { b.setAttribute('aria-expanded', 'false'); } catch(e){}
-            });
-
-            const finishCard = stepper.querySelector('.step-card[data-step="finish"]') || document.getElementById('finishCard');
-            const finishBtn  = finishCard ? finishCard.querySelector('[data-step-toggle]') : null;
-            const finishPanel = finishCard ? finishCard.querySelector('[data-step-panel]') : null;
-
-            if (finishPanel) finishPanel.style.display = '';
-            if (finishBtn) finishBtn.setAttribute('aria-expanded', 'true');
-
-            // Ensure Finish is truly "live" (parity with wide-mode setMode('finish'))
             try { stepper.classList.remove('mech-active'); } catch(e){}
             try { stepper.classList.add('finish-active'); } catch(e){}
           }
@@ -1965,7 +1956,11 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         window.addEventListener('beforeunload', function(e){
           try {
             const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
-            const hasWf = !!_getActiveWorkingFileId();
+            const aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+            const rec = aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
+              ? window.codedeskGetWorkingFileRecord(aid)
+              : null);
+            const hasWf = !!rec;
             const dirty = (window.__CODEDESK_DIRTY__ === true);
 
             // If they accepted a name but never created the working file, warn.
@@ -2035,9 +2030,12 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     return;
   }
 
-  // One-time setup: if we already have a working file id, the setup step should be gone.
+  // One-time setup: only treat as "already set up" if an actual working-file record exists.
   const existingId = _getActiveWorkingFileId();
-  if (existingId) {
+  const existingRec = existingId && (typeof window.codedeskGetWorkingFileRecord === 'function'
+    ? window.codedeskGetWorkingFileRecord(existingId)
+    : null);
+  if (existingRec) {
     try { codedeskRemoveSetupStep && codedeskRemoveSetupStep(); } catch(e){}
     return;
   }
