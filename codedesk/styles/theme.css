@@ -257,7 +257,7 @@ body{
 
 /* ✅ Open header slab: same height as closed, flat bottom corners */
 #stepper > div.is-open .step-header-wrap{
-  min-height: 3.6rem;
+  min-height: 3.4rem;
   border-radius: var(--phone-radius) var(--phone-radius) 0 0;
 }
 
@@ -504,7 +504,7 @@ body.codedesk-locked #codedeskFilename{
     0 1px 0 rgba(0,0,0,.06);
 
   /* ✅ match the older, roomier “Caption” pill */
-  min-height: 3.6rem;
+  min-height: 3.4rem;
   display: flex;
   align-items: center;
 }
@@ -939,7 +939,7 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   width: 100%;
   display: flex;
   align-items: center;
-  min-height: 3.6rem; /* keep header body height consistent */
+  min-height: 3.4rem; /* keep header body height consistent */
 }
 
 .step-header .title{
