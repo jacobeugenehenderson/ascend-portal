@@ -318,65 +318,6 @@ function wireFontSelect(){
 
     // run after DOM loads
     
-    // -------- Emoji picker (catalog + search) --------
-    const EMOJI_BIG = ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","🙂","🙃","☺️","😋","😌","😍","🥰","😘","😗","😙","😚","😜","🤪","😝","😛","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😶‍🌫️","😏","😒","🙄","😬","🤥","😴","😪","😮‍💨","😌","😮","😯","😲","😳","🥵","🥶","😱","😨","😰","😥","😢","😭","😤","😡","😠","🤬","🤯","😷","🤒","🤕","🤢","🤮","🤧","🥴","😵","😵‍💫","🤠","🥳","😎","🤓","🧐","😕","🫤","😟","🙁","☹️","🤷","🤷‍♂️","🤷‍♀️","💪","👋","🤝","👍","👎","👏","🙌","👐","🤲","🤟","✌️","🤘","👌","🤌","🤏","👈","👉","☝️","👆","👇","✋","🖐️","🖖","✊","👊","💋","❤️","🩷","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟","🌈","🏳️‍🌈","🏳️‍⚧️","⭐️","✨","🔥","⚡️","💥","🌟","☀️","🌙","🪐","🌍","🌎","🌏","🌊","⛰️","🏙️","🗽","🚗","✈️","🚀","⌚️","📱","💻","🖥️","🖨️","🎧","🎤","🎬","📷","📸","📝","📚","🔖","📎","🔬","🔧","⚙️","🍎","🍉","🍇","🍓","🍑","🍍","🥑","🌮","🍣","🍰","🍫","🍩","🍿","🍺","🍷","🍸","🎉","🎊","🎈","🎮","🎯","🏆","🏵️","✊🏿","✊🏾","✊🏽","✊🏼","✊🏻","👍🏿","👍🏾","👍🏽","👍🏼","👍🏻","👋🏿","👋🏾","👋🏽","👋🏼","👋🏻","🏁","🚩","🏳️","🏴","🏳️‍🌈","🏳️‍⚧️","🇺🇸","🇨🇦","🇬🇧","🇫🇷","🇩🇪","🇮🇹","🇪🇸","🇧🇷","🇯🇵","🇰🇷","🇨🇳","🇮🇳","🇿🇦"];
-    const emojiModal = document.getElementById('emojiModal');
-    const emojiGrid  = document.getElementById('emojiGrid');
-    const emojiSearch= document.getElementById('emojiSearch');
-    const emojiClose = document.getElementById('emojiClose');
-    window.emojiTarget = null;
-    function openEmoji(targetId){
-      window.emojiTarget = document.getElementById(targetId);
-      emojiSearch.value = '';
-      renderEmojiGrid('');
-      emojiModal.classList.remove('hidden');
-      document.documentElement.classList.add('emoji-open');   // ⬅️ disable phone taps
-      emojiSearch.focus();
-    }
-    
-    function closeEmoji(){
-      emojiModal.classList.add('hidden');
-      document.documentElement.classList.remove('emoji-open'); // ⬅️ re-enable phone taps
-      window.emojiTarget = null;
-
-  // force a fresh preview on close as a safety net
-  if (typeof render === 'function') render();
-}
-window.closeEmoji = closeEmoji;
-
-    function renderEmojiGrid(q){ const norm=q.trim().toLowerCase(); emojiGrid.innerHTML=''; EMOJI_BIG.filter(e => !norm || e.toLowerCase().includes(norm)).forEach(e=>{ const b=document.createElement('button'); b.type='button'; b.className='h-9 text-lg rounded-md border hover:bg-neutral-50'; b.textContent=e; b.addEventListener('click', ()=>{
-  if (window.emojiTarget) {
-    window.emojiTarget.value = e;
-    // fire 'input' so live preview updates immediately
-    window.emojiTarget.dispatchEvent(new Event('input', { bubbles:true }));
-  }
-  // Do NOT close the emoji modal here; user decides when to close.
-});
-
-emojiGrid.appendChild(b); }); }
-    // Delegate: emoji open triggers (safe across form rebuilds)
-    if (!window._emojiTriggerBound) {
-      document.addEventListener('click', (e) => {
-        const btn = e.target && e.target.closest && e.target.closest('[data-emoji-target]');
-        if (!btn) return;
-        openEmoji(btn.getAttribute('data-emoji-target'));
-      });
-      window._emojiTriggerBound = true;
-    }
-
-    // These are safe to bind once (static controls)
-    if (!window._emojiControlsBound) {
-      emojiSearch.addEventListener('input', ()=> renderEmojiGrid(emojiSearch.value));
-      emojiClose.addEventListener('click', closeEmoji);
-      emojiModal.addEventListener('click', (e)=>{ if(e.target===emojiModal) closeEmoji(); });
-
-      document.addEventListener('keydown', (e)=> {
-        if (e.key === 'Escape' && !emojiModal.classList.contains('hidden')) closeEmoji();
-      });
-
-      window._emojiControlsBound = true;
-    }
-
     // -------- Scale clickers (delegated; safe across form rebuilds) --------
     function clamp(val, min, max) {
       return Math.min(max, Math.max(min, val));
