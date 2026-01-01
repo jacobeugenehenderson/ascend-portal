@@ -3934,8 +3934,8 @@ function currentUiState() {
         centerMode:  document.getElementById('centerMode')?.value  || ''
     },
     outputs: {
-      png: !!document.getElementById('wantPng')?.checked,
-      svg: !!document.getElementById('wantSvg')?.checked
+      png: true,
+      svg: false
     }
   };
 }
@@ -4001,8 +4001,8 @@ async function reportExport() {
 
       // outputs
       outputs: {
-        png: !!document.getElementById('wantPng')?.checked,
-        svg: !!document.getElementById('wantSvg')?.checked
+        png: true,
+        svg: false
       }
     };
 
@@ -4040,8 +4040,8 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     btn.textContent = 'Working…';
   }
 
-  const wantPng = document.getElementById('wantPng')?.checked;
-  const wantSvg = document.getElementById('wantSvg')?.checked;
+  const wantPng = true;
+  const wantSvg = false;
 
   // get filename (required identity)
   const caption =

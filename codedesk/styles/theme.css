@@ -1384,13 +1384,7 @@ label.text-sm.block{
   padding-inline: 1rem;               /* same side padding as QR Types */
 }
 
-/* Center the heart emoji in the QR Types button when it's acting as a circular icon */
-/* (Removed: conflicting layout model. Keep #qrType unified as inline-flex with the other top-bar pills.) */
 
-/* Temporarily hide the SVG export toggle in the Finish step */
-.step-card[data-step="finish"] label:has(#wantSvg) {
-  display: none !important;
-}
 /* =========================
   MOBILE OVERRIDES
 ========================= */
