@@ -962,7 +962,7 @@ textarea::placeholder{
   flex-wrap: nowrap;
   gap: var(--density-gap);
   margin-left: auto;
-  padding-right: var(--edge-gutter);
+  padding-right: 0;
 }
 
 /* Stowed vs open: never remove from layout (prevents “gone” states) */

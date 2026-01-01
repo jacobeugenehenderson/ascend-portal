@@ -367,19 +367,20 @@
 </div>
 
 <!-- Finish (header-only action row; no accordion panel) -->
+<!-- Finish -->
 <div id="finishCard"
      class="step-card"
      data-step="finish">
 
   <div class="step-header-wrap flex items-center gap-3">
-    <div class="flex-1 step-header px-4 py-3 text-left font-medium">
+    <button type="button"
+            class="flex-1 step-header px-4 py-3 text-left font-medium"
+            data-step-toggle>
       Create working file
-    </div>
+    </button>
 
-    <button id="exportBtn"
-            type="button"
-            data-action="finish"
-            class="px-4 py-2 rounded-lg bg-black text-white text-sm">
+    <button id="exportBtn" type="button" data-action="finish"
+            class="ml-auto px-4 py-2 rounded-lg bg-black text-white text-sm">
       ✨
     </button>
   </div>
