@@ -241,11 +241,9 @@ body{
 
 /* Collapsed header: subtle tint + crisp edge (reuses existing knobs) */
 #stepper > .step-card:not(.is-open) .step-header{
-  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
-  border-bottom: 1px solid var(--stepper-stroke-closed);
-  box-shadow:
-    0 0 0 1px var(--stepper-stroke-closed) inset,
-    0 1px 0 rgba(0,0,0,.06);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 #stepper > .step-card:not(.is-open) .step-header:hover{
   background: color-mix(in oklab, var(--ui-surface) 88%, var(--step-color-primary) 12%);
@@ -491,9 +489,13 @@ body.codedesk-locked #codedeskFilename{
 }
 
 /* Closed accordion buttons: navy stroke */
-#stepper > div:not(.is-open),
-#stepper > div:not(.is-open) .step-header{
-  border-color: var(--stepper-stroke-closed);
+#stepper > div:not(.is-open) .step-header-wrap{
+  background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
+  border: 1px solid var(--stepper-stroke-closed);
+  border-radius: var(--phone-radius);
+  box-shadow:
+    0 0 0 1px var(--stepper-stroke-closed) inset,
+    0 1px 0 rgba(0,0,0,.06);
 }
 
 /* Buttons — CANONICAL */
@@ -913,6 +915,16 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   letter-spacing: var(--typo-display-track, .01em);
   color: var(--md-sys-color-on-surface);
   padding: 0; /* slab is full-bleed; padding belongs to the title */
+
+  /* ✅ Content-only: NEVER paint the slab (wrap owns bg/border/radius) */
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+
+  /* Ensure the clickable area fills the wrap */
+  width: 100%;
+  display: block;
 }
 
 .step-header .title{
