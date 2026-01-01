@@ -55,12 +55,12 @@
 
   /* Surfaces & text (inherit Ascend app shell)
      IMPORTANT: include fallbacks so light-mode doesn't go "empty" if Ascend tokens aren't present. */
-  --md-sys-color-background:       var(--ascend-app-bg, #050814);
-  --md-sys-color-on-background:    var(--ascend-app-text-main, #e6eefc);
-  --md-sys-color-surface:          var(--ascend-app-surface, rgba(15, 23, 42, 0.78));
-  --md-sys-color-on-surface:       var(--ascend-app-text-main, #e6eefc);
-  --md-sys-color-surface-variant:  var(--ascend-control-bg, rgba(15, 23, 42, 0.92));
-  --md-sys-color-muted:            var(--ascend-app-text-muted, rgba(230, 238, 252, 0.68));
+  --md-sys-color-background:       var(--ascend-app-bg, #e7ecf5);
+  --md-sys-color-on-background:    var(--ascend-app-text-main, #020617);
+  --md-sys-color-surface:          var(--ascend-app-surface, #ffffff);
+  --md-sys-color-on-surface:       var(--ascend-app-text-main, #020617);
+  --md-sys-color-surface-variant:  var(--ascend-control-bg, #ffffff);
+  --md-sys-color-muted:            var(--ascend-app-text-muted, #64748b);
 
   /* Strokes (inherit Ascend app shell) */
   --md-sys-color-outline:          var(--ascend-app-border);
@@ -508,8 +508,8 @@ body.codedesk-locked #codedeskFilename{
 
   /* visuals (Ascend controls) */
   background: var(--ascend-control-bg, #ffffff);
-  border: 1px solid var(--ascend-control-border, rgba(15, 23, 42, 0.10));
-  color: var(--ascend-app-text-main, #0f172a);
+  border: 1px solid var(--ascend-control-border, rgba(148, 163, 184, 0.85));
+  color: var(--ascend-app-text-main, #020617);
   text-decoration: none !important;
 
   /* type + motion */
