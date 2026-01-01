@@ -421,6 +421,65 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="./qr_app.js?v=9" defer></script>
 
+<!-- Emoji picker wiring -->
+<script type="module">
+  import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js';
+
+  const emojiModal  = document.getElementById('emojiModal');
+  const emojiClose  = document.getElementById('emojiClose');
+  let   emojiTarget = null;
+
+  function openEmoji(targetId) {
+    emojiTarget = document.getElementById(targetId) || null;
+    emojiModal.classList.remove('hidden');
+    queueMicrotask(() => document.querySelector('emoji-picker')?.focus());
+  }
+  function closeEmoji() {
+    emojiModal.classList.add('hidden');
+    emojiTarget = null;
+    if (typeof window.render === 'function') window.render();
+  }
+  window.openEmoji  = openEmoji;
+  window.closeEmoji = closeEmoji;
+
+  document.querySelectorAll('[data-emoji-target]')
+    .forEach(btn => btn.addEventListener('click', () => openEmoji(btn.getAttribute('data-emoji-target'))));
+  emojiClose?.addEventListener('click', closeEmoji);
+  emojiModal?.addEventListener('click', (e) => { if (e.target === emojiModal) closeEmoji(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !emojiModal.classList.contains('hidden')) closeEmoji(); });
+
+  // Insert picker and connect selection
+  const grid   = document.getElementById('emojiGrid');
+  const picker = document.createElement('emoji-picker');
+  picker.setAttribute('emojis-per-row', '10');
+  picker.setAttribute('skin-tone-emoji', '👍');
+  picker.style.width = '100%';
+  picker.style.maxHeight = '60vh';
+  picker.style.border = '0';
+
+  const applyPickerTheme = () => {
+    picker.setAttribute('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+  };
+  applyPickerTheme();
+  document.getElementById('themeToggle')?.addEventListener('click', applyPickerTheme);
+  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', applyPickerTheme);
+
+  // Keep picker in sync whenever <html> toggles dark/light
+new MutationObserver(() => applyPickerTheme())
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+  grid.replaceWith(picker);
+
+  picker.addEventListener('emoji-click', (e) => {
+    const char = e.detail.unicode;
+    if (emojiTarget) {
+      emojiTarget.value = char;
+      emojiTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    closeEmoji();
+  });
+</script>
+
 <script>
 (function () {
   const onTab = e => { if (e.key === 'Tab') document.body.classList.add('kbd'); };
