@@ -284,7 +284,7 @@ body{
 
 /* Mechanicals (open): unified stripe and no duplicate borders */
 .step-card[data-step="mechanicals"].is-open .step-header-wrap {
-  background: color-mix(in oklab, var(--step-color-primary) 12%, transparent);
+  background: var(--step-header-open-bg);
   border-bottom: 0 !important;
   position: relative;
 }
@@ -584,7 +584,7 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 
 /* Design (open): unified stripe and no duplicate borders (mirror of Mechanicals) */
 .step-card[data-step="design"].is-open .step-header-wrap{
-  background: color-mix(in oklab, var(--step-color-primary) 12%, transparent);
+  background: var(--step-header-open-bg);
   border-bottom: 0 !important;
   position: relative;
 }
