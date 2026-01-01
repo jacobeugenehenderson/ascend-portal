@@ -1068,7 +1068,7 @@ textarea::placeholder{
   border-bottom: 0;
 }
 
-#emojiSearch { display: block !important; }
+#emojiSearch { display: none !important; }
 
 /* There should be no "Details" step in CodeDesk */
 .step-card[data-step="details"]{
