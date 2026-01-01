@@ -578,7 +578,9 @@ body.kbd .ecc-btn[aria-pressed="true"] {
   /* slab geometry */
   width: 100%;
   margin: 0;
-  padding: 0;
+
+  /* ✅ canonical horizontal inset for ALL headers */
+  padding-inline: 1.25rem;
 }
 
 /* Keep the existing mechanials selector for specificity parity */
@@ -645,7 +647,10 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 }
 
 .step-card[data-step="design"] .step-header-wrap #fontPill.ecc-pill{
-  align-items:center; flex-wrap:nowrap; gap:var(--density-gap); margin-left:auto; padding-right:var(--edge-gutter);
+  align-items:center;
+  flex-wrap:nowrap;
+  gap:var(--density-gap);
+  margin-left:auto;
 }
 
 /* Font pill alignment */
@@ -926,20 +931,18 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   letter-spacing: var(--typo-display-track, .01em);
   color: var(--md-sys-color-on-surface);
 
-  /* ✅ Header content padding (so Caption matches everything else) */
-  padding: 0 1.25rem;
+  /* horizontal padding lives on .step-header-wrap */
+  padding: 0;
 
-  /* ✅ Content-only: NEVER paint the slab (wrap owns bg/border/radius) */
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
   border-radius: 0 !important;
 
-  /* Ensure the clickable area fills the wrap */
   width: 100%;
   display: flex;
   align-items: center;
-  min-height: 3.4rem; /* keep header body height consistent */
+  min-height: 3.4rem; /* matches your updated value */
 }
 
 .step-header .title{
@@ -1020,12 +1023,11 @@ textarea::placeholder{
 
 /* Base pill styles (authoritative) */
 .step-card[data-step="mechanicals"] .step-header-wrap #eccPill.ecc-pill {
-  display: inline-flex;                 /* ✅ always participates in header layout */
+  display: inline-flex;
   align-items: center;
   flex-wrap: nowrap;
   gap: var(--density-gap);
   margin-left: auto;
-  padding-right: 0;
 }
 
 /* Stowed vs open: never remove from layout (prevents “gone” states) */
