@@ -256,13 +256,13 @@
 
       .artstart-qr-row{
         display: grid;
-        grid-template-columns: 44px 1fr;
+        grid-template-columns: 48px 1fr;
         gap: 12px;
         align-items: center;
-        padding: 10px 12px;
+        padding: 12px 14px;
         cursor: pointer;
 
-        /* separators */
+        /* FileRoom-like separators */
         border-bottom: 1px solid rgba(15,23,42,0.08);
       }
 
@@ -270,65 +270,74 @@
         border-bottom: 0;
       }
 
-      /* zebra */
+      /* zebra (lighter, more FileRoom-like) */
       .artstart-qr-row:nth-child(odd){
-        background: rgba(15,23,42,0.02);
+        background: rgba(15,23,42,0.015);
       }
       .artstart-qr-row:nth-child(even){
-        background: rgba(15,23,42,0.00);
+        background: rgba(255,255,255,0.00);
       }
 
       .artstart-qr-row:hover{
-        background: rgba(15,23,42,0.05);
+        background: rgba(15,23,42,0.04);
       }
 
       .artstart-qr-thumb{
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
       }
 
-      /* Vertical rectangle icon with branded gradient (FileRoom-light vibe) */
+      /* FileRoom provenance cell: left vertical bar + monogram letter */
       .artstart-qr-icon{
-        width: 22px;
-        height: 32px;
-        border-radius: 6px;
-        border: 1px solid rgba(15,23,42,0.16);
-        background:
-          linear-gradient(180deg,
-            rgba(79,209,197,0.95),
-            rgba(56,189,248,0.92)
-          );
-        box-shadow: 0 8px 18px rgba(15,23,42,0.14);
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        border: 1px solid rgba(15,23,42,0.10);
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(241,245,249,0.92));
+        box-shadow: 0 10px 24px rgba(15,23,42,0.10);
         position: relative;
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         justify-content: center;
         overflow: hidden;
       }
 
+      /* the vertical rectangle provenance bar */
       .artstart-qr-icon::before{
+        content: "";
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        bottom: 8px;
+        width: 7px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, rgba(79,209,197,0.95), rgba(56,189,248,0.92));
+        box-shadow: 0 8px 18px rgba(15,23,42,0.14);
+        pointer-events: none;
+      }
+
+      /* subtle glass highlight */
+      .artstart-qr-icon::after{
         content: "";
         position: absolute;
         inset: 0;
         background:
-          radial-gradient(circle at 30% 20%, rgba(255,255,255,0.45), rgba(255,255,255,0) 55%),
-          linear-gradient(180deg, rgba(255,255,255,0.20), rgba(255,255,255,0));
+          radial-gradient(circle at 30% 18%, rgba(255,255,255,0.55), rgba(255,255,255,0) 52%);
         pointer-events: none;
       }
 
       .artstart-qr-icon-label{
         position: relative;
         z-index: 1;
-        font-size: 9px;
+        font-size: 18px;
         line-height: 1;
         font-weight: 900;
-        letter-spacing: .04em;
-        color: rgba(255,255,255,0.92);
-        padding-bottom: 4px;
+        letter-spacing: .02em;
+        color: rgba(15,23,42,0.78);
         text-transform: uppercase;
       }
 

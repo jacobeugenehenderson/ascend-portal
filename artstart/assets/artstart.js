@@ -279,7 +279,7 @@ function applyTranslatedFields_(f) {
 
       var iconLabel = document.createElement('div');
       iconLabel.className = 'artstart-qr-icon-label';
-      iconLabel.textContent = 'QR';
+      iconLabel.textContent = 'Q';
 
       icon.appendChild(iconLabel);
       thumb.appendChild(icon);
