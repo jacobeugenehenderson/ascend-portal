@@ -1318,11 +1318,13 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
     const inp = document.getElementById('codedeskFilename');
     if (inp) {
       inp.value = String(rec.name || '').trim();
-      inp.disabled = false;
-      inp.removeAttribute('disabled');
-      inp.style.pointerEvents = 'auto';
 
-      // Freeze rename-on-return (temporary policy)
+      // Return visit: filename is frozen (disabled) and visually centered
+      inp.disabled = true;
+      try { inp.setAttribute('disabled', 'disabled'); } catch(_e){}
+      inp.style.pointerEvents = 'none';
+
+      // Keep center treatment (matches your desired frozen/centered identity badge)
       inp.readOnly = true;
       try { inp.setAttribute('readonly', 'readonly'); } catch(_e){}
       try { inp.style.textAlign = 'center'; } catch(_e){}
@@ -2033,7 +2035,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     // Gate is ceremony-based: ONLY Enter unlocks (typing does not).
     let accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
 
-    // Keep filename editable at all times
+    // Ensure filename UI reflects mode (new vs return visit)
     try { ensureFilenameUi && ensureFilenameUi(); } catch(e){}
 
     // If we are reopening an existing working file and a name is already present,
@@ -2051,6 +2053,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       if (hasWf && fname) {
         accepted = true;
         try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(e){}
+
+        // Return visit: force frozen/centered filename identity badge
+        try {
+          if (inp) {
+            inp.disabled = true;
+            try { inp.setAttribute('disabled', 'disabled'); } catch(_e){}
+            inp.style.pointerEvents = 'none';
+            inp.readOnly = true;
+            try { inp.setAttribute('readonly', 'readonly'); } catch(_e){}
+            try { inp.style.textAlign = 'center'; } catch(_e){}
+          }
+        } catch(_e){}
 
         // Return visit: remove Enter ceremony entirely once a working file exists.
         try {
