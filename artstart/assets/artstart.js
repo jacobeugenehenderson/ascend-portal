@@ -224,11 +224,19 @@ function applyTranslatedFields_(f) {
 
     list.innerHTML = '';
 
-    var rows = (items || []).filter(isLikelyQrAsset_);
+    var rows = (items || []).slice();
+
+    // Prefer likely QR items first, but do NOT hide everything if tagging/keys differ.
+    rows.sort(function(a, b){
+      var qa = isLikelyQrAsset_(a) ? 1 : 0;
+      var qb = isLikelyQrAsset_(b) ? 1 : 0;
+      return qb - qa;
+    });
+
     if (!rows.length) {
       var empty = document.createElement('div');
       empty.className = 'artstart-qr-modal-note';
-      empty.textContent = 'No QR assets found in FileRoom for your account.';
+      empty.textContent = 'No FileRoom outputs found for your account.';
       list.appendChild(empty);
       return;
     }
@@ -238,10 +246,19 @@ function applyTranslatedFields_(f) {
         item.title || item.Title || item.name || item.Name || item.FileName || item.filename || item.AssetName || 'QR';
 
       var openUrl =
-        item.openUrl || item.OpenUrl || item.open_url || item.Url || item.url || '';
+        item.openUrl || item.OpenUrl || item.open_url ||
+        item.OpenURL || item.openURL ||
+        item.DriveUrl || item.DriveURL || item.driveUrl || item.driveURL ||
+        item.webViewLink || item.WebViewLink ||
+        item.Url || item.url ||
+        item.fileUrl || item.FileUrl || item.fileURL || item.FileURL ||
+        '';
 
       var driveFileId =
-        item.driveFileId || item.DriveFileId || item.drive_file_id || item.FileId || item.fileId || '';
+        item.driveFileId || item.DriveFileId || item.drive_file_id ||
+        item.FileId || item.fileId ||
+        item.DriveFileID || item.driveFileID ||
+        '';
 
       var payloadText =
         item.qrPayloadText || item.PayloadText || item.payloadText || item.Payload || item.payload || '';
@@ -337,7 +354,11 @@ function applyTranslatedFields_(f) {
 
     var url = new URL(FILEROOM_API_BASE);
     url.searchParams.set('action', 'listJobsForUser');
+
+    // FileRoom has historically accepted different param keys; set both.
     url.searchParams.set('user_email', email);
+    url.searchParams.set('userEmail', email);
+
     url.searchParams.set('limit', '1500');
     url.searchParams.set('callback', callbackName);
 
