@@ -675,12 +675,31 @@ try {
       // Canonical rule: non-working entry must not inherit an old active working file.
       if (mode === 'template' || mode === 'new') {
         try { localStorage.removeItem('codedesk_active_working_file_v1'); } catch(e){}
+        try { typeof CODEDESK_ACTIVE_WF_KEY !== 'undefined' && localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
+        try { window.CODEDESK_ACTIVE_WORKING_FILE_ID = ''; } catch(e){}
         try { window.__CODEDESK_CURRENT_WF_ID__ = ''; } catch(e){}
-}
+
+        // New/template lifecycle must re-arm the ceremony + prevent autosave until ✨ completes.
+        try { window.__CODEDESK_FILENAME_ACCEPTED__ = false; } catch(e){}
+        try { window.__CODEDESK_SETUP_DONE__ = false; } catch(e){}
+        try { window.__CODEDESK_FINISH_INFLIGHT__ = false; } catch(e){}
+
+        // Defensive: if "New" was clicked while a working_file_id is still in the URL, strip it.
+        if (mode === 'new') {
+          try {
+            const u = new URL(window.location.href);
+            u.searchParams.delete('working_file_id');
+            u.searchParams.delete('workingFileId');
+            u.searchParams.delete('wf');
+            window.history.replaceState({}, '', u.toString());
+          } catch(e){}
+        }
+      }
 
       // 1) Working-file open path wins (hopper open)
       // Treat presence of wfId as authoritative even if `mode` is missing.
-      if (wfId && typeof window.codedeskOpenWorkingFile === 'function') {
+      // EXCEPT: mode=new must always force a fresh filename ceremony.
+      if (wfId && mode !== 'new' && typeof window.codedeskOpenWorkingFile === 'function') {
         window.codedeskOpenWorkingFile(wfId);
         return;
       }
@@ -1899,8 +1918,35 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     window.codedeskSaveWorkingFile(name, { id: activeId });
   }
 
+  // Briefly show “working” while the upsert runs (best-effort, icon-only safe).
+  try {
+    document.querySelectorAll('button').forEach((b) => {
+      if (!isFinishButton || !isFinishButton(b)) return;
+      try { b.classList.add('is-busy'); } catch(_e){}
+      try { b.setAttribute('title', 'working'); } catch(_e){}
+      try {
+        const t = (b.textContent || '').trim();
+        if (t.length > 2) b.textContent = 'working';
+      } catch(_e){}
+    });
+  } catch(e){}
+
   // ✨ has created/confirmed the working file: autosave/push is now allowed.
   try { window.__CODEDESK_SETUP_DONE__ = true; } catch(e){}
+  try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(e){}
+
+  // Clear the brief “working” state shortly after.
+  try {
+    setTimeout(function(){
+      try {
+        document.querySelectorAll('button').forEach((b) => {
+          if (!isFinishButton || !isFinishButton(b)) return;
+          try { b.classList.remove('is-busy'); } catch(_e){}
+          try { b.removeAttribute('title'); } catch(_e){}
+        });
+      } catch(_e){}
+    }, 600);
+  } catch(e){}
 
   // NEW-FLOW POLISH:
   // Immediately flip the UI into "return-visit" posture:
@@ -1949,13 +1995,24 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     const inp = document.getElementById('codedeskFilename');
     if (!inp) return;
 
-    // Temporary policy: if a working file exists, freeze rename-on-return (disabled).
+    // Temporary policy: freeze rename ONLY on true return-visits (URL has working_file_id/wf),
+    // not merely because a stale "active working file" pointer exists in storage.
     try {
+      const u = new URL(window.location.href);
+      const mode = String(u.searchParams.get('mode') || '').trim().toLowerCase();
+      const wfParam =
+        String(u.searchParams.get('working_file_id') || u.searchParams.get('wf') || '').trim();
+
+      const forcedNew = (mode === 'new' || mode === 'portal_new');
+
       const aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
       const rec = aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
         ? window.codedeskGetWorkingFileRecord(aid)
         : null);
-      if (rec) {
+
+      const isReturnVisit = (!!rec && !!wfParam && String(aid || '') === String(wfParam || ''));
+
+      if (isReturnVisit && !forcedNew) {
         inp.readOnly = true;
         try { inp.setAttribute('readonly', 'readonly'); } catch(_e){}
         try { inp.style.textAlign = 'center'; } catch(_e){}
@@ -1963,11 +2020,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         inp.disabled = true;
         try { inp.setAttribute('disabled', 'disabled'); } catch(_e){}
         inp.style.pointerEvents = 'none';
+
+        // Return visit must behave as "already accepted" so the accordion is live immediately.
+        try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
+        try { window.__CODEDESK_SETUP_DONE__ = true; } catch(_e){}
+        try { codedeskSetLocked(false); } catch(_e){}
+        try { codedeskSetSetupSparkleVisible(false); } catch(_e){}
+        try { typeof codedeskRemoveSetupStep === 'function' && codedeskRemoveSetupStep(); } catch(_e){}
         return;
       }
     } catch(e){}
 
-    // No working file yet: filename must be editable.
+    // No working file yet (or New →): filename must be editable.
     inp.disabled = false;
     inp.removeAttribute('disabled');
     inp.style.pointerEvents = 'auto';
@@ -2211,9 +2275,17 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
           : null);
         const hasWf0 = !!rec0;
 
-        if (hasWf0 && fname0) {
-          try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
-        }
+        // Only skip Enter ceremony on true return-visits (explicit working_file_id), never on mode=new.
+        try {
+          const u0 = new URL(window.location.href);
+          const mode0 = String(u0.searchParams.get('mode') || '').trim().toLowerCase();
+          const wf0 = String(u0.searchParams.get('working_file_id') || '').trim();
+          const forcedNew0 = (mode0 === 'new' || mode0 === 'portal_new');
+
+          if (!forcedNew0 && wf0 && hasWf0 && fname0 && String(aid0 || '') === String(wf0 || '')) {
+            try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
+          }
+        } catch(_e){}
       } catch(_e){}
 
       if (window.__CODEDESK_FILENAME_ACCEPTED__ !== true) {
@@ -2449,7 +2521,8 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     const prevText = (btn.textContent || '').trim();
     btn.disabled = true;
     btn.classList.add('is-busy');
-    if (prevText.length > 2) btn.textContent = 'Working…';
+    btn.textContent = 'Working…';
+    try { btn.setAttribute('title', 'Working…'); } catch(e){}
 
     let id = '';
     try { id = window.codedeskFinishSetup(); } catch(err){}
