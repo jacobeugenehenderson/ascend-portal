@@ -363,6 +363,33 @@
         padding: 18px;
       }
 
+      #artstart-qr-modal{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+#artstart-qr-modal-backdrop{
+  position: absolute;
+  inset: 0;
+  background: rgba(15,23,42,0.45);
+}
+
+#artstart-qr-modal .artstart-qr-modal-panel{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(860px, calc(100vw - 28px));
+  max-height: min(720px, calc(100vh - 28px));
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(16, 24, 40, 0.30);
+  display: flex;
+  flex-direction: column;
+}
+
       /* Digital formats share the exact same stage model as print.
          Only difference allowed: print shows bleed; digital hides bleed. */
 

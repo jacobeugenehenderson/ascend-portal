@@ -1631,7 +1631,7 @@ function wireQrUiOnce_(){
     var cb = 'artstartFileRoomCb_' + String(Date.now());
     window[cb] = function(payload){
       try {
-        var jobs = (payload && payload.jobs) ? payload.jobs : [];
+        var jobs = (payload && payload.data && payload.data.jobs) ? payload.data.jobs : [];
         renderList_(jobs);
       } catch(e) {
         console.warn('FileRoom callback error', e);
