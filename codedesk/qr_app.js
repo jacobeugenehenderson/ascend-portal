@@ -1170,6 +1170,53 @@ function codedeskNotifyAscendWorkingSave(rec){
   return rec;
 }
 
+/* === Brief "working" indicator during FileRoom upsert/sync ==================
+   - Wraps codedeskSyncFileRoomNow (if/when defined) and toggles a tiny status.
+   - Safe no-op if no UI node exists.
+============================================================================ */
+function codedeskSetWorkingNotice(on){
+  try {
+    const el =
+      document.getElementById('codedeskWorkingNotice') ||
+      document.getElementById('codedeskStatus') ||
+      document.querySelector('[data-codedesk-working-notice]') ||
+      null;
+
+    if (el) {
+      el.textContent = on ? 'working' : '';
+      el.style.display = on ? '' : 'none';
+    }
+
+    // Also expose a CSS hook for any existing styles
+    try { document.documentElement.toggleAttribute('data-codedesk-working', !!on); } catch(_e){}
+  } catch(_e){}
+}
+
+(function wrapFileRoomUpsertOnce(){
+  if (window.__CODEDESK_WORKING_NOTICE_WRAPPED__) return;
+  window.__CODEDESK_WORKING_NOTICE_WRAPPED__ = true;
+
+  // Defer so it can wrap even if codedeskSyncFileRoomNow is declared later.
+  queueMicrotask(function(){
+    try {
+      if (typeof window.codedeskSyncFileRoomNow !== 'function') return;
+      if (window.codedeskSyncFileRoomNow.__wrapped_working_notice__) return;
+
+      const _orig = window.codedeskSyncFileRoomNow;
+      window.codedeskSyncFileRoomNow = async function(){
+        codedeskSetWorkingNotice(true);
+        try {
+          return await _orig.apply(this, arguments);
+        } finally {
+          // Briefly visible, even for fast upserts
+          setTimeout(() => codedeskSetWorkingNotice(false), 250);
+        }
+      };
+      window.codedeskSyncFileRoomNow.__wrapped_working_notice__ = true;
+    } catch(_e){}
+  });
+})();
+
 function _getActiveWorkingFileId(){
   try { return String(localStorage.getItem(CODEDESK_ACTIVE_WF_KEY) || '').trim(); } catch(e){ return ''; }
 }
@@ -1854,6 +1901,27 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   // ✨ has created/confirmed the working file: autosave/push is now allowed.
   try { window.__CODEDESK_SETUP_DONE__ = true; } catch(e){}
+
+  // NEW-FLOW POLISH:
+  // Immediately flip the UI into "return-visit" posture:
+  // - filename becomes frozen + centered badge
+  // - setup step / ✨ affordance disappears
+  // - accordion unlocks
+  try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(e){}
+  try {
+    const inp = document.getElementById('codedeskFilename');
+    if (inp) {
+      try { inp.readOnly = true; } catch(_e){}
+      try { inp.setAttribute('readonly', 'readonly'); } catch(_e){}
+      try { inp.disabled = true; } catch(_e){}
+      try { inp.setAttribute('disabled', 'disabled'); } catch(_e){}
+      try { inp.style.textAlign = 'center'; } catch(_e){}
+      try { inp.style.pointerEvents = 'none'; } catch(_e){}
+    }
+  } catch(e){}
+  try { typeof codedeskRemoveSetupStep === 'function' && codedeskRemoveSetupStep(); } catch(e){}
+  try { typeof codedeskSetSetupSparkleVisible === 'function' && codedeskSetSetupSparkleVisible(false); } catch(e){}
+  try { typeof codedeskSetLocked === 'function' && codedeskSetLocked(false); } catch(e){}
 
   // IMPORTANT: after Finish, lock the URL to this working file.
   // Otherwise a refresh on mode=new/template will clear the active id during bootstrap.
