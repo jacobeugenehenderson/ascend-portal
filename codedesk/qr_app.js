@@ -1493,7 +1493,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'upsertJob',
-            ascend_job_key: 'CODEDESK_WORKFILE:' + workingId,
+            ascend_job_key: 'CODEDESK_WF:' + workingId,
             app: 'codedesk',
             source_id: workingId,
             title: base || 'CODEDESK QR',
@@ -1502,7 +1502,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
             open_url: workingOpenUrl || String(location && location.href ? location.href : ''),
             owner_email: ownerEmail,
             kind: 'working',
-            asset_type: 'qr',
+            asset_type: 'working',
             template_id: templateId,
             destination_url: destinationUrl,
             state_json: stateJson,
@@ -4078,7 +4078,7 @@ async function reportExport() {
 // =====================================================
 // CodeDesk → FileRoom pairing config
 // =====================================================
-window.CODEDESK_FILEROOM_API_BASE = window.CODEDESK_FILEROOM_API_BASE || '';
+window.CODEDESK_FILEROOM_API_BASE = window.CODEDESK_FILEROOM_API_BASE || window.FILEROOM_API_BASE || '';
 window.CODEDESK_FILEROOM_FOLDER_ID = window.CODEDESK_FILEROOM_FOLDER_ID || '1x882jC2h_2YJsIXQrV1K56nqKvCPzJ4N';
 
 // Dirty tracking for navigation safety + autosync
