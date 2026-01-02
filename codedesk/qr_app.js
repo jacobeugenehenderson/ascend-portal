@@ -658,7 +658,12 @@ try {
         ].join('|');
 
         const __prev = sessionStorage.getItem(CODEDESK_BOOTSTRAP_SESSION_KEY) || '';
-        if (__prev === __sig) return;
+
+        // IMPORTANT: never short-circuit reloads for working-file opens.
+        // Otherwise: first refresh works (sig changes once), second refresh skips bootstrap and "purges" state.
+        const __wf = String((window.CODEDESK_ENTRY && (window.CODEDESK_ENTRY.working_file_id || window.CODEDESK_ENTRY.workingFileId)) || '').trim();
+
+        if (__prev === __sig && !__wf) return;
         sessionStorage.setItem(CODEDESK_BOOTSTRAP_SESSION_KEY, __sig);
       } catch (e) {}
 
