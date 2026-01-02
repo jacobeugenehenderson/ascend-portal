@@ -1286,6 +1286,18 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
 
   const ok = window.okqralImportState(rec.state);
 
+  // Normalize URL on open: ensure refresh is reopen-safe and saved open_url is canonical.
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set('working_file_id', String(rec.id || '').trim());
+    u.searchParams.set('wf', String(rec.id || '').trim()); // legacy alias (keep)
+    // Remove non-working lifecycle params so Enter ceremony never gets confused later
+    u.searchParams.delete('mode');
+    u.searchParams.delete('template_id');
+    u.searchParams.delete('templateId');
+    window.history.replaceState({}, '', u.toString());
+  } catch(e){}
+
   // Opening an existing WORKING file from the hopper implies:
   // - setup is already done
   // - filename ceremony is permanently bypassed
@@ -1346,8 +1358,13 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
   } catch(e){}
 
   // Ensure the WORKFILE row stays fresh in Ascend even if no prior FileRoom pairing exists
+  // Run after import-triggered rebuilds so buildText() reflects the loaded state.
   try {
-    setTimeout(() => { try { window.codedeskPushWorkingDebounced && window.codedeskPushWorkingDebounced('open'); } catch(e){} }, 250);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try { window.codedeskPushWorkingDebounced && window.codedeskPushWorkingDebounced('open'); } catch(e){}
+      });
+    });
   } catch(e){}
 
   // If this working file has been Finished before, opening it should trigger an update.
@@ -1575,7 +1592,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 
       // ALSO: ensure this export appears in the right Ascend lanes (Dashboard prefs).
       try {
-        const workingKey = String((data && data.working_ascend_job_key) ? data.working_ascend_job_key : ('CODEDESK_WF:' + workingId)).trim();
+        const workingKey = String((data && data.working_ascend_job_key) ? data.working_ascend_job_key : ('CODEDESK_WORKFILE:' + workingId)).trim();
 
         // FileRoom lane for the delivered PNG row
         await fetch(window.CODEDESK_FILEROOM_API_BASE, {
@@ -1613,7 +1630,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'upsertJob',
-            ascend_job_key: 'CODEDESK_WF:' + workingId,
+            ascend_job_key: 'CODEDESK_WORKFILE:' + workingId,
             app: 'codedesk',
             source_id: workingId,
             title: base || 'CODEDESK QR',
@@ -1621,8 +1638,8 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
             status: 'open',
             open_url: workingOpenUrl || String(location && location.href ? location.href : ''),
             owner_email: ownerEmail,
-            kind: 'working',
-            asset_type: 'working',
+            kind: 'workfile',
+            asset_type: 'qr',
             template_id: templateId,
             destination_url: destinationUrl,
             state_json: stateJson,
