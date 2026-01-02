@@ -1483,10 +1483,14 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          action: 'uploadPngToDrive',
+          action: 'upsertQrPngAsset',
           folder_id: folderId,
           png_data_url: pngDataUrl,
-          file_name: fileName,
+
+          // CRITICAL: if we already have a paired Drive file id, overwrite it (stable ID).
+          // If missing, the server will create a new file once (first-ever pairing/export).
+          drive_png_file_id: (rec && rec.fileroom && rec.fileroom.drive_file_id) ? String(rec.fileroom.drive_file_id) : '',
+
           source_id: workingId,
           ascend_job_key: 'CODEDESK_PNG:' + workingId,
           title: base || 'CODEDESK QR',
