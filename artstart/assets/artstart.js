@@ -227,7 +227,7 @@ function applyTranslatedFields_(f) {
     var rows = (items || []).filter(isLikelyQrAsset_);
     if (!rows.length) {
       var empty = document.createElement('div');
-      empty.className = 'artstart-modal-note';
+      empty.className = 'artstart-qr-modal-note';
       empty.textContent = 'No QR assets found in FileRoom for your account.';
       list.appendChild(empty);
       return;
@@ -250,10 +250,10 @@ function applyTranslatedFields_(f) {
       if (!openUrl || !driveFileId) return;
 
       var row = document.createElement('div');
-      row.className = 'artstart-modal-row';
+      row.className = 'artstart-qr-row';
 
       var thumb = document.createElement('div');
-      thumb.className = 'artstart-modal-thumb';
+      thumb.className = 'artstart-qr-thumb';
       var img = document.createElement('img');
       img.alt = 'QR';
       img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveFileId) + '&sz=w256';
@@ -262,11 +262,11 @@ function applyTranslatedFields_(f) {
       var text = document.createElement('div');
 
       var t = document.createElement('div');
-      t.className = 'artstart-modal-row-title';
+      t.className = 'artstart-qr-row-title';
       t.textContent = String(title || 'QR');
 
       var sub = document.createElement('div');
-      sub.className = 'artstart-modal-row-sub';
+      sub.className = 'artstart-qr-row-sub';
       sub.textContent = String(payloadText || '').trim() ? String(payloadText) : openUrl;
 
       text.appendChild(t);
@@ -315,7 +315,17 @@ function applyTranslatedFields_(f) {
     var callbackName = 'artstartFileRoomQrCallback_' + String(Date.now());
     window[callbackName] = function (payload) {
       try {
-        var jobs = (payload && payload.jobs) ? payload.jobs : [];
+        var jobs = [];
+
+        // Accept multiple payload shapes (FileRoom has varied over time)
+        if (payload) {
+          if (Array.isArray(payload.jobs)) jobs = payload.jobs;
+          else if (payload.data && Array.isArray(payload.data.jobs)) jobs = payload.data.jobs;
+          else if (payload.data && Array.isArray(payload.data.rows)) jobs = payload.data.rows;
+          else if (Array.isArray(payload.rows)) jobs = payload.rows;
+          else if (Array.isArray(payload.items)) jobs = payload.items;
+        }
+
         renderQrList_(jobs);
       } catch (e) {
         console.warn('ArtStart: error in FileRoom QR callback', e);
@@ -328,7 +338,7 @@ function applyTranslatedFields_(f) {
     var url = new URL(FILEROOM_API_BASE);
     url.searchParams.set('action', 'listJobsForUser');
     url.searchParams.set('user_email', email);
-    url.searchParams.set('limit', '200');
+    url.searchParams.set('limit', '1500');
     url.searchParams.set('callback', callbackName);
 
     var script = document.createElement('script');
@@ -1866,7 +1876,6 @@ function saveDraft(jobId) {
 
   function init() {
     setUserLabel();
-    try { wireQrUiOnce_(); } catch(e) {}
     initQrUi_();
 
     // Cache language UI
