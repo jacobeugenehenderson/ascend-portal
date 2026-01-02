@@ -2060,6 +2060,23 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         const fname = String(inp.value || '').trim();
         if (!fname) return;
 
+        // RETURN VISIT: if a working file already exists, Enter is not a ceremony.
+        // Just reaffirm unlocked state and exit (do NOT clear the active working-file pointer).
+        try {
+          const _aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+          const _rec = _aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
+            ? window.codedeskGetWorkingFileRecord(_aid)
+            : null);
+          if (_rec) {
+            try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
+            try { codedeskSetLocked(false); } catch(_e){}
+            try { codedeskSetSetupSparkleVisible(false); } catch(_e){}
+            try { syncFinishEnabled(); } catch(_e){}
+            try { inp.blur(); } catch(_e){}
+            return;
+          }
+        } catch(_e){}
+
         try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
         try { codedeskSetLocked(false); } catch(_e){}
 
