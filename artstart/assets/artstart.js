@@ -276,10 +276,10 @@ function applyTranslatedFields_(f) {
       var title =
         item.title || item.Title || item.name || item.Name || item.FileName || item.filename || item.AssetName || 'QR';
 
-      var openUrl =
-        item.DrivePngOpenUrl || item.drivePngOpenUrl || item.drive_png_open_url ||
-        item.openUrl || item.OpenUrl || item.open_url || item.OpenURL ||
-        item.Url || item.URL || item.url || item.link || item.Link || '';
+        var openUrl =
+        item.DrivePngOpenUrl ||
+        item.openUrl || item.OpenUrl || item.openURL ||
+        item.qrOpenUrl || item.QrOpenUrl || item.qr_open_url || '';
 
       // FileRoom registry returns PNG fields explicitly (DrivePngFileId / DrivePngOpenUrl).
       // SourceId is NOT the PNG file id — it’s the registry source key.
@@ -292,10 +292,10 @@ function applyTranslatedFields_(f) {
       // Correct payload is the destination url when present (FileRoom: DestinationUrl).
       // IMPORTANT: do NOT fall back to Subtitle/subtitle; that is commonly a label like "CODEDESK — FLATTENED (PNG)".
       var payloadText =
-        item.DestinationUrl || item.DestinationURL || item.destinationUrl || item.destination_url || item.destUrl || item.DestUrl ||
-        item.qrDestinationUrl || item.QrDestinationUrl || item.qr_destination_url ||
-        item.qrPayloadText || item.QrPayloadText ||
-        item.PayloadText || item.payloadText || item.Payload || item.payload || '';
+        item.DestinationUrl ||
+        item.DestinationURL ||
+        item.destinationUrl ||
+        '';
 
       // Guard: FileRoom often stores a human label here (e.g. "CODEDESK — FLATTENED (PNG)"), not the true destination.
       // If it looks like that label, treat it as empty so UI falls back to openUrl.
