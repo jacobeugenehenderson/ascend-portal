@@ -25,6 +25,7 @@
     
   const CODEDESK_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/codedesk/index.html";
+  try { window.CODEDESK_URL = CODEDESK_URL; } catch(_e) {}
 
   // CodeDesk template manifest (static JSON; hopper templates must read from this)
   // Relative so it works on jacobhenderson.studio/ascend/ (and any mirrored host).
@@ -39,6 +40,7 @@
 
   const FILEROOM_API_BASE =
     "https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec";
+  try { window.FILEROOM_API_BASE = FILEROOM_API_BASE; } catch(_e) {}
   
   // ArtStart API base – same as art_start.js
   const ARTSTART_API_BASE =

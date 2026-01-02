@@ -94,10 +94,8 @@
       .artstart-qr-stage {
         position: relative;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 10px;
 
         /* Fill remaining height inside the QR card (now a flex column) */
         flex: 1;
@@ -106,17 +104,15 @@
 
         border: 1px dashed rgba(15,23,42,0.18);
         border-radius: 12px;
-        color: #6b7280;
-        font-size: 12px;
-        text-align: center;
         padding: 16px;
         background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
+        overflow: hidden;
       }
 
       .artstart-qr-stage::before {
         content: "";
-        width: min(260px, 72%);
-        aspect-ratio: 1 / 1;
+        position: absolute;
+        inset: 16px;
         border-radius: 10px;
         border: 1px solid rgba(15,23,42,0.14);
         background:
@@ -129,6 +125,181 @@
             rgba(255,255,255,0.0) 12px
           );
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        pointer-events: none;
+      }
+
+      /* When QR is present, hide the placeholder “box” */
+      .artstart-qr-stage.has-qr::before {
+        display: none;
+      }
+
+      .artstart-qr-place-btn{
+        position: relative;
+        z-index: 2;
+        border: 1px solid rgba(15,23,42,0.16);
+        background: rgba(255,255,255,0.92);
+        color: rgba(15,23,42,0.86);
+        font-weight: 800;
+        border-radius: 999px;
+        padding: 10px 16px;
+        cursor: pointer;
+      }
+
+      .artstart-qr-place-btn:hover{
+        background: rgba(255,255,255,0.98);
+      }
+
+      #artstart-qr-link{
+        position: relative;
+        z-index: 2;
+        width: min(260px, 72%);
+        aspect-ratio: 1 / 1;
+        display: none;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+      }
+
+      #artstart-qr-link img{
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        background: rgba(255,255,255,0.85);
+      }
+
+      /* Modal (minimal, ascend-apps-aligned) */
+      .artstart-qr-modal{
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+      }
+
+      .artstart-qr-modal-backdrop{
+        position: absolute;
+        inset: 0;
+        background: rgba(15,23,42,0.45);
+      }
+
+      .artstart-qr-modal-panel{
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(860px, calc(100vw - 28px));
+        max-height: min(720px, calc(100vh - 28px));
+        background: #fff;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 24px 70px rgba(16, 24, 40, 0.30);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .artstart-qr-modal-header{
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(15,23,42,0.10);
+      }
+
+      .artstart-qr-modal-title{
+        font-weight: 900;
+        font-size: 13px;
+        color: rgba(15,23,42,0.86);
+      }
+
+      .artstart-qr-modal-actions{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .artstart-qr-mini-btn{
+        border: 1px solid rgba(15,23,42,0.16);
+        background: rgba(255,255,255,0.92);
+        color: rgba(15,23,42,0.86);
+        font-weight: 800;
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .artstart-qr-mini-btn:hover{
+        background: rgba(255,255,255,0.98);
+      }
+
+      .artstart-qr-modal-x{
+        border: 0;
+        background: transparent;
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+        color: rgba(15,23,42,0.62);
+      }
+
+      .artstart-qr-modal-body{
+        padding: 12px 14px 14px;
+        overflow: auto;
+      }
+
+      .artstart-qr-modal-note{
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 10px;
+      }
+
+      .artstart-qr-list{
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .artstart-qr-row{
+        display: grid;
+        grid-template-columns: 86px 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(15,23,42,0.10);
+        background: rgba(15,23,42,0.02);
+        cursor: pointer;
+      }
+
+      .artstart-qr-row:hover{
+        background: rgba(15,23,42,0.04);
+      }
+
+      .artstart-qr-thumb{
+        width: 86px;
+        height: 86px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.75);
+        border: 1px solid rgba(15,23,42,0.10);
+        overflow: hidden;
+      }
+
+      .artstart-qr-thumb img{
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+
+      .artstart-qr-row-title{
+        font-weight: 900;
+        font-size: 13px;
+        color: rgba(15,23,42,0.86);
+      }
+
+      .artstart-qr-row-sub{
+        margin-top: 4px;
+        font-size: 12px;
+        color: #6b7280;
+        word-break: break-word;
       }
 
       .artstart-card h2 {
@@ -647,17 +818,21 @@
             <section class="artstart-card artstart-card--qr" aria-labelledby="qr-card-title">
               <h2 id="qr-card-title">QR code</h2>
 
+              <!-- Persisted association fields (Projects tab headers already added) -->
+              <input type="hidden" id="qrDriveFileId" value="">
+              <input type="hidden" id="qrOpenUrl" value="">
+              <input type="hidden" id="qrPayloadText" value="">
+
               <div class="artstart-qr-stage" id="artstart-qr-stage">
+                <!-- Empty state: centered Place button -->
+                <button type="button" class="artstart-qr-place-btn" id="artstart-qr-place">
+                  Place
+                </button>
+
+                <!-- Filled state: QR image is the button -->
                 <a id="artstart-qr-link" href="#" target="_blank" rel="noopener" style="display:none;">
                   <img id="artstart-qr-img" alt="QR code" style="width:100%; height:auto; display:block;" />
                 </a>
-
-                <div id="artstart-qr-empty">
-                  QR CODE<br>
-                  <span style="opacity:0.7;">
-                    (Attach from FileRoom)
-                  </span>
-                </div>
               </div>
 
               <div class="artstart-qr-meta" style="margin-top:10px;">
@@ -665,10 +840,8 @@
                 <div id="artstart-qr-payload" style="font-size:11px; color:#6b7280; white-space:pre-wrap; word-break:break-word;">—</div>
               </div>
 
-              <div class="artstart-qr-actions" style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-                <button type="button" class="artstart-save-button" id="artstart-qr-place">Place</button>
-                <button type="button" class="artstart-save-button" id="artstart-qr-host">Host</button>
-                <button type="button" class="artstart-save-button" id="artstart-qr-clear" style="opacity:0.7;">Clear</button>
+              <div class="artstart-qr-actions" style="margin-top:10px; display:flex; justify-content:flex-end;">
+                <button type="button" class="artstart-save-button" id="artstart-qr-clear" style="opacity:0.7; display:none;">Clear</button>
               </div>
             </section>
           </div>
@@ -699,6 +872,32 @@
         </footer>
       </div> <!-- .ascend-app-panel -->
     </div>   <!-- .ascend-app-shell -->
+
+    <!-- QR picker modal -->
+    <div class="artstart-modal" id="artstart-qr-modal" style="display:none;" aria-hidden="true">
+      <div class="artstart-modal-backdrop" data-modal-close="1"></div>
+
+      <div class="artstart-modal-panel" role="dialog" aria-modal="true" aria-labelledby="artstart-qr-modal-title">
+        <div class="artstart-modal-header">
+          <div class="artstart-modal-title" id="artstart-qr-modal-title">Place QR from FileRoom</div>
+
+          <div class="artstart-modal-header-actions">
+            <button type="button" class="artstart-qr-mini-btn" id="artstart-qr-new-btn">New →</button>
+            <button type="button" class="artstart-modal-x" id="artstart-qr-modal-close" aria-label="Close">×</button>
+          </div>
+        </div>
+
+        <div class="artstart-modal-body">
+          <div class="artstart-modal-note" id="artstart-qr-modal-note">
+            Showing FileRoom outputs filtered to QR assets.
+          </div>
+
+          <div class="artstart-modal-list" id="artstart-qr-list">
+            <!-- rows injected by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script src="../../assets/ascend.js"></script>
     <script src="./artstart.js"></script>

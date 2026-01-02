@@ -9,6 +9,10 @@ var ARTSTART_ENABLE_DAVE_STATUS = false;
 
 var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
 
+// Optional shared config (if ../../assets/ascend.js exposes these, we use them; otherwise we fail loudly)
+var FILEROOM_API_BASE = window.FILEROOM_API_BASE || '';
+var CODEDESK_URL = window.CODEDESK_URL || '';
+
 // ---------- Language / Translation (workspace dropdown) ----------
 var baseLanguage = 'EN';
 var activeLanguage = 'EN';
@@ -87,6 +91,320 @@ function applyTranslatedFields_(f) {
       errEl.style.display = 'none';
       errEl.textContent = '';
     }
+  }
+
+  // ---------------- QR attachment (FileRoom) ----------------
+
+  function getCurrentUserEmail_() {
+    try {
+      if (window.Ascend && typeof window.Ascend.getCurrentUser === 'function') {
+        var u = window.Ascend.getCurrentUser();
+        var em = u && (u.email || u.userEmail);
+        if (em) return String(em).trim();
+      }
+    } catch (e) {}
+
+    // Fallback: try Ascend session objects
+    try {
+      if (window.localStorage) {
+        var raw = window.localStorage.getItem('ascend_session_v1');
+        if (raw) {
+          var obj = JSON.parse(raw);
+          var em2 = obj && (obj.userEmail || obj.email);
+          if (em2) return String(em2).trim();
+        }
+      }
+    } catch (e2) {}
+
+    return '';
+  }
+
+  function qs_(id) { return document.getElementById(id); }
+
+  function getQrState_() {
+    var idEl = qs_('qrDriveFileId');
+    var urlEl = qs_('qrOpenUrl');
+    var txtEl = qs_('qrPayloadText');
+    return {
+      driveFileId: idEl ? String(idEl.value || '').trim() : '',
+      openUrl: urlEl ? String(urlEl.value || '').trim() : '',
+      payloadText: txtEl ? String(txtEl.value || '').trim() : ''
+    };
+  }
+
+  function setQrState_(next) {
+    var idEl = qs_('qrDriveFileId');
+    var urlEl = qs_('qrOpenUrl');
+    var txtEl = qs_('qrPayloadText');
+
+    if (idEl) idEl.value = (next && next.driveFileId) ? String(next.driveFileId) : '';
+    if (urlEl) urlEl.value = (next && next.openUrl) ? String(next.openUrl) : '';
+    if (txtEl) txtEl.value = (next && next.payloadText) ? String(next.payloadText) : '';
+
+    renderQrStage_();
+  }
+
+  function renderQrStage_() {
+    var placeBtn = qs_('artstart-qr-place');
+    var linkEl = qs_('artstart-qr-link');
+    var imgEl = qs_('artstart-qr-img');
+    var payloadEl = qs_('artstart-qr-payload');
+    var clearBtn = qs_('artstart-qr-clear');
+
+    if (!placeBtn || !linkEl || !imgEl || !payloadEl || !clearBtn) return;
+
+    var s = getQrState_();
+    var has = !!(s && s.openUrl && s.driveFileId);
+
+    placeBtn.style.display = has ? 'none' : '';
+    linkEl.style.display = has ? '' : 'none';
+    clearBtn.style.display = has ? '' : 'none';
+
+    if (has) {
+      // Click = open FileRoom asset
+      linkEl.href = s.openUrl;
+
+      // Drive image thumbnail (fast enough; no new infra)
+      imgEl.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(s.driveFileId) + '&sz=w512';
+
+      if (s.payloadText) {
+        payloadEl.textContent = s.payloadText;
+        payloadEl.style.display = '';
+      } else {
+        payloadEl.textContent = '';
+        payloadEl.style.display = 'none';
+      }
+    } else {
+      linkEl.href = '#';
+      imgEl.removeAttribute('src');
+      payloadEl.textContent = '';
+      payloadEl.style.display = 'none';
+    }
+  }
+
+  function openQrModal_() {
+    var modal = qs_('artstart-qr-modal');
+    if (!modal) return;
+
+    modal.style.display = '';
+    modal.setAttribute('aria-hidden', 'false');
+
+    requestFileRoomQrList_();
+  }
+
+  function closeQrModal_() {
+    var modal = qs_('artstart-qr-modal');
+    if (!modal) return;
+
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function isLikelyQrAsset_(item) {
+    if (!item) return false;
+
+    var originRaw =
+      (item.Origin || item.origin || item.Source || item.source || item.App || item.app || item.Type || item.type || item.Kind || item.kind) || '';
+    var origin = String(originRaw).trim().toLowerCase();
+
+    if (origin.indexOf('qr') !== -1) return true;
+    if (origin.indexOf('codedesk') !== -1) return true;
+    if (origin.indexOf('code desk') !== -1) return true;
+
+    // Also accept rows that expose payload text with the mechanicals-esque keys
+    var p = item.qrPayloadText || item.PayloadText || item.payloadText || item.Payload || item.payload || '';
+    if (String(p).trim()) return true;
+
+    return false;
+  }
+
+  function renderQrList_(items) {
+    var list = qs_('artstart-qr-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    var rows = (items || []).filter(isLikelyQrAsset_);
+    if (!rows.length) {
+      var empty = document.createElement('div');
+      empty.className = 'artstart-modal-note';
+      empty.textContent = 'No QR assets found in FileRoom for your account.';
+      list.appendChild(empty);
+      return;
+    }
+
+    rows.forEach(function (item) {
+      var title =
+        item.title || item.Title || item.name || item.Name || item.FileName || item.filename || item.AssetName || 'QR';
+
+      var openUrl =
+        item.openUrl || item.OpenUrl || item.open_url || item.Url || item.url || '';
+
+      var driveFileId =
+        item.driveFileId || item.DriveFileId || item.drive_file_id || item.FileId || item.fileId || '';
+
+      var payloadText =
+        item.qrPayloadText || item.PayloadText || item.payloadText || item.Payload || item.payload || '';
+
+      // If we can’t open or render it, it’s not selectable.
+      if (!openUrl || !driveFileId) return;
+
+      var row = document.createElement('div');
+      row.className = 'artstart-modal-row';
+
+      var thumb = document.createElement('div');
+      thumb.className = 'artstart-modal-thumb';
+      var img = document.createElement('img');
+      img.alt = 'QR';
+      img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveFileId) + '&sz=w256';
+      thumb.appendChild(img);
+
+      var text = document.createElement('div');
+
+      var t = document.createElement('div');
+      t.className = 'artstart-modal-row-title';
+      t.textContent = String(title || 'QR');
+
+      var sub = document.createElement('div');
+      sub.className = 'artstart-modal-row-sub';
+      sub.textContent = String(payloadText || '').trim() ? String(payloadText) : openUrl;
+
+      text.appendChild(t);
+      text.appendChild(sub);
+
+      row.appendChild(thumb);
+      row.appendChild(text);
+
+      row.addEventListener('click', function () {
+        setQrState_({
+          driveFileId: driveFileId,
+          openUrl: openUrl,
+          payloadText: String(payloadText || '').trim()
+        });
+
+        // Trigger autosave via blur listeners: touch a working field momentarily.
+        try {
+          var notes = qs_('working-notes');
+          if (notes) {
+            notes.focus();
+            notes.blur();
+          }
+        } catch (e) {}
+
+        closeQrModal_();
+      });
+
+      list.appendChild(row);
+    });
+  }
+
+  function requestFileRoomQrList_() {
+    if (!FILEROOM_API_BASE) {
+      renderQrList_([]);
+      console.warn('FILEROOM_API_BASE is missing. Expose window.FILEROOM_API_BASE in ../../assets/ascend.js.');
+      return;
+    }
+
+    var email = getCurrentUserEmail_();
+    if (!email) {
+      renderQrList_([]);
+      console.warn('No user email available for FileRoom list.');
+      return;
+    }
+
+    var callbackName = 'artstartFileRoomQrCallback_' + String(Date.now());
+    window[callbackName] = function (payload) {
+      try {
+        var jobs = (payload && payload.jobs) ? payload.jobs : [];
+        renderQrList_(jobs);
+      } catch (e) {
+        console.warn('ArtStart: error in FileRoom QR callback', e);
+        renderQrList_([]);
+      }
+
+      try { delete window[callbackName]; } catch (e2) { window[callbackName] = undefined; }
+    };
+
+    var url = new URL(FILEROOM_API_BASE);
+    url.searchParams.set('action', 'listJobsForUser');
+    url.searchParams.set('user_email', email);
+    url.searchParams.set('limit', '200');
+    url.searchParams.set('callback', callbackName);
+
+    var script = document.createElement('script');
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
+  function openCodeDeskNewQr_() {
+    if (!CODEDESK_URL) {
+      console.warn('CODEDESK_URL is missing. Expose window.CODEDESK_URL in ../../assets/ascend.js.');
+      return;
+    }
+
+    var jobIdNow = getJobIdFromQuery();
+    var target = CODEDESK_URL;
+
+    // Lightweight return hint (no coupling required)
+    try {
+      var u = new URL(target, window.location.href);
+      u.searchParams.set('origin', 'artstart');
+      if (jobIdNow) u.searchParams.set('jobid', jobIdNow);
+      target = u.toString();
+    } catch (e) {}
+
+    window.open(target, '_blank', 'noopener');
+  }
+
+  function initQrUi_() {
+    var placeBtn = qs_('artstart-qr-place');
+    var clearBtn = qs_('artstart-qr-clear');
+    var modal = qs_('artstart-qr-modal');
+    var modalClose = qs_('artstart-qr-modal-close');
+    var newBtn = qs_('artstart-qr-new-btn');
+
+    if (placeBtn) {
+      placeBtn.addEventListener('click', function () {
+        openQrModal_();
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        setQrState_({ driveFileId: '', openUrl: '', payloadText: '' });
+
+        try {
+          var notes = qs_('working-notes');
+          if (notes) {
+            notes.focus();
+            notes.blur();
+          }
+        } catch (e) {}
+      });
+    }
+
+    if (newBtn) {
+      newBtn.addEventListener('click', function () {
+        openCodeDeskNewQr_();
+      });
+    }
+
+    if (modalClose) {
+      modalClose.addEventListener('click', function () { closeQrModal_(); });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', function (evt) {
+        var t = evt && evt.target;
+        if (t && t.getAttribute && t.getAttribute('data-modal-close') === '1') {
+          closeQrModal_();
+        }
+      });
+    }
+
+    // Initial paint
+    renderQrStage_();
   }
 
   function setUserLabel() {
@@ -621,6 +939,15 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       gridEl.style.display = '';
     }
 
+    // QR attachment (base job metadata, not translated)
+    try {
+      setQrState_({
+        driveFileId: (job && (job.qrDriveFileId || job.QrDriveFileId || job.qr_drive_file_id)) || '',
+        openUrl: (job && (job.qrOpenUrl || job.QrOpenUrl || job.qr_open_url)) || '',
+        payloadText: (job && (job.qrPayloadText || job.QrPayloadText || job.qr_payload_text)) || ''
+      });
+    } catch (e) {}
+
     // Header middle
     var headerTitleEl = document.getElementById('job-title');
     var headerMetaEl = document.getElementById('job-meta');
@@ -879,10 +1206,6 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
     // Mirror text into canvas for scale only
     syncCanvasTextFromFields();
-
-    // QR card
-    try { renderQrCard_(job); } catch (e) {}
-    try { wireQrButtonsOnce_(); } catch (e) {}
   }
 
   function setSaveStatus(text) {
@@ -954,7 +1277,12 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       workingBullets: document.getElementById('working-bullets').value,
       workingWebsite: (document.getElementById('working-website') || {}).value || '',
       workingEmail: (document.getElementById('working-email') || {}).value || '',
-      workingNotes: document.getElementById('working-notes').value
+      workingNotes: document.getElementById('working-notes').value,
+
+      // QR association (FileRoom)
+      qrDriveFileId: (document.getElementById('qrDriveFileId') || {}).value || '',
+      qrOpenUrl: (document.getElementById('qrOpenUrl') || {}).value || '',
+      qrPayloadText: (document.getElementById('qrPayloadText') || {}).value || ''
     };
   }
 
@@ -1113,6 +1441,248 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       });
     }
   }
+
+function wireQrUiOnce_(){
+  if (window.__ARTSTART_QR_UI_WIRED__) return;
+  window.__ARTSTART_QR_UI_WIRED__ = true;
+
+  var stage = document.getElementById('artstart-qr-stage');
+  var btnPlace = document.getElementById('artstart-qr-place');
+  var link = document.getElementById('artstart-qr-link');
+  var img = document.getElementById('artstart-qr-img');
+  var payloadEl = document.getElementById('artstart-qr-payload');
+  var clearBtn = document.getElementById('artstart-qr-clear');
+
+  var modal = document.getElementById('artstart-qr-modal');
+  var modalBackdrop = document.getElementById('artstart-qr-modal-backdrop');
+  var modalClose = document.getElementById('artstart-qr-modal-close');
+  var listEl = document.getElementById('artstart-qr-list');
+  var btnNew = document.getElementById('artstart-qr-new');
+
+  function getUserEmail_(){
+    try {
+      if (window.Ascend && typeof window.Ascend.getCurrentUser === 'function') {
+        var u = window.Ascend.getCurrentUser();
+        if (u && u.email) return String(u.email).trim();
+      }
+    } catch(e){}
+    return '';
+  }
+
+  function parseDriveId_(url){
+    var s = String(url || '').trim();
+    if (!s) return '';
+    var m = s.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})\//);
+    if (m && m[1]) return m[1];
+    m = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+    if (m && m[1]) return m[1];
+    return '';
+  }
+
+  function renderQr_(){
+    var fid = (document.getElementById('qrDriveFileId') || {}).value || '';
+    var openUrl = (document.getElementById('qrOpenUrl') || {}).value || '';
+    var payload = (document.getElementById('qrPayloadText') || {}).value || '';
+
+    var has = !!(String(fid).trim() && String(openUrl).trim());
+
+    if (stage) {
+      if (has) stage.classList.add('has-qr');
+      else stage.classList.remove('has-qr');
+    }
+
+    if (btnPlace) btnPlace.style.display = has ? 'none' : '';
+    if (link) link.style.display = has ? '' : 'none';
+    if (clearBtn) clearBtn.style.display = has ? '' : 'none';
+
+    if (payloadEl) payloadEl.textContent = payload ? String(payload) : '—';
+
+    if (has) {
+      if (link) link.href = String(openUrl);
+      if (img) img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(String(fid)) + '&sz=w512';
+    } else {
+      if (link) link.href = '#';
+      if (img) img.removeAttribute('src');
+    }
+  }
+
+  function openModal_(){
+    if (!modal) return;
+    modal.style.display = '';
+    modal.setAttribute('aria-hidden','false');
+    loadFileRoomQrList_();
+  }
+
+  function closeModal_(){
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden','true');
+  }
+
+  function isQrOutput_(it){
+    if (!it) return false;
+    var kind = String(it.Kind || it.kind || '').toLowerCase().trim();
+    var at = String(it.AssetType || it.assetType || '').toLowerCase().trim();
+    if (kind !== 'output') return false;
+    if (at !== 'qr') return false;
+    return true;
+  }
+
+  function pickBestOpenUrl_(it){
+    return it.OpenUrl || it.openUrl || it.open_url || it.DrivePngOpenUrl || it.drivePngOpenUrl || '';
+  }
+
+  function pickBestFileId_(it){
+    return it.DrivePngFileId || it.drivePngFileId || it.DriveFileId || it.driveFileId || it.FileId || it.fileId || '';
+  }
+
+  function pickPayload_(it){
+    var p = it.qrPayloadText || it.QrPayloadText || it.PayloadText || it.payloadText || it.payload || '';
+    if (String(p || '').trim()) return String(p);
+    // Fallback: try StateJson
+    try {
+      var sj = it.StateJson || it.stateJson || '';
+      if (sj) {
+        var obj = JSON.parse(sj);
+        var p2 = obj && (obj.payloadText || obj.payload || obj.text || obj.encodedText || '');
+        if (String(p2 || '').trim()) return String(p2);
+      }
+    } catch(e){}
+    return '';
+  }
+
+  function renderList_(jobs){
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    var rows = (jobs || []).filter(isQrOutput_);
+    if (!rows.length) {
+      var d = document.createElement('div');
+      d.className = 'artstart-qr-modal-note';
+      d.textContent = 'No QR outputs found in FileRoom.';
+      listEl.appendChild(d);
+      return;
+    }
+
+    rows.forEach(function(it){
+      var openUrl = pickBestOpenUrl_(it);
+      var fid = pickBestFileId_(it) || parseDriveId_(openUrl);
+      if (!openUrl || !fid) return;
+
+      var title = it.FileRoomTitle || it.Title || it.title || it.Name || it.name || 'QR';
+      var payload = pickPayload_(it);
+
+      var row = document.createElement('div');
+      row.className = 'artstart-qr-row';
+
+      var thumb = document.createElement('div');
+      thumb.className = 'artstart-qr-thumb';
+      var im = document.createElement('img');
+      im.alt = 'QR';
+      im.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(String(fid)) + '&sz=w256';
+      thumb.appendChild(im);
+
+      var text = document.createElement('div');
+      var t = document.createElement('div');
+      t.className = 'artstart-qr-row-title';
+      t.textContent = String(title || 'QR');
+
+      var sub = document.createElement('div');
+      sub.className = 'artstart-qr-row-sub';
+      sub.textContent = payload ? payload : openUrl;
+
+      text.appendChild(t);
+      text.appendChild(sub);
+
+      row.appendChild(thumb);
+      row.appendChild(text);
+
+      row.addEventListener('click', function(){
+        (document.getElementById('qrDriveFileId') || {}).value = String(fid);
+        (document.getElementById('qrOpenUrl') || {}).value = String(openUrl);
+        (document.getElementById('qrPayloadText') || {}).value = String(payload || '');
+
+        renderQr_();
+        closeModal_();
+
+        // Persist immediately
+        try { saveDraft(currentJobId); } catch(e) {}
+      });
+
+      listEl.appendChild(row);
+    });
+  }
+
+  function loadFileRoomQrList_(){
+    var api = window.FILEROOM_API_BASE;
+    if (!api) {
+      console.warn('FILEROOM_API_BASE missing on window. Export it from ascend.js.');
+      renderList_([]);
+      return;
+    }
+
+    var email = getUserEmail_();
+    if (!email) {
+      console.warn('No user email available for FileRoom list.');
+      renderList_([]);
+      return;
+    }
+
+    var cb = 'artstartFileRoomCb_' + String(Date.now());
+    window[cb] = function(payload){
+      try {
+        var jobs = (payload && payload.jobs) ? payload.jobs : [];
+        renderList_(jobs);
+      } catch(e) {
+        console.warn('FileRoom callback error', e);
+        renderList_([]);
+      }
+      try { delete window[cb]; } catch(_e) { window[cb] = undefined; }
+    };
+
+    var u = new URL(String(api));
+    u.searchParams.set('action','listJobsForUser');
+    u.searchParams.set('user_email', email);
+    u.searchParams.set('limit','250');
+    u.searchParams.set('callback', cb);
+
+    var s = document.createElement('script');
+    s.src = u.toString();
+    s.async = true;
+    document.body.appendChild(s);
+  }
+
+  if (btnPlace) btnPlace.addEventListener('click', openModal_);
+  if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal_);
+  if (modalClose) modalClose.addEventListener('click', closeModal_);
+
+  if (clearBtn) clearBtn.addEventListener('click', function(){
+    (document.getElementById('qrDriveFileId') || {}).value = '';
+    (document.getElementById('qrOpenUrl') || {}).value = '';
+    (document.getElementById('qrPayloadText') || {}).value = '';
+    renderQr_();
+    try { saveDraft(currentJobId); } catch(e) {}
+  });
+
+  if (btnNew) btnNew.addEventListener('click', function(){
+    var url = window.CODEDESK_URL;
+    if (!url) {
+      console.warn('CODEDESK_URL missing on window. Export it from ascend.js.');
+      return;
+    }
+    try {
+      var ru = window.location.href;
+      var uu = new URL(String(url), ru);
+      uu.searchParams.set('origin','artstart');
+      uu.searchParams.set('jobid', String(currentJobId || ''));
+      uu.searchParams.set('returnUrl', ru);
+      url = uu.toString();
+    } catch(e){}
+    window.open(String(url), '_blank', 'noopener');
+  });
+
+  renderQr_();
+}
 
 function saveDraft(jobId) {
   setSaveStatus('Saving…');
@@ -1296,6 +1866,8 @@ function saveDraft(jobId) {
 
   function init() {
     setUserLabel();
+    try { wireQrUiOnce_(); } catch(e) {}
+    initQrUi_();
 
     // Cache language UI
     langSelect = document.getElementById('working-language');
