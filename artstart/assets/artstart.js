@@ -145,6 +145,7 @@ function applyTranslatedFields_(f) {
   }
 
   function renderQrStage_() {
+    var stageEl = qs_('artstart-qr-stage');
     var placeBtn = qs_('artstart-qr-place');
     var linkEl = qs_('artstart-qr-link');
     var imgEl = qs_('artstart-qr-img');
@@ -156,18 +157,17 @@ function applyTranslatedFields_(f) {
     var s = getQrState_();
     var has = !!(s && s.openUrl && s.driveFileId);
 
+    if (stageEl) stageEl.classList.toggle('has-qr', has);
+
     placeBtn.style.display = has ? 'none' : '';
     linkEl.style.display = has ? '' : 'none';
     clearBtn.style.display = has ? '' : 'none';
 
     if (has) {
-      // Click = open FileRoom asset
       linkEl.href = s.openUrl;
-
-      // Drive image thumbnail (fast enough; no new infra)
       imgEl.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(s.driveFileId) + '&sz=w512';
 
-      if (s.payloadText) {
+      if (String(s.payloadText || '').trim()) {
         payloadEl.textContent = s.payloadText;
         payloadEl.style.display = '';
       } else {
@@ -177,8 +177,8 @@ function applyTranslatedFields_(f) {
     } else {
       linkEl.href = '#';
       imgEl.removeAttribute('src');
-      payloadEl.textContent = '';
-      payloadEl.style.display = 'none';
+      payloadEl.textContent = '—';
+      payloadEl.style.display = '';
     }
   }
 
@@ -421,64 +421,7 @@ function applyTranslatedFields_(f) {
     var labelEl = document.getElementById('artstart-user-label');
     if (!labelEl) return;
 
-    var email = '';
-
-    try {
-      // 1) Prefer the shared Ascend helper if it exists.
-      if (window.Ascend && typeof window.Ascend.getCurrentUser === 'function') {
-        var user = window.Ascend.getCurrentUser();
-        if (user && user.email) {
-          email = user.email;
-        }
-      }
-
-      // 2) Fall back to known localStorage keys if we still don't have an email.
-      if (!email && window.localStorage) {
-        var possibleKeys = [
-          'ascendUserEmail',
-          'ascend_user_email',
-          'ascendEmail',
-          'ascend.user.email',
-          'ascend-user-email'
-        ];
-
-        for (var i = 0; i < possibleKeys.length && !email; i++) {
-          var v = window.localStorage.getItem(possibleKeys[i]);
-          if (v && typeof v === 'string') {
-            email = v;
-          }
-        }
-
-        // 3) Last-resort: scan any Ascend-ish localStorage entry for an email.
-        if (!email) {
-          for (var j = 0; j < window.localStorage.length; j++) {
-            var key = window.localStorage.key(j);
-            if (!key || key.toLowerCase().indexOf('ascend') === -1) continue;
-
-            var raw = window.localStorage.getItem(key);
-            if (!raw || typeof raw !== 'string') continue;
-
-            // If it’s JSON, try to pull .email; otherwise use the string itself.
-            var candidate = '';
-            try {
-              var parsed = JSON.parse(raw);
-              if (parsed && parsed.email) {
-                candidate = parsed.email;
-              }
-            } catch (e) {
-              candidate = raw;
-            }
-
-            if (candidate && candidate.indexOf('@') !== -1) {
-              email = candidate;
-              break;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // Swallow any weirdness; we'll just show "Not logged in".
-    }
+    var email = getCurrentUserEmail_();
 
     if (email) {
       labelEl.textContent = 'Logged in as ' + email;
