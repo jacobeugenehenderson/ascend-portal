@@ -1477,6 +1477,11 @@ function _codedeskHasFinishedPairing(activeId){
 }
 
 async function codedeskPngDataUrlFromCurrentSvg(scale = 3) {
+  // Ensure the preview stage is fully current before snapshotting it.
+  try { if (typeof render === 'function') render(); } catch(e){}
+  try { await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); } catch(e){}
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
+
   const src = getCurrentSvgNode();
   if (!src) return '';
 
