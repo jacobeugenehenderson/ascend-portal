@@ -266,17 +266,18 @@ function applyTranslatedFields_(f) {
 
       // FileRoom registry returns PNG fields explicitly (DrivePngFileId / DrivePngOpenUrl).
       // SourceId is NOT the PNG file id — it’s the registry source key.
+      // IMPORTANT: do NOT fall back to generic Id/id here; that is commonly the registry row id.
       var driveFileId =
         item.DrivePngFileId || item.drivePngFileId || item.drive_png_file_id ||
         item.driveFileId || item.DriveFileId || item.drive_file_id ||
-        item.FileId || item.fileId || item.Id || item.id || '';
+        item.FileId || item.fileId || '';
 
       // Correct payload is the destination url when present (FileRoom: DestinationUrl).
+      // IMPORTANT: do NOT fall back to Subtitle/subtitle; that is commonly a label like "CODEDESK — FLATTENED (PNG)".
       var payloadText =
         item.DestinationUrl || item.destinationUrl || item.destination_url ||
         item.qrPayloadText || item.QrPayloadText ||
-        item.PayloadText || item.payloadText || item.Payload || item.payload ||
-        item.Subtitle || item.subtitle || '';
+        item.PayloadText || item.payloadText || item.Payload || item.payload || '';
 
       // If we can’t render it, it’s not selectable.
       if (!driveFileId) return;
