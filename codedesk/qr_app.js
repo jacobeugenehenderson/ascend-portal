@@ -52,7 +52,7 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
   const parentAscendJobKey = (qs.get("parent_ascend_job_key") || "").trim();
 
   // Working-file open path (from hopper)
-  const workingFileId = (qs.get("working_file_id") || qs.get("workingFileId") || "").trim();
+  const workingFileId = (qs.get("working_file_id") || qs.get("workingFileId") || qs.get("wf") || "").trim();
 
   // Carry-through identity (may be present when launched from Ascend)
   const token = (qs.get("token") || "").trim();
@@ -1511,6 +1511,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
     const u = new URL(location.href);
     // Ensure we have a stable id param if you later choose to add one
     u.searchParams.set('wf', workingId); // legacy alias
+    u.searchParams.set('working_file_id', workingId); // canonical
     workingOpenUrl = u.toString();
   } catch (e) {}
 
