@@ -1949,23 +1949,38 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
   function codedeskRefreshFilenameGate(){
     // Gate is ceremony-based: ONLY Enter unlocks (typing does not).
-    const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
+    let accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
 
     // Keep filename editable at all times
     try { ensureFilenameUi && ensureFilenameUi(); } catch(e){}
 
-    // Lock/unlock the rest of the UI strictly by accepted flag
-    codedeskSetLocked(!accepted);
-
-    // Setup (✨) should be hidden on load, visible only after Enter (and only if no working file exists yet)
+    // If we are reopening an existing working file and a name is already present,
+    // skip the Enter ceremony and unlock immediately.
     try {
+      const inp = document.getElementById('codedeskFilename');
+      const fname = String(inp ? (inp.value || '') : '').trim();
+
       const aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
       const rec = aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
         ? window.codedeskGetWorkingFileRecord(aid)
         : null);
       const hasWf = !!rec;
+
+      if (hasWf && fname) {
+        accepted = true;
+        try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(e){}
+      }
+
+      // Lock/unlock the rest of the UI strictly by accepted flag
+      codedeskSetLocked(!accepted);
+
+      // Setup (✨) is only relevant before a working file exists
       codedeskSetSetupSparkleVisible(accepted && !hasWf);
-    } catch(e){}
+    } catch(e){
+      // Fall back to original behavior if anything above fails
+      codedeskSetLocked(!accepted);
+      try { codedeskSetSetupSparkleVisible(false); } catch(_e){}
+    }
 
     syncFinishEnabled();
   }
@@ -2006,6 +2021,22 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       if (!inp) return false;
 
       // initial state: locked + ✨ hidden
+      // BUT: if we are reopening an existing working file and a filename is already present,
+      // do not require the Enter ceremony.
+      try {
+        const fname0 = String(inp.value || '').trim();
+
+        const aid0 = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+        const rec0 = aid0 && (typeof window.codedeskGetWorkingFileRecord === 'function'
+          ? window.codedeskGetWorkingFileRecord(aid0)
+          : null);
+        const hasWf0 = !!rec0;
+
+        if (hasWf0 && fname0) {
+          try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
+        }
+      } catch(_e){}
+
       if (window.__CODEDESK_FILENAME_ACCEPTED__ !== true) {
         try { codedeskSetLocked(true); } catch(e){}
         try { codedeskSetSetupSparkleVisible(false); } catch(e){}
