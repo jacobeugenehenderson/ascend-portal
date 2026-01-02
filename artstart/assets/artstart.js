@@ -164,7 +164,24 @@ function applyTranslatedFields_(f) {
     clearBtn.style.display = has ? '' : 'none';
 
     if (has) {
-      var fid = encodeURIComponent(String(s.driveFileId || '').trim());
+      // Normalize: driveFileId may be a raw id OR a full Drive URL.
+      var rawId = String(s.driveFileId || '').trim();
+      var driveId = rawId;
+
+      // URL forms:
+      // 1) ...open?id=FILEID
+      // 2) .../file/d/FILEID/...
+      // 3) ...uc?id=FILEID
+      try {
+        if (rawId.indexOf('http') === 0 || rawId.indexOf('drive.google.com') !== -1) {
+          var m1 = rawId.match(/[?&]id=([^&]+)/i);
+          var m2 = rawId.match(/\/d\/([^\/\?\#]+)/i);
+          if (m1 && m1[1]) driveId = m1[1];
+          else if (m2 && m2[1]) driveId = m2[1];
+        }
+      } catch (e) {}
+
+      var fid = encodeURIComponent(String(driveId || '').trim());
       var href = String(s.openUrl || '').trim();
       if (!href) href = 'https://drive.google.com/open?id=' + fid;
 
@@ -275,7 +292,8 @@ function applyTranslatedFields_(f) {
       // Correct payload is the destination url when present (FileRoom: DestinationUrl).
       // IMPORTANT: do NOT fall back to Subtitle/subtitle; that is commonly a label like "CODEDESK — FLATTENED (PNG)".
       var payloadText =
-        item.DestinationUrl || item.destinationUrl || item.destination_url ||
+        item.DestinationUrl || item.DestinationURL || item.destinationUrl || item.destination_url || item.destUrl || item.DestUrl ||
+        item.qrDestinationUrl || item.QrDestinationUrl || item.qr_destination_url ||
         item.qrPayloadText || item.QrPayloadText ||
         item.PayloadText || item.payloadText || item.Payload || item.payload || '';
 
@@ -321,6 +339,18 @@ function applyTranslatedFields_(f) {
       row.appendChild(text);
 
       row.addEventListener('click', function () {
+        // Persist selection per-job so populateJob async refresh can't overwrite it.
+        try {
+          var jobKey = getJobIdFromQuery();
+          if (jobKey && window.localStorage) {
+            window.localStorage.setItem('artstart_qr_override_v1:' + jobKey, JSON.stringify({
+              driveFileId: driveFileId,
+              openUrl: openUrl,
+              payloadText: String(payloadText || '').trim()
+            }));
+          }
+        } catch (e2) {}
+
         setQrState_({
           driveFileId: driveFileId,
           openUrl: openUrl,
@@ -431,6 +461,13 @@ function applyTranslatedFields_(f) {
 
     if (clearBtn) {
       clearBtn.addEventListener('click', function () {
+        try {
+          var jobKey = getJobIdFromQuery();
+          if (jobKey && window.localStorage) {
+            window.localStorage.removeItem('artstart_qr_override_v1:' + jobKey);
+          }
+        } catch (e2) {}
+
         setQrState_({ driveFileId: '', openUrl: '', payloadText: '' });
 
         try {
@@ -943,11 +980,35 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
     // QR attachment (base job metadata, not translated)
     try {
-      setQrState_({
-        driveFileId: (job && (job.qrDriveFileId || job.QrDriveFileId || job.qr_drive_file_id)) || '',
-        openUrl: (job && (job.qrOpenUrl || job.QrOpenUrl || job.qr_open_url)) || '',
-        payloadText: (job && (job.qrPayloadText || job.QrPayloadText || job.qr_payload_text)) || ''
-      });
+      // Prefer a user-picked QR override (prevents async refresh from snapping back to stale sheet fields)
+      var jobKeyQr = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+      var qrOverride = null;
+
+      try {
+        if (jobKeyQr && window.localStorage) {
+          var rawQr = window.localStorage.getItem('artstart_qr_override_v1:' + jobKeyQr);
+          if (rawQr) qrOverride = JSON.parse(rawQr);
+        }
+      } catch (_e) { qrOverride = null; }
+
+      if (qrOverride && qrOverride.driveFileId) {
+        setQrState_(qrOverride);
+      } else {
+        setQrState_({
+          driveFileId: (job && (
+            job.qrDrivePngFileId || job.QrDrivePngFileId || job.qr_drive_png_file_id ||
+            job.qrDriveFileId || job.QrDriveFileId || job.qr_drive_file_id
+          )) || '',
+          openUrl: (job && (
+            job.qrDrivePngOpenUrl || job.QrDrivePngOpenUrl || job.qr_drive_png_open_url ||
+            job.qrOpenUrl || job.QrOpenUrl || job.qr_open_url
+          )) || '',
+          payloadText: (job && (
+            job.qrDestinationUrl || job.QrDestinationUrl || job.qr_destination_url ||
+            job.qrPayloadText || job.QrPayloadText || job.qr_payload_text
+          )) || ''
+        });
+      }
     } catch (e) {}
 
     // Header middle
