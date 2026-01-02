@@ -1286,6 +1286,32 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
 
   const ok = window.okqralImportState(rec.state);
 
+  // Opening an existing WORKING file from the hopper implies:
+  // - setup is already done (autosave allowed)
+  // - filename ceremony is already satisfied (UI unlocked + push allowed)
+  try { window.__CODEDESK_SETUP_DONE__ = true; } catch(e){}
+  try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(e){}
+
+  // Populate the filename input from the working-file record name (and keep it editable)
+  try {
+    const inp = document.getElementById('codedeskFilename');
+    if (inp) {
+      inp.value = String(rec.name || '').trim();
+      inp.disabled = false;
+      inp.removeAttribute('disabled');
+      inp.style.pointerEvents = 'auto';
+    }
+  } catch(e){}
+
+  // Unlock the accordion / interactive UI and keep ✨ hidden for existing working files
+  try { typeof codedeskRefreshFilenameGate === 'function' && codedeskRefreshFilenameGate(); } catch(e){}
+  try { typeof codedeskSetSetupSparkleVisible === 'function' && codedeskSetSetupSparkleVisible(false); } catch(e){}
+
+  // Ensure the WORKFILE row stays fresh in Ascend even if no prior FileRoom pairing exists
+  try {
+    setTimeout(() => { try { window.codedeskPushWorkingDebounced && window.codedeskPushWorkingDebounced('open'); } catch(e){} }, 250);
+  } catch(e){}
+
   // If this working file has been Finished before, opening it should trigger an update.
   // Debounced so the first render settles.
   try {
