@@ -1453,7 +1453,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          action: 'uploadPngToDrive',
+          action: 'upsertQrPngAsset',
           folder_id: folderId,
           png_data_url: pngDataUrl,
           file_name: fileName,
@@ -1501,7 +1501,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
             status: 'open',
             open_url: workingOpenUrl || String(location && location.href ? location.href : ''),
             owner_email: ownerEmail,
-            kind: 'workfile',
+            kind: 'working',
             asset_type: 'qr',
             template_id: templateId,
             destination_url: destinationUrl,
