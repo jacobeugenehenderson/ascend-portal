@@ -195,12 +195,14 @@ function applyTranslatedFields_(f) {
         this.src = 'https://drive.google.com/thumbnail?id=' + fid + '&sz=w512';
       };
 
-      if (String(s.payloadText || '').trim()) {
-        payloadEl.textContent = s.payloadText;
+      var pt2 = String(s.payloadText || '').trim();
+      if (pt2) {
+        payloadEl.textContent = pt2;
         payloadEl.style.display = '';
       } else {
-        payloadEl.textContent = '';
-        payloadEl.style.display = 'none';
+        // If payload text isn't stored, show the destination we *do* have (the link).
+        payloadEl.textContent = href;
+        payloadEl.style.display = '';
       }
     } else {
       linkEl.href = '#';
@@ -999,6 +1001,21 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       } catch (_e) { qrOverride = null; }
 
       if (qrOverride && qrOverride.driveFileId) {
+        // Sanitize stale overrides (older builds stored a human label or empty payload).
+        try {
+          var opt = String((qrOverride && qrOverride.payloadText) || '').trim();
+          if (/codedesk/i.test(opt) && /flattened/i.test(opt)) opt = '';
+          qrOverride.payloadText = opt;
+        } catch (_e) {}
+
+        // If override payload is empty, fall back to the job's canonical destination fields.
+        if (!String((qrOverride && qrOverride.payloadText) || '').trim()) {
+          qrOverride.payloadText = (job && (
+            job.qrDestinationUrl || job.QrDestinationUrl || job.qr_destination_url ||
+            job.qrPayloadText || job.QrPayloadText || job.qr_payload_text
+          )) || '';
+        }
+
         setQrState_(qrOverride);
       } else {
         setQrState_({
