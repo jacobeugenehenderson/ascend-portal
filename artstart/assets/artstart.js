@@ -879,6 +879,10 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
     // Mirror text into canvas for scale only
     syncCanvasTextFromFields();
+
+    // QR card
+    try { renderQrCard_(job); } catch (e) {}
+    try { wireQrButtonsOnce_(); } catch (e) {}
   }
 
   function setSaveStatus(text) {
@@ -952,6 +956,162 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       workingEmail: (document.getElementById('working-email') || {}).value || '',
       workingNotes: document.getElementById('working-notes').value
     };
+  }
+
+  // -------------------------------------------------------------------
+  // QR association (FileRoom asset)
+  // -------------------------------------------------------------------
+
+  var __ARTSTART_QR_WIRED__ = false;
+
+  function parseDriveFileIdFromUrl_(url) {
+    var s = String(url || '').trim();
+    if (!s) return '';
+    // Common patterns:
+    //  - https://drive.google.com/file/d/<ID>/view
+    //  - https://drive.google.com/open?id=<ID>
+    //  - https://drive.google.com/uc?id=<ID>&export=download
+    var m = s.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})\//);
+    if (m && m[1]) return m[1];
+    m = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+    if (m && m[1]) return m[1];
+    return '';
+  }
+
+  function renderQrCard_(job) {
+    var stage = document.getElementById('artstart-qr-stage');
+    var link = document.getElementById('artstart-qr-link');
+    var img = document.getElementById('artstart-qr-img');
+    var empty = document.getElementById('artstart-qr-empty');
+    var payloadEl = document.getElementById('artstart-qr-payload');
+
+    if (!stage) return;
+
+    var openUrl = (job && job.qrOpenUrl) ? String(job.qrOpenUrl) : '';
+    var payloadText = (job && job.qrPayloadText) ? String(job.qrPayloadText) : '';
+
+    if (payloadEl) payloadEl.textContent = payloadText || '—';
+
+    if (openUrl) {
+      if (link) {
+        link.href = openUrl;
+        link.style.display = '';
+      }
+      if (img) {
+        // Render via Google Drive “uc” endpoint when possible (keeps it a simple <img>)
+        var fid = (job && job.qrDriveFileId) ? String(job.qrDriveFileId) : '';
+        fid = fid || parseDriveFileIdFromUrl_(openUrl);
+        img.src = fid ? ('https://drive.google.com/uc?id=' + encodeURIComponent(fid)) : openUrl;
+        img.style.display = '';
+      }
+      if (empty) empty.style.display = 'none';
+    } else {
+      if (link) link.style.display = 'none';
+      if (img) img.style.display = 'none';
+      if (empty) empty.style.display = '';
+    }
+  }
+
+  function saveQrAssociation_(jobId, rec, onDone) {
+    if (!jobId) return;
+
+    var params = new URLSearchParams();
+    params.append('action', 'updateArtStartDraftFields');
+    params.append('jobId', jobId);
+
+    params.append('qrDriveFileId', (rec && rec.qrDriveFileId) ? String(rec.qrDriveFileId) : '');
+    params.append('qrOpenUrl', (rec && rec.qrOpenUrl) ? String(rec.qrOpenUrl) : '');
+    params.append('qrPayloadText', (rec && rec.qrPayloadText) ? String(rec.qrPayloadText) : '');
+
+    var url = ARTSTART_API_BASE + '?' + params.toString();
+
+    setSaveStatus('Saving QR…');
+
+    fetch(url, { method: 'GET' })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (!json || !json.ok) {
+          throw new Error((json && json.error) || 'Unknown error');
+        }
+        setSaveStatus('Saved');
+        if (typeof onDone === 'function') onDone(true);
+      })
+      .catch(function (err) {
+        console.error('Error saving QR association', err);
+        setSaveStatus('Save failed – try again');
+        if (typeof onDone === 'function') onDone(false);
+      });
+  }
+
+  function wireQrButtonsOnce_() {
+    if (__ARTSTART_QR_WIRED__) return;
+    __ARTSTART_QR_WIRED__ = true;
+
+    var btnPlace = document.getElementById('artstart-qr-place');
+    var btnHost = document.getElementById('artstart-qr-host');
+    var btnClear = document.getElementById('artstart-qr-clear');
+
+    if (btnPlace) {
+      btnPlace.addEventListener('click', function () {
+        var jobId = currentJobId || getJobIdFromQuery();
+        if (!jobId) return;
+
+        // “Place”: user pastes a FileRoom/Drive URL, and (for now) also pastes the payload text.
+        var openUrl = window.prompt('Paste the FileRoom / Drive URL for the QR PNG:', '');
+        if (openUrl === null) return;
+
+        openUrl = String(openUrl || '').trim();
+        if (!openUrl) return;
+
+        var payloadText = window.prompt('Paste the QR payload text (what the QR encodes):', '');
+        if (payloadText === null) return;
+
+        payloadText = String(payloadText || '').trim();
+
+        var fid = parseDriveFileIdFromUrl_(openUrl);
+
+        saveQrAssociation_(jobId, {
+          qrDriveFileId: fid,
+          qrOpenUrl: openUrl,
+          qrPayloadText: payloadText
+        }, function () {
+          fetchJob(jobId);
+        });
+      });
+    }
+
+    if (btnHost) {
+      btnHost.addEventListener('click', function () {
+        var jobId = currentJobId || getJobIdFromQuery();
+        if (!jobId) return;
+
+        // “Host”: open CodeDesk to create a new QR for this job.
+        // NOTE: adjust the relative path if your CodeDesk lives elsewhere.
+        var returnUrl = window.location.href;
+        var url =
+          '../codedesk/index.html' +
+          '?entry=artstart' +
+          '&jobId=' + encodeURIComponent(jobId) +
+          '&returnUrl=' + encodeURIComponent(returnUrl);
+
+        window.open(url, '_blank', 'noopener');
+      });
+    }
+
+    if (btnClear) {
+      btnClear.addEventListener('click', function () {
+        var jobId = currentJobId || getJobIdFromQuery();
+        if (!jobId) return;
+
+        saveQrAssociation_(jobId, {
+          qrDriveFileId: '',
+          qrOpenUrl: '',
+          qrPayloadText: ''
+        }, function () {
+          fetchJob(jobId);
+        });
+      });
+    }
   }
 
 function saveDraft(jobId) {

@@ -647,11 +647,28 @@
             <section class="artstart-card artstart-card--qr" aria-labelledby="qr-card-title">
               <h2 id="qr-card-title">QR code</h2>
 
-              <div class="artstart-qr-stage">
-                QR CODE<br>
-                <span style="opacity:0.7;">
-                  (Attach from FileRoom)
-                </span>
+              <div class="artstart-qr-stage" id="artstart-qr-stage">
+                <a id="artstart-qr-link" href="#" target="_blank" rel="noopener" style="display:none;">
+                  <img id="artstart-qr-img" alt="QR code" style="width:100%; height:auto; display:block;" />
+                </a>
+
+                <div id="artstart-qr-empty">
+                  QR CODE<br>
+                  <span style="opacity:0.7;">
+                    (Attach from FileRoom)
+                  </span>
+                </div>
+              </div>
+
+              <div class="artstart-qr-meta" style="margin-top:10px;">
+                <div style="font-size:11px; font-weight:600; margin-bottom:4px;">Payload</div>
+                <div id="artstart-qr-payload" style="font-size:11px; color:#6b7280; white-space:pre-wrap; word-break:break-word;">—</div>
+              </div>
+
+              <div class="artstart-qr-actions" style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button type="button" class="artstart-save-button" id="artstart-qr-place">Place</button>
+                <button type="button" class="artstart-save-button" id="artstart-qr-host">Host</button>
+                <button type="button" class="artstart-save-button" id="artstart-qr-clear" style="opacity:0.7;">Clear</button>
               </div>
             </section>
           </div>
