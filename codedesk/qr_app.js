@@ -1835,12 +1835,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     const inp = document.getElementById('codedeskFilename');
     if (!inp) return;
 
-    // Filename input must always be enabled if it exists
-    inp.disabled = false;
-    inp.removeAttribute('disabled');
-    inp.style.pointerEvents = 'auto';
-
-    // Temporary policy: if a working file exists, freeze rename-on-return.
+    // Temporary policy: if a working file exists, freeze rename-on-return (disabled).
     try {
       const aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
       const rec = aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
@@ -1850,11 +1845,21 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         inp.readOnly = true;
         try { inp.setAttribute('readonly', 'readonly'); } catch(_e){}
         try { inp.style.textAlign = 'center'; } catch(_e){}
-      } else {
-        inp.readOnly = false;
-        try { inp.removeAttribute('readonly'); } catch(_e){}
+
+        inp.disabled = true;
+        try { inp.setAttribute('disabled', 'disabled'); } catch(_e){}
+        inp.style.pointerEvents = 'none';
+        return;
       }
     } catch(e){}
+
+    // No working file yet: filename must be editable.
+    inp.disabled = false;
+    inp.removeAttribute('disabled');
+    inp.style.pointerEvents = 'auto';
+
+    inp.readOnly = false;
+    try { inp.removeAttribute('readonly'); } catch(_e){}
   }
 
     function syncFinishEnabled(){
@@ -2010,13 +2015,20 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
             try { inp.removeEventListener('keydown', _h, true); } catch(_e){}
           }
         } catch(_e){}
+
+        // Return visit: remove the setup step so the “Create working file” flipper cannot appear.
+        try { typeof codedeskRemoveSetupStep === 'function' && codedeskRemoveSetupStep(); } catch(_e){}
+
+        // Return visit: hard-unlock regardless of any earlier ceremony state.
+        try { codedeskSetLocked(false); } catch(_e){}
+        try { codedeskSetSetupSparkleVisible(false); } catch(_e){}
+      } else {
+        // Lock/unlock the rest of the UI strictly by accepted flag (new job flow)
+        codedeskSetLocked(!accepted);
+
+        // Setup (✨) is only relevant before a working file exists
+        codedeskSetSetupSparkleVisible(accepted && !hasWf);
       }
-
-      // Lock/unlock the rest of the UI strictly by accepted flag
-      codedeskSetLocked(!accepted);
-
-      // Setup (✨) is only relevant before a working file exists
-      codedeskSetSetupSparkleVisible(accepted && !hasWf);
     } catch(e){
       // Fall back to original behavior if anything above fails
       codedeskSetLocked(!accepted);
