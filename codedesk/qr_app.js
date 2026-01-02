@@ -1287,10 +1287,14 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
   const ok = window.okqralImportState(rec.state);
 
   // Opening an existing WORKING file from the hopper implies:
-  // - setup is already done (autosave allowed)
-  // - filename ceremony is already satisfied (UI unlocked + push allowed)
-  try { window.__CODEDESK_SETUP_DONE__ = true; } catch(e){}
-  try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(e){}
+  // - setup is already done
+  // - filename ceremony is permanently bypassed
+  // - autosave + edits are immediately allowed
+  try {
+    window.__CODEDESK_SETUP_DONE__ = true;
+    window.__CODEDESK_FILENAME_ACCEPTED__ = true;
+    window.__CODEDESK_FILENAME_GATE_BYPASSED__ = true;
+  } catch(e){}
 
   // Populate the filename input from the working-file record name (freeze rename for now)
   try {
@@ -1316,13 +1320,30 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
     } catch(_e){}
   } catch(e){}
 
-  // Existing working file: remove the entire Finish/Setup step so no empty flipper remains
-  try { typeof codedeskRemoveSetupStep === 'function' && codedeskRemoveSetupStep(); } catch(e){}
-  try { typeof codedeskSetSetupSparkleVisible === 'function' && codedeskSetSetupSparkleVisible(false); } catch(e){}
+  // Existing working file: permanently remove setup UI
+  try {
+    if (typeof codedeskRemoveSetupStep === 'function') {
+      codedeskRemoveSetupStep();
+    }
+    if (typeof codedeskSetSetupSparkleVisible === 'function') {
+      codedeskSetSetupSparkleVisible(false);
+    }
+    // Defensive: ensure no setup remnants survive reflows
+    const step = document.getElementById('setupStep');
+    if (step && step.parentNode) step.parentNode.removeChild(step);
+  } catch(e){}
 
-  // Hard unlock (do not rely on any ceremony path)
-  try { typeof codedeskSetLocked === 'function' && codedeskSetLocked(false); } catch(e){}
-  try { typeof codedeskRefreshFilenameGate === 'function' && codedeskRefreshFilenameGate(); } catch(e){}
+  // Hard unlock — return visits must never be gated
+  try {
+    if (typeof codedeskSetLocked === 'function') {
+      codedeskSetLocked(false);
+    }
+    if (typeof codedeskRefreshFilenameGate === 'function') {
+      codedeskRefreshFilenameGate();
+    }
+    // Absolute override: ensure editability even if other guards fire later
+    window.__CODEDESK_LOCKED__ = false;
+  } catch(e){}
 
   // Ensure the WORKFILE row stays fresh in Ascend even if no prior FileRoom pairing exists
   try {
