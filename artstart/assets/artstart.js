@@ -273,7 +273,7 @@ function applyTranslatedFields_(f) {
       var thumb = document.createElement('div');
       thumb.className = 'artstart-qr-thumb';
 
-      // Branded FileRoom-style icon (no QR thumbnail image)
+            // FileRoom-style provenance lane: bar + monogram letter (siblings)
       var icon = document.createElement('div');
       icon.className = 'artstart-qr-icon';
 
@@ -281,8 +281,9 @@ function applyTranslatedFields_(f) {
       iconLabel.className = 'artstart-qr-icon-label';
       iconLabel.textContent = 'Q';
 
-      icon.appendChild(iconLabel);
+      // Bar first (absolute), then the letter sits in the lane
       thumb.appendChild(icon);
+      thumb.appendChild(iconLabel);
 
       var text = document.createElement('div');
       text.className = 'artstart-qr-text';
