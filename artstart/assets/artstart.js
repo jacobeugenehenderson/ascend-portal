@@ -160,7 +160,7 @@ function applyTranslatedFields_(f) {
     if (stageEl) stageEl.classList.toggle('has-qr', has);
 
     placeBtn.style.display = has ? 'none' : '';
-    linkEl.style.display = has ? '' : 'none';
+    linkEl.style.display = has ? 'block' : 'none';
     clearBtn.style.display = has ? '' : 'none';
 
     if (has) {
@@ -296,6 +296,13 @@ function applyTranslatedFields_(f) {
         item.qrDestinationUrl || item.QrDestinationUrl || item.qr_destination_url ||
         item.qrPayloadText || item.QrPayloadText ||
         item.PayloadText || item.payloadText || item.Payload || item.payload || '';
+
+      // Guard: FileRoom often stores a human label here (e.g. "CODEDESK — FLATTENED (PNG)"), not the true destination.
+      // If it looks like that label, treat it as empty so UI falls back to openUrl.
+      try {
+        var pt = String(payloadText || '').trim();
+        if (/codedesk/i.test(pt) && /flattened/i.test(pt)) payloadText = '';
+      } catch (e) {}
 
       // If we can’t render it, it’s not selectable.
       if (!driveFileId) return;
