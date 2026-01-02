@@ -65,12 +65,7 @@
         flex-direction: column;
         min-height: 0;
       }
-
-      .artstart-lower-grid .artstart-card--qr .artstart-qr-stage {
-        flex: 1;
-        min-height: 0;
-      }
-
+      
       @media (max-width: 900px) {
         .artstart-grid {
           gap: 12px;
@@ -169,19 +164,19 @@
       }
 
       /* Modal (minimal, ascend-apps-aligned) */
-      .artstart-modal{
+      .artstart-qr-modal{
         position: fixed;
         inset: 0;
         z-index: 9999;
       }
 
-      .artstart-modal-backdrop{
+      .artstart-qr-modal-backdrop{
         position: absolute;
         inset: 0;
         background: rgba(15,23,42,0.45);
       }
 
-      .artstart-modal-panel{
+      .artstart-qr-modal-panel{
         position: absolute;
         left: 50%;
         top: 50%;
@@ -196,7 +191,7 @@
         flex-direction: column;
       }
 
-      .artstart-modal-header{
+      .artstart-qr-modal-header{
         padding: 12px 14px;
         display: flex;
         align-items: center;
@@ -204,13 +199,13 @@
         border-bottom: 1px solid rgba(15,23,42,0.10);
       }
 
-      .artstart-modal-title{
+      .artstart-qr-modal-title{
         font-weight: 900;
         font-size: 13px;
         color: rgba(15,23,42,0.86);
       }
 
-      .artstart-modal-header-actions{
+      .artstart-qr-modal-actions{
         display: flex;
         align-items: center;
         gap: 8px;
@@ -231,7 +226,7 @@
         background: rgba(255,255,255,0.98);
       }
 
-      .artstart-modal-x{
+      .artstart-qr-modal-x{
         border: 0;
         background: transparent;
         font-size: 22px;
@@ -240,24 +235,24 @@
         color: rgba(15,23,42,0.62);
       }
 
-      .artstart-modal-body{
+      .artstart-qr-modal-body{
         padding: 12px 14px 14px;
         overflow: auto;
       }
 
-      .artstart-modal-note{
+      .artstart-qr-modal-note{
         font-size: 12px;
         color: #6b7280;
         margin-bottom: 10px;
       }
 
-      .artstart-modal-list{
+      .artstart-qr-list{
         display: grid;
         grid-template-columns: 1fr;
         gap: 10px;
       }
 
-      .artstart-modal-row{
+      .artstart-qr-row{
         display: grid;
         grid-template-columns: 86px 1fr;
         gap: 12px;
@@ -269,11 +264,11 @@
         cursor: pointer;
       }
 
-      .artstart-modal-row:hover{
+      .artstart-qr-row:hover{
         background: rgba(15,23,42,0.04);
       }
 
-      .artstart-modal-thumb{
+      .artstart-qr-thumb{
         width: 86px;
         height: 86px;
         border-radius: 12px;
@@ -282,20 +277,20 @@
         overflow: hidden;
       }
 
-      .artstart-modal-thumb img{
+      .artstart-qr-thumb img{
         width: 100%;
         height: 100%;
         object-fit: contain;
         display: block;
       }
 
-      .artstart-modal-row-title{
+      .artstart-qr-row-title{
         font-weight: 900;
         font-size: 13px;
         color: rgba(15,23,42,0.86);
       }
 
-      .artstart-modal-row-sub{
+      .artstart-qr-row-sub{
         margin-top: 4px;
         font-size: 12px;
         color: #6b7280;
@@ -874,25 +869,25 @@
     </div>   <!-- .ascend-app-shell -->
 
     <!-- QR picker modal -->
-    <div class="artstart-modal" id="artstart-qr-modal" style="display:none;" aria-hidden="true">
-      <div class="artstart-modal-backdrop" data-modal-close="1"></div>
+    <div class="artstart-qr-modal" id="artstart-qr-modal" style="display:none;" aria-hidden="true">
+      <div class="artstart-qr-modal-backdrop" id="artstart-qr-modal-backdrop" data-modal-close="1"></div>
 
-      <div class="artstart-modal-panel" role="dialog" aria-modal="true" aria-labelledby="artstart-qr-modal-title">
-        <div class="artstart-modal-header">
-          <div class="artstart-modal-title" id="artstart-qr-modal-title">Place QR from FileRoom</div>
+      <div class="artstart-qr-modal-panel" role="dialog" aria-modal="true" aria-labelledby="artstart-qr-modal-title">
+        <div class="artstart-qr-modal-header">
+          <div class="artstart-qr-modal-title" id="artstart-qr-modal-title">Place QR from FileRoom</div>
 
-          <div class="artstart-modal-header-actions">
+          <div class="artstart-qr-modal-actions">
             <button type="button" class="artstart-qr-mini-btn" id="artstart-qr-new-btn">New →</button>
-            <button type="button" class="artstart-modal-x" id="artstart-qr-modal-close" aria-label="Close">×</button>
+            <button type="button" class="artstart-qr-modal-x" id="artstart-qr-modal-close" aria-label="Close">×</button>
           </div>
         </div>
 
-        <div class="artstart-modal-body">
-          <div class="artstart-modal-note" id="artstart-qr-modal-note">
+        <div class="artstart-qr-modal-body">
+          <div class="artstart-qr-modal-note" id="artstart-qr-modal-note">
             Showing FileRoom outputs filtered to QR assets.
           </div>
 
-          <div class="artstart-modal-list" id="artstart-qr-list">
+          <div class="artstart-qr-list" id="artstart-qr-list">
             <!-- rows injected by JS -->
           </div>
         </div>
