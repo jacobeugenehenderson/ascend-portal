@@ -1369,7 +1369,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       // QR association (FileRoom)
       qrDriveFileId: (document.getElementById('qrDriveFileId') || {}).value || '',
       qrOpenUrl: (document.getElementById('qrOpenUrl') || {}).value || '',
-      qrPayloadText: (document.getElementById('qrPayloadText') || {}).value || ''
+      qrDestinationUrl: (document.getElementById('qrPayloadText') || {}).value || ''
     };
   }
 
