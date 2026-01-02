@@ -207,6 +207,9 @@ function applyTranslatedFields_(f) {
       (item.Origin || item.origin || item.Source || item.source || item.App || item.app || item.Type || item.type || item.Kind || item.kind) || '';
     var origin = String(originRaw).trim().toLowerCase();
 
+    // Hard rule: anything from CodeDesk is a QR.
+    if (origin === 'codedesk') return true;
+
     if (origin.indexOf('qr') !== -1) return true;
     if (origin.indexOf('codedesk') !== -1) return true;
     if (origin.indexOf('code desk') !== -1) return true;
@@ -235,8 +238,8 @@ function applyTranslatedFields_(f) {
 
     if (!rows.length) {
       var empty = document.createElement('div');
-      empty.className = 'artstart-qr-modal-note';
-      empty.textContent = 'No FileRoom outputs found for your account.';
+      empty.className = 'artstart-modal-note';
+      empty.textContent = 'No QR assets found in FileRoom for your account.';
       list.appendChild(empty);
       return;
     }
@@ -246,31 +249,29 @@ function applyTranslatedFields_(f) {
         item.title || item.Title || item.name || item.Name || item.FileName || item.filename || item.AssetName || 'QR';
 
       var openUrl =
-        item.openUrl || item.OpenUrl || item.open_url ||
-        item.OpenURL || item.openURL ||
-        item.DriveUrl || item.DriveURL || item.driveUrl || item.driveURL ||
-        item.webViewLink || item.WebViewLink ||
-        item.Url || item.url ||
-        item.fileUrl || item.FileUrl || item.fileURL || item.FileURL ||
-        '';
+        item.openUrl || item.OpenUrl || item.open_url || item.OpenURL ||
+        item.Url || item.URL || item.url || item.link || item.Link || '';
 
+      // FileRoom registry uses SourceId as the Drive file id (column C).
       var driveFileId =
         item.driveFileId || item.DriveFileId || item.drive_file_id ||
-        item.FileId || item.fileId ||
-        item.DriveFileID || item.driveFileID ||
-        '';
+        item.FileId || item.fileId || item.Id || item.id ||
+        item.SourceId || item.sourceId || item.source_id || '';
 
+      // FileRoom registry commonly stores payload-ish text in Subtitle (column E in your UI, but “Subtitle” field).
       var payloadText =
-        item.qrPayloadText || item.PayloadText || item.payloadText || item.Payload || item.payload || '';
+        item.qrPayloadText || item.QrPayloadText ||
+        item.PayloadText || item.payloadText || item.Payload || item.payload ||
+        item.Subtitle || item.subtitle || '';
 
       // If we can’t open or render it, it’s not selectable.
       if (!openUrl || !driveFileId) return;
 
       var row = document.createElement('div');
-      row.className = 'artstart-qr-row';
+      row.className = 'artstart-modal-row';
 
       var thumb = document.createElement('div');
-      thumb.className = 'artstart-qr-thumb';
+      thumb.className = 'artstart-modal-thumb';
       var img = document.createElement('img');
       img.alt = 'QR';
       img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveFileId) + '&sz=w256';
@@ -279,11 +280,11 @@ function applyTranslatedFields_(f) {
       var text = document.createElement('div');
 
       var t = document.createElement('div');
-      t.className = 'artstart-qr-row-title';
+      t.className = 'artstart-modal-row-title';
       t.textContent = String(title || 'QR');
 
       var sub = document.createElement('div');
-      sub.className = 'artstart-qr-row-sub';
+      sub.className = 'artstart-modal-row-sub';
       sub.textContent = String(payloadText || '').trim() ? String(payloadText) : openUrl;
 
       text.appendChild(t);
