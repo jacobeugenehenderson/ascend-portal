@@ -1437,6 +1437,10 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const ownerEmail = (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '';
   const templateId = (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '';
 
+  // DestinationUrl: canonical QR payload (includes Mechanical knobs like UTM)
+  let destinationUrl = '';
+  try { destinationUrl = (typeof buildText === 'function') ? String(buildText() || '') : ''; } catch(e){ destinationUrl = ''; }
+
 
 
   // 2) Upload PNG to Drive + upsert delivered row
@@ -1462,6 +1466,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
           kind: 'output',
           asset_type: 'qr',
           template_id: templateId,
+          destination_url: destinationUrl,
           state_json: stateJson
         })
       });
@@ -1499,6 +1504,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
             kind: 'workfile',
             asset_type: 'qr',
             template_id: templateId,
+            destination_url: destinationUrl,
             state_json: stateJson,
             tags: 'codedesk,workfile'
           })
@@ -1539,6 +1545,10 @@ window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
   const ownerEmail = (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '';
   const templateId = (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '';
 
+  // DestinationUrl: canonical QR payload (includes Mechanical knobs like UTM)
+  let destinationUrl = '';
+  try { destinationUrl = (typeof buildText === 'function') ? String(buildText() || '') : ''; } catch(e){ destinationUrl = ''; }
+
   // Canonical display name: CodeDesk filename (live), falling back to record name
   const caption =
     String(document.getElementById('codedeskFilename')?.value || '').trim() ||
@@ -1572,6 +1582,7 @@ window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
         kind: 'workfile',
         asset_type: 'qr',
         template_id: templateId,
+        destination_url: destinationUrl,
         state_json: stateJson,
         tags: 'codedesk,workfile'
       })
