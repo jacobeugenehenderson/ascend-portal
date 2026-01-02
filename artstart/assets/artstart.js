@@ -155,7 +155,7 @@ function applyTranslatedFields_(f) {
     if (!placeBtn || !linkEl || !imgEl || !payloadEl || !clearBtn) return;
 
     var s = getQrState_();
-    var has = !!(s && s.openUrl && s.driveFileId);
+    var has = !!(s && s.driveFileId);
 
     if (stageEl) stageEl.classList.toggle('has-qr', has);
 
@@ -164,8 +164,19 @@ function applyTranslatedFields_(f) {
     clearBtn.style.display = has ? '' : 'none';
 
     if (has) {
-      linkEl.href = s.openUrl;
-      imgEl.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(s.driveFileId) + '&sz=w512';
+      var fid = encodeURIComponent(String(s.driveFileId || '').trim());
+      var href = String(s.openUrl || '').trim();
+      if (!href) href = 'https://drive.google.com/open?id=' + fid;
+
+      linkEl.href = href;
+
+      // Prefer direct view; fallback to thumbnail if needed.
+      imgEl.onerror = null;
+      imgEl.src = 'https://drive.google.com/uc?export=view&id=' + fid;
+      imgEl.onerror = function () {
+        try { this.onerror = null; } catch (e) {}
+        this.src = 'https://drive.google.com/thumbnail?id=' + fid + '&sz=w512';
+      };
 
       if (String(s.payloadText || '').trim()) {
         payloadEl.textContent = s.payloadText;
@@ -249,23 +260,29 @@ function applyTranslatedFields_(f) {
         item.title || item.Title || item.name || item.Name || item.FileName || item.filename || item.AssetName || 'QR';
 
       var openUrl =
+        item.DrivePngOpenUrl || item.drivePngOpenUrl || item.drive_png_open_url ||
         item.openUrl || item.OpenUrl || item.open_url || item.OpenURL ||
         item.Url || item.URL || item.url || item.link || item.Link || '';
 
-      // FileRoom registry uses SourceId as the Drive file id (column C).
+      // FileRoom registry returns PNG fields explicitly (DrivePngFileId / DrivePngOpenUrl).
+      // SourceId is NOT the PNG file id — it’s the registry source key.
       var driveFileId =
+        item.DrivePngFileId || item.drivePngFileId || item.drive_png_file_id ||
         item.driveFileId || item.DriveFileId || item.drive_file_id ||
-        item.FileId || item.fileId || item.Id || item.id ||
-        item.SourceId || item.sourceId || item.source_id || '';
+        item.FileId || item.fileId || item.Id || item.id || '';
 
-      // FileRoom registry commonly stores payload-ish text in Subtitle (column E in your UI, but “Subtitle” field).
+      // Correct payload is the destination url when present (FileRoom: DestinationUrl).
       var payloadText =
+        item.DestinationUrl || item.destinationUrl || item.destination_url ||
         item.qrPayloadText || item.QrPayloadText ||
         item.PayloadText || item.payloadText || item.Payload || item.payload ||
         item.Subtitle || item.subtitle || '';
 
-      // If we can’t open or render it, it’s not selectable.
-      if (!openUrl || !driveFileId) return;
+      // If we can’t render it, it’s not selectable.
+      if (!driveFileId) return;
+
+      // Ensure a clickable link even if the registry row doesn’t store OpenUrl for the PNG.
+      if (!openUrl) openUrl = 'https://drive.google.com/open?id=' + encodeURIComponent(driveFileId);
 
       var row = document.createElement('div');
       row.className = 'artstart-qr-row';

@@ -259,14 +259,18 @@ function upsertQrPngAsset_(p) {
     ? rawTitle.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 48)
     : 'CODEDESK_QR';
 
+  // If we were given a specific Drive file id, overwrite IN PLACE.
+  // Accept either drive_png_file_id (preferred) or drive_file_id (legacy/client convenience).
+  const overwriteId = String(p.drive_png_file_id || p.drive_file_id || '').trim();
+
+  // When overwriting, keep a stable filename (no timestamp churn).
+  // When creating a new file, keep the timestamp for uniqueness.
   const stamp = (new Date()).toISOString().replace(/[:.]/g, '-');
-  const fileName = safeTitle + '_' + sourceId + '_' + stamp + '.png';
+  const fileName = overwriteId
+    ? (safeTitle + '_' + sourceId + '.png')
+    : (safeTitle + '_' + sourceId + '_' + stamp + '.png');
 
   const blob = Utilities.newBlob(bytes, 'image/png', fileName);
-
-  // If we were given a specific Drive file id, overwrite IN PLACE.
-  // Otherwise, always create a new file (prevents "everything overwrote the previous QR").
-  const overwriteId = String(p.drive_png_file_id || '').trim();
 
   let fileId = '';
   if (overwriteId) {
