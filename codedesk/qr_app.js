@@ -1437,32 +1437,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const ownerEmail = (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '';
   const templateId = (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '';
 
-  // 1) Upsert WORKING row (persistent editor state)
-  try {
-    const wr = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
-      method: 'POST',
-      credentials: 'omit',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'upsertJob',
-        ascend_job_key: 'CODEDESK_WORKING:' + workingId,
-        app: 'codedesk',
-        source_id: workingId,
-        title: base || 'CODEDESK QR',
-        subtitle: 'CODEDESK — WORKING (STATE)',
-        status: 'open',
-        open_url: workingOpenUrl || String(location && location.href ? location.href : ''),
-        owner_email: ownerEmail,
-        kind: 'working',
-        asset_type: 'qr',
-        template_id: templateId,
-        state_json: stateJson,
-        tags: 'codedesk,working'
-      })
-    });
-    await wr.json().catch(()=>null);
-  } catch(e){}
+
 
   // 2) Upload PNG to Drive + upsert delivered row
   try {
@@ -1576,32 +1551,6 @@ window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
   try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
   let stateJson = '';
   try { stateJson = (typeof stateObj === 'string') ? stateObj : JSON.stringify(stateObj || {}); } catch(e){ stateJson = ''; }
-
-  // Upsert WORKING row (persistent editor state) — NO PNG
-  try {
-    await fetch(window.CODEDESK_FILEROOM_API_BASE, {
-      method: 'POST',
-      credentials: 'omit',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'upsertJob',
-        ascend_job_key: 'CODEDESK_WORKING:' + workingId,
-        app: 'codedesk',
-        source_id: workingId,
-        title: base || 'CODEDESK QR',
-        subtitle: 'CODEDESK — WORKING (STATE)',
-        status: 'open',
-        open_url: String(location && location.href ? location.href : ''),
-        owner_email: ownerEmail,
-        kind: 'working',
-        asset_type: 'qr',
-        template_id: templateId,
-        state_json: stateJson,
-        tags: 'codedesk,working'
-      })
-    });
-  } catch(e){}
 
   // Upsert WORKFILE row (orange hopper lane) — NO PNG
   try {
@@ -2144,35 +2093,38 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     return;
   }
 
-  const prevText = (btn.textContent || '').trim();
-  btn.disabled = true;
-  btn.classList.add('is-busy');
-  if (prevText.length > 2) btn.textContent = 'Saving…';
+  // Hard guard: prevent double-fire (capture + fast clicks + weirdness)
+  if (window.__CODEDESK_FINISH_INFLIGHT__ === true) {
+    try { e && e.preventDefault && e.preventDefault(); } catch(_e){}
+    try { e && e.stopPropagation && e.stopPropagation(); } catch(_e){}
+    return;
+  }
+  window.__CODEDESK_FINISH_INFLIGHT__ = true;
 
-  let id = '';
-  try { id = window.codedeskFinishSetup(); } catch(err){}
-
-  // Full one-time pairing: creates/updates the Drive PNG + FileRoom rows
   try {
-    if (id && window.codedeskSyncFileRoomNow) {
-      await window.codedeskSyncFileRoomNow('setup');
-    }
-  } catch(e){}
+    const prevText = (btn.textContent || '').trim();
+    btn.disabled = true;
+    btn.classList.add('is-busy');
+    if (prevText.length > 2) btn.textContent = 'Working…';
 
-  btn.classList.remove('is-busy');
-  btn.classList.add('is-setup-done');
-  btn.disabled = false;
+    let id = '';
+    try { id = window.codedeskFinishSetup(); } catch(err){}
 
-  // Remove setup step forever: after setup, CodeDesk is autosave + push-only (no re-clicking)
-  try { codedeskRemoveSetupStep && codedeskRemoveSetupStep(); } catch(e){}
+    // Full one-time pairing: creates/updates the Drive PNG + FileRoom rows
+    try {
+      if (id && window.codedeskSyncFileRoomNow) {
+        await window.codedeskSyncFileRoomNow('setup');
+      }
+    } catch(e){}
 
-  // Keep filename editable (live label) — do NOT hide or freeze it
-  try { ensureFilenameUi && ensureFilenameUi(); } catch(e){}
+    // Disappear forever (button + finish step)
+    try { codedeskRemoveSetupStep && codedeskRemoveSetupStep(); } catch(e){}
 
-  // Restore label if still visible (should be removed, but this is safe)
-  try { if (prevText.length > 2) btn.textContent = prevText; } catch(e){}
-
-  relabel(btn);
+    // Keep filename editable (live label) — do NOT hide or freeze it
+    try { ensureFilenameUi && ensureFilenameUi(); } catch(e){}
+  } finally {
+    try { window.__CODEDESK_FINISH_INFLIGHT__ = false; } catch(e){}
+  }
 }, true);
 
 })();
