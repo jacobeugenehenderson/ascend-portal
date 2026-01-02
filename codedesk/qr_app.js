@@ -2064,6 +2064,18 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   const btn = e.target && e.target.closest && e.target.closest('button');
   if (!isFinishButton(btn)) return;
 
+  // HARD STOP: this button may still have legacy handlers / form-submit behavior.
+  // We own the ✨ click exclusively.
+  try { e.preventDefault && e.preventDefault(); } catch(_e){}
+  try { e.stopPropagation && e.stopPropagation(); } catch(_e){}
+  try { e.stopImmediatePropagation && e.stopImmediatePropagation(); } catch(_e){}
+  try {
+    if (btn) {
+      btn.onclick = null;
+      btn.removeAttribute && btn.removeAttribute('onclick');
+    }
+  } catch(_e){}
+
   // Ceremony contract:
   // - Enter unlocks the workspace (no server writes)
   // - ✨ creates the working file + Drive/FileRoom artifacts (one-time), then disappears forever
@@ -4109,14 +4121,7 @@ document.getElementById('exportBtn')?.addEventListener('click', async () => {
     const svgNode = getCurrentSvgNode();
     if (!svgNode) throw new Error('Finish: no SVG found');
 
-    let workingId = (window.__CODEDESK_CURRENT_WF_ID__ || window.codedeskGetActiveWorkingFileId?.() || '').trim();
-    if (!workingId) {
-      // Ensure a working file exists so Finish can create the pairing.
-      if (typeof window.codedeskFinishSetup === 'function') {
-        window.codedeskFinishSetup(); // expected to set __CODEDESK_CURRENT_WF_ID__ / active wf id
-      }
-      workingId = (window.__CODEDESK_CURRENT_WF_ID__ || window.codedeskGetActiveWorkingFileId?.() || '').trim();
-    }
+    const workingId = (window.__CODEDESK_CURRENT_WF_ID__ || window.codedeskGetActiveWorkingFileId?.() || '').trim();
     if (!workingId) throw new Error('Finish: no working file id in session');
 
     const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
