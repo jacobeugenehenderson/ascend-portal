@@ -296,7 +296,7 @@
         /* Space for the icon footprint + a clean gap before the letter */
         padding-left: 26px;
 
-        font-weight: 900;
+        font-weight: var(--ascend-weight-bold);
         letter-spacing: 0.08em;
 
         /* Light ascend-apps story: darker than FileRoom’s near-white */
@@ -325,11 +325,12 @@
 
         background: linear-gradient(
           180deg,
-          rgba(79,209,197,0.95) 0%,
-          rgba(56,189,248,0.92) 100%
+          var(--ascend-hopper-stage-3) 0%,
+          var(--ascend-hopper-stage-2) 50%,
+          var(--ascend-hopper-stage-1) 100%
         );
 
-        box-shadow: 0 8px 18px rgba(15,23,42,0.14);
+        box-shadow: none;
 
         pointer-events: none;
         z-index: 0;
