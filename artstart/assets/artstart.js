@@ -297,6 +297,22 @@ function applyTranslatedFields_(f) {
         item.DestinationUrl ||
         item.DestinationURL ||
         item.destinationUrl ||
+
+        // Some registries/exporters keep the space in the header.
+        item['Destination URL'] ||
+        item['destination url'] ||
+        item['destinationUrl'] ||
+
+        // Accept QR-ish payload keys too (FileRoom has varied).
+        item.qrDestinationUrl ||
+        item.QrDestinationUrl ||
+        item.qr_destination_url ||
+        item.qrPayloadText ||
+        item.PayloadText ||
+        item.payloadText ||
+        item.Payload ||
+        item.payload ||
+
         '';
 
       // Guard: FileRoom often stores a human label here (e.g. "CODEDESK — FLATTENED (PNG)"), not the true destination.
