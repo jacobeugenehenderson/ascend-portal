@@ -268,23 +268,31 @@ function applyTranslatedFields_(f) {
       if (!openUrl || !driveFileId) return;
 
       var row = document.createElement('div');
-      row.className = 'artstart-modal-row';
+      row.className = 'artstart-qr-row';
 
       var thumb = document.createElement('div');
-      thumb.className = 'artstart-modal-thumb';
-      var img = document.createElement('img');
-      img.alt = 'QR';
-      img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(driveFileId) + '&sz=w256';
-      thumb.appendChild(img);
+      thumb.className = 'artstart-qr-thumb';
+
+      // Branded FileRoom-style icon (no QR thumbnail image)
+      var icon = document.createElement('div');
+      icon.className = 'artstart-qr-icon';
+
+      var iconLabel = document.createElement('div');
+      iconLabel.className = 'artstart-qr-icon-label';
+      iconLabel.textContent = 'QR';
+
+      icon.appendChild(iconLabel);
+      thumb.appendChild(icon);
 
       var text = document.createElement('div');
+      text.className = 'artstart-qr-text';
 
       var t = document.createElement('div');
-      t.className = 'artstart-modal-row-title';
+      t.className = 'artstart-qr-row-title';
       t.textContent = String(title || 'QR');
 
       var sub = document.createElement('div');
-      sub.className = 'artstart-modal-row-sub';
+      sub.className = 'artstart-qr-row-sub';
       sub.textContent = String(payloadText || '').trim() ? String(payloadText) : openUrl;
 
       text.appendChild(t);
