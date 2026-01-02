@@ -1398,6 +1398,30 @@ async function codedeskPngDataUrlFromCurrentSvg(scale = 3) {
   return canvas.toDataURL('image/png');
 }
 
+  function getCurrentUserEmail_() {
+    try {
+      if (window.Ascend && typeof window.Ascend.getCurrentUser === 'function') {
+        var u = window.Ascend.getCurrentUser();
+        var em = u && (u.email || u.userEmail);
+        if (em) return String(em).trim();
+      }
+    } catch (e) {}
+
+    // Fallback: try Ascend session objects
+    try {
+      if (window.localStorage) {
+        var raw = window.localStorage.getItem('ascend_session_v1');
+        if (raw) {
+          var obj = JSON.parse(raw);
+          var em2 = obj && (obj.userEmail || obj.email);
+          if (em2) return String(em2).trim();
+        }
+      }
+    } catch (e2) {}
+
+    return '';
+  }
+
 window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const workingId = String(window.__CODEDESK_CURRENT_WF_ID__ || _getActiveWorkingFileId() || '').trim();
   if (!workingId) return false;
@@ -1434,7 +1458,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const base = caption.replace(/[^\w\d-_]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40) || 'codedesk';
   const fileName = `${base}.png`;
 
-  const ownerEmail = (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '';
+  const ownerEmail = ((window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '') || getCurrentUserEmail_();
   const templateId = (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '';
 
   // DestinationUrl: canonical QR payload (includes Mechanical knobs like UTM)
@@ -1484,8 +1508,39 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
       rec.updatedAt = Date.now();
       window.codedeskSaveWorkingFile(rec);
 
-      // ALSO: upsert a "working file" row so Ascend can show it in the hopper.
+      // ALSO: ensure this export appears in the right Ascend lanes (Dashboard prefs).
       try {
+        const workingKey = String((data && data.working_ascend_job_key) ? data.working_ascend_job_key : ('CODEDESK_WF:' + workingId)).trim();
+
+        // FileRoom lane for the delivered PNG row
+        await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+          method: 'POST',
+          credentials: 'omit',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'setDashboardPref',
+            user_email: ownerEmail,
+            ascend_job_key: jobKey,
+            lane: 'FILEROOM'
+          })
+        });
+
+        // Hopper lane for the working file row
+        await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+          method: 'POST',
+          credentials: 'omit',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'setDashboardPref',
+            user_email: ownerEmail,
+            ascend_job_key: workingKey,
+            lane: 'HOPPER'
+          })
+        });
+
+        // Keep the explicit "working file" upsert so the record stays fresh + has open_url/state.
         await fetch(window.CODEDESK_FILEROOM_API_BASE, {
           method: 'POST',
           credentials: 'omit',
@@ -1542,7 +1597,7 @@ window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
   // If the filename gate has not been accepted yet, do not push anything server-side.
   if (window.__CODEDESK_FILENAME_ACCEPTED__ !== true) return false;
 
-  const ownerEmail = (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '';
+  const ownerEmail = ((window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '') || getCurrentUserEmail_();
   const templateId = (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '';
 
   // DestinationUrl: canonical QR payload (includes Mechanical knobs like UTM)
