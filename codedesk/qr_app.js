@@ -1969,6 +1969,14 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       if (hasWf && fname) {
         accepted = true;
         try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(e){}
+
+        // Return visit: remove Enter ceremony entirely once a working file exists.
+        try {
+          const _h = window.__CODEDESK_FILENAME_ENTER_CEREMONY__;
+          if (_h && inp) {
+            try { inp.removeEventListener('keydown', _h, true); } catch(_e){}
+          }
+        } catch(_e){}
       }
 
       // Lock/unlock the rest of the UI strictly by accepted flag
@@ -2049,7 +2057,8 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       }, { passive: true });
 
       // Ceremony: Enter commits the filename gate and unlocks the workspace (drawers remain closed).
-      inp.addEventListener('keydown', function(e){
+      // Once a WORKING file exists, this ceremony is disabled entirely.
+      function codedeskFilenameEnterCeremony(e){
         if (!e) return;
         const isEnter = (e.key === 'Enter' || e.keyCode === 13);
         if (!isEnter) return;
@@ -2060,19 +2069,15 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         const fname = String(inp.value || '').trim();
         if (!fname) return;
 
-        // RETURN VISIT: if a working file already exists, Enter is not a ceremony.
-        // Just reaffirm unlocked state and exit (do NOT clear the active working-file pointer).
+        // If a working file already exists, this listener should not be active.
+        // (Defensive: remove itself if it ever fires in that state.)
         try {
           const _aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
           const _rec = _aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
             ? window.codedeskGetWorkingFileRecord(_aid)
             : null);
           if (_rec) {
-            try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
-            try { codedeskSetLocked(false); } catch(_e){}
-            try { codedeskSetSetupSparkleVisible(false); } catch(_e){}
-            try { syncFinishEnabled(); } catch(_e){}
-            try { inp.blur(); } catch(_e){}
+            try { inp.removeEventListener('keydown', codedeskFilenameEnterCeremony, true); } catch(__e){}
             return;
           }
         } catch(_e){}
@@ -2106,7 +2111,23 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         try { syncFinishEnabled(); } catch(_e){}
 
         try { inp.blur(); } catch(_e){}
-      }, true);
+      }
+
+      // Stash a reference so other code paths can remove this later.
+      try { window.__CODEDESK_FILENAME_ENTER_CEREMONY__ = codedeskFilenameEnterCeremony; } catch(_e){}
+
+      // Only attach the Enter ceremony if NO working file exists right now.
+      try {
+        const __aid0 = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+        const __rec0 = __aid0 && (typeof window.codedeskGetWorkingFileRecord === 'function'
+          ? window.codedeskGetWorkingFileRecord(__aid0)
+          : null);
+        if (!__rec0) {
+          inp.addEventListener('keydown', codedeskFilenameEnterCeremony, true);
+        }
+      } catch(_e){
+        inp.addEventListener('keydown', codedeskFilenameEnterCeremony, true);
+      }
 
       // Cmd/Ctrl+S: push working metadata/state (NO PNG) if a working file exists.
       document.addEventListener('keydown', function(e){
