@@ -1292,7 +1292,7 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
   try { window.__CODEDESK_SETUP_DONE__ = true; } catch(e){}
   try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(e){}
 
-  // Populate the filename input from the working-file record name (and keep it editable)
+  // Populate the filename input from the working-file record name (freeze rename for now)
   try {
     const inp = document.getElementById('codedeskFilename');
     if (inp) {
@@ -1300,12 +1300,29 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
       inp.disabled = false;
       inp.removeAttribute('disabled');
       inp.style.pointerEvents = 'auto';
+
+      // Freeze rename-on-return (temporary policy)
+      inp.readOnly = true;
+      try { inp.setAttribute('readonly', 'readonly'); } catch(_e){}
+      try { inp.style.textAlign = 'center'; } catch(_e){}
     }
+
+    // Return visit: remove Enter ceremony entirely once a working file exists
+    try {
+      const _h = window.__CODEDESK_FILENAME_ENTER_CEREMONY__;
+      if (_h && inp) {
+        try { inp.removeEventListener('keydown', _h, true); } catch(_e){}
+      }
+    } catch(_e){}
   } catch(e){}
 
-  // Unlock the accordion / interactive UI and keep ✨ hidden for existing working files
-  try { typeof codedeskRefreshFilenameGate === 'function' && codedeskRefreshFilenameGate(); } catch(e){}
+  // Existing working file: remove the entire Finish/Setup step so no empty flipper remains
+  try { typeof codedeskRemoveSetupStep === 'function' && codedeskRemoveSetupStep(); } catch(e){}
   try { typeof codedeskSetSetupSparkleVisible === 'function' && codedeskSetSetupSparkleVisible(false); } catch(e){}
+
+  // Hard unlock (do not rely on any ceremony path)
+  try { typeof codedeskSetLocked === 'function' && codedeskSetLocked(false); } catch(e){}
+  try { typeof codedeskRefreshFilenameGate === 'function' && codedeskRefreshFilenameGate(); } catch(e){}
 
   // Ensure the WORKFILE row stays fresh in Ascend even if no prior FileRoom pairing exists
   try {
@@ -1818,10 +1835,26 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     const inp = document.getElementById('codedeskFilename');
     if (!inp) return;
 
-    // Filename input must always be editable if it exists
+    // Filename input must always be enabled if it exists
     inp.disabled = false;
     inp.removeAttribute('disabled');
     inp.style.pointerEvents = 'auto';
+
+    // Temporary policy: if a working file exists, freeze rename-on-return.
+    try {
+      const aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+      const rec = aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
+        ? window.codedeskGetWorkingFileRecord(aid)
+        : null);
+      if (rec) {
+        inp.readOnly = true;
+        try { inp.setAttribute('readonly', 'readonly'); } catch(_e){}
+        try { inp.style.textAlign = 'center'; } catch(_e){}
+      } else {
+        inp.readOnly = false;
+        try { inp.removeAttribute('readonly'); } catch(_e){}
+      }
+    } catch(e){}
   }
 
     function syncFinishEnabled(){
