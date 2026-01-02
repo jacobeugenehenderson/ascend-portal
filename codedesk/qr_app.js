@@ -2359,13 +2359,22 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       // Stash a reference so other code paths can remove this later.
       try { window.__CODEDESK_FILENAME_ENTER_CEREMONY__ = codedeskFilenameEnterCeremony; } catch(_e){}
 
-      // Only attach the Enter ceremony if NO working file exists right now.
+      // Attach Enter ceremony for New flow even if a stale active record exists.
+      // Only skip attaching on a TRUE return-visit (URL working_file_id matches active record) and not mode=new.
       try {
+        const __u0 = new URL(window.location.href);
+        const __mode0 = String(__u0.searchParams.get('mode') || '').trim().toLowerCase();
+        const __forcedNew0 = (__mode0 === 'new' || __mode0 === 'portal_new');
+        const __wf0 = String(__u0.searchParams.get('working_file_id') || __u0.searchParams.get('wf') || '').trim();
+
         const __aid0 = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
         const __rec0 = __aid0 && (typeof window.codedeskGetWorkingFileRecord === 'function'
           ? window.codedeskGetWorkingFileRecord(__aid0)
           : null);
-        if (!__rec0) {
+
+        const __isReturn0 = (!!__wf0 && !!__rec0 && String(__aid0 || '') === String(__wf0 || ''));
+
+        if (!__isReturn0 || __forcedNew0) {
           inp.addEventListener('keydown', codedeskFilenameEnterCeremony, true);
         }
       } catch(_e){
