@@ -1461,9 +1461,16 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       });
     } catch (_e2) {}
 
+    // Restore saved language selection for this job (prevents snap-back during async refreshes)
+    var jobKey = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+    var savedLang = loadActiveLanguage_(jobKey);
+    if (savedLang) {
+      activeLanguage = savedLang;
+    }
+
     // Merge local drafts last so fetchJob() can never overwrite unsaved/just-saved translation edits.
     try {
-      var jobKeyDraft = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+      var jobKeyDraft = jobKey;
       var langsToMerge = {};
       langsToMerge[String(activeLanguage || '').trim().toUpperCase()] = true;
       Object.keys(translationsDb || {}).forEach(function (l) { langsToMerge[String(l || '').trim().toUpperCase()] = true; });
@@ -1487,13 +1494,6 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         try { saveLangState_(jobKeyDraft, lang, 'human'); } catch (_e3) {}
       });
     } catch (_e4) {}
-
-    // Restore saved language selection for this job (prevents snap-back during async refreshes)
-    var jobKey = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
-    var savedLang = loadActiveLanguage_(jobKey);
-    if (savedLang) {
-      activeLanguage = savedLang;
-    }
 
     // Populate language dropdown
     if (langSelect) {
