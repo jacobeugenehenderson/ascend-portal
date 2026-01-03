@@ -2766,7 +2766,7 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
 
         // If empty, export empty (no placeholder payloads)
         const rawTrim = String(raw || "").trim();
-        if (!rawTrim) return "";
+        if (!rawTrim) return "https://jacobhenderson.studio";
 
         // read optional utm fields (support common variants)
         const s = (val("utmSource")   || val("utm_source")   || "").trim();
