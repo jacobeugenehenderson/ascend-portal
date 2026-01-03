@@ -291,31 +291,23 @@ function applyTranslatedFields_(f) {
         item.driveFileId || item.DriveFileId || item.drive_file_id ||
         item.FileId || item.fileId || '';
 
-      // Correct payload is the destination url when present (FileRoom: DestinationUrl).
+      // Correct payload comes from CodeDesk "Mechanicals" (stored in FileRoom under payload keys),
+      // NOT from DestinationUrl (wrong column for our behavior).
       // IMPORTANT: do NOT fall back to Subtitle/subtitle; that is commonly a label like "CODEDESK — FLATTENED (PNG)".
       var payloadText =
-        item.DestinationUrl ||
-        item.DestinationURL ||
-        item.destinationUrl ||
-
-        // Some registries/exporters keep the space in the header.
-        item['Destination URL'] ||
-        item['destination url'] ||
-        item['destinationUrl'] ||
-
-        // Accept QR-ish payload keys too (FileRoom has varied).
-        item.qrDestinationUrl ||
-        item.QrDestinationUrl ||
-        item.qr_destination_url ||
+        // Accept QR-ish payload keys (mechanicals-derived)
         item.qrPayloadText ||
         item.PayloadText ||
         item.payloadText ||
         item.Payload ||
         item.payload ||
 
-        '';
+        // Some registries/exporters keep alternate QR destination keys
+        item.qrDestinationUrl ||
+        item.QrDestinationUrl ||
+        item.qr_destination_url ||
 
-      // Guard: FileRoom often stores a human label here (e.g. "CODEDESK — FLATTENED (PNG)"), not the true destination.
+        '';      // Guard: FileRoom often stores a human label here (e.g. "CODEDESK — FLATTENED (PNG)"), not the true destination.
       // If it looks like that label, treat it as empty so UI falls back to openUrl.
       try {
         var pt = String(payloadText || '').trim();
