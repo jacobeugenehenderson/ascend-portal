@@ -631,7 +631,11 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
 };
 
 // force UI refresh now that templates are in memory
-try { if (typeof render === "function") render(); } catch (e) {}
+try {
+  if (typeof render === "function" && window.QRCode && window.QRCode.CorrectLevel) {
+    render();
+  }
+} catch (e) {}
 try {
   // If launched from Ascend (new tab/window), ask the opener to refresh hoppers now.
   // This is same-origin (github.io) so it can directly call Ascend functions.
