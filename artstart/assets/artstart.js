@@ -1777,22 +1777,27 @@ function saveDraft(jobId, langOverride) {
           };
         }
 
+        // IMPORTANT: Apps Script endpoints are querystring-driven in this app.
+        // On unload, put the payload in the URL (like saveDraft does), not the POST body.
         var url =
           ARTSTART_API_BASE +
           '?action=' + (isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields') +
           (isBase ? '' : ('&lang=' + encodeURIComponent(langToSave)));
-        var data = JSON.stringify(payload);
+
+        Object.keys(payload).forEach(function (key) {
+          var value = payload[key];
+          url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
+        });
 
         if (navigator && typeof navigator.sendBeacon === 'function') {
-          // sendBeacon is designed for unload-safe fire-and-forget
-          var blob = new Blob([data], { type: 'application/json' });
+          // sendBeacon is unload-safe, but it POSTs; that's fine because our data is now in the URL.
+          var blob = new Blob([''], { type: 'text/plain' });
           navigator.sendBeacon(url, blob);
         } else {
-          // Fallback: synchronous XHR on unload
+          // Fallback: synchronous GET on unload
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', url, false);
-          xhr.setRequestHeader('Content-Type', 'application/json');
-          xhr.send(data);
+          xhr.open('GET', url, false);
+          xhr.send(null);
         }
       } catch (e) {
         // Nothing useful to do during unload.
