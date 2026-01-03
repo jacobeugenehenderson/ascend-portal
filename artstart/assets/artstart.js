@@ -71,6 +71,43 @@ function saveActiveLanguage_(jobId, lang) {
   }
 }
 
+// Persist per-job, per-language draft fields locally so fetchJob() can't overwrite unsaved edits.
+var LANG_DRAFT_PREFIX = 'artstart_lang_draft_v1:'; // key: jobId:LANG -> JSON {at, fields}
+
+function _langDraftKey_(jobId, lang) {
+  return LANG_DRAFT_PREFIX + String(jobId || '') + ':' + String(lang || '').trim().toUpperCase();
+}
+
+function loadLangDraft_(jobId, lang) {
+  try {
+    if (!jobId || !lang || !window.localStorage) return null;
+    var raw = window.localStorage.getItem(_langDraftKey_(jobId, lang));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveLangDraft_(jobId, lang, fields) {
+  try {
+    if (!jobId || !lang || !window.localStorage) return;
+    var f = fields || {};
+    var rec = {
+      at: (new Date()).toISOString(),
+      fields: {
+        workingHeadline: String(f.workingHeadline || ''),
+        workingSubhead: String(f.workingSubhead || ''),
+        workingCta: String(f.workingCta || ''),
+        workingBullets: String(f.workingBullets || '')
+      }
+    };
+    window.localStorage.setItem(_langDraftKey_(jobId, lang), JSON.stringify(rec));
+  } catch (e) {
+    // ignore
+  }
+}
+
 var __LANG_OPTION_LABELS_CACHED__ = false;
 
 function cacheLangOptionLabelsOnce_() {
@@ -1424,6 +1461,33 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       });
     } catch (_e2) {}
 
+    // Merge local drafts last so fetchJob() can never overwrite unsaved/just-saved translation edits.
+    try {
+      var jobKeyDraft = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+      var langsToMerge = {};
+      langsToMerge[String(activeLanguage || '').trim().toUpperCase()] = true;
+      Object.keys(translationsDb || {}).forEach(function (l) { langsToMerge[String(l || '').trim().toUpperCase()] = true; });
+
+      Object.keys(langsToMerge).forEach(function (lang) {
+        if (!lang || lang === baseLanguage) return;
+        var d = loadLangDraft_(jobKeyDraft, lang);
+        if (!d || !d.fields) return;
+
+        translationsDb = translationsDb || {};
+        translationsDb[lang] = translationsDb[lang] || {};
+        translationsDb[lang].human = true;
+        translationsDb[lang].at = d.at || (new Date()).toISOString();
+        translationsDb[lang].fields = {
+          workingHeadline: String(d.fields.workingHeadline || ''),
+          workingSubhead:  String(d.fields.workingSubhead || ''),
+          workingCta:      String(d.fields.workingCta || ''),
+          workingBullets:  String(d.fields.workingBullets || '')
+        };
+
+        try { saveLangState_(jobKeyDraft, lang, 'human'); } catch (_e3) {}
+      });
+    } catch (_e4) {}
+
     // Restore saved language selection for this job (prevents snap-back during async refreshes)
     var jobKey = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
     var savedLang = loadActiveLanguage_(jobKey);
@@ -1663,6 +1727,9 @@ function saveDraft(jobId, langOverride) {
         // Persist human state so async refreshes can't revert it.
         try { saveLangState_(jobId, langToSave, 'human'); } catch (_e) {}
 
+        // Persist the draft locally so fetchJob() can't overwrite it while the network save catches up.
+        try { saveLangDraft_(jobId, langToSave, translationsDb[langToSave].fields); } catch (_e2) {}
+
         // Only update the UI indicator if we saved the currently viewed language
         if (langToSave === activeLanguage) updateLangDot_();
       }
@@ -1899,6 +1966,36 @@ function saveDraft(jobId, langOverride) {
         var jobIdNow = getJobIdFromQuery();
         var next = String(langSelect.value || '').trim().toUpperCase();
         if (!jobIdNow || !next) return;
+
+        // COMMIT the language we are leaving (prevents EN fetchJob() refresh from overwriting unsaved edits)
+        try {
+          var prevLang = String(activeLanguage || '').trim().toUpperCase();
+          if (prevLang && prevLang !== baseLanguage) {
+            var snap = {
+              workingHeadline: (document.getElementById('working-headline') || {}).value || '',
+              workingSubhead:  (document.getElementById('working-subhead')  || {}).value || '',
+              workingCta:      (document.getElementById('working-cta')      || {}).value || '',
+              workingBullets:  (document.getElementById('working-bullets')  || {}).value || ''
+            };
+
+            translationsDb = translationsDb || {};
+            translationsDb[prevLang] = translationsDb[prevLang] || {};
+            translationsDb[prevLang].human = true;
+            translationsDb[prevLang].at = (new Date()).toISOString();
+            translationsDb[prevLang].fields = {
+              workingHeadline: String(snap.workingHeadline || ''),
+              workingSubhead:  String(snap.workingSubhead || ''),
+              workingCta:      String(snap.workingCta || ''),
+              workingBullets:  String(snap.workingBullets || '')
+            };
+
+            try { saveLangState_(jobIdNow, prevLang, 'human'); } catch (_e0) {}
+            try { saveLangDraft_(jobIdNow, prevLang, translationsDb[prevLang].fields); } catch (_e1) {}
+
+            // Also kick an immediate save for the language we are leaving (best effort).
+            try { saveDraft(jobIdNow, prevLang); } catch (_e2) {}
+          }
+        } catch (_e3) {}
 
         activeLanguage = next;
         saveActiveLanguage_(jobIdNow, activeLanguage);
