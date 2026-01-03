@@ -74,6 +74,11 @@
   /* Control hover wash */
   --ascend-control-hover-wash: rgba(255, 255, 255, .08);
 
+  /* Destructive / warning (used already by CODEDESK setup-done state) */
+  --ascend-app-danger: rgba(220, 38, 38, 0.92);
+  --ascend-app-danger-border: rgba(185, 28, 28, 0.70);
+  --ascend-app-danger-hover: rgba(220, 38, 38, 0.98);
+
   /* Hover/focus glow knobs */
   --ascend-hover-glow-color: color-mix(in oklab, var(--ascend-app-accent) 30%, transparent);
   --ascend-hover-glow-blur: 8px;
@@ -574,30 +579,43 @@ body.ascend-app-body {
    Unlabeled; destructive-ish but lightweight.
    ========================================================= */
 
-.artstart-retranslate-btn{
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid rgba(185, 28, 28, 0.65);
-  background: rgba(220, 38, 38, 0.92);
-  box-shadow: 0 1px 2px rgba(15,23,42,0.18);
-  flex: 0 0 auto;
-  margin-right: 8px;
-  cursor: pointer;
-  padding: 0;
+/* Force this to win over the global .ascend-app-panel button styling */
+.ascend-app-panel .artstart-retranslate-btn{
   appearance: none;
   -webkit-appearance: none;
+
+  /* hard geometry: true square */
+  width: 12px;
+  height: 12px;
+  min-height: 0;
+  padding: 0;
+  line-height: 0;
+
+  /* do NOT inherit the global button pill look */
+  border-radius: 2px;
+  border: 1px solid var(--ascend-app-danger-border);
+  background: var(--ascend-app-danger);
+
+  /* keep it feeling like our other indicator squares */
+  box-shadow: 0 1px 2px rgba(15,23,42,0.18);
+
+  /* inline-left placement */
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 10px 0 0;
+
+  cursor: pointer;
 }
 
-.artstart-retranslate-btn:hover{
-  filter: brightness(1.05);
+.ascend-app-panel .artstart-retranslate-btn:hover{
+  background: var(--ascend-app-danger-hover);
 }
 
-.artstart-retranslate-btn:active{
+.ascend-app-panel .artstart-retranslate-btn:active{
   transform: translateY(1px);
 }
 
-.artstart-retranslate-btn.is-hidden{
+.ascend-app-panel .artstart-retranslate-btn.is-hidden{
   display: none;
 }
 

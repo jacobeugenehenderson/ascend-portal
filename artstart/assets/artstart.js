@@ -25,6 +25,31 @@ var langRetransBtn = null;
 var currentJobId = '';
 var LANG_STORAGE_PREFIX = 'artstart_active_lang_v1:';
 
+// Persist per-job, per-language "human vs machine" state so async refreshes can't spring back.
+var LANG_STATE_PREFIX = 'artstart_lang_state_v1:'; // key: jobId:LANG -> "human" | "machine"
+
+function _langStateKey_(jobId, lang) {
+  return LANG_STATE_PREFIX + String(jobId || '') + ':' + String(lang || '').trim().toUpperCase();
+}
+
+function loadLangState_(jobId, lang) {
+  try {
+    if (!jobId || !lang || !window.localStorage) return '';
+    return String(window.localStorage.getItem(_langStateKey_(jobId, lang)) || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+
+function saveLangState_(jobId, lang, state) {
+  try {
+    if (!jobId || !lang || !state || !window.localStorage) return;
+    window.localStorage.setItem(_langStateKey_(jobId, lang), String(state));
+  } catch (e) {
+    // ignore
+  }
+}
+
 function loadActiveLanguage_(jobId) {
   try {
     if (!jobId || !window.localStorage) return '';
@@ -158,6 +183,9 @@ function retranslateLanguage_(lang) {
       // Ensure we are showing this language now
       activeLanguage = lang;
       saveActiveLanguage_(jobIdNow, activeLanguage);
+
+      // Persist relink state so refreshes can't spring back to "human edited".
+      try { saveLangState_(jobIdNow, lang, 'machine'); } catch (_e) {}
 
       applyTranslatedFields_(data.fields);
       updateLangDot_();
@@ -1342,6 +1370,18 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       });
     } catch (_e) {}
 
+    // Re-apply persisted "human vs machine" states so refreshes can't spring back.
+    try {
+      var jobKeyState = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+      translationsDb = translationsDb || {};
+      Object.keys(translationsDb).forEach(function (lang) {
+        var st = loadLangState_(jobKeyState, lang);
+        if (!st) return;
+        if (!translationsDb[lang]) return;
+        translationsDb[lang].human = (st === 'human');
+      });
+    } catch (_e2) {}
+
     // Restore saved language selection for this job (prevents snap-back during async refreshes)
     var jobKey = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
     var savedLang = loadActiveLanguage_(jobKey);
@@ -1570,6 +1610,9 @@ function saveDraft(jobId, langOverride) {
         translationsDb[langToSave].fields.workingSubhead = payload.workingSubhead || '';
         translationsDb[langToSave].fields.workingCta = payload.workingCta || '';
         translationsDb[langToSave].fields.workingBullets = payload.workingBullets || '';
+
+        // Persist human state so async refreshes can't revert it.
+        try { saveLangState_(jobId, langToSave, 'human'); } catch (_e) {}
 
         // Only update the UI indicator if we saved the currently viewed language
         if (langToSave === activeLanguage) updateLangDot_();
