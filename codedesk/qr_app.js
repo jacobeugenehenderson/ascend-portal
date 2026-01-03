@@ -2773,8 +2773,8 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
         if (!s && !m && !c) return rawTrim;
 
         try {
-          // Robust path when raw is a valid absolute URL
-          const u = new URL(raw);
+          // Robust path when rawTrim is a valid absolute URL
+          const u = new URL(rawTrim);
           if (s) u.searchParams.set("utm_source",   s);
           if (m) u.searchParams.set("utm_medium",   m);
           if (c) u.searchParams.set("utm_campaign", c);
@@ -2782,12 +2782,12 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
         } catch {
           // Fallback for non-absolute or invalid URLs:
           // append query the "old-fashioned" way without breaking existing params
-          const join = raw.includes("?") ? "&" : "?";
+          const join = rawTrim.includes("?") ? "&" : "?";
           const parts = [];
           if (s) parts.push(`utm_source=${encodeURIComponent(s)}`);
           if (m) parts.push(`utm_medium=${encodeURIComponent(m)}`);
           if (c) parts.push(`utm_campaign=${encodeURIComponent(c)}`);
-          return parts.length ? `${raw}${join}${parts.join("&")}` : raw;
+          return parts.length ? `${rawTrim}${join}${parts.join("&")}` : rawTrim;
         }
       }
       case "Payment": {
