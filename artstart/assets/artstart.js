@@ -21,6 +21,9 @@ var langSelect = null;
 var langDot = null;
 var langRetransBtn = null;
 
+// While true, autosave scheduling is suppressed (prevents blur-save from re-marking translations as "human").
+var __ARTSTART_TRANSLATION_ACTION__ = false;
+
 // Persist per-job language choice so async refreshes can't snap back to base.
 var currentJobId = '';
 var LANG_STORAGE_PREFIX = 'artstart_active_lang_v1:';
@@ -190,8 +193,12 @@ function retranslateLanguage_(lang) {
       applyTranslatedFields_(data.fields);
       updateLangDot_();
       setSaveStatus('Saved');
+      __ARTSTART_TRANSLATION_ACTION__ = false;
     })
-    .catch(function () { setSaveStatus('Save error'); });
+    .catch(function () {
+      setSaveStatus('Save error');
+      __ARTSTART_TRANSLATION_ACTION__ = false;
+    });
 }
 
 function applyTranslatedFields_(f) {
@@ -1456,6 +1463,13 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
               var label = String((l && l.label) || code).trim();
               if (!code || code === baseLanguage) return;
 
+              // Avoid duplicates (we may have inserted a temporary option to preserve selection)
+              try {
+                if (langSelect && langSelect.querySelector && langSelect.querySelector('option[value="' + code + '"]')) {
+                  return;
+                }
+              } catch (e) {}
+
               var opt = document.createElement('option');
               opt.value = code;
               opt.textContent = label + ' (' + code + ')';
@@ -1668,6 +1682,9 @@ function saveDraft(jobId, langOverride) {
     var pendingDebounceLanguage = null;
 
     function scheduleAutosave(langSnapshot) {
+      // If we are applying a machine translation / reset, do NOT autosave on blur.
+      if (__ARTSTART_TRANSLATION_ACTION__ === true) return;
+
       setSaveStatus('Editing…');
 
       var langToSave = (langSnapshot || activeLanguage);
@@ -1851,16 +1868,28 @@ function saveDraft(jobId, langOverride) {
         langSelect.parentNode.insertBefore(langRetransBtn, langSelect);
       } catch (e) {}
 
+      // Must be mousedown so it runs BEFORE the focused field blurs (blur triggers autosave).
+      langRetransBtn.addEventListener('mousedown', function () {
+        __ARTSTART_TRANSLATION_ACTION__ = true;
+      });
+
       langRetransBtn.addEventListener('click', function (ev) {
         try { ev.preventDefault(); } catch (_e) {}
         try { ev.stopPropagation(); } catch (_e2) {}
 
-        if (activeLanguage === baseLanguage) return;
+        if (activeLanguage === baseLanguage) {
+          __ARTSTART_TRANSLATION_ACTION__ = false;
+          return;
+        }
 
         var entry = translationsDb && translationsDb[activeLanguage];
         var humanEdited = !!(entry && entry.human === true);
-        if (!humanEdited) return;
+        if (!humanEdited) {
+          __ARTSTART_TRANSLATION_ACTION__ = false;
+          return;
+        }
 
+        // Run the reset; retranslateLanguage_ will clear the flag on completion.
         retranslateLanguage_(activeLanguage);
       });
     }
