@@ -434,8 +434,8 @@ function applyTranslatedFields_(f) {
     if (origin.indexOf('codedesk') !== -1) return true;
     if (origin.indexOf('code desk') !== -1) return true;
 
-    // Also accept rows that expose payload text with the mechanicals-esque keys
-    var p = item.destination_url || item.DestinationUrl || item.qrPayloadText || item.PayloadText || item.payloadText || item.Payload || item.payload || '';
+    // Also accept rows that expose a DestinationUrl (canonical payload)
+    var p = item.DestinationUrl || item.destinationUrl || item.destination_url || '';
     if (String(p).trim()) return true;
 
     return false;
@@ -486,14 +486,7 @@ function applyTranslatedFields_(f) {
       var payloadText =
         item.DestinationUrl ||
         item.destinationUrl ||
-        item.destinationURL ||
         item.destination_url ||
-
-        // Accept alternate destination keys if present (but still treat them as "destination URL" fields)
-        item.qrDestinationUrl ||
-        item.QrDestinationUrl ||
-        item.qr_destination_url ||
-
         '';
 
       // If it looks like the human label, treat it as empty so UI falls back to openUrl.
@@ -1204,11 +1197,10 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
           qrOverride.payloadText = opt;
         } catch (_e) {}
 
-        // If override payload is empty, fall back to the job's canonical destination fields.
+        // If override payload is empty, fall back to the job's canonical DestinationUrl fields only.
         if (!String((qrOverride && qrOverride.payloadText) || '').trim()) {
           qrOverride.payloadText = (job && (
-            job.qrDestinationUrl || job.QrDestinationUrl || job.qr_destination_url ||
-            job.qrPayloadText || job.QrPayloadText || job.qr_payload_text
+            job.DestinationUrl || job.destinationUrl || job.destination_url
           )) || '';
         }
 
@@ -1224,9 +1216,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
             job.qrOpenUrl || job.QrOpenUrl || job.qr_open_url
           )) || '',
           payloadText: (job && (
-            job.DestinationUrl || job.destinationUrl || job.destination_url ||
-            job.qrDestinationUrl || job.QrDestinationUrl || job.qr_destination_url ||
-            job.qrPayloadText || job.QrPayloadText || job.qr_payload_text
+            job.DestinationUrl || job.destinationUrl || job.destination_url
           )) || ''
         });
       }
