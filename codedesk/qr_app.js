@@ -48,6 +48,11 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
   let mode = (qs.get("mode") || "").trim();       // "new" | "template" (or legacy)
   if (mode === "portal_new") mode = "new";        // normalize legacy portal mode
 
+  // ArtStart always implies a fresh job unless explicitly reopening a working file
+  if (!mode && (qs.get("origin") || "").trim() === "artstart") {
+    mode = "new";
+  }
+
   const templateId = (qs.get("template_id") || qs.get("templateId") || "").trim();
   const parentAscendJobKey = (qs.get("parent_ascend_job_key") || "").trim();
 

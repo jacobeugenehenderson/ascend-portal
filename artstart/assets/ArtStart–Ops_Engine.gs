@@ -960,6 +960,11 @@ function getArtStartJob_(jobId) {
     workingEmail: workingEmail,
     workingNotes: workingNotes,
 
+    // QR association (FileRoom asset)
+    qrDriveFileId: p.qrDriveFileId || '',
+    qrOpenUrl: p.qrOpenUrl || '',
+    qrPayloadText: p.qrPayloadText || '',
+
     // Translation (workspace language dropdown)
     languagePrimary: p.LanguagePrimary || 'EN',
     workingTranslationsJson:
@@ -1003,11 +1008,14 @@ function handleUpdateArtStartDraftFields_(e) {
       workingBullets: p.workingBullets || '',
       workingWebsite: p.workingWebsite || '',
       workingEmail: p.workingEmail || '',
-      workingNotes: p.workingNotes || ''
+      workingNotes: p.workingNotes || '',
+      qrDriveFileId: p.qrDriveFileId || '',
+      qrOpenUrl: p.qrOpenUrl || '',
+      qrPayloadText: p.qrPayloadText || ''
     };
   }
 
-  const jobId = payload.jobId;
+  const jobId = payload.jobId || '';
   if (!jobId) {
     return jsonResponse_({ ok: false, error: 'Missing jobId' });
   }
@@ -1029,6 +1037,72 @@ function handleUpdateArtStartDraftFields_(e) {
   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingWebsite', payload.workingWebsite);
   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingEmail', payload.workingEmail);
   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingNotes', payload.workingNotes);
+
+  // QR association (FileRoom asset)
+  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrDriveFileId', payload.qrDriveFileId);
+  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrOpenUrl', payload.qrOpenUrl);
+  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrPayloadText', payload.qrPayloadText);
+
+  return jsonResponse_({ ok: true });
+}
+
+function handleUpdateArtStartTranslatedFields_(e) {
+  let payload;
+  let langU;
+
+  // Preferred path: JSON body (POST from unload-safe sendBeacon / XHR)
+  if (e.postData && e.postData.contents) {
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch (err) {
+      return jsonResponse_({ ok: false, error: 'Invalid JSON payload' });
+    }
+    langU = (e.parameter && (e.parameter.lang || e.parameter.language)) || '';
+  } else {
+    // Fallback: query parameters (GET)
+    const p = e.parameter || {};
+    payload = {
+      jobId: p.jobId || p.jobid || '',
+      workingHeadline: p.workingHeadline || '',
+      workingSubhead: p.workingSubhead || '',
+      workingCta: p.workingCta || '',
+      workingBullets: p.workingBullets || ''
+    };
+    langU = p.lang || p.language || '';
+  }
+
+  const jobIdU = payload.jobId || '';
+  if (!jobIdU || !langU) {
+    return jsonResponse_({ ok: false, error: 'Missing jobId or lang' });
+  }
+
+  const infoU = findProjectRowByAscendJobId_(jobIdU);
+  if (!infoU) return jsonResponse_({ ok: false, error: 'Job not found: ' + jobIdU });
+
+  const headersU = infoU.headers;
+
+  function getValU_(name) {
+    var idx = headersU.indexOf(name);
+    if (idx < 0) return '';
+    return infoU.row[idx];
+  }
+
+  var existingJson = String(getValU_('WorkingTranslationsJson') || '');
+  var tdbU = parseTranslationsJson_(existingJson);
+
+  var nowIsoU = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+  tdbU[langU] = {
+    human: true,
+    at: nowIsoU,
+    fields: {
+      workingHeadline: String(payload.workingHeadline || ''),
+      workingSubhead: String(payload.workingSubhead || ''),
+      workingCta: String(payload.workingCta || ''),
+      workingBullets: String(payload.workingBullets || '')
+    }
+  };
+
+  setProjectFieldIfPresent_(infoU.sheet, headersU, infoU.rowIndex, 'WorkingTranslationsJson', JSON.stringify(tdbU));
 
   return jsonResponse_({ ok: true });
 }
@@ -1656,21 +1730,29 @@ function doGet(e) {
 
       var baseLang = String(getVal_('LanguagePrimary') || 'EN').trim() || 'EN';
 
-      // Base fields
+      // Base fields (translation-only; EN-only meta fields are not translatable and are never included per-language)
       var fields = {
         workingHeadline: String(getVal_('WorkingHeadline') || ''),
         workingSubhead: String(getVal_('WorkingSubhead') || ''),
         workingCta: String(getVal_('WorkingCTA') || ''),
-        workingBullets: String(getVal_('WorkingBullets') || ''),
-        workingWebsite: String(getVal_('WorkingWebsite') || ''),
-        workingEmail: String(getVal_('WorkingEmail') || ''),
-        workingNotes: String(getVal_('WorkingNotes') || '')
+        workingBullets: String(getVal_('WorkingBullets') || '')
       };
+
+      function pickTranslatableFields_(obj) {
+        obj = obj || {};
+        return {
+          workingHeadline: String(obj.workingHeadline || ''),
+          workingSubhead: String(obj.workingSubhead || ''),
+          workingCta: String(obj.workingCta || ''),
+          workingBullets: String(obj.workingBullets || '')
+        };
+      }
 
       // Existing translations JSON
       var existingJson = String(getVal_('WorkingTranslationsJson') || '');
       var tdb = parseTranslationsJson_(existingJson);
 
+      // If we already have this language, return it (don’t re-machine-translate).
       // If we already have this language, return it (don’t re-machine-translate).
       if (tdb[targetLang] && tdb[targetLang].fields) {
         return jsonResponse_({
@@ -1679,7 +1761,7 @@ function doGet(e) {
           baseLanguage: baseLang,
           targetLanguage: targetLang,
           human: !!tdb[targetLang].human,
-          fields: tdb[targetLang].fields
+          fields: pickTranslatableFields_(tdb[targetLang].fields)
         }, callback);
       }
 
@@ -1703,14 +1785,11 @@ function doGet(e) {
         workingSubhead: tr_(fields.workingSubhead),
         workingCta: tr_(fields.workingCta),
         workingBullets: tr_(fields.workingBullets),
-        workingWebsite: tr_(fields.workingWebsite),
-        workingEmail: tr_(fields.workingEmail),
-        workingNotes: tr_(fields.workingNotes)
       };
 
       // Persist as machine translation (human=false)
       var nowIsoT = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
-      tdb[targetLang] = { human: false, at: nowIsoT, fields: translated };
+     tdb[targetLang] = { human: false, at: nowIsoT, fields: pickTranslatableFields_(translated) };
 
       setProjectFieldIfPresent_(infoT.sheet, headersT, infoT.rowIndex, 'WorkingTranslationsJson', JSON.stringify(tdb));
 
@@ -1760,9 +1839,6 @@ function doGet(e) {
           workingSubhead: String(e.parameter.workingSubhead || ''),
           workingCta: String(e.parameter.workingCta || ''),
           workingBullets: String(e.parameter.workingBullets || ''),
-          workingWebsite: String(e.parameter.workingWebsite || ''),
-          workingEmail: String(e.parameter.workingEmail || ''),
-          workingNotes: String(e.parameter.workingNotes || '')
         }
       };
 
@@ -1889,6 +1965,10 @@ function doPost(e) {
 
   if (action === 'updateArtStartDraftFields') {
     return handleUpdateArtStartDraftFields_(e);
+  }
+
+  if (action === 'updateArtStartTranslatedFields') {
+    return handleUpdateArtStartTranslatedFields_(e);
   }
 
   if (action === 'createJobFromForm') {

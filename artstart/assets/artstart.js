@@ -44,10 +44,22 @@ function saveActiveLanguage_(jobId, lang) {
 
 function updateLangDot_() {
   if (!langDot) return;
+
+  // Hide the indicator for base language (EN)
+  if (activeLanguage === baseLanguage) {
+    langDot.classList.add('is-hidden');
+    langDot.classList.remove('is-empty');
+    return;
+  }
+
+  langDot.classList.remove('is-hidden');
+
+  // Filled square = machine translation (linked)
+  // Empty square  = human edited (decoupled). Clicking empty triggers re-translate.
   var entry = translationsDb && translationsDb[activeLanguage];
-  var humanEdited = !!(entry && entry.human && entry.edited === true);
-  langDot.classList.toggle('is-human', humanEdited);
-  langDot.style.opacity = humanEdited ? '1' : '0';
+  var humanEdited = !!(entry && entry.human === true);
+
+  langDot.classList.toggle('is-empty', humanEdited);
 }
 
 function applyTranslatedFields_(f) {
@@ -59,10 +71,12 @@ function applyTranslatedFields_(f) {
   v = document.getElementById('working-cta');      if (v) v.value = f.workingCta || '';
   v = document.getElementById('working-bullets');  if (v) v.value = f.workingBullets || '';
 
-  v = document.getElementById('working-website');  if (v) v.value = f.workingWebsite || '';
-  v = document.getElementById('working-email');    if (v) v.value = f.workingEmail || '';
+  // EN-only meta fields must never come from translation records.
+  // Only write these if the caller explicitly provided them (e.g., base job load).
+  v = document.getElementById('working-website');  if (v && typeof f.workingWebsite !== 'undefined') v.value = f.workingWebsite || '';
+  v = document.getElementById('working-email');    if (v && typeof f.workingEmail !== 'undefined') v.value = f.workingEmail || '';
 
-  v = document.getElementById('working-notes');    if (v) v.value = f.workingNotes || '';
+  v = document.getElementById('working-notes');    if (v && typeof f.workingNotes !== 'undefined') v.value = f.workingNotes || '';
 
   syncCanvasTextFromFields();
   autoscaleCanvasBands();
@@ -1036,6 +1050,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
             job.qrOpenUrl || job.QrOpenUrl || job.qr_open_url
           )) || '',
           payloadText: (job && (
+            job.DestinationUrl || job.destinationUrl || job.destination_url ||
             job.qrDestinationUrl || job.QrDestinationUrl || job.qr_destination_url ||
             job.qrPayloadText || job.QrPayloadText || job.qr_payload_text
           )) || ''
@@ -1203,6 +1218,22 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     } catch (e) {
       translationsDb = {};
     }
+
+    // Enforce translation invariants locally: translationsDb[lang].fields contains ONLY translatable fields.
+    try {
+      translationsDb = translationsDb || {};
+      Object.keys(translationsDb).forEach(function (lang) {
+        var rec = translationsDb[lang];
+        if (!rec || !rec.fields) return;
+        var f = rec.fields || {};
+        rec.fields = {
+          workingHeadline: String(f.workingHeadline || ''),
+          workingSubhead: String(f.workingSubhead || ''),
+          workingCta: String(f.workingCta || ''),
+          workingBullets: String(f.workingBullets || '')
+        };
+      });
+    } catch (_e) {}
 
     // Restore saved language selection for this job (prevents snap-back during async refreshes)
     var jobKey = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
@@ -1381,68 +1412,82 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     };
   }
 
-function saveDraft(jobId) {
+// REPLACE (exact block)
+function saveDraft(jobId, langOverride) {
   setSaveStatus('Saving…');
 
+  var langToSave = langOverride || activeLanguage;
+
   var payload = buildDraftPayload(jobId);
-  var params = new URLSearchParams();
 
-  var isBase = (activeLanguage === baseLanguage);
-  params.append('action', isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields');
+  var isBase = (langToSave === baseLanguage);
 
-  // Non-base writes must specify which language is being edited.
+  // Non-EN saves are translation-only: never persist EN-only meta fields or QR fields per-language.
   if (!isBase) {
-    params.append('lang', activeLanguage);
+    payload = {
+      jobId: payload.jobId,
+      workingHeadline: payload.workingHeadline,
+      workingSubhead: payload.workingSubhead,
+      workingCta: payload.workingCta,
+      workingBullets: payload.workingBullets
+    };
   }
+
+  var url =
+    ARTSTART_API_BASE +
+    '?action=' + (isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields') +
+    (isBase ? '' : ('&lang=' + encodeURIComponent(langToSave)));
 
   Object.keys(payload).forEach(function (key) {
     var value = payload[key];
-    if (value !== undefined && value !== null) {
-      params.append(key, value);
-    }
+    url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
   });
 
-  var url = ARTSTART_API_BASE + '?' + params.toString();
-
-  fetch(url, { method: 'GET' })
-    .then(function (res) { return res.json(); })
-    .then(function (json) {
-      if (!json || !json.ok) {
-        throw new Error((json && json.error) || 'Unknown error');
+  fetch(url)
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data || !data.success) {
+        setSaveStatus('Save error');
+        return;
       }
 
-      // Mark translation as human-edited locally (dot fills immediately)
+      // Track human edit state deterministically (for the language we actually saved)
       if (!isBase) {
         translationsDb = translationsDb || {};
-        translationsDb[activeLanguage] = translationsDb[activeLanguage] || {};
-        translationsDb[activeLanguage].human = true;
-        translationsDb[activeLanguage].edited = true;
-        translationsDb[activeLanguage].fields = {
-          workingHeadline: payload.workingHeadline || '',
-          workingSubhead: payload.workingSubhead || '',
-          workingCta: payload.workingCta || '',
-          workingBullets: payload.workingBullets || '',
-          workingWebsite: payload.workingWebsite || '',
-          workingEmail: payload.workingEmail || '',
-          workingNotes: payload.workingNotes || ''
-        };
-        updateLangDot_();
+        translationsDb[langToSave] = translationsDb[langToSave] || {};
+        translationsDb[langToSave].human = true;
+        translationsDb[langToSave].edited = true;
+        translationsDb[langToSave].at = (new Date()).toISOString();
+        translationsDb[langToSave].fields = translationsDb[langToSave].fields || {};
+        translationsDb[langToSave].fields.workingHeadline = payload.workingHeadline || '';
+        translationsDb[langToSave].fields.workingSubhead = payload.workingSubhead || '';
+        translationsDb[langToSave].fields.workingCta = payload.workingCta || '';
+        translationsDb[langToSave].fields.workingBullets = payload.workingBullets || '';
+
+        // Only update the UI indicator if we saved the currently viewed language
+        if (langToSave === activeLanguage) updateLangDot_();
       }
 
       setSaveStatus('Saved');
     })
-    .catch(function (err) {
-      console.error('Error saving draft', err);
-      setSaveStatus('Save failed – try again');
+    .catch(function () {
+      setSaveStatus('Save error');
     });
 }
-
   function attachBlurListeners(jobId) {
     var debounceTimer = null;
     var DEBOUNCE_MS = 1500;
 
-    function scheduleAutosave() {
+    // Language safety: snapshot the language at the moment of edit so debounce/unload cannot "follow" the dropdown.
+    var lastEditedLanguage = null;
+    var pendingDebounceLanguage = null;
+
+    function scheduleAutosave(langSnapshot) {
       setSaveStatus('Editing…');
+
+      var langToSave = (langSnapshot || activeLanguage);
+      lastEditedLanguage = langToSave;
+      pendingDebounceLanguage = langToSave;
 
       if (debounceTimer) {
         clearTimeout(debounceTimer);
@@ -1450,7 +1495,9 @@ function saveDraft(jobId) {
 
       debounceTimer = setTimeout(function () {
         debounceTimer = null;
-        saveDraft(jobId);
+        var langFire = pendingDebounceLanguage || lastEditedLanguage || activeLanguage;
+        pendingDebounceLanguage = null;
+        saveDraft(jobId, langFire);
       }, DEBOUNCE_MS);
     }
 
@@ -1462,13 +1509,27 @@ function saveDraft(jobId) {
         el.addEventListener('input', function () {
           // Keep the canvas in sync while typing
           syncCanvasTextFromFields();
+
+          // Language snapshot at the moment of edit:
+          // - Translation fields follow the dropdown
+          // - EN-only meta fields always save as baseLanguage
+          var langSnapshot =
+            (id === 'working-headline' || id === 'working-subhead' || id === 'working-cta' || id === 'working-bullets')
+              ? activeLanguage
+              : baseLanguage;
+
           // Debounced autosave while user pauses
-          scheduleAutosave();
+          scheduleAutosave(langSnapshot);
         });
 
         el.addEventListener('blur', function () {
           // On explicit field exit, ensure a save happens promptly
-          scheduleAutosave();
+          var langSnapshot =
+            (id === 'working-headline' || id === 'working-subhead' || id === 'working-cta' || id === 'working-bullets')
+              ? activeLanguage
+              : baseLanguage;
+
+          scheduleAutosave(langSnapshot);
         });
       });
 
@@ -1480,12 +1541,27 @@ function saveDraft(jobId) {
           debounceTimer = null;
         }
 
+        var langToSave = pendingDebounceLanguage || lastEditedLanguage || activeLanguage;
+
         var payload = buildDraftPayload(jobId);
-        var isBase = (activeLanguage === baseLanguage);
+
+        var isBase = (langToSave === baseLanguage);
+
+        // Non-EN unload saves are translation-only: never persist EN-only meta fields or QR fields per-language.
+        if (!isBase) {
+          payload = {
+            jobId: payload.jobId,
+            workingHeadline: payload.workingHeadline,
+            workingSubhead: payload.workingSubhead,
+            workingCta: payload.workingCta,
+            workingBullets: payload.workingBullets
+          };
+        }
+
         var url =
           ARTSTART_API_BASE +
           '?action=' + (isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields') +
-          (isBase ? '' : ('&lang=' + encodeURIComponent(activeLanguage)));
+          (isBase ? '' : ('&lang=' + encodeURIComponent(langToSave)));
         var data = JSON.stringify(payload);
 
         if (navigator && typeof navigator.sendBeacon === 'function') {
@@ -1567,7 +1643,54 @@ function saveDraft(jobId) {
 
     // Cache language UI
     langSelect = document.getElementById('working-language');
-    langDot = document.getElementById('working-language-dot');
+    langDot = document.getElementById('working-language-square');
+
+    // Empty square click = re-translate (returns to “linked” machine translation)
+    if (langDot) {
+      langDot.addEventListener('click', function () {
+        var jobIdNow = getJobIdFromQuery();
+        if (!jobIdNow) return;
+        if (activeLanguage === baseLanguage) return;
+
+        var entry = translationsDb && translationsDb[activeLanguage];
+        var humanEdited = !!(entry && entry.human === true);
+        if (!humanEdited) return;
+
+        setSaveStatus('Translating…');
+
+        fetch(
+          ARTSTART_API_BASE +
+          '?action=translateArtStartFields' +
+          '&jobId=' + encodeURIComponent(jobIdNow) +
+          '&targetLanguage=' + encodeURIComponent(activeLanguage)
+        )
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data || !data.success || !data.fields) {
+              setSaveStatus('Save error');
+              return;
+            }
+
+            // Overwrite local entry as machine translation (linked)
+            translationsDb = translationsDb || {};
+            translationsDb[activeLanguage] = {
+              human: false,
+              at: (new Date()).toISOString(),
+              fields: {
+                workingHeadline: String((data.fields || {}).workingHeadline || ''),
+                workingSubhead: String((data.fields || {}).workingSubhead || ''),
+                workingCta: String((data.fields || {}).workingCta || ''),
+                workingBullets: String((data.fields || {}).workingBullets || '')
+              }
+            };
+
+            applyTranslatedFields_(data.fields);
+            updateLangDot_();
+            setSaveStatus('Saved');
+          })
+          .catch(function () { setSaveStatus('Save error'); });
+      });
+    }
 
     if (langSelect) {
       langSelect.addEventListener('change', function () {
