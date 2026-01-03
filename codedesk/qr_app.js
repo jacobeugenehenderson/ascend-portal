@@ -3975,6 +3975,10 @@ function render() {
   // Build composed SVG
   const ecc = getECC();
 
+  // If empty, export empty (no placeholder payloads)
+  const rawTrim = String(buildText() || "").trim();
+  if (!rawTrim) { try { mount.innerHTML = ''; } catch (e) {} return; }
+
   let svg;
   try {
     svg = composeCardSvg({
