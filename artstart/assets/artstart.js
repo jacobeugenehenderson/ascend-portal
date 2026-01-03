@@ -200,15 +200,15 @@ function applyTranslatedFields_(f) {
         payloadEl.textContent = pt2;
         payloadEl.style.display = '';
       } else {
-        // If payload text isn't stored, show the destination we *do* have (the link).
-        payloadEl.textContent = href;
-        payloadEl.style.display = '';
+        // Payload must be DestinationUrl only. If empty, show nothing.
+        payloadEl.textContent = '';
+        payloadEl.style.display = 'none';
       }
     } else {
       linkEl.href = '#';
       imgEl.removeAttribute('src');
-      payloadEl.textContent = '—';
-      payloadEl.style.display = '';
+      payloadEl.textContent = '';
+      payloadEl.style.display = 'none';
     }
   }
 
