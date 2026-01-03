@@ -129,6 +129,22 @@ function cacheLangOptionLabelsOnce_() {
   } catch (e) {}
 }
 
+function isLangHumanEdited_(lang) {
+  var jobIdNow = currentJobId || getJobIdFromQuery();
+  lang = String(lang || '').trim().toUpperCase();
+  if (!jobIdNow || !lang || lang === baseLanguage) return false;
+
+  // 1) LocalStorage is authoritative (survives fetchJob() rebuilds and option repaints)
+  var st = '';
+  try { st = loadLangState_(jobIdNow, lang); } catch (_e) { st = ''; }
+  if (st === 'human') return true;
+  if (st === 'machine') return false;
+
+  // 2) Fallback to in-memory db (best effort)
+  var entry = translationsDb && translationsDb[lang];
+  return !!(entry && entry.human === true);
+}
+
 function paintLangOptionSquares_() {
   if (!langSelect || !langSelect.options) return;
 
@@ -152,8 +168,7 @@ function paintLangOptionSquares_() {
 
       // Solid square = linked/machine
       // Empty square = human edited/decoupled
-      var entry = translationsDb && translationsDb[lang];
-      var humanEdited = !!(entry && entry.human === true);
+      var humanEdited = isLangHumanEdited_(lang);
       var sq = humanEdited ? '\u25A1' : '\u25A0'; // □ / ■
 
       opt.textContent = sq + ' ' + baseLabel;
@@ -166,9 +181,8 @@ function updateLangDot_() {
   cacheLangOptionLabelsOnce_();
   paintLangOptionSquares_();
 
-  // Determine decoupled state for the ACTIVE language
-  var entry = translationsDb && translationsDb[activeLanguage];
-  var humanEdited = !!(entry && entry.human === true);
+  // Determine decoupled state for the ACTIVE language (localStorage is authoritative)
+  var humanEdited = isLangHumanEdited_(activeLanguage);
 
   // Red re-translate button appears ONLY when:
   // - non-EN active, AND
