@@ -1938,22 +1938,44 @@ function saveDraft(jobId, langOverride) {
               workingBullets:  (document.getElementById('working-bullets')  || {}).value || ''
             };
 
-            translationsDb = translationsDb || {};
-            translationsDb[prevLang] = translationsDb[prevLang] || {};
-            translationsDb[prevLang].human = true;
-            translationsDb[prevLang].at = (new Date()).toISOString();
-            translationsDb[prevLang].fields = {
-              workingHeadline: String(snap.workingHeadline || ''),
-              workingSubhead:  String(snap.workingSubhead || ''),
-              workingCta:      String(snap.workingCta || ''),
-              workingBullets:  String(snap.workingBullets || '')
-            };
+            // If this language is still "machine" and the user hasn't changed anything,
+            // do NOT flip it to human or write a draft (prevents false "human edited" persistence).
+            var stPrev = '';
+            try { stPrev = loadLangState_(jobIdNow, prevLang); } catch (_eSt) { stPrev = ''; }
 
-            try { saveLangState_(jobIdNow, prevLang, 'human'); } catch (_e0) {}
-            try { saveLangDraft_(jobIdNow, prevLang, translationsDb[prevLang].fields); } catch (_e1) {}
+            var existing = (translationsDb && translationsDb[prevLang] && translationsDb[prevLang].fields) ? translationsDb[prevLang].fields : null;
 
-            // Also kick an immediate save for the language we are leaving (best effort).
-            try { saveDraft(jobIdNow, prevLang); } catch (_e2) {}
+            var changed = true;
+            if (existing) {
+              changed = !(
+                String(existing.workingHeadline || '') === String(snap.workingHeadline || '') &&
+                String(existing.workingSubhead  || '') === String(snap.workingSubhead  || '') &&
+                String(existing.workingCta      || '') === String(snap.workingCta      || '') &&
+                String(existing.workingBullets  || '') === String(snap.workingBullets  || '')
+              );
+            }
+
+            var wasHuman = !!(translationsDb && translationsDb[prevLang] && translationsDb[prevLang].human === true);
+
+            // Only commit as human if it was already human, or the user actually changed the text.
+            if (wasHuman || stPrev === 'human' || changed) {
+              translationsDb = translationsDb || {};
+              translationsDb[prevLang] = translationsDb[prevLang] || {};
+              translationsDb[prevLang].human = true;
+              translationsDb[prevLang].at = (new Date()).toISOString();
+              translationsDb[prevLang].fields = {
+                workingHeadline: String(snap.workingHeadline || ''),
+                workingSubhead:  String(snap.workingSubhead || ''),
+                workingCta:      String(snap.workingCta || ''),
+                workingBullets:  String(snap.workingBullets || '')
+              };
+
+              try { saveLangState_(jobIdNow, prevLang, 'human'); } catch (_e0) {}
+              try { saveLangDraft_(jobIdNow, prevLang, translationsDb[prevLang].fields); } catch (_e1) {}
+
+              // Also kick an immediate save for the language we are leaving (best effort).
+              try { saveDraft(jobIdNow, prevLang); } catch (_e2) {}
+            }
           }
         } catch (_e3) {}
 
