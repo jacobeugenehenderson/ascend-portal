@@ -1954,7 +1954,11 @@ function saveDraft(jobId, langOverride) {
 
             var existing = (translationsDb && translationsDb[prevLang] && translationsDb[prevLang].fields) ? translationsDb[prevLang].fields : null;
 
-            var changed = true;
+            var wasHuman = !!(translationsDb && translationsDb[prevLang] && translationsDb[prevLang].human === true);
+
+            // Default: assume unchanged unless we can prove a change against an existing record.
+            // This prevents "just switching languages" from promoting machine translations to human.
+            var changed = false;
             if (existing) {
               changed = !(
                 String(existing.workingHeadline || '') === String(snap.workingHeadline || '') &&
@@ -1964,9 +1968,7 @@ function saveDraft(jobId, langOverride) {
               );
             }
 
-            var wasHuman = !!(translationsDb && translationsDb[prevLang] && translationsDb[prevLang].human === true);
-
-            // Only commit as human if it was already human, or the user actually changed the text.
+            // Only commit as human if it was already human, or we have a real diff against an existing record.
             if (wasHuman || stPrev === 'human' || changed) {
               translationsDb = translationsDb || {};
               translationsDb[prevLang] = translationsDb[prevLang] || {};
