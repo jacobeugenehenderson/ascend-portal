@@ -19,6 +19,7 @@ var activeLanguage = 'EN';
 var translationsDb = {};
 var langSelect = null;
 var langDot = null;
+var langRetransBtn = null;
 
 // Persist per-job language choice so async refreshes can't snap back to base.
 var currentJobId = '';
@@ -100,22 +101,23 @@ function updateLangDot_() {
   cacheLangOptionLabelsOnce_();
   paintLangOptionSquares_();
 
-  // Legacy square remains the click-target for hard retranslate
-  if (!langDot) return;
-
-  if (activeLanguage === baseLanguage) {
-    langDot.classList.add('is-hidden');
-    langDot.classList.remove('is-empty');
-    return;
-  }
-
-  langDot.classList.remove('is-hidden');
-
+  // Determine decoupled state for the ACTIVE language
   var entry = translationsDb && translationsDb[activeLanguage];
   var humanEdited = !!(entry && entry.human === true);
 
-  // Empty = decoupled
-  langDot.classList.toggle('is-empty', humanEdited);
+  // Red re-translate button appears ONLY when:
+  // - non-EN active, AND
+  // - human-edited/decoupled
+  if (langRetransBtn) {
+    var show = (activeLanguage !== baseLanguage) && humanEdited;
+    langRetransBtn.classList.toggle('is-hidden', !show);
+  }
+
+  // Keep legacy square hidden (we use the button instead)
+  if (langDot) {
+    langDot.classList.add('is-hidden');
+    langDot.classList.remove('is-empty');
+  }
 }
 
 function retranslateLanguage_(lang) {
@@ -1754,50 +1756,34 @@ function saveDraft(jobId, langOverride) {
     cacheLangOptionLabelsOnce_();
     paintLangOptionSquares_();
 
-    // Empty square click = re-translate (returns to “linked” machine translation)
+    // Legacy square is no longer the action control; we use a dedicated red button.
     if (langDot) {
-      langDot.addEventListener('click', function () {
-        var jobIdNow = getJobIdFromQuery();
-        if (!jobIdNow) return;
+      langDot.classList.add('is-hidden');
+    }
+
+    // Create the red, unlabeled re-translate square button inline to the LEFT of the dropdown
+    if (langSelect && !langRetransBtn) {
+      langRetransBtn = document.createElement('button');
+      langRetransBtn.type = 'button';
+      langRetransBtn.className = 'artstart-retranslate-btn is-hidden';
+      langRetransBtn.setAttribute('aria-label', 'Re-translate from English');
+      langRetransBtn.setAttribute('title', 'Re-translate from English');
+
+      try {
+        langSelect.parentNode.insertBefore(langRetransBtn, langSelect);
+      } catch (e) {}
+
+      langRetransBtn.addEventListener('click', function (ev) {
+        try { ev.preventDefault(); } catch (_e) {}
+        try { ev.stopPropagation(); } catch (_e2) {}
+
         if (activeLanguage === baseLanguage) return;
 
         var entry = translationsDb && translationsDb[activeLanguage];
         var humanEdited = !!(entry && entry.human === true);
         if (!humanEdited) return;
 
-        setSaveStatus('Translating…');
-
-        fetch(
-          ARTSTART_API_BASE +
-          '?action=translateArtStartFields' +
-          '&jobId=' + encodeURIComponent(jobIdNow) +
-          '&targetLanguage=' + encodeURIComponent(activeLanguage)
-        )
-          .then(function (r) { return r.json(); })
-          .then(function (data) {
-            if (!data || !data.success || !data.fields) {
-              setSaveStatus('Save error');
-              return;
-            }
-
-            // Overwrite local entry as machine translation (linked)
-            translationsDb = translationsDb || {};
-            translationsDb[activeLanguage] = {
-              human: false,
-              at: (new Date()).toISOString(),
-              fields: {
-                workingHeadline: String((data.fields || {}).workingHeadline || ''),
-                workingSubhead: String((data.fields || {}).workingSubhead || ''),
-                workingCta: String((data.fields || {}).workingCta || ''),
-                workingBullets: String((data.fields || {}).workingBullets || '')
-              }
-            };
-
-            applyTranslatedFields_(data.fields);
-            updateLangDot_();
-            setSaveStatus('Saved');
-          })
-          .catch(function () { setSaveStatus('Save error'); });
+        retranslateLanguage_(activeLanguage);
       });
     }
 
