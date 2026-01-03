@@ -538,6 +538,11 @@ body.ascend-app-body {
    Empty  = human-edited (decoupled). Click to re-translate.
    ========================================================= */
 
+/* Legacy outside-square (replaced by per-language squares inside dropdown) */
+#working-language-square{
+  display: none !important;
+}
+
 .artstart-language-square{
   width: 12px;
   height: 12px;
@@ -561,6 +566,77 @@ body.ascend-app-body {
 .artstart-language-square.is-hidden{
   opacity: 0;
   pointer-events: none;
+}
+
+/* Custom language dropdown wrapper (keeps native <select> for state) */
+.artstart-lang-dropdown{
+  position: relative;
+}
+
+/* Hide the native select but keep it in the DOM for change handlers */
+.artstart-lang-dropdown select{
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.artstart-lang-button{
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid rgba(45,212,191,0.45);
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.08);
+  cursor: pointer;
+}
+
+.artstart-lang-button:focus{
+  outline: none;
+  border-color: rgba(45,212,191,0.75);
+  box-shadow: 0 0 0 3px rgba(45,212,191,0.18);
+}
+
+.artstart-lang-menu{
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  display: none;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15,23,42,0.18);
+}
+
+.artstart-lang-menu.is-open{
+  display: block;
+}
+
+.artstart-lang-item{
+  display: flex;
+  align-items: center;
+  padding: 10px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.artstart-lang-item:hover{
+  background: rgba(15,23,42,0.04);
+}
+
+.artstart-lang-label{
+  font-weight: 700;
 }
 
 /* =========================================================

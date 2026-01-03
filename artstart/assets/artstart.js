@@ -20,6 +20,13 @@ var translationsDb = {};
 var langSelect = null;
 var langDot = null;
 
+// Custom language dropdown (we hide the native <select> and render a list
+// with per-language square indicators inside the dropdown UI)
+var langDropdown = null;
+var langButton = null;
+var langMenu = null;
+var langOptionEls = {}; // { LANG: { row, square, label } }
+
 // Persist per-job language choice so async refreshes can't snap back to base.
 var currentJobId = '';
 var LANG_STORAGE_PREFIX = 'artstart_active_lang_v1:';
@@ -43,23 +50,240 @@ function saveActiveLanguage_(jobId, lang) {
 }
 
 function updateLangDot_() {
-  if (!langDot) return;
-
-  // Hide the indicator for base language (EN)
-  if (activeLanguage === baseLanguage) {
+  // Legacy square (outside the dropdown) is now hidden; keep behavior safe.
+  if (langDot) {
     langDot.classList.add('is-hidden');
     langDot.classList.remove('is-empty');
-    return;
   }
 
-  langDot.classList.remove('is-hidden');
+  // Custom dropdown not wired yet
+  if (!langButton || !langMenu) return;
 
-  // Filled square = machine translation (linked)
-  // Empty square  = human edited (decoupled). Clicking empty triggers re-translate.
-  var entry = translationsDb && translationsDb[activeLanguage];
-  var humanEdited = !!(entry && entry.human === true);
+  // Update selected label (button)
+  renderLanguageButton_();
 
-  langDot.classList.toggle('is-empty', humanEdited);
+  // Update per-option squares
+  try {
+    Object.keys(langOptionEls || {}).forEach(function (lang) {
+      var rec = langOptionEls[lang];
+      if (!rec || !rec.square) return;
+
+      // Hide the square for base language (EN)
+      if (lang === baseLanguage) {
+        rec.square.classList.add('is-hidden');
+        rec.square.classList.remove('is-empty');
+        return;
+      }
+
+      rec.square.classList.remove('is-hidden');
+
+      var entry = translationsDb && translationsDb[lang];
+      var humanEdited = !!(entry && entry.human === true);
+      rec.square.classList.toggle('is-empty', humanEdited);
+    });
+  } catch (e) {}
+}
+
+function renderLanguageButton_() {
+  if (!langButton) return;
+
+  // Clear
+  while (langButton.firstChild) langButton.removeChild(langButton.firstChild);
+
+  var lang = String(activeLanguage || baseLanguage || 'EN').toUpperCase();
+
+  // Square
+  var sq = document.createElement('span');
+  sq.className = 'artstart-language-square';
+
+  if (lang === baseLanguage) {
+    sq.classList.add('is-hidden');
+  } else {
+    var entry = translationsDb && translationsDb[lang];
+    var humanEdited = !!(entry && entry.human === true);
+    if (humanEdited) sq.classList.add('is-empty');
+
+    // Clicking empty triggers re-translate
+    sq.addEventListener('click', function (ev) {
+      try { ev.preventDefault(); } catch (_e) {}
+      try { ev.stopPropagation(); } catch (_e2) {}
+      if (lang === baseLanguage) return;
+      if (!sq.classList.contains('is-empty')) return;
+      retranslateLanguage_(lang);
+    });
+  }
+
+  var label = document.createElement('span');
+  label.className = 'artstart-lang-label';
+  label.textContent = lang;
+
+  langButton.appendChild(sq);
+  langButton.appendChild(label);
+}
+
+function buildLanguageDropdown_() {
+  if (!langSelect) return;
+  if (langDropdown) return;
+
+  // Wrap the existing select so we can keep it for state + change handlers
+  langDropdown = document.createElement('div');
+  langDropdown.className = 'artstart-lang-dropdown';
+
+  // Insert wrapper and move select into it
+  var parent = langSelect.parentNode;
+  if (!parent) return;
+
+  parent.insertBefore(langDropdown, langSelect);
+  langDropdown.appendChild(langSelect);
+
+  // Create button + menu
+  langButton = document.createElement('button');
+  langButton.type = 'button';
+  langButton.className = 'artstart-lang-button';
+
+  langMenu = document.createElement('div');
+  langMenu.className = 'artstart-lang-menu';
+  langMenu.setAttribute('aria-hidden', 'true');
+
+  langDropdown.insertBefore(langButton, langSelect);
+  langDropdown.insertBefore(langMenu, langSelect);
+
+  // Build menu items from <option>s
+  langOptionEls = {};
+  Array.prototype.slice.call(langSelect.options || []).forEach(function (opt) {
+    if (!opt) return;
+    var lang = String(opt.value || '').trim().toUpperCase();
+    if (!lang) return;
+
+    var row = document.createElement('div');
+    row.className = 'artstart-lang-item';
+    row.setAttribute('data-lang', lang);
+
+    var sq = document.createElement('span');
+    sq.className = 'artstart-language-square';
+
+    var label = document.createElement('span');
+    label.className = 'artstart-lang-label';
+    label.textContent = (opt.textContent || opt.innerText || lang).trim();
+
+    // EN: hide square
+    if (lang === baseLanguage) {
+      sq.classList.add('is-hidden');
+    }
+
+    // Clicking empty square triggers re-translate (and selects the language)
+    sq.addEventListener('click', function (ev) {
+      try { ev.preventDefault(); } catch (_e) {}
+      try { ev.stopPropagation(); } catch (_e2) {}
+      if (lang === baseLanguage) return;
+
+      // ensure selected
+      try {
+        langSelect.value = lang;
+        langSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch (e) {}
+
+      // only re-translate when empty (human edited)
+      if (!sq.classList.contains('is-empty')) return;
+      retranslateLanguage_(lang);
+    });
+
+    row.addEventListener('click', function () {
+      try {
+        langSelect.value = lang;
+        langSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch (e) {}
+      closeLanguageMenu_();
+    });
+
+    row.appendChild(sq);
+    row.appendChild(label);
+    langMenu.appendChild(row);
+
+    langOptionEls[lang] = { row: row, square: sq, label: label };
+  });
+
+  function openLanguageMenu_() {
+    if (!langMenu) return;
+    langMenu.classList.add('is-open');
+    langMenu.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeLanguageMenu_() {
+    if (!langMenu) return;
+    langMenu.classList.remove('is-open');
+    langMenu.setAttribute('aria-hidden', 'true');
+  }
+
+  function toggleLanguageMenu_() {
+    if (!langMenu) return;
+    if (langMenu.classList.contains('is-open')) closeLanguageMenu_();
+    else openLanguageMenu_();
+  }
+
+  langButton.addEventListener('click', function (ev) {
+    try { ev.preventDefault(); } catch (_e) {}
+    toggleLanguageMenu_();
+  });
+
+  // Close on outside click
+  document.addEventListener('click', function (ev) {
+    if (!langDropdown) return;
+    if (!langMenu || !langMenu.classList.contains('is-open')) return;
+    var t = ev && ev.target;
+    if (t && (langDropdown === t || langDropdown.contains(t))) return;
+    closeLanguageMenu_();
+  });
+
+  // Initial paint
+  renderLanguageButton_();
+  updateLangDot_();
+}
+
+function retranslateLanguage_(lang) {
+  var jobIdNow = getJobIdFromQuery();
+  if (!jobIdNow) return;
+
+  lang = String(lang || '').trim().toUpperCase();
+  if (!lang || lang === baseLanguage) return;
+
+  setSaveStatus('Translating…');
+
+  fetch(
+    ARTSTART_API_BASE +
+    '?action=translateArtStartFields' +
+    '&jobId=' + encodeURIComponent(jobIdNow) +
+    '&targetLanguage=' + encodeURIComponent(lang)
+  )
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data || !data.success || !data.fields) {
+        setSaveStatus('Save error');
+        return;
+      }
+
+      // Overwrite local entry as machine translation (linked)
+      translationsDb = translationsDb || {};
+      translationsDb[lang] = {
+        human: false,
+        at: (new Date()).toISOString(),
+        fields: {
+          workingHeadline: String((data.fields || {}).workingHeadline || ''),
+          workingSubhead: String((data.fields || {}).workingSubhead || ''),
+          workingCta: String((data.fields || {}).workingCta || ''),
+          workingBullets: String((data.fields || {}).workingBullets || '')
+        }
+      };
+
+      // Ensure we are showing this language now
+      activeLanguage = lang;
+      saveActiveLanguage_(jobIdNow, activeLanguage);
+
+      applyTranslatedFields_(data.fields);
+      updateLangDot_();
+      setSaveStatus('Saved');
+    })
+    .catch(function () { setSaveStatus('Save error'); });
 }
 
 function applyTranslatedFields_(f) {
@@ -1648,52 +1872,14 @@ function saveDraft(jobId, langOverride) {
     langSelect = document.getElementById('working-language');
     langDot = document.getElementById('working-language-square');
 
-    // Empty square click = re-translate (returns to “linked” machine translation)
+    // Language indicators now live INSIDE the dropdown.
+    // Keep the legacy square hidden (if present) so the UI doesn't duplicate.
     if (langDot) {
-      langDot.addEventListener('click', function () {
-        var jobIdNow = getJobIdFromQuery();
-        if (!jobIdNow) return;
-        if (activeLanguage === baseLanguage) return;
-
-        var entry = translationsDb && translationsDb[activeLanguage];
-        var humanEdited = !!(entry && entry.human === true);
-        if (!humanEdited) return;
-
-        setSaveStatus('Translating…');
-
-        fetch(
-          ARTSTART_API_BASE +
-          '?action=translateArtStartFields' +
-          '&jobId=' + encodeURIComponent(jobIdNow) +
-          '&targetLanguage=' + encodeURIComponent(activeLanguage)
-        )
-          .then(function (r) { return r.json(); })
-          .then(function (data) {
-            if (!data || !data.success || !data.fields) {
-              setSaveStatus('Save error');
-              return;
-            }
-
-            // Overwrite local entry as machine translation (linked)
-            translationsDb = translationsDb || {};
-            translationsDb[activeLanguage] = {
-              human: false,
-              at: (new Date()).toISOString(),
-              fields: {
-                workingHeadline: String((data.fields || {}).workingHeadline || ''),
-                workingSubhead: String((data.fields || {}).workingSubhead || ''),
-                workingCta: String((data.fields || {}).workingCta || ''),
-                workingBullets: String((data.fields || {}).workingBullets || '')
-              }
-            };
-
-            applyTranslatedFields_(data.fields);
-            updateLangDot_();
-            setSaveStatus('Saved');
-          })
-          .catch(function () { setSaveStatus('Save error'); });
-      });
+      langDot.classList.add('is-hidden');
     }
+
+    // Build the custom dropdown UI (per-language squares inside the menu)
+    buildLanguageDropdown_();
 
     if (langSelect) {
       langSelect.addEventListener('change', function () {

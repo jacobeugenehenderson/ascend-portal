@@ -1599,6 +1599,10 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   const svgNode = (typeof getCurrentSvgNode === 'function') ? getCurrentSvgNode() : null;
   if (!svgNode) return false;
 
+  // DestinationUrl: canonical QR payload (includes Mechanical knobs like UTM)
+  let destinationUrl = '';
+  try { destinationUrl = (typeof buildText === 'function') ? String(buildText() || '') : ''; } catch(e){ destinationUrl = ''; }
+
   // --- Canonical state blob (includes all styling knobs) ---
   let stateObj = null;
   try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
@@ -1635,12 +1639,6 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 
   const ownerEmail = ((window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '') || getCurrentUserEmail_();
   const templateId = (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '';
-
-  // DestinationUrl: canonical QR payload (includes Mechanical knobs like UTM)
-  let destinationUrl = '';
-  try { destinationUrl = (typeof buildText === 'function') ? String(buildText() || '') : ''; } catch(e){ destinationUrl = ''; }
-
-
 
   // 2) Upload PNG to Drive + upsert delivered row
   try {
@@ -2753,7 +2751,7 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
     switch(t){
       case "URL": {
         // NOTE: field IDs come from qr_type_manifest.json; support common variants
-        const raw =
+                const raw =
           val("urlData") ||
           val("url") ||
           val("href") ||
@@ -2762,13 +2760,17 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
           val("targetUrl") ||
           "";
 
+        // If empty, export empty (no placeholder payloads)
+        const rawTrim = String(raw || "").trim();
+        if (!rawTrim) return "";
+
         // read optional utm fields (support common variants)
         const s = (val("utmSource")   || val("utm_source")   || "").trim();
         const m = (val("utmMedium")   || val("utm_medium")   || "").trim();
         const c = (val("utmCampaign") || val("utm_campaign") || "").trim();
 
         // If nothing extra was entered, return as-is
-        if (!s && !m && !c) return raw;
+        if (!s && !m && !c) return rawTrim;
 
         try {
           // Robust path when raw is a valid absolute URL
