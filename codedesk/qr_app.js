@@ -1602,6 +1602,16 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   // --- Canonical state blob (includes all styling knobs) ---
   let stateObj = null;
   try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
+
+  // Stamp canonical destination_url into the exported state blob (portable single source of truth).
+  try {
+    if (stateObj && typeof stateObj === 'object') {
+      stateObj.destination_url = destinationUrl;
+      stateObj.DestinationUrl = destinationUrl; // compatibility alias
+      stateObj.payloadText = destinationUrl;    // compatibility alias
+    }
+  } catch(e){}
+
   let stateJson = '';
   try { stateJson = (typeof stateObj === 'string') ? stateObj : JSON.stringify(stateObj || {}); } catch(e){ stateJson = ''; }
 
@@ -2750,7 +2760,7 @@ try { typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e)
           val("link") ||
           val("destination") ||
           val("targetUrl") ||
-          "https://example.org";
+          "";
 
         // read optional utm fields (support common variants)
         const s = (val("utmSource")   || val("utm_source")   || "").trim();
