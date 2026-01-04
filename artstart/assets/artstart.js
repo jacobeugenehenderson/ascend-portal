@@ -1816,8 +1816,12 @@ if (code === baseLanguage) {
 }
 
               // Avoid duplicates (we may have inserted a temporary option to preserve selection)
+              // BUT: if it exists already, upgrade its label so we don't get stuck with "FR (FR)" forever.
               try {
-                if (langSelect && langSelect.querySelector && langSelect.querySelector('option[value="' + code + '"]')) {
+                var existingOpt = langSelect && langSelect.querySelector && langSelect.querySelector('option[value="' + code + '"]');
+                if (existingOpt) {
+                  existingOpt.textContent = label + ' (' + code + ')';
+                  try { existingOpt.setAttribute('data-base-label', label + ' (' + code + ')'); } catch (_eLbl) {}
                   return;
                 }
               } catch (e) {}
@@ -1846,17 +1850,84 @@ if (code === baseLanguage) {
     updateLangDot_();
 
     // Prevent "English snapback":
-    // If a non-base language is active and we have cached translation fields,
-    // populate the UI from that translation instead of overwriting with base fields.
+    // If a non-base language is active, NEVER overwrite the 4 translation fields with EN.
+    // Prefer: (1) cached translationsDb, (2) local lang draft v1, (3) backend translated-fields fetch.
     var usedTranslation = false;
     if (activeLanguage && baseLanguage && activeLanguage !== baseLanguage) {
-      var keyUpper = String(activeLanguage).trim();
+      var keyUpper = String(activeLanguage).trim().toUpperCase();
       var keyLower = keyUpper.toLowerCase();
       var entry = translationsDb && (translationsDb[keyUpper] || translationsDb[keyLower]);
+
+      // (1) In-memory cache
       if (entry && entry.fields) {
         applyTranslatedFields_(entry.fields);
         usedTranslation = true;
         updateLangDot_();
+      }
+
+      // (2) Local per-language draft (authoritative for human edits)
+      if (!usedTranslation) {
+        try {
+          var jobIdNow = currentJobId || (job && job.id) || getJobIdFromQuery();
+          var localDraft = loadLangDraft_(jobIdNow, keyUpper);
+          if (localDraft && localDraft.fields) {
+            applyTranslatedFields_(localDraft.fields);
+            try { setLangBaseline_(keyUpper, localDraft.fields); } catch (_eBL0) {}
+            try { saveLangState_(jobIdNow, keyUpper, 'human'); } catch (_eST0) {}
+            translationsDb = translationsDb || {};
+            translationsDb[keyUpper] = translationsDb[keyUpper] || {};
+            translationsDb[keyUpper].human = true;
+            translationsDb[keyUpper].edited = true;
+            translationsDb[keyUpper].fields = localDraft.fields;
+            usedTranslation = true;
+            updateLangDot_();
+          }
+        } catch (_eLD0) {}
+      }
+
+      // (3) Backend fetch for this language if we still have nothing (prevents "empty unless truly missing")
+      if (!usedTranslation) {
+        try {
+          var jobIdNow2 = currentJobId || (job && job.id) || getJobIdFromQuery();
+          if (jobIdNow2) {
+            var urlT = ARTSTART_API_BASE
+              + '?action=getArtStartTranslatedFields'
+              + '&jobId=' + encodeURIComponent(String(jobIdNow2))
+              + '&lang=' + encodeURIComponent(String(keyUpper));
+
+            fetch(urlT)
+              .then(function (r) { return r.json(); })
+              .then(function (payload) {
+                var f = payload && payload.fields ? payload.fields : null;
+                if (!f) return;
+
+                var fields = {
+                  workingHeadline: String(f.workingHeadline || ''),
+                  workingSubhead:  String(f.workingSubhead || ''),
+                  workingCta:      String(f.workingCta || ''),
+                  workingBullets:  String(f.workingBullets || '')
+                };
+
+                applyTranslatedFields_(fields);
+                translationsDb = translationsDb || {};
+                translationsDb[keyUpper] = translationsDb[keyUpper] || {};
+                translationsDb[keyUpper].fields = fields;
+
+                // Respect returned human/machine if present; default to machine.
+                var isHuman = !!(payload && payload.human === true);
+                translationsDb[keyUpper].human = isHuman;
+                translationsDb[keyUpper].edited = isHuman;
+
+                try { setLangBaseline_(keyUpper, fields); } catch (_eBL1) {}
+                try { saveLangState_(jobIdNow2, keyUpper, isHuman ? 'human' : 'machine'); } catch (_eST1) {}
+
+                updateLangDot_();
+              })
+              .catch(function () {
+                // silent; we fall back to EN-only hydration below
+              });
+          }
+        } catch (_eFT0) {}
       }
     }
 
