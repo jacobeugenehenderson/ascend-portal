@@ -1780,7 +1780,11 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       // Base language first (muted label)
       var optBase = document.createElement('option');
       optBase.value = baseLanguage;
-      optBase.textContent = baseLanguage + ' (' + baseLanguage + ')';
+
+      // Base language should read as a human label immediately (prevents "EN (EN)" flash/stick)
+      optBase.textContent = 'English' + ' (' + baseLanguage + ')';
+      try { optBase.setAttribute('data-base-label', optBase.textContent); } catch (_eBLabel) {}
+
       langSelect.appendChild(optBase);
 
       // Ensure the current selection exists immediately so the UI never snaps to base.
@@ -1810,7 +1814,10 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 if (code === baseLanguage) {
   try {
     var baseOpt = langSelect && langSelect.querySelector && langSelect.querySelector('option[value="' + code + '"]');
-    if (baseOpt) baseOpt.textContent = label + ' (' + code + ')';
+    if (baseOpt) {
+      baseOpt.textContent = label + ' (' + code + ')';
+      try { baseOpt.setAttribute('data-base-label', baseOpt.textContent); } catch (_eB0lbl) {}
+    }
   } catch (_eB0) {}
   return;
 }
