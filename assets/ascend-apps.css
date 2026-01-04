@@ -606,14 +606,23 @@ body.ascend-app-body {
   /* Lock geometry so the button doesn't balloon */
   min-height: 40px;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: 12px;
 
-  border: 1px solid rgba(148,163,184,0.25);
-  background: rgba(15,23,42,0.30);
-  box-shadow: 0 8px 20px rgba(2,6,23,0.35);
+  /* Ascend app light-story control */
+  border: 1px solid rgba(15,23,42,0.14);
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 10px 26px rgba(15,23,42,0.10);
 
-  color: inherit;
+  color: rgba(15,23,42,0.92);
   cursor: pointer;
+}
+
+.artstart-langpicker-btn:hover{
+  background: rgba(255,255,255,0.98);
+}
+
+.artstart-langpicker-btn:active{
+  transform: translateY(1px);
 }
 
 .artstart-langpicker-label{
@@ -628,16 +637,20 @@ body.ascend-app-body {
   left: 0;
   z-index: 9999;
 
-  min-width: 260px;
-  max-height: 320px;
+  min-width: 320px;
+  max-height: 360px;
   overflow: auto;
 
-  padding: 8px;
+  /* FileRoom modal list vibe: one continuous tray */
+  padding: 0;
   border-radius: 14px;
 
-  border: 1px solid rgba(148,163,184,0.20);
-  background: rgba(15,23,42,0.92);
-  box-shadow: 0 18px 50px rgba(2,6,23,0.55);
+  border: 1px solid rgba(15,23,42,0.12);
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 26px 70px rgba(15,23,42,0.22);
+
+  /* keep the list edges clean */
+  overflow: hidden;
 }
 
 .artstart-langpicker-menu.is-hidden{
@@ -650,27 +663,53 @@ body.ascend-app-body {
   align-items: center;
   gap: 10px;
 
-  padding: 10px 10px;
-  border-radius: 12px;
+  /* full-width rows (no inner pill) */
+  padding: 12px 14px;
+  border-radius: 0;
 
   border: 0;
   background: transparent;
-  color: inherit;
+  color: rgba(15,23,42,0.92);
 
   cursor: pointer;
   text-align: left;
+
+  /* row separators (subtle) */
+  border-bottom: 1px solid rgba(15,23,42,0.08);
+}
+
+.artstart-langpicker-item:last-child{
+  border-bottom: 0;
+}
+
+/* zebra (FileRoom-like) */
+.artstart-langpicker-item:nth-child(odd){
+  background: rgba(240,246,252,0.65);
+}
+
+.artstart-langpicker-item:nth-child(even){
+  background: rgba(255,255,255,0.65);
 }
 
 .artstart-langpicker-item:hover{
-  background: rgba(148,163,184,0.10);
+  background: color-mix(
+    in srgb,
+    var(--ascend-hopper-stage-2) 12%,
+    rgba(240,246,252,0.9)
+  );
 }
 
+/* active selection: quiet, not loud */
 .artstart-langpicker-item.is-active{
-  background: rgba(79,209,197,0.10);
+  background: color-mix(
+    in srgb,
+    var(--ascend-app-accent) 10%,
+    rgba(240,246,252,0.85)
+  );
 }
 
 .artstart-langpicker-item-label{
-  font-weight: 600;
+  font-weight: 800;
   letter-spacing: 0.01em;
 }
 
