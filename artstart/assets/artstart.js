@@ -5,7 +5,9 @@
   'use strict';
 
 // ---- Feature flags (intentionally boring, default-off) ----
-var ARTSTART_ENABLE_DAVE_STATUS = false;  
+// Feature flags (intentionally boring, default-off)
+// Allow hard override from window if ascend.js (or console) sets it.
+var ARTSTART_ENABLE_DAVE_STATUS = (window.ARTSTART_ENABLE_DAVE_STATUS === true) ? true : false;
 
 var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
 
@@ -520,11 +522,6 @@ function applyTranslatedFields_(f) {
   syncCanvasTextFromFields();
   autoscaleCanvasBands();
 }
-  function getJobIdFromQuery() {
-  var params = new URLSearchParams(window.location.search || '');
-  // accept both spellings
-  return params.get('jobid') || params.get('jobId');
-  }
 
   function setError(message) {
     var errEl = document.getElementById('artstart-error');
@@ -2029,7 +2026,17 @@ function saveDraft(jobId, langOverride) {
       setSaveStatus('Save error');
     });
 }
+  // Prevent duplicate listener attachment across fetchJob() refreshes.
+  // fetchJob() can be called repeatedly (language switching, refreshes, etc.).
+  var __ARTSTART_BLUR_LISTENERS_JOB__ = __ARTSTART_BLUR_LISTENERS_JOB__ || '';
+
   function attachBlurListeners(jobId) {
+    // Already attached for this job → do nothing.
+    if (jobId && __ARTSTART_BLUR_LISTENERS_JOB__ === String(jobId)) {
+      return;
+    }
+    __ARTSTART_BLUR_LISTENERS_JOB__ = String(jobId || '');
+
     var debounceTimer = null;
     var DEBOUNCE_MS = 1500;
 
@@ -2182,11 +2189,9 @@ function saveDraft(jobId, langOverride) {
 
         populateJob(json.job);
         attachBlurListeners(effectiveJobId);
-        if (window.ARTSTART_ENABLE_DAVE_STATUS === true) {
-          if (ARTSTART_ENABLE_DAVE_STATUS) {
-            refreshDaveStatus(effectiveJobId);
-          }
-}
+        if (ARTSTART_ENABLE_DAVE_STATUS === true) {
+          refreshDaveStatus(effectiveJobId);
+        }
         setSaveStatus('Autosave ready.');
       })
       .catch(function (err) {
