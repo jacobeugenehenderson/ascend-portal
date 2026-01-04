@@ -400,9 +400,6 @@ function ensureLangPickerBuilt_() {
     __LANG_PICKER_BTN__.appendChild(sq);
     __LANG_PICKER_BTN__.appendChild(__LANG_PICKER_BTN_LABEL__);
 
-    // Custom picker must also set translation-action on mousedown (pre-blur autosave suppression).
-    _artstartBindTranslationActionMouseDown_(__LANG_PICKER_BTN__);
-
     __LANG_PICKER_MENU__ = document.createElement('div');
     __LANG_PICKER_MENU__.className = 'artstart-langpicker-menu is-hidden';
     __LANG_PICKER_MENU__.setAttribute('role', 'listbox');
