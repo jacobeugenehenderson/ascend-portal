@@ -2762,41 +2762,40 @@ if (langSelect) {
         return;
       }
 
-      // If this language is HUMAN, show the human draft/cache and do NOT retranslate.
-      var stNext = '';
-      try { stNext = loadLangState_(jobIdNow, activeLanguage); } catch (_eStN) { stNext = ''; }
-
-      // Existing translation in cache?
-      var entry = translationsDb && translationsDb[activeLanguage];
-      var isHuman = (stNext === 'human') || !!(entry && entry.human === true);
-
-      if (isHuman) {
-        // Prefer local per-language draft (survives refreshes; prevents "blank flash")
-        try {
-          var local = loadLangDraft_(jobIdNow, activeLanguage);
-          if (local && local.fields) {
-            applyTranslatedFields_(local.fields);
-            updateLangDot_();
-            __ARTSTART_TRANSLATION_ACTION__ = false;
-            return;
-          }
-        } catch (_eLocal) {}
-
-        if (entry && entry.fields) {
-          applyTranslatedFields_(entry.fields);
+      // Prefer local per-language draft (survives refreshes; prevents "blank flash")
+      try {
+        var local = loadLangDraft_(jobIdNow, activeLanguage);
+        if (local && local.fields) {
+          applyTranslatedFields_(local.fields);
           updateLangDot_();
           __ARTSTART_TRANSLATION_ACTION__ = false;
           return;
         }
+      } catch (_eLocal) {}
 
-        // Last resort: no human payload found, do nothing destructive.
+      // Existing translation in cache?
+      var entry = translationsDb && translationsDb[activeLanguage];
+
+      // If we have a cached translation, only use it if it is non-empty
+      // OR if base is blank (blank translations are legitimate only when EN is blank).
+      var entryHasAny = false;
+      try {
+        var ef = entry && entry.fields ? entry.fields : null;
+        entryHasAny = !!(
+          ef &&
+          (String(ef.workingHeadline || '').trim() ||
+           String(ef.workingSubhead || '').trim() ||
+           String(ef.workingCta || '').trim() ||
+           String(ef.workingBullets || '').trim())
+        );
+      } catch (_eEA) { entryHasAny = false; }
+
+      if (entry && entry.fields && (entryHasAny || !baseHasText)) {
+        applyTranslatedFields_(entry.fields);
+        updateLangDot_();
         __ARTSTART_TRANSLATION_ACTION__ = false;
         return;
       }
-
-      // MACHINE-LINKED: always refresh on language change (idempotent; overwrites machine fields only).
-      retranslateLanguage_(activeLanguage);
-      return;
 
       // Otherwise request translation and persist server-side
       setSaveStatus('Translating…');
