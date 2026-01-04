@@ -278,6 +278,59 @@ function clearLangDraft_(jobId, lang) {
   } catch (e) {}
 }
 
+// Persist per-job base-language translatable fields so non-EN→non-EN switches
+// can still know whether EN has any text (prevents "blank entry short-circuit").
+var BASE_TEXT_PREFIX = 'artstart_base_text_v1:'; // key: jobId -> JSON {at, fields}
+
+function _baseTextKey_(jobId) {
+  return BASE_TEXT_PREFIX + String(jobId || '');
+}
+
+function saveBaseText_(jobId, fields) {
+  try {
+    if (!jobId || !window.localStorage) return;
+    var f = fields || {};
+    var rec = {
+      at: (new Date()).toISOString(),
+      fields: {
+        workingHeadline: String(f.workingHeadline || ''),
+        workingSubhead:  String(f.workingSubhead  || ''),
+        workingCta:      String(f.workingCta      || ''),
+        workingBullets:  String(f.workingBullets  || '')
+      }
+    };
+    window.localStorage.setItem(_baseTextKey_(jobId), JSON.stringify(rec));
+  } catch (e) {
+    // ignore
+  }
+}
+
+function loadBaseText_(jobId) {
+  try {
+    if (!jobId || !window.localStorage) return null;
+    var raw = window.localStorage.getItem(_baseTextKey_(jobId));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function baseHasTextForJob_(jobId) {
+  try {
+    var rec = loadBaseText_(jobId);
+    var f = (rec && rec.fields) ? rec.fields : {};
+    return !!(
+      String(f.workingHeadline || '').trim() ||
+      String(f.workingSubhead  || '').trim() ||
+      String(f.workingCta      || '').trim() ||
+      String(f.workingBullets  || '').trim()
+    );
+  } catch (_eBH0) {
+    return false;
+  }
+}
+
 function getJobLocalLangs_(jobId) {
   if (!jobId || !window.localStorage) return [];
   var out = {};
@@ -1947,6 +2000,16 @@ if (code === baseLanguage) {
         document.getElementById('working-cta').value      = job.workingCta || '';
         document.getElementById('working-bullets').value  = job.workingBullets || '';
 
+        // Cache base-language translatable text for non-EN→non-EN switching logic
+        try {
+          saveBaseText_(jobIdNow, {
+            workingHeadline: job.workingHeadline || '',
+            workingSubhead:  job.workingSubhead  || '',
+            workingCta:      job.workingCta      || '',
+            workingBullets:  job.workingBullets  || ''
+          });
+        } catch (_eBaseCache) {}
+
         const websiteEl = document.getElementById('working-website');
         if (websiteEl) websiteEl.value = job.workingWebsite || '';
 
@@ -2574,17 +2637,32 @@ if (langSelect) {
 
     var leavingBase = (prevLangSafe === baseLanguage) && (next !== baseLanguage);
 
-    // Snapshot: if we are leaving EN, detect whether EN has any translatable text.
+    // Determine whether EN has any translatable text.
+// IMPORTANT: non-EN→non-EN switches must NOT assume "no EN text" (that allows blank cached entries to win).
     var baseHasText = false;
+
+    // Default: use cached EN snapshot (written during EN hydration)
+    try { baseHasText = baseHasTextForJob_(jobIdNow); } catch (_eBHC) { baseHasText = false; }
+
+    // If we are currently in EN and leaving it, compute live from the DOM and refresh the cache
     if (leavingBase) {
       try {
+        var liveBaseFields = {
+          workingHeadline: String(((document.getElementById('working-headline') || {}).value) || ''),
+          workingSubhead:  String(((document.getElementById('working-subhead')  || {}).value) || ''),
+          workingCta:      String(((document.getElementById('working-cta')      || {}).value) || ''),
+          workingBullets:  String(((document.getElementById('working-bullets')  || {}).value) || '')
+        };
+
         baseHasText = !!(
-          String(((document.getElementById('working-headline') || {}).value) || '').trim() ||
-          String(((document.getElementById('working-subhead')  || {}).value) || '').trim() ||
-          String(((document.getElementById('working-cta')      || {}).value) || '').trim() ||
-          String(((document.getElementById('working-bullets')  || {}).value) || '').trim()
+          String(liveBaseFields.workingHeadline || '').trim() ||
+          String(liveBaseFields.workingSubhead  || '').trim() ||
+          String(liveBaseFields.workingCta      || '').trim() ||
+          String(liveBaseFields.workingBullets  || '').trim()
         );
-      } catch (_eBH) { baseHasText = false; }
+
+        try { saveBaseText_(jobIdNow, liveBaseFields); } catch (_eBHS) {}
+      } catch (_eBH) { baseHasText = baseHasTextForJob_(jobIdNow); }
     }
 
     // COMMIT the language we are leaving (prevents EN fetchJob() refresh from overwriting unsaved edits)

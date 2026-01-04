@@ -1752,9 +1752,12 @@ function doGet(e) {
       var existingJson = String(getVal_('WorkingTranslationsJson') || '');
       var tdb = parseTranslationsJson_(existingJson);
 
-      // If we already have this language, return it (don’t re-machine-translate).
-      // If we already have this language, return it (don’t re-machine-translate).
-      if (tdb[targetLang] && tdb[targetLang].fields) {
+      // Optional override: force=1 re-runs machine translation and overwrites any existing (including human).
+      var forceRaw = String((e.parameter && e.parameter.force) || '').trim().toLowerCase();
+      var forceTranslate = (forceRaw === '1' || forceRaw === 'true' || forceRaw === 'yes');
+
+      // If we already have this language, return it (don’t re-machine-translate) unless force=1.
+      if (!forceTranslate && tdb[targetLang] && tdb[targetLang].fields) {
         return jsonResponse_({
           success: true,
           jobId: jobIdT,
