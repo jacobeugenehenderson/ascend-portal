@@ -1946,7 +1946,6 @@ if (code === baseLanguage) {
     };
   }
 
-// REPLACE (exact block)
 function saveDraft(jobId, langOverride) {
   setSaveStatus('Saving…');
 
@@ -2028,7 +2027,9 @@ function saveDraft(jobId, langOverride) {
 }
   // Prevent duplicate listener attachment across fetchJob() refreshes.
   // fetchJob() can be called repeatedly (language switching, refreshes, etc.).
-  var __ARTSTART_BLUR_LISTENERS_JOB__ = __ARTSTART_BLUR_LISTENERS_JOB__ || '';
+  // Guard to prevent duplicate blur / unload listeners across refreshes
+var __ARTSTART_BLUR_LISTENERS_JOB__ =
+  window.__ARTSTART_BLUR_LISTENERS_JOB__ || '';
 
   function attachBlurListeners(jobId) {
     // Already attached for this job → do nothing.
@@ -2036,6 +2037,7 @@ function saveDraft(jobId, langOverride) {
       return;
     }
     __ARTSTART_BLUR_LISTENERS_JOB__ = String(jobId || '');
+    window.__ARTSTART_BLUR_LISTENERS_JOB__ = __ARTSTART_BLUR_LISTENERS_JOB__;
 
     var debounceTimer = null;
     var DEBOUNCE_MS = 1500;
@@ -2158,13 +2160,56 @@ function saveDraft(jobId, langOverride) {
     });
   }
 
+  function fetchJsonWithTimeout_(url, timeoutMs) {
+    var ms = (typeof timeoutMs === 'number' && timeoutMs > 0) ? timeoutMs : 12000;
+
+    // AbortController supported in modern browsers; fall back to normal fetch if missing.
+    var ctrl = null;
+    var timer = null;
+
+    try {
+      if (typeof AbortController === 'function') {
+        ctrl = new AbortController();
+        timer = setTimeout(function () {
+          try { ctrl.abort(); } catch (e) {}
+        }, ms);
+      }
+    } catch (e2) { ctrl = null; }
+
+    var opts = ctrl ? { signal: ctrl.signal } : {};
+
+    return fetch(url, opts)
+      .then(function (r) {
+        // Don’t assume JSON; Apps Script can return HTML on auth/error.
+        return r.text().then(function (txt) {
+          var data = null;
+          try { data = JSON.parse(txt); } catch (e) {
+            var err = new Error('Non-JSON response from API');
+            err._raw = txt;
+            err._status = r.status;
+            throw err;
+          }
+          return data;
+        });
+      })
+      .finally(function () {
+        if (timer) {
+          try { clearTimeout(timer); } catch (e3) {}
+        }
+      });
+  }
+
   function fetchJob(jobId) {
     currentJobId = jobId || '';
     clearError();
     setSaveStatus('Loading job…');
 
-    fetch(ARTSTART_API_BASE + '?action=getArtStartJob&jobId=' + encodeURIComponent(jobId))
-      .then(function (res) { return res.json(); })
+    var url = ARTSTART_API_BASE + '?action=getArtStartJob&jobId=' + encodeURIComponent(jobId);
+
+    // DEBUG: show the exact endpoint being called
+    try { console.log('ArtStart fetchJob URL:', url); } catch (_e0) {}
+
+    fetchJsonWithTimeout_(url, 12000)
       .then(function (json) {
         if (!json || !json.ok) {
           throw new Error((json && json.error) || 'Unknown error');
@@ -2196,7 +2241,27 @@ function saveDraft(jobId, langOverride) {
       })
       .catch(function (err) {
         console.error('Error loading job', err);
-        setError('We couldn’t find that job or load its details.');
+
+        // If the API returned HTML (common when auth/session breaks), show a useful clue.
+        try {
+          if (err && err._raw) {
+            console.warn('ArtStart raw API response (first 300 chars):', String(err._raw).slice(0, 300));
+          }
+        } catch (_e2) {}
+
+        var msg = 'We couldn’t load that job.';
+        try {
+          if (err && String(err.name || '').toLowerCase().indexOf('abort') !== -1) {
+            msg = 'Timed out contacting ArtStart API (network/auth/CORS).';
+          } else if (err && err._status) {
+            msg = 'ArtStart API error (' + err._status + ').';
+          } else if (err && err.message) {
+            msg = 'ArtStart load error: ' + err.message;
+          }
+        } catch (_e3) {}
+
+        setError(msg);
+        setSaveStatus('Load error');
       });
   }
 
