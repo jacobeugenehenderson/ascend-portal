@@ -999,20 +999,26 @@ function handleUpdateArtStartDraftFields_(e) {
     }
   } else {
     // Fallback: use URL/query parameters (GET from ArtStart workspace autosave)
+    // IMPORTANT: do NOT default missing fields to ''.
+    // Only write fields that are explicitly present in the request, otherwise we will blank-out the row.
     const p = e.parameter || {};
+    const has = function (k) { return Object.prototype.hasOwnProperty.call(p, k); };
+
     payload = {
-      jobId: p.jobId || p.jobid || '',
-      workingHeadline: p.workingHeadline || '',
-      workingSubhead: p.workingSubhead || '',
-      workingCta: p.workingCta || '',
-      workingBullets: p.workingBullets || '',
-      workingWebsite: p.workingWebsite || '',
-      workingEmail: p.workingEmail || '',
-      workingNotes: p.workingNotes || '',
-      qrDriveFileId: p.qrDriveFileId || '',
-      qrOpenUrl: p.qrOpenUrl || '',
-      qrPayloadText: p.qrPayloadText || ''
+      jobId: (p.jobId || p.jobid || '')
     };
+
+    if (has('workingHeadline')) payload.workingHeadline = String(p.workingHeadline || '');
+    if (has('workingSubhead'))  payload.workingSubhead  = String(p.workingSubhead  || '');
+    if (has('workingCta'))      payload.workingCta      = String(p.workingCta      || '');
+    if (has('workingBullets'))  payload.workingBullets  = String(p.workingBullets  || '');
+    if (has('workingWebsite'))  payload.workingWebsite  = String(p.workingWebsite  || '');
+    if (has('workingEmail'))    payload.workingEmail    = String(p.workingEmail    || '');
+    if (has('workingNotes'))    payload.workingNotes    = String(p.workingNotes    || '');
+
+    if (has('qrDriveFileId'))   payload.qrDriveFileId   = String(p.qrDriveFileId   || '');
+    if (has('qrOpenUrl'))       payload.qrOpenUrl       = String(p.qrOpenUrl       || '');
+    if (has('qrPayloadText'))   payload.qrPayloadText   = String(p.qrPayloadText   || '');
   }
 
   const jobId = payload.jobId || '';
@@ -1029,19 +1035,22 @@ function handleUpdateArtStartDraftFields_(e) {
   const headers = projInfo.headers;
   const rowIndex = projInfo.rowIndex;
 
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingHeadline', payload.workingHeadline);
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingSubhead', payload.workingSubhead);
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingCTA', payload.workingCta);
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingBullets', payload.workingBullets);
+  const hasPayload = function (k) { return Object.prototype.hasOwnProperty.call(payload, k); };
+
+  if (hasPayload('workingHeadline')) setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingHeadline', payload.workingHeadline);
+  if (hasPayload('workingSubhead'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingSubhead', payload.workingSubhead);
+  if (hasPayload('workingCta'))      setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingCTA', payload.workingCta);
+  if (hasPayload('workingBullets'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingBullets', payload.workingBullets);
+
   // Optional extras – safe even if these columns don't exist
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingWebsite', payload.workingWebsite);
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingEmail', payload.workingEmail);
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingNotes', payload.workingNotes);
+  if (hasPayload('workingWebsite'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingWebsite', payload.workingWebsite);
+  if (hasPayload('workingEmail'))    setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingEmail', payload.workingEmail);
+  if (hasPayload('workingNotes'))    setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingNotes', payload.workingNotes);
 
   // QR association (FileRoom asset)
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrDriveFileId', payload.qrDriveFileId);
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrOpenUrl', payload.qrOpenUrl);
-  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrPayloadText', payload.qrPayloadText);
+  if (hasPayload('qrDriveFileId'))   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrDriveFileId', payload.qrDriveFileId);
+  if (hasPayload('qrOpenUrl'))       setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrOpenUrl', payload.qrOpenUrl);
+  if (hasPayload('qrPayloadText'))   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrPayloadText', payload.qrPayloadText);
 
   return jsonResponse_({ ok: true });
 }

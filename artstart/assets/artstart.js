@@ -2838,11 +2838,13 @@ if (langSelect) {
 
           __ARTSTART_TRANSLATION_ACTION__ = false;
 
-          // Refresh job payload so translationsDb + dot state are canonical
-          // BUT keep the user’s selected language from snapping back to base.
-          var keep = activeLanguage;
-          fetchJob(jobIdNow);
-          activeLanguage = keep;
+          // IMPORTANT:
+          // Do NOT immediately fetchJob() here.
+          // A fast rehydrate can arrive before the translated payload is fully reflected in getArtStartJob,
+          // and populateJob() will repaint the active language with empty strings (appears like a "save wipe").
+          //
+          // Instead, persist the machine translation locally so any later refresh cannot blank the UI.
+          try { saveLangDraft_(jobIdNow, activeLanguage, translationsDb[activeLanguage].fields); } catch (_eD) {}
         })
         .catch(function (err) {
           console.error(err);
