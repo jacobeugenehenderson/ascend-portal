@@ -37,6 +37,24 @@ var langRetransBtn = null;
 // While true, autosave scheduling is suppressed (prevents blur-save from re-marking translations as "human").
 var __ARTSTART_TRANSLATION_ACTION__ = false;
 
+// Centralized mousedown suppression helper.
+// Clicking language UI must set this BEFORE focused fields blur (blur triggers autosave).
+function _artstartSetTranslationAction_(on) {
+  __ARTSTART_TRANSLATION_ACTION__ = (on === true);
+}
+
+// Attach a "translation action" mousedown handler to any element that can steal focus
+// (native select, custom picker button, menu rows, retranslate button).
+function _artstartBindTranslationActionMouseDown_(el) {
+  if (!el || el.__artstartBoundTranslationMouseDown) return;
+  try {
+    el.addEventListener('mousedown', function () {
+      _artstartSetTranslationAction_(true);
+    });
+    el.__artstartBoundTranslationMouseDown = true;
+  } catch (e) {}
+}
+
 // One-page-load guard: prevents repeated auto-translate attempts on every refresh tick.
 var __ARTSTART_AUTOTRANSLATE_DONE__ = {};
 
@@ -382,6 +400,9 @@ function ensureLangPickerBuilt_() {
     __LANG_PICKER_BTN__.appendChild(sq);
     __LANG_PICKER_BTN__.appendChild(__LANG_PICKER_BTN_LABEL__);
 
+    // Custom picker must also set translation-action on mousedown (pre-blur autosave suppression).
+    _artstartBindTranslationActionMouseDown_(__LANG_PICKER_BTN__);
+
     __LANG_PICKER_MENU__ = document.createElement('div');
     __LANG_PICKER_MENU__.className = 'artstart-langpicker-menu is-hidden';
     __LANG_PICKER_MENU__.setAttribute('role', 'listbox');
@@ -393,11 +414,17 @@ function ensureLangPickerBuilt_() {
     __LANG_PICKER_WRAP__.appendChild(__LANG_PICKER_MENU__);
     __LANG_PICKER_WRAP__.appendChild(langSelect);
 
+    // Must be mousedown so it runs BEFORE the focused field blurs (blur triggers autosave).
+    _artstartBindTranslationActionMouseDown_(__LANG_PICKER_BTN__);
+
     __LANG_PICKER_BTN__.addEventListener('click', function () {
       var open = !__LANG_PICKER_MENU__.classList.contains('is-hidden');
       if (open) {
         __LANG_PICKER_MENU__.classList.add('is-hidden');
         __LANG_PICKER_BTN__.setAttribute('aria-expanded', 'false');
+
+        // If user just opened/closed the menu (no language change), do not leave suppression stuck on.
+        _artstartSetTranslationAction_(false);
         return;
       }
 
@@ -412,6 +439,9 @@ function ensureLangPickerBuilt_() {
       if (__LANG_PICKER_WRAP__.contains(ev.target)) return;
       __LANG_PICKER_MENU__.classList.add('is-hidden');
       __LANG_PICKER_BTN__.setAttribute('aria-expanded', 'false');
+
+      // Closing without changing should not leave autosave suppression stuck.
+      _artstartSetTranslationAction_(false);
     });
 
     __LANG_PICKER_BUILT__ = true;
@@ -467,6 +497,9 @@ function renderLangPickerMenu_() {
       label.textContent = baseLabel;
 
       row.appendChild(label);
+
+      // Must be mousedown so it runs BEFORE the focused field blurs (blur triggers autosave).
+      _artstartBindTranslationActionMouseDown_(row);
 
       row.addEventListener('click', function () {
         try {
@@ -2587,9 +2620,7 @@ function saveDraft(jobId, langOverride) {
       } catch (e) {}
 
       // Must be mousedown so it runs BEFORE the focused field blurs (blur triggers autosave).
-      langRetransBtn.addEventListener('mousedown', function () {
-        __ARTSTART_TRANSLATION_ACTION__ = true;
-      });
+      _artstartBindTranslationActionMouseDown_(langRetransBtn);
 
       langRetransBtn.addEventListener('click', function (ev) {
         try { ev.preventDefault(); } catch (_e) {}
@@ -2614,9 +2645,7 @@ function saveDraft(jobId, langOverride) {
 
 if (langSelect) {
   // Must be mousedown so it runs BEFORE the focused field blurs (blur triggers autosave).
-  langSelect.addEventListener('mousedown', function () {
-    __ARTSTART_TRANSLATION_ACTION__ = true;
-  });
+  _artstartBindTranslationActionMouseDown_(langSelect);
 
   // Safety: if user opens the picker but does not change languages, clear suppression on blur.
   langSelect.addEventListener('blur', function () {
