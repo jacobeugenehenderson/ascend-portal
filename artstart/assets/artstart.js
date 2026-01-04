@@ -37,6 +37,9 @@ var langRetransBtn = null;
 // While true, autosave scheduling is suppressed (prevents blur-save from re-marking translations as "human").
 var __ARTSTART_TRANSLATION_ACTION__ = false;
 
+// One-page-load guard: prevents repeated auto-translate attempts on every refresh tick.
+var __ARTSTART_AUTOTRANSLATE_DONE__ = {};
+
 // Persist per-job language choice so async refreshes can't snap back to base.
 var currentJobId = '';
 var LANG_STORAGE_PREFIX = 'artstart_active_lang_v1:';
@@ -1872,6 +1875,28 @@ if (code === baseLanguage) {
         if (emailEl) emailEl.value = job.workingEmail || '';
 
         document.getElementById('working-notes').value = job.workingNotes || '';
+      } else {
+        // Non-EN is active, but we had no cached translation fields to apply.
+        // Do NOT leave the UI blank — hydrate by:
+        //   1) local draft (human) if present
+        //   2) otherwise auto-request machine translation ONCE per job+lang per page load
+        try {
+          var jobKeyHydrate = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+          var langHydrate = String(activeLanguage || '').trim().toUpperCase();
+          var guardKey = String(jobKeyHydrate || '') + ':' + langHydrate;
+
+          // Prefer local draft if it exists (human-edited)
+          var dHyd = loadLangDraft_(jobKeyHydrate, langHydrate);
+          if (dHyd && dHyd.fields) {
+            applyTranslatedFields_(dHyd.fields);
+            usedTranslation = true;
+            updateLangDot_();
+          } else if (!__ARTSTART_AUTOTRANSLATE_DONE__[guardKey]) {
+            __ARTSTART_AUTOTRANSLATE_DONE__[guardKey] = true;
+            __ARTSTART_TRANSLATION_ACTION__ = true;
+            retranslateLanguage_(langHydrate);
+          }
+        } catch (_eHyd) {}
       }
     }
 
@@ -2039,8 +2064,7 @@ function saveDraft(jobId, langOverride) {
   // Prevent duplicate listener attachment across fetchJob() refreshes.
   // fetchJob() can be called repeatedly (language switching, refreshes, etc.).
   // Guard to prevent duplicate blur / unload listeners across refreshes
-var __ARTSTART_BLUR_LISTENERS_JOB__ = __ARTSTART_BLUR_LISTENERS_JOB__ || '';
-__ARTSTART_BLUR_LISTENERS_JOB__ = window.__ARTSTART_BLUR_LISTENERS_JOB__ || __ARTSTART_BLUR_LISTENERS_JOB__;
+  var __ARTSTART_BLUR_LISTENERS_JOB__ = window.__ARTSTART_BLUR_LISTENERS_JOB__ || '';
 
   function attachBlurListeners(jobId) {
     // Already attached for this job → do nothing.
@@ -2281,7 +2305,6 @@ __ARTSTART_BLUR_LISTENERS_JOB__ = window.__ARTSTART_BLUR_LISTENERS_JOB__ || __AR
   window.artStartDebug.populateJob = populateJob;
   window.artStartDebug.attachBlurListeners = attachBlurListeners;
 
-  var __ARTSTART_BLUR_LISTENERS_JOB__ = __ARTSTART_BLUR_LISTENERS_JOB__ || '';
   var getJobIdFromQuery = window.getJobIdFromQuery;
 
   function init() {
