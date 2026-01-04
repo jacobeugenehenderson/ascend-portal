@@ -2597,7 +2597,7 @@ function saveDraft(jobId, langOverride) {
         // If we are leaving EN → non-EN, force-save EN FIRST so the translator never sees stale/blank base text.
         var commitBaseP = Promise.resolve();
         if (leavingBase) {
-          try { commitBaseP = saveDraft(jobIdNow, baseLanguage) || Promise.resolve(); } catch (_eB) { commitBaseP = Promise.resolve(); }
+          try { commitBaseP = saveDraft(jobIdNow, baseLanguage); } catch (_eB) { commitBaseP = Promise.resolve(); }
         }
 
         commitBaseP.then(function () {
@@ -2670,7 +2670,7 @@ function saveDraft(jobId, langOverride) {
         });
       });
     }
-    
+
     // Prime the Dave status card before we know anything else.
     setDaveStatusHeader('Dave (courier)');
     setDaveStatusBody('Waiting for job…');
