@@ -262,6 +262,30 @@ function clearLangDraft_(jobId, lang) {
   } catch (e) {}
 }
 
+function getJobLocalLangs_(jobId) {
+  if (!jobId || !window.localStorage) return [];
+  var out = {};
+  try {
+    for (var i = 0; i < window.localStorage.length; i++) {
+      var k = window.localStorage.key(i);
+      if (!k) continue;
+
+      if (k.indexOf(LANG_STATE_PREFIX + jobId + ':') === 0) {
+        var lang = k.substring((LANG_STATE_PREFIX + jobId + ':').length);
+        if (lang) out[String(lang).trim().toUpperCase()] = true;
+      }
+
+      if (k.indexOf(LANG_DRAFT_PREFIX + jobId + ':') === 0) {
+        var lang2 = k.substring((LANG_DRAFT_PREFIX + jobId + ':').length);
+        if (lang2) out[String(lang2).trim().toUpperCase()] = true;
+      }
+    }
+  } catch (e) {
+    return [];
+  }
+  return Object.keys(out);
+}
+
 function ensureLangPickerBuilt_() {
   if (__LANG_PICKER_BUILT__) return;
   if (!langSelect) return;
@@ -1639,16 +1663,53 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     } catch (_e) {}
 
     // Re-apply persisted "human vs machine" states so refreshes can't spring back.
+    // IMPORTANT: "human" is only trusted if there is a local draft backing it.
+    // This prevents stale state from making squares orange / showing the red button.
     try {
       var jobKeyState = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
       translationsDb = translationsDb || {};
-      Object.keys(translationsDb).forEach(function (lang) {
-        var st = loadLangState_(jobKeyState, lang);
-        if (!st) return;
-        if (!translationsDb[lang]) return;
-        translationsDb[lang].human = (st === 'human');
+
+      // Ensure locally-known languages exist in translationsDb so they can be merged + displayed.
+      var localLangs = getJobLocalLangs_(jobKeyState) || [];
+      localLangs.forEach(function (L) {
+        var langU = String(L || '').trim().toUpperCase();
+        if (!langU || langU === baseLanguage) return;
+        translationsDb[langU] = translationsDb[langU] || { human: false, fields: { workingHeadline:'', workingSubhead:'', workingCta:'', workingBullets:'' } };
       });
-    } catch (_e2) {}
+
+  Object.keys(translationsDb).forEach(function (lang) {
+    var langU2 = String(lang || '').trim().toUpperCase();
+    if (!langU2 || langU2 === baseLanguage) return;
+
+    var rec = translationsDb[lang] || {};
+    var st = loadLangState_(jobKeyState, langU2);
+
+    if (st === 'human') {
+      var d = loadLangDraft_(jobKeyState, langU2);
+
+      // ONLY accept human if draft exists.
+      if (d && d.fields) {
+        rec.human = true;
+      } else {
+        rec.human = false;
+        try { saveLangState_(jobKeyState, langU2, 'machine'); } catch (_eS) {}
+      }
+
+      translationsDb[lang] = rec;
+      return;
+    }
+
+    if (st === 'machine') {
+      rec.human = false;
+      translationsDb[lang] = rec;
+      return;
+    }
+
+    // No persisted state: default is machine-linked
+    rec.human = false;
+    translationsDb[lang] = rec;
+  });
+} catch (_e2) {}
 
     // Restore saved language selection for this job (prevents snap-back during async refreshes)
     var jobKey = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
@@ -1658,26 +1719,28 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     }
 
     // Merge local drafts last so fetchJob() can never overwrite unsaved/just-saved translation edits.
+    // Include locally-known languages so edits persist even if the server payload lags.
     try {
       var jobKeyDraft = jobKey;
       var langsToMerge = {};
+
       langsToMerge[String(activeLanguage || '').trim().toUpperCase()] = true;
       Object.keys(translationsDb || {}).forEach(function (l) { langsToMerge[String(l || '').trim().toUpperCase()] = true; });
+      (getJobLocalLangs_(jobKeyDraft) || []).forEach(function (l2) { langsToMerge[String(l2 || '').trim().toUpperCase()] = true; });
 
       Object.keys(langsToMerge).forEach(function (lang) {
         if (!lang || lang === baseLanguage) return;
 
-        // Drafts are only authoritative when the persisted state says "human".
-        // This prevents machine-linked languages from being falsely marked as edited.
-        var st = loadLangState_(jobKeyDraft, lang);
-        if (st !== 'human') return;
-
         var d = loadLangDraft_(jobKeyDraft, lang);
         if (!d || !d.fields) return;
+
+        // Draft exists => this language is human-edited/decoupled
+        try { saveLangState_(jobKeyDraft, lang, 'human'); } catch (_eS) {}
 
         translationsDb = translationsDb || {};
         translationsDb[lang] = translationsDb[lang] || {};
         translationsDb[lang].human = true;
+        translationsDb[lang].edited = true;
         translationsDb[lang].at = d.at || (new Date()).toISOString();
         translationsDb[lang].fields = {
           workingHeadline: String(d.fields.workingHeadline || ''),
@@ -1706,7 +1769,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       // Base language first (muted label)
       var optBase = document.createElement('option');
       optBase.value = baseLanguage;
-      optBase.textContent = baseLanguage;
+      optBase.textContent = baseLanguage + ' (' + baseLanguage + ')';
       langSelect.appendChild(optBase);
 
       // Ensure the current selection exists immediately so the UI never snaps to base.
@@ -1730,7 +1793,16 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
             langs.forEach(function (l) {
               var code = String((l && l.code) || '').trim().toUpperCase();
               var label = String((l && l.label) || code).trim();
-              if (!code || code === baseLanguage) return;
+              if (!code) return;
+
+// If this is the base language, update the existing base option label to "Language (CODE)".
+if (code === baseLanguage) {
+  try {
+    var baseOpt = langSelect && langSelect.querySelector && langSelect.querySelector('option[value="' + code + '"]');
+    if (baseOpt) baseOpt.textContent = label + ' (' + code + ')';
+  } catch (_eB0) {}
+  return;
+}
 
               // Avoid duplicates (we may have inserted a temporary option to preserve selection)
               try {
