@@ -472,7 +472,8 @@ function retranslateLanguage_(lang) {
     ARTSTART_API_BASE +
     '?action=translateArtStartFields' +
     '&jobId=' + encodeURIComponent(jobIdNow) +
-    '&targetLanguage=' + encodeURIComponent(lang)
+    '&targetLanguage=' + encodeURIComponent(lang) +
+    '&force=1'
   )
     .then(function (r) { return r.json(); })
     .then(function (data) {
@@ -2549,19 +2550,42 @@ function saveDraft(jobId, langOverride) {
     }
 
 if (langSelect) {
+  // Must be mousedown so it runs BEFORE the focused field blurs (blur triggers autosave).
+  langSelect.addEventListener('mousedown', function () {
+    __ARTSTART_TRANSLATION_ACTION__ = true;
+  });
+
+  // Safety: if user opens the picker but does not change languages, clear suppression on blur.
+  langSelect.addEventListener('blur', function () {
+    if (__ARTSTART_TRANSLATION_ACTION__ === true) __ARTSTART_TRANSLATION_ACTION__ = false;
+  });
+
   langSelect.addEventListener('change', function () {
     var jobIdNow = getJobIdFromQuery();
     var next = String(langSelect.value || '').trim().toUpperCase();
-    if (!jobIdNow || !next) return;
+    if (!jobIdNow || !next) { __ARTSTART_TRANSLATION_ACTION__ = false; return; }
 
     // If user selected the current language, do nothing.
     var prevLangSafe = String(activeLanguage || '').trim().toUpperCase() || baseLanguage;
-    if (prevLangSafe === next) return;
+    if (prevLangSafe === next) { __ARTSTART_TRANSLATION_ACTION__ = false; return; }
 
     // Suppress blur/unload autosaves during the switch (blur fires when clicking the picker).
     __ARTSTART_TRANSLATION_ACTION__ = true;
 
     var leavingBase = (prevLangSafe === baseLanguage) && (next !== baseLanguage);
+
+    // Snapshot: if we are leaving EN, detect whether EN has any translatable text.
+    var baseHasText = false;
+    if (leavingBase) {
+      try {
+        baseHasText = !!(
+          String(((document.getElementById('working-headline') || {}).value) || '').trim() ||
+          String(((document.getElementById('working-subhead')  || {}).value) || '').trim() ||
+          String(((document.getElementById('working-cta')      || {}).value) || '').trim() ||
+          String(((document.getElementById('working-bullets')  || {}).value) || '').trim()
+        );
+      } catch (_eBH) { baseHasText = false; }
+    }
 
     // COMMIT the language we are leaving (prevents EN fetchJob() refresh from overwriting unsaved edits)
     try {
@@ -2647,7 +2671,22 @@ if (langSelect) {
 
       // Existing translation in cache?
       var entry = translationsDb && translationsDb[activeLanguage];
-      if (entry && entry.fields) {
+
+      // If we have a cached translation, only use it if it is non-empty
+      // OR if base is blank (blank translations are legitimate only when EN is blank).
+      var entryHasAny = false;
+      try {
+        var ef = entry && entry.fields ? entry.fields : null;
+        entryHasAny = !!(
+          ef &&
+          (String(ef.workingHeadline || '').trim() ||
+           String(ef.workingSubhead || '').trim() ||
+           String(ef.workingCta || '').trim() ||
+           String(ef.workingBullets || '').trim())
+        );
+      } catch (_eEA) { entryHasAny = false; }
+
+      if (entry && entry.fields && (entryHasAny || !baseHasText)) {
         applyTranslatedFields_(entry.fields);
         updateLangDot_();
         __ARTSTART_TRANSLATION_ACTION__ = false;
