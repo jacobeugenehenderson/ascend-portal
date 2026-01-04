@@ -2089,6 +2089,15 @@ function saveDraft(jobId, langOverride) {
     } catch (_e0) {}
   }
 
+  // Trim empty QR params on base saves to reduce URL length and avoid backend confusion.
+  if (isBase) {
+    if (!payload.qrDriveFileId && !payload.qrOpenUrl && !payload.qrDestinationUrl) {
+      delete payload.qrDriveFileId;
+      delete payload.qrOpenUrl;
+      delete payload.qrDestinationUrl;
+    }
+  }
+
   var url =
     ARTSTART_API_BASE +
     '?action=' + (isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields') +
@@ -2099,10 +2108,10 @@ function saveDraft(jobId, langOverride) {
     url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
   });
 
-  fetch(url)
-    .then(function (r) { return r.json(); })
+  fetchJsonWithTimeout_(url)
     .then(function (data) {
       if (!data || !data.success) {
+        console.warn('ArtStart saveDraft: non-success response', data);
         setSaveStatus('Save error');
         return;
       }
@@ -2115,10 +2124,17 @@ function saveDraft(jobId, langOverride) {
         translationsDb[langToSave].edited = true;
         translationsDb[langToSave].at = (new Date()).toISOString();
         translationsDb[langToSave].fields = translationsDb[langToSave].fields || {};
+        var base = window.__ARTSTART_BASE_DRAFT_CACHE__ || {};
         translationsDb[langToSave].fields.workingHeadline = payload.workingHeadline || '';
-        translationsDb[langToSave].fields.workingSubhead = payload.workingSubhead || '';
-        translationsDb[langToSave].fields.workingCta = payload.workingCta || '';
-        translationsDb[langToSave].fields.workingBullets = payload.workingBullets || '';
+        translationsDb[langToSave].fields.workingSubhead  = payload.workingSubhead  || '';
+        translationsDb[langToSave].fields.workingCta      = payload.workingCta      || '';
+        translationsDb[langToSave].fields.workingBullets  = payload.workingBullets  || '';
+
+        // UI fallback rule: never show blanks if EN exists.
+        if (!translationsDb[langToSave].fields.workingHeadline) translationsDb[langToSave].fields.workingHeadline = base.workingHeadline || '';
+        if (!translationsDb[langToSave].fields.workingSubhead)  translationsDb[langToSave].fields.workingSubhead  = base.workingSubhead  || '';
+        if (!translationsDb[langToSave].fields.workingCta)      translationsDb[langToSave].fields.workingCta      = base.workingCta      || '';
+        if (!translationsDb[langToSave].fields.workingBullets)  translationsDb[langToSave].fields.workingBullets  = base.workingBullets  || '';
 
         // Persist human state so async refreshes can't revert it.
         try { saveLangState_(jobId, langToSave, 'human'); } catch (_e) {}
@@ -2135,7 +2151,8 @@ function saveDraft(jobId, langOverride) {
 
       setSaveStatus('Saved');
     })
-    .catch(function () {
+    .catch(function (err) {
+      console.warn('ArtStart saveDraft: request failed', err);
       setSaveStatus('Save error');
     });
 }
@@ -2236,6 +2253,15 @@ function saveDraft(jobId, langOverride) {
             workingCta: payload.workingCta,
             workingBullets: payload.workingBullets
           };
+        }
+
+        // Trim empty QR params on base unload saves to reduce URL length.
+        if (isBase) {
+          if (!payload.qrDriveFileId && !payload.qrOpenUrl && !payload.qrDestinationUrl) {
+            delete payload.qrDriveFileId;
+            delete payload.qrOpenUrl;
+            delete payload.qrDestinationUrl;
+          }
         }
 
         // IMPORTANT: Apps Script endpoints are querystring-driven in this app.
