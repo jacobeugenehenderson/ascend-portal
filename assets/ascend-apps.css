@@ -599,7 +599,13 @@ body.ascend-app-body {
   align-items: center;
   gap: 10px;
 
-  padding: 8px 12px;
+  /* Lock typography so it cannot inherit a huge parent font-size */
+  font-size: 0.95rem;
+  line-height: 1.1;
+
+  /* Lock geometry so the button doesn't balloon */
+  min-height: 40px;
+  padding: 8px 14px;
   border-radius: 10px;
 
   border: 1px solid rgba(148,163,184,0.25);
@@ -611,6 +617,7 @@ body.ascend-app-body {
 }
 
 .artstart-langpicker-label{
+  font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
