@@ -11,6 +11,12 @@ var ARTSTART_ENABLE_DAVE_STATUS = (window.ARTSTART_ENABLE_DAVE_STATUS === true) 
 
 var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
 
+function getJobIdFromQuery() {
+  var params = new URLSearchParams(window.location.search || '');
+  // accept both spellings
+  return params.get('jobid') || params.get('jobId');
+}
+
 // Optional shared config (if ../../assets/ascend.js exposes these, we use them; otherwise we fail loudly)
 var FILEROOM_API_BASE = window.FILEROOM_API_BASE || '';
 var CODEDESK_URL = window.CODEDESK_URL || '';
