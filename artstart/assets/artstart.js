@@ -2080,11 +2080,12 @@ function saveDraft(jobId, langOverride) {
     };
 
     // If nothing changed vs baseline, do NOT mark human or persist drafts.
+    // IMPORTANT: return a resolved Promise so callers can safely chain.
     try {
       if (!langHasChangedFromBaseline_(langToSave, payload)) {
         setSaveStatus('Saved');
         updateLangDot_();
-        return;
+        return Promise.resolve({ success: true, skipped: true });
       }
     } catch (_e0) {}
   }
@@ -2108,9 +2109,10 @@ function saveDraft(jobId, langOverride) {
     url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
   });
 
+  // IMPORTANT: return the Promise so language switching can wait on base saves.
   return fetchJsonWithTimeout_(url)
     .then(function (data) {
-      if (!data || (data.success !== true && data.ok !== true)) {
+      if (!data || !data.success) {
         console.warn('ArtStart saveDraft: non-success response', data);
         setSaveStatus('Save error');
         return;
@@ -2143,6 +2145,7 @@ function saveDraft(jobId, langOverride) {
         try { saveLangDraft_(jobId, langToSave, translationsDb[langToSave].fields); } catch (_e2) {}
 
         // Baseline becomes the saved human text (prevents repeated re-marking)
+       
         try { setLangBaseline_(langToSave, translationsDb[langToSave].fields); } catch (_e3) {}
 
         // Only update the UI indicator if we saved the currently viewed language
@@ -2544,133 +2547,167 @@ function saveDraft(jobId, langOverride) {
       });
     }
 
-    if (langSelect) {
-      langSelect.addEventListener('change', function () {
-        var jobIdNow = getJobIdFromQuery();
-        var next = String(langSelect.value || '').trim().toUpperCase();
-        if (!jobIdNow || !next) return;
+if (langSelect) {
+  langSelect.addEventListener('change', function () {
+    var jobIdNow = getJobIdFromQuery();
+    var next = String(langSelect.value || '').trim().toUpperCase();
+    if (!jobIdNow || !next) return;
 
-        var prevLangSafe = String(activeLanguage || '').trim().toUpperCase() || baseLanguage;
-        var leavingBase = (prevLangSafe === baseLanguage) && (next !== baseLanguage);
+    // If user selected the current language, do nothing.
+    var prevLangSafe = String(activeLanguage || '').trim().toUpperCase() || baseLanguage;
+    if (prevLangSafe === next) return;
 
-        // COMMIT the language we are leaving (prevents EN fetchJob() refresh from overwriting unsaved edits)
-        try {
-          var prevLang = String(activeLanguage || '').trim().toUpperCase();
-          if (prevLang && prevLang !== baseLanguage) {
-            var snap = {
-              workingHeadline: (document.getElementById('working-headline') || {}).value || '',
-              workingSubhead:  (document.getElementById('working-subhead')  || {}).value || '',
-              workingCta:      (document.getElementById('working-cta')      || {}).value || '',
-              workingBullets:  (document.getElementById('working-bullets')  || {}).value || ''
-            };
+    // Suppress blur/unload autosaves during the switch (blur fires when clicking the picker).
+    __ARTSTART_TRANSLATION_ACTION__ = true;
 
-            translationsDb = translationsDb || {};
-            translationsDb[prevLang] = translationsDb[prevLang] || { fields: {} };
+    var leavingBase = (prevLangSafe === baseLanguage) && (next !== baseLanguage);
 
-            // Only commit if it differs from the current baseline (prevents false human marks)
-            var baseSnap = getLangBaseline_(prevLang) || {};
-            if (
-              String(snap.workingHeadline || '') !== String(baseSnap.workingHeadline || '') ||
-              String(snap.workingSubhead  || '') !== String(baseSnap.workingSubhead  || '') ||
-              String(snap.workingCta      || '') !== String(baseSnap.workingCta      || '') ||
-              String(snap.workingBullets  || '') !== String(baseSnap.workingBullets  || '')
-            ) {
-              translationsDb[prevLang].human = true;
-              translationsDb[prevLang].edited = true;
-              translationsDb[prevLang].at = (new Date()).toISOString();
-              translationsDb[prevLang].fields = {
-                workingHeadline: String(snap.workingHeadline || ''),
-                workingSubhead:  String(snap.workingSubhead  || ''),
-                workingCta:      String(snap.workingCta      || ''),
-                workingBullets:  String(snap.workingBullets  || '')
-              };
+    // COMMIT the language we are leaving (prevents EN fetchJob() refresh from overwriting unsaved edits)
+    try {
+      var prevLang = prevLangSafe;
+      if (prevLang && prevLang !== baseLanguage) {
+        var snap = {
+          workingHeadline: (document.getElementById('working-headline') || {}).value || '',
+          workingSubhead:  (document.getElementById('working-subhead')  || {}).value || '',
+          workingCta:      (document.getElementById('working-cta')      || {}).value || '',
+          workingBullets:  (document.getElementById('working-bullets')  || {}).value || ''
+        };
 
-              try { saveLangState_(jobIdNow, prevLang, 'human'); } catch (_e0) {}
-              try { saveLangDraft_(jobIdNow, prevLang, translationsDb[prevLang].fields); } catch (_e1) {}
+        // If this language is still "machine" and the user hasn't changed anything,
+        // do NOT flip it to human or write a draft (prevents false "human edited" persistence).
+        var stPrev = '';
+        try { stPrev = loadLangState_(jobIdNow, prevLang); } catch (_eSt) { stPrev = ''; }
 
-              // Also kick an immediate save for the language we are leaving (best effort).
-              try { saveDraft(jobIdNow, prevLang); } catch (_e2) {}
-            }
-          }
-        } catch (_e3) {}
+        var existing = (translationsDb && translationsDb[prevLang] && translationsDb[prevLang].fields) ? translationsDb[prevLang].fields : null;
 
-        // If we are leaving EN → non-EN, force-save EN FIRST so the translator never sees stale/blank base text.
-        var commitBaseP = Promise.resolve();
-        if (leavingBase) {
-          try { commitBaseP = saveDraft(jobIdNow, baseLanguage); } catch (_eB) { commitBaseP = Promise.resolve(); }
+        var wasHuman = !!(translationsDb && translationsDb[prevLang] && translationsDb[prevLang].human === true);
+
+        // Default: assume unchanged unless we can prove a change against an existing record.
+        // This prevents "just switching languages" from promoting machine translations to human.
+        var changed = false;
+        if (existing) {
+          changed = !(
+            String(existing.workingHeadline || '') === String(snap.workingHeadline || '') &&
+            String(existing.workingSubhead  || '') === String(snap.workingSubhead  || '') &&
+            String(existing.workingCta      || '') === String(snap.workingCta      || '') &&
+            String(existing.workingBullets  || '') === String(snap.workingBullets  || '')
+          );
         }
 
-        commitBaseP.then(function () {
-          activeLanguage = next;
-          saveActiveLanguage_(jobIdNow, activeLanguage);
+        // Only commit as human if it was already human, or we have a real diff against an existing record.
+        if (wasHuman || stPrev === 'human' || changed) {
+          translationsDb = translationsDb || {};
+          translationsDb[prevLang] = translationsDb[prevLang] || {};
+          translationsDb[prevLang].human = true;
+          translationsDb[prevLang].at = (new Date()).toISOString();
+          translationsDb[prevLang].fields = {
+            workingHeadline: String(snap.workingHeadline || ''),
+            workingSubhead:  String(snap.workingSubhead || ''),
+            workingCta:      String(snap.workingCta || ''),
+            workingBullets:  String(snap.workingBullets || '')
+          };
 
-          // Base language: reload canonical job fields from sheet
-          if (activeLanguage === baseLanguage) {
-            fetchJob(jobIdNow);
-            return;
-          }
+          try { saveLangState_(jobIdNow, prevLang, 'human'); } catch (_e0) {}
+          try { saveLangDraft_(jobIdNow, prevLang, translationsDb[prevLang].fields); } catch (_e1) {}
 
-          // Existing translation in cache?
-          var entry = translationsDb && translationsDb[activeLanguage];
-          if (entry && entry.fields) {
-            applyTranslatedFields_(entry.fields);
-            updateLangDot_();
-            return;
-          }
+          // Also kick an immediate save for the language we are leaving (best effort).
+          try { saveDraft(jobIdNow, prevLang); } catch (_e2) {}
+        }
+      }
+    } catch (_e3) {}
 
-          // Otherwise request translation and persist server-side
-          setSaveStatus('Translating…');
-
-          fetch(
-            ARTSTART_API_BASE +
-            '?action=translateArtStartFields' +
-            '&jobId=' + encodeURIComponent(jobIdNow) +
-            '&targetLanguage=' + encodeURIComponent(activeLanguage)
-          )
-            .then(function (r) { return r.json(); })
-            .then(function (payload) {
-              if (!payload || payload.success === false) {
-                throw new Error((payload && payload.error) || 'Translate failed');
-              }
-
-              // Record this as a machine-linked translation immediately (prevents baseline race).
-              translationsDb = translationsDb || {};
-              translationsDb[activeLanguage] = {
-                human: false,
-                at: (new Date()).toISOString(),
-                fields: {
-                  workingHeadline: String(((payload.fields || {}).workingHeadline) || ''),
-                  workingSubhead:  String(((payload.fields || {}).workingSubhead)  || ''),
-                  workingCta:      String(((payload.fields || {}).workingCta)      || ''),
-                  workingBullets:  String(((payload.fields || {}).workingBullets)  || '')
-                }
-              };
-
-              // Persist "machine" state so async refreshes can't misclassify.
-              try { saveLangState_(jobIdNow, activeLanguage, 'machine'); } catch (_e0) {}
-
-              // Baseline becomes the machine text (so the first human edit can be detected/saved).
-              try { setLangBaseline_(activeLanguage, translationsDb[activeLanguage].fields); } catch (_e1) {}
-
-              // Apply translated text immediately
-              applyTranslatedFields_(translationsDb[activeLanguage].fields);
-
-              updateLangDot_();
-
-              // Refresh job payload so translationsDb + dot state are canonical
-              // BUT keep the user’s selected language from snapping back to base.
-              var keep = activeLanguage;
-              fetchJob(jobIdNow);
-              activeLanguage = keep;
-            })
-            .catch(function (err) {
-              console.error(err);
-              setSaveStatus('Translate failed – try again');
-            });
-        });
-      });
+    // If we are leaving EN → non-EN, force-save EN FIRST so the translator never sees stale/blank base text.
+    var commitBaseP = Promise.resolve();
+    if (leavingBase) {
+      try { commitBaseP = saveDraft(jobIdNow, baseLanguage) || Promise.resolve(); } catch (_eB) { commitBaseP = Promise.resolve(); }
     }
 
+    commitBaseP.then(function () {
+      activeLanguage = next;
+      saveActiveLanguage_(jobIdNow, activeLanguage);
+
+      // Base language: reload canonical job fields from sheet
+      if (activeLanguage === baseLanguage) {
+        __ARTSTART_TRANSLATION_ACTION__ = false;
+        fetchJob(jobIdNow);
+        return;
+      }
+
+      // Prefer local per-language draft (survives refreshes; prevents "blank flash")
+      try {
+        var local = loadLangDraft_(jobIdNow, activeLanguage);
+        if (local && local.fields) {
+          applyTranslatedFields_(local.fields);
+          updateLangDot_();
+          __ARTSTART_TRANSLATION_ACTION__ = false;
+          return;
+        }
+      } catch (_eLocal) {}
+
+      // Existing translation in cache?
+      var entry = translationsDb && translationsDb[activeLanguage];
+      if (entry && entry.fields) {
+        applyTranslatedFields_(entry.fields);
+        updateLangDot_();
+        __ARTSTART_TRANSLATION_ACTION__ = false;
+        return;
+      }
+
+      // Otherwise request translation and persist server-side
+      setSaveStatus('Translating…');
+
+      fetch(
+        ARTSTART_API_BASE +
+        '?action=translateArtStartFields' +
+        '&jobId=' + encodeURIComponent(jobIdNow) +
+        '&targetLanguage=' + encodeURIComponent(activeLanguage)
+      )
+        .then(function (r) { return r.json(); })
+        .then(function (payload) {
+          if (!payload || payload.success === false) {
+            throw new Error((payload && payload.error) || 'Translate failed');
+          }
+
+          // Record this as a machine-linked translation immediately (prevents baseline race).
+          translationsDb = translationsDb || {};
+          translationsDb[activeLanguage] = {
+            human: false,
+            at: (new Date()).toISOString(),
+            fields: {
+              workingHeadline: String(((payload.fields || {}).workingHeadline) || ''),
+              workingSubhead:  String(((payload.fields || {}).workingSubhead) || ''),
+              workingCta:      String(((payload.fields || {}).workingCta) || ''),
+              workingBullets:  String(((payload.fields || {}).workingBullets) || '')
+            }
+          };
+
+          // Persist "machine" state so async refreshes can't misclassify.
+          try { saveLangState_(jobIdNow, activeLanguage, 'machine'); } catch (_e0) {}
+
+          // Baseline becomes the machine text (so the first human edit can be detected/saved).
+          try { setLangBaseline_(activeLanguage, translationsDb[activeLanguage].fields); } catch (_e1) {}
+
+          // Apply translated text immediately
+          applyTranslatedFields_(translationsDb[activeLanguage].fields);
+
+          updateLangDot_();
+
+          __ARTSTART_TRANSLATION_ACTION__ = false;
+
+          // Refresh job payload so translationsDb + dot state are canonical
+          // BUT keep the user’s selected language from snapping back to base.
+          var keep = activeLanguage;
+          fetchJob(jobIdNow);
+          activeLanguage = keep;
+        })
+        .catch(function (err) {
+          console.error(err);
+          __ARTSTART_TRANSLATION_ACTION__ = false;
+          setSaveStatus('Translate failed – try again');
+        });
+    });
+  });
+}
     // Prime the Dave status card before we know anything else.
     setDaveStatusHeader('Dave (courier)');
     setDaveStatusBody('Waiting for job…');
