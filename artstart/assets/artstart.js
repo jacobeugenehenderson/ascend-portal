@@ -2110,7 +2110,7 @@ function saveDraft(jobId, langOverride) {
 
   return fetchJsonWithTimeout_(url)
     .then(function (data) {
-      if (!data || !data.success) {
+      if (!data || (data.success !== true && data.ok !== true)) {
         console.warn('ArtStart saveDraft: non-success response', data);
         setSaveStatus('Save error');
         return;
