@@ -37,6 +37,10 @@ var langRetransBtn = null;
 // While true, autosave scheduling is suppressed (prevents blur-save from re-marking translations as "human").
 var __ARTSTART_TRANSLATION_ACTION__ = false;
 
+// Guards against stale async translation responses repainting the UI after a language switch.
+// Keyed by "jobId::LANG" => requestId
+var __ARTSTART_TRANSLATE_REQ__ = __ARTSTART_TRANSLATE_REQ__ || {};
+
 // Centralized mousedown suppression helper.
 // Clicking language UI must set this BEFORE focused fields blur (blur triggers autosave).
 function _artstartSetTranslationAction_(on) {
@@ -551,6 +555,13 @@ function retranslateLanguage_(lang) {
 
   setSaveStatus('Translating…');
 
+  // Guard against stale async responses repainting the UI after a language switch.
+  var requestedLang = lang;
+  var __reqKey = String(jobIdNow) + '::' + String(requestedLang);
+  var __reqId = String(Date.now()) + ':' + Math.random().toString(16).slice(2);
+  __ARTSTART_TRANSLATE_REQ__ = __ARTSTART_TRANSLATE_REQ__ || {};
+  __ARTSTART_TRANSLATE_REQ__[__reqKey] = __reqId;
+
   fetch(
     ARTSTART_API_BASE +
     '?action=translateArtStartFields' +
@@ -564,6 +575,10 @@ function retranslateLanguage_(lang) {
         setSaveStatus('Save error');
         return;
       }
+
+      // Ignore stale async responses (user switched languages while request was in flight).
+      if (!__ARTSTART_TRANSLATE_REQ__ || __ARTSTART_TRANSLATE_REQ__[__reqKey] !== __reqId) return;
+      if (String(activeLanguage || '').trim().toUpperCase() !== String(requestedLang || '').trim().toUpperCase()) return;
 
       // Overwrite local entry as machine translation (linked)
       translationsDb = translationsDb || {};
@@ -2794,64 +2809,9 @@ if (langSelect) {
         return;
       }
 
-      // MACHINE-LINKED: always refresh on language change (idempotent; overwrites machine fields only).
+      // MACHINE-LINKED: always refresh on every language change (deterministic + idempotent).
       retranslateLanguage_(activeLanguage);
       return;
-
-      // Otherwise request translation and persist server-side
-      setSaveStatus('Translating…');
-
-      fetch(
-        ARTSTART_API_BASE +
-        '?action=translateArtStartFields' +
-        '&jobId=' + encodeURIComponent(jobIdNow) +
-        '&targetLanguage=' + encodeURIComponent(activeLanguage)
-      )
-        .then(function (r) { return r.json(); })
-        .then(function (payload) {
-          if (!payload || payload.success === false) {
-            throw new Error((payload && payload.error) || 'Translate failed');
-          }
-
-          // Record this as a machine-linked translation immediately (prevents baseline race).
-          translationsDb = translationsDb || {};
-          translationsDb[activeLanguage] = {
-            human: false,
-            at: (new Date()).toISOString(),
-            fields: {
-              workingHeadline: String(((payload.fields || {}).workingHeadline) || ''),
-              workingSubhead:  String(((payload.fields || {}).workingSubhead) || ''),
-              workingCta:      String(((payload.fields || {}).workingCta) || ''),
-              workingBullets:  String(((payload.fields || {}).workingBullets) || '')
-            }
-          };
-
-          // Persist "machine" state so async refreshes can't misclassify.
-          try { saveLangState_(jobIdNow, activeLanguage, 'machine'); } catch (_e0) {}
-
-          // Baseline becomes the machine text (so the first human edit can be detected/saved).
-          try { setLangBaseline_(activeLanguage, translationsDb[activeLanguage].fields); } catch (_e1) {}
-
-          // Apply translated text immediately
-          applyTranslatedFields_(translationsDb[activeLanguage].fields);
-
-          updateLangDot_();
-
-          __ARTSTART_TRANSLATION_ACTION__ = false;
-
-          // IMPORTANT:
-          // Do NOT immediately fetchJob() here.
-          // A fast rehydrate can arrive before the translated payload is fully reflected in getArtStartJob,
-          // and populateJob() will repaint the active language with empty strings (appears like a "save wipe").
-          //
-          // Instead, persist the machine translation locally so any later refresh cannot blank the UI.
-          try { saveLangDraft_(jobIdNow, activeLanguage, translationsDb[activeLanguage].fields); } catch (_eD) {}
-        })
-        .catch(function (err) {
-          console.error(err);
-          __ARTSTART_TRANSLATION_ACTION__ = false;
-          setSaveStatus('Translate failed – try again');
-        });
     });
   });
 }
