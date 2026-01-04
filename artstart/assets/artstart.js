@@ -2274,7 +2274,7 @@ function saveDraft(jobId, langOverride) {
   }
 
   function fetchJsonWithTimeout_(url, timeoutMs) {
-    var ms = (typeof timeoutMs === 'number' && timeoutMs > 0) ? timeoutMs : 12000;
+    var ms = (typeof timeoutMs === 'number' && timeoutMs > 0) ? timeoutMs : 25000;
 
     // AbortController supported in modern browsers; fall back to normal fetch if missing.
     var ctrl = null;
@@ -2290,6 +2290,9 @@ function saveDraft(jobId, langOverride) {
     } catch (e2) { ctrl = null; }
 
     var opts = ctrl ? { signal: ctrl.signal } : {};
+    // Be explicit; we’re on GitHub Pages calling Apps Script.
+    opts.cache = 'no-store';
+    opts.credentials = 'omit';
 
     return fetch(url, opts)
       .then(function (r) {
@@ -2312,6 +2315,57 @@ function saveDraft(jobId, langOverride) {
       });
   }
 
+  // Fallback loader: XHR uses a different network path than fetch() and can succeed when fetch stalls.
+  function fetchJsonViaXhr_(url, timeoutMs) {
+    var ms = (typeof timeoutMs === 'number' && timeoutMs > 0) ? timeoutMs : 25000;
+
+    return new Promise(function (resolve, reject) {
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.timeout = ms;
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState !== 4) return;
+
+          var status = xhr.status || 0;
+          var txt = xhr.responseText || '';
+
+          if (status >= 200 && status < 300) {
+            try {
+              resolve(JSON.parse(txt));
+            } catch (e) {
+              var err = new Error('Non-JSON response from API');
+              err._raw = txt;
+              err._status = status;
+              reject(err);
+            }
+            return;
+          }
+
+          var err2 = new Error('HTTP ' + status);
+          err2._raw = txt;
+          err2._status = status;
+          reject(err2);
+        };
+
+        xhr.ontimeout = function () {
+          var errT = new Error('XHR timeout');
+          errT.name = 'AbortError';
+          reject(errT);
+        };
+
+        xhr.onerror = function () {
+          reject(new Error('XHR network error'));
+        };
+
+        xhr.send(null);
+      } catch (e2) {
+        reject(e2);
+      }
+    });
+  }
+
   function fetchJob(jobId) {
     currentJobId = jobId || '';
     clearError();
@@ -2322,7 +2376,16 @@ function saveDraft(jobId, langOverride) {
     // DEBUG: show the exact endpoint being called
     try { console.log('ArtStart fetchJob URL:', url); } catch (_e0) {}
 
-    fetchJsonWithTimeout_(url, 12000)
+    fetchJsonWithTimeout_(url, 25000)
+      .catch(function (err) {
+        // If fetch() timed out / got stuck, try XHR as a fallback.
+        try {
+          if (err && String(err.name || '').toLowerCase().indexOf('abort') !== -1) {
+            return fetchJsonViaXhr_(url, 25000);
+          }
+        } catch (_e0b) {}
+        throw err;
+      })
       .then(function (json) {
         if (!json || !json.ok) {
           throw new Error((json && json.error) || 'Unknown error');
