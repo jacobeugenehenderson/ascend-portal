@@ -809,11 +809,15 @@ body.ascend-app-body {
   top: calc(100% + 8px);
   z-index: 50;
   display: none;
-  padding: 6px;
+
+  /* One continuous tray (outer corners only) */
+  padding: 0;
   border-radius: 14px;
-  border: 1px solid rgba(15,23,42,0.10);
-  background: #ffffff;
-  box-shadow: 0 16px 40px rgba(15,23,42,0.18);
+  overflow: hidden;
+
+  border: 1px solid rgba(15,23,42,0.12);
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 26px 70px rgba(15,23,42,0.22);
 }
 
 .artstart-lang-menu.is-open{
@@ -823,17 +827,40 @@ body.ascend-app-body {
 .artstart-lang-item{
   display: flex;
   align-items: center;
-  padding: 10px 10px;
-  border-radius: 10px;
+
+  /* Flat, full-width rows (no stacked rounded pills) */
+  padding: 12px 14px;
+  border-radius: 0;
   cursor: pointer;
+
+  /* Subtle separators */
+  border-bottom: 1px solid rgba(15,23,42,0.08);
+}
+
+.artstart-lang-item:last-child{
+  border-bottom: 0;
+}
+
+/* Zebra striping */
+.artstart-lang-item:nth-child(odd){
+  background: rgba(240,246,252,0.65);
+}
+
+.artstart-lang-item:nth-child(even){
+  background: rgba(255,255,255,0.65);
 }
 
 .artstart-lang-item:hover{
-  background: rgba(15,23,42,0.04);
+  background: color-mix(
+    in srgb,
+    var(--ascend-app-accent) 10%,
+    rgba(240,246,252,0.92)
+  );
 }
 
 .artstart-lang-label{
-  font-weight: 700;
+  /* Lighter (700 is why it feels shouty) */
+  font-weight: 520;
 }
 
 /* =========================================================
