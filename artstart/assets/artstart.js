@@ -171,27 +171,32 @@ function updateLangDot_() {
   cacheLangOptionLabelsOnce_();
   paintLangOptionSquares_();
 
-  // Ensure our custom picker exists (colored squares live here)
-  ensureLangPickerBuilt_();
-
   // Determine decoupled state for the ACTIVE language (localStorage is authoritative)
   var humanEdited = isLangHumanEdited_(activeLanguage);
+
+  // Square regime:
+  // - EN: hidden
+  // - non-EN machine-linked: solid blue (default .artstart-language-square)
+  // - non-EN human-edited: empty orange (add .is-empty)
+  if (langDot) {
+    if (!activeLanguage || activeLanguage === baseLanguage) {
+      langDot.classList.add('is-hidden');
+      langDot.classList.remove('is-empty');
+    } else {
+      langDot.classList.remove('is-hidden');
+      langDot.classList.toggle('is-empty', !!humanEdited);
+    }
+  }
 
   // Red re-translate button appears ONLY when:
   // - non-EN active, AND
   // - human-edited/decoupled
   if (langRetransBtn) {
-    var show = (activeLanguage !== baseLanguage) && humanEdited;
+    var show = (activeLanguage !== baseLanguage) && !!humanEdited;
     langRetransBtn.classList.toggle('is-hidden', !show);
   }
 
-  // Keep legacy square hidden (we use the button instead)
-  if (langDot) {
-    langDot.classList.add('is-hidden');
-    langDot.classList.remove('is-empty');
-  }
-
-  // Update the visible picker button + menu rows
+  // Keep the custom picker button/menu squares in sync
   updateLangPickerUI_();
 }
 
@@ -2131,16 +2136,23 @@ function saveDraft(jobId, langOverride) {
     langSelect = document.getElementById('working-language');
     langDot = document.getElementById('working-language-square');
 
+    // Build the custom picker UI (colored squares) and hide the native select.
+    ensureLangPickerBuilt_();
+
     // Ensure the dropdown options get their per-language square indicators
     cacheLangOptionLabelsOnce_();
     paintLangOptionSquares_();
+
+    // Sync picker button label + square immediately
+    updateLangPickerUI_();
 
     // Legacy square is no longer the action control; we use a dedicated red button.
     if (langDot) {
       langDot.classList.add('is-hidden');
     }
 
-    // Create the red, unlabeled re-translate square button inline to the LEFT of the dropdown
+    // Create the red, unlabeled re-translate square button inline next to the language square
+    // Order: [square] [red] [select]
     if (langSelect && !langRetransBtn) {
       langRetransBtn = document.createElement('button');
       langRetransBtn.type = 'button';
@@ -2149,7 +2161,15 @@ function saveDraft(jobId, langOverride) {
       langRetransBtn.setAttribute('title', 'Re-translate from English');
 
       try {
-        langSelect.parentNode.insertBefore(langRetransBtn, langSelect);
+        if (langDot && langDot.parentNode) {
+          if (langDot.nextSibling) {
+            langDot.parentNode.insertBefore(langRetransBtn, langDot.nextSibling);
+          } else {
+            langDot.parentNode.appendChild(langRetransBtn);
+          }
+        } else {
+          langSelect.parentNode.insertBefore(langRetransBtn, langSelect);
+        }
       } catch (e) {}
 
       // Must be mousedown so it runs BEFORE the focused field blurs (blur triggers autosave).
@@ -2270,8 +2290,29 @@ function saveDraft(jobId, langOverride) {
               throw new Error((payload && payload.error) || 'Translate failed');
             }
 
+            // Record this as a machine-linked translation immediately (prevents baseline race).
+            translationsDb = translationsDb || {};
+            translationsDb[activeLanguage] = {
+              human: false,
+              at: (new Date()).toISOString(),
+              fields: {
+                workingHeadline: String(((payload.fields || {}).workingHeadline) || ''),
+                workingSubhead:  String(((payload.fields || {}).workingSubhead) || ''),
+                workingCta:      String(((payload.fields || {}).workingCta) || ''),
+                workingBullets:  String(((payload.fields || {}).workingBullets) || '')
+              }
+            };
+
+            // Persist "machine" state so async refreshes can't misclassify.
+            try { saveLangState_(jobIdNow, activeLanguage, 'machine'); } catch (_e0) {}
+
+            // Baseline becomes the machine text (so the first human edit can be detected/saved).
+            try { setLangBaseline_(activeLanguage, translationsDb[activeLanguage].fields); } catch (_e1) {}
+
             // Apply translated text immediately
-            applyTranslatedFields_(payload.fields || {});
+            applyTranslatedFields_(translationsDb[activeLanguage].fields);
+
+            updateLangDot_();
 
             // Refresh job payload so translationsDb + dot state are canonical
             // BUT keep the user’s selected language from snapping back to base.
