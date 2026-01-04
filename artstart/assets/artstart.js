@@ -15,7 +15,12 @@ function getJobIdFromQuery() {
   var params = new URLSearchParams(window.location.search || '');
   // accept both spellings
   return params.get('jobid') || params.get('jobId');
-}
+  }
+
+  // Expose helper for later (non-IIFE) boot code.
+  window.getJobIdFromQuery = window.getJobIdFromQuery || getJobIdFromQuery;
+
+  
 
 // Optional shared config (if ../../assets/ascend.js exposes these, we use them; otherwise we fail loudly)
 var FILEROOM_API_BASE = window.FILEROOM_API_BASE || '';
@@ -2034,8 +2039,8 @@ function saveDraft(jobId, langOverride) {
   // Prevent duplicate listener attachment across fetchJob() refreshes.
   // fetchJob() can be called repeatedly (language switching, refreshes, etc.).
   // Guard to prevent duplicate blur / unload listeners across refreshes
-var __ARTSTART_BLUR_LISTENERS_JOB__ =
-  window.__ARTSTART_BLUR_LISTENERS_JOB__ || '';
+var __ARTSTART_BLUR_LISTENERS_JOB__ = __ARTSTART_BLUR_LISTENERS_JOB__ || '';
+__ARTSTART_BLUR_LISTENERS_JOB__ = window.__ARTSTART_BLUR_LISTENERS_JOB__ || __ARTSTART_BLUR_LISTENERS_JOB__;
 
   function attachBlurListeners(jobId) {
     // Already attached for this job → do nothing.
@@ -2275,6 +2280,9 @@ var __ARTSTART_BLUR_LISTENERS_JOB__ =
   window.artStartDebug = window.artStartDebug || {};
   window.artStartDebug.populateJob = populateJob;
   window.artStartDebug.attachBlurListeners = attachBlurListeners;
+
+  var __ARTSTART_BLUR_LISTENERS_JOB__ = __ARTSTART_BLUR_LISTENERS_JOB__ || '';
+  var getJobIdFromQuery = window.getJobIdFromQuery;
 
   function init() {
     setUserLabel();
