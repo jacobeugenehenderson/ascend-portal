@@ -1898,9 +1898,9 @@ if (code === baseLanguage) {
           var jobIdNow2 = currentJobId || (job && job.id) || getJobIdFromQuery();
           if (jobIdNow2) {
             var urlT = ARTSTART_API_BASE
-              + '?action=getArtStartTranslatedFields'
+              + '?action=translateArtStartFields'
               + '&jobId=' + encodeURIComponent(String(jobIdNow2))
-              + '&lang=' + encodeURIComponent(String(keyUpper));
+              + '&targetLanguage=' + encodeURIComponent(String(keyUpper));
 
             fetch(urlT)
               .then(function (r) { return r.json(); })
