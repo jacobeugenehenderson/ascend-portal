@@ -146,14 +146,13 @@ function isLangHumanEdited_(lang) {
 }
 
 function paintLangOptionSquares_() {
-  // Native <select><option> rows cannot reliably render Ascend-colored squares.
-  // We now render the real square regime inside a custom menu (see below).
-  // This function is retained ONLY to scrub any legacy □/■ prefixes.
   if (!langSelect || !langSelect.options) return;
 
   try {
     Array.prototype.forEach.call(langSelect.options, function (opt) {
       if (!opt) return;
+
+      var lang = String(opt.value || '').trim().toUpperCase();
 
       var baseLabel = opt.getAttribute('data-base-label');
       if (!baseLabel) {
@@ -161,18 +160,26 @@ function paintLangOptionSquares_() {
         opt.setAttribute('data-base-label', baseLabel);
       }
 
-      opt.textContent = baseLabel;
+      // Base language gets no square prefix
+      if (!lang || lang === baseLanguage) {
+        opt.textContent = baseLabel;
+        return;
+      }
+
+      // Solid square = linked/machine
+      // Empty square = human edited/decoupled
+      var humanEdited = isLangHumanEdited_(lang);
+      var sq = humanEdited ? '\u25A1' : '\u25A0'; // □ / ■
+
+      opt.textContent = sq + ' ' + baseLabel;
     });
   } catch (e) {}
 }
 
 function updateLangDot_() {
-  // Always scrub legacy □/■ prefixes if any linger
+  // Paint squares INSIDE the native dropdown options
   cacheLangOptionLabelsOnce_();
   paintLangOptionSquares_();
-
-  // Ensure our custom picker exists (colored squares live here)
-  ensureLangPickerBuilt_();
 
   // Determine decoupled state for the ACTIVE language (localStorage is authoritative)
   var humanEdited = isLangHumanEdited_(activeLanguage);
@@ -190,228 +197,6 @@ function updateLangDot_() {
     langDot.classList.add('is-hidden');
     langDot.classList.remove('is-empty');
   }
-
-  // Update the visible picker button + menu rows
-  updateLangPickerUI_();
-}
-
-/* ============================================================
-   LANGUAGE PICKER — BASELINE + CUSTOM MENU (COLORED SQUARES)
-   Blue filled  = machine-linked
-   Orange empty = human-edited / decoupled
-   Red filled   = manual retranslate button (already exists)
-   ============================================================ */
-
-var __LANG_BASELINE_SIGS__ = {}; // lang -> signature
-var __LANG_PICKER_BUILT__ = false;
-var __LANG_PICKER_WRAP__ = null;
-var __LANG_PICKER_BTN__ = null;
-var __LANG_PICKER_BTN_LABEL__ = null;
-var __LANG_PICKER_MENU__ = null;
-
-function _readWorkingFields_() {
-  var f = {};
-  var v;
-
-  v = document.getElementById('working-headline'); if (v) f.workingHeadline = v.value || '';
-  v = document.getElementById('working-subhead');  if (v) f.workingSubhead  = v.value || '';
-  v = document.getElementById('working-cta');      if (v) f.workingCta      = v.value || '';
-  v = document.getElementById('working-bullets');  if (v) f.workingBullets  = v.value || '';
-
-  return f;
-}
-
-function _fieldsSig_(f) {
-  var x = f || {};
-  return JSON.stringify([
-    String(x.workingHeadline || ''),
-    String(x.workingSubhead || ''),
-    String(x.workingCta || ''),
-    String(x.workingBullets || '')
-  ]);
-}
-
-function setLangBaseline_(lang, fields) {
-  lang = String(lang || '').trim().toUpperCase();
-  if (!lang || lang === baseLanguage) return;
-  __LANG_BASELINE_SIGS__[lang] = _fieldsSig_(fields || {});
-}
-
-function langHasChangedFromBaseline_(lang, fields) {
-  lang = String(lang || '').trim().toUpperCase();
-  if (!lang || lang === baseLanguage) return false;
-
-  var sigNow = _fieldsSig_(fields || {});
-  var sigBase = __LANG_BASELINE_SIGS__[lang];
-
-  // If we don't yet have a baseline, do NOT assume "human" (prevents false positives).
-  if (!sigBase) return false;
-
-  return sigNow !== sigBase;
-}
-
-function clearLangDraft_(jobId, lang) {
-  try {
-    if (!jobId || !lang || !window.localStorage) return;
-    window.localStorage.removeItem(_langDraftKey_(jobId, lang));
-  } catch (e) {}
-}
-
-function ensureLangPickerBuilt_() {
-  if (__LANG_PICKER_BUILT__) return;
-  if (!langSelect) return;
-
-  try {
-    // Hide the native select (we keep it for state + change events)
-    langSelect.classList.add('is-hidden');
-
-    __LANG_PICKER_WRAP__ = document.createElement('div');
-    __LANG_PICKER_WRAP__.className = 'artstart-langpicker';
-
-    __LANG_PICKER_BTN__ = document.createElement('button');
-    __LANG_PICKER_BTN__.type = 'button';
-    __LANG_PICKER_BTN__.className = 'artstart-langpicker-btn';
-    __LANG_PICKER_BTN__.setAttribute('aria-haspopup', 'listbox');
-    __LANG_PICKER_BTN__.setAttribute('aria-expanded', 'false');
-
-    var sq = document.createElement('span');
-    sq.className = 'artstart-language-square';
-    sq.setAttribute('aria-hidden', 'true');
-
-    __LANG_PICKER_BTN_LABEL__ = document.createElement('span');
-    __LANG_PICKER_BTN_LABEL__.className = 'artstart-langpicker-label';
-
-    __LANG_PICKER_BTN__.appendChild(sq);
-    __LANG_PICKER_BTN__.appendChild(__LANG_PICKER_BTN_LABEL__);
-
-    __LANG_PICKER_MENU__ = document.createElement('div');
-    __LANG_PICKER_MENU__.className = 'artstart-langpicker-menu is-hidden';
-    __LANG_PICKER_MENU__.setAttribute('role', 'listbox');
-
-    // Insert wrapper where the select lives
-    var parent = langSelect.parentNode;
-    parent.insertBefore(__LANG_PICKER_WRAP__, langSelect);
-    __LANG_PICKER_WRAP__.appendChild(__LANG_PICKER_BTN__);
-    __LANG_PICKER_WRAP__.appendChild(__LANG_PICKER_MENU__);
-    __LANG_PICKER_WRAP__.appendChild(langSelect);
-
-    __LANG_PICKER_BTN__.addEventListener('click', function () {
-      var open = !__LANG_PICKER_MENU__.classList.contains('is-hidden');
-      if (open) {
-        __LANG_PICKER_MENU__.classList.add('is-hidden');
-        __LANG_PICKER_BTN__.setAttribute('aria-expanded', 'false');
-        return;
-      }
-
-      renderLangPickerMenu_();
-      __LANG_PICKER_MENU__.classList.remove('is-hidden');
-      __LANG_PICKER_BTN__.setAttribute('aria-expanded', 'true');
-    });
-
-    document.addEventListener('mousedown', function (ev) {
-      if (!__LANG_PICKER_WRAP__) return;
-      if (__LANG_PICKER_MENU__.classList.contains('is-hidden')) return;
-      if (__LANG_PICKER_WRAP__.contains(ev.target)) return;
-      __LANG_PICKER_MENU__.classList.add('is-hidden');
-      __LANG_PICKER_BTN__.setAttribute('aria-expanded', 'false');
-    });
-
-    __LANG_PICKER_BUILT__ = true;
-  } catch (e) {}
-}
-
-function renderLangPickerMenu_() {
-  if (!__LANG_PICKER_MENU__ || !langSelect || !langSelect.options) return;
-
-  __LANG_PICKER_MENU__.innerHTML = '';
-
-  try {
-    Array.prototype.forEach.call(langSelect.options, function (opt) {
-      if (!opt) return;
-
-      var lang = String(opt.value || '').trim().toUpperCase();
-
-      var baseLabel = opt.getAttribute('data-base-label');
-      if (!baseLabel) {
-        baseLabel = String(opt.textContent || '').replace(/^[\u25A0\u25A1]\s*/g, '');
-        opt.setAttribute('data-base-label', baseLabel);
-      }
-
-      var row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'artstart-langpicker-item';
-      row.setAttribute('role', 'option');
-      row.setAttribute('data-lang', lang);
-
-      if (lang === activeLanguage) {
-        row.classList.add('is-active');
-        row.setAttribute('aria-selected', 'true');
-      } else {
-        row.setAttribute('aria-selected', 'false');
-      }
-
-      // Square (non-EN only)
-      if (lang && lang !== baseLanguage) {
-        var sq = document.createElement('span');
-        sq.className = 'artstart-language-square';
-        if (isLangHumanEdited_(lang)) sq.classList.add('is-empty');
-        sq.setAttribute('aria-hidden', 'true');
-        row.appendChild(sq);
-      } else {
-        var spacer = document.createElement('span');
-        spacer.className = 'artstart-langpicker-spacer';
-        spacer.setAttribute('aria-hidden', 'true');
-        row.appendChild(spacer);
-      }
-
-      var label = document.createElement('span');
-      label.className = 'artstart-langpicker-item-label';
-      label.textContent = baseLabel;
-
-      row.appendChild(label);
-
-      row.addEventListener('click', function () {
-        try {
-          langSelect.value = lang;
-          var ev = document.createEvent('HTMLEvents');
-          ev.initEvent('change', true, true);
-          langSelect.dispatchEvent(ev);
-        } catch (e) {}
-
-        __LANG_PICKER_MENU__.classList.add('is-hidden');
-        __LANG_PICKER_BTN__.setAttribute('aria-expanded', 'false');
-      });
-
-      __LANG_PICKER_MENU__.appendChild(row);
-    });
-  } catch (e) {}
-}
-
-function updateLangPickerUI_() {
-  if (!__LANG_PICKER_BUILT__ || !__LANG_PICKER_BTN__ || !langSelect) return;
-
-  try {
-    // Button label reflects active option label
-    var opt = langSelect.options[langSelect.selectedIndex];
-    var baseLabel = opt ? (opt.getAttribute('data-base-label') || String(opt.textContent || '').replace(/^[\u25A0\u25A1]\s*/g, '')) : '';
-    if (__LANG_PICKER_BTN_LABEL__) __LANG_PICKER_BTN_LABEL__.textContent = baseLabel;
-
-    // Button square reflects active language state (non-EN only)
-    var sq = __LANG_PICKER_BTN__.querySelector('.artstart-language-square');
-    if (sq) {
-      if (!activeLanguage || activeLanguage === baseLanguage) {
-        sq.style.opacity = '0';
-      } else {
-        sq.style.opacity = '1';
-        sq.classList.toggle('is-empty', isLangHumanEdited_(activeLanguage));
-      }
-    }
-
-    // If menu is open, re-render rows to update squares/active highlight
-    if (__LANG_PICKER_MENU__ && !__LANG_PICKER_MENU__.classList.contains('is-hidden')) {
-      renderLangPickerMenu_();
-    }
-  } catch (e) {}
 }
 
 function retranslateLanguage_(lang) {
@@ -453,15 +238,10 @@ function retranslateLanguage_(lang) {
       activeLanguage = lang;
       saveActiveLanguage_(jobIdNow, activeLanguage);
 
-      // Persist relink state + clear any stale human draft
-      try { saveLangState_(jobIdNow, lang, 'machine'); } catch (_e0) {}
-      try { clearLangDraft_(jobIdNow, lang); } catch (_e1) {}
+      // Persist relink state so refreshes can't spring back to "human edited".
+      try { saveLangState_(jobIdNow, lang, 'machine'); } catch (_e) {}
 
       applyTranslatedFields_(data.fields);
-
-      // Baseline becomes the machine text (prevents blur-save from re-marking as human)
-      try { setLangBaseline_(lang, data.fields); } catch (_e2) {}
-
       updateLangDot_();
       setSaveStatus('Saved');
       __ARTSTART_TRANSLATION_ACTION__ = false;
@@ -1661,12 +1441,6 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
       Object.keys(langsToMerge).forEach(function (lang) {
         if (!lang || lang === baseLanguage) return;
-
-        // Drafts are only authoritative when the persisted state says "human".
-        // This prevents machine-linked languages from being falsely marked as edited.
-        var st = loadLangState_(jobKeyDraft, lang);
-        if (st !== 'human') return;
-
         var d = loadLangDraft_(jobKeyDraft, lang);
         if (!d || !d.fields) return;
 
@@ -1680,20 +1454,10 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
           workingCta:      String(d.fields.workingCta || ''),
           workingBullets:  String(d.fields.workingBullets || '')
         };
+
+        try { saveLangState_(jobKeyDraft, lang, 'human'); } catch (_e3) {}
       });
     } catch (_e4) {}
-
-    // Establish baselines for every available translation record (required for "changed vs baseline" logic).
-    try {
-      translationsDb = translationsDb || {};
-      Object.keys(translationsDb).forEach(function (l) {
-        var L = String(l || '').trim().toUpperCase();
-        if (!L || L === baseLanguage) return;
-        var rec = translationsDb[L];
-        if (!rec || !rec.fields) return;
-        setLangBaseline_(L, rec.fields);
-      });
-    } catch (_eB) {}
 
     // Populate language dropdown
     if (langSelect) {
@@ -1891,15 +1655,6 @@ function saveDraft(jobId, langOverride) {
       workingCta: payload.workingCta,
       workingBullets: payload.workingBullets
     };
-
-    // If nothing changed vs baseline, do NOT mark human or persist drafts.
-    try {
-      if (!langHasChangedFromBaseline_(langToSave, payload)) {
-        setSaveStatus('Saved');
-        updateLangDot_();
-        return;
-      }
-    } catch (_e0) {}
   }
 
   var url =
@@ -1938,9 +1693,6 @@ function saveDraft(jobId, langOverride) {
 
         // Persist the draft locally so fetchJob() can't overwrite it while the network save catches up.
         try { saveLangDraft_(jobId, langToSave, translationsDb[langToSave].fields); } catch (_e2) {}
-
-        // Baseline becomes the saved human text (prevents repeated re-marking)
-        try { setLangBaseline_(langToSave, translationsDb[langToSave].fields); } catch (_e3) {}
 
         // Only update the UI indicator if we saved the currently viewed language
         if (langToSave === activeLanguage) updateLangDot_();
