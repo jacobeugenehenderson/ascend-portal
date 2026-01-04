@@ -2080,7 +2080,6 @@ function saveDraft(jobId, langOverride) {
     };
 
     // If nothing changed vs baseline, do NOT mark human or persist drafts.
-    // IMPORTANT: return a resolved Promise so callers can safely chain.
     try {
       if (!langHasChangedFromBaseline_(langToSave, payload)) {
         setSaveStatus('Saved');
@@ -2109,13 +2108,13 @@ function saveDraft(jobId, langOverride) {
     url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
   });
 
-  // IMPORTANT: return the Promise so language switching can wait on base saves.
-  return fetchJsonWithTimeout_(url)
+  return fetch(url)
+    .then(function (r) { return r.json(); })
     .then(function (data) {
-      if (!data || !data.success) {
-        console.warn('ArtStart saveDraft: non-success response', data);
+      if (!data || data.success === false) {
+        console.warn('ArtStart saveDraft: backend error', data);
         setSaveStatus('Save error');
-        return;
+        return { success: false, data: data };
       }
 
       // Track human edit state deterministically (for the language we actually saved)
@@ -2144,8 +2143,7 @@ function saveDraft(jobId, langOverride) {
         // Persist the draft locally so fetchJob() can't overwrite it while the network save catches up.
         try { saveLangDraft_(jobId, langToSave, translationsDb[langToSave].fields); } catch (_e2) {}
 
-        // Baseline becomes the saved human text (prevents repeated re-marking)
-       
+        // Baseline becomes the human text (so subsequent edits can be detected).
         try { setLangBaseline_(langToSave, translationsDb[langToSave].fields); } catch (_e3) {}
 
         // Only update the UI indicator if we saved the currently viewed language
@@ -2153,12 +2151,15 @@ function saveDraft(jobId, langOverride) {
       }
 
       setSaveStatus('Saved');
+      return { success: true, data: data };
     })
     .catch(function (err) {
       console.warn('ArtStart saveDraft: request failed', err);
       setSaveStatus('Save error');
+      return { success: false, error: String(err) };
     });
 }
+
   // Prevent duplicate listener attachment across fetchJob() refreshes.
   // fetchJob() can be called repeatedly (language switching, refreshes, etc.).
   // Guard to prevent duplicate blur / unload listeners across refreshes
