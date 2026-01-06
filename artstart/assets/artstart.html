@@ -513,19 +513,44 @@
         overflow: hidden;
       }
 
-      /* DIGITAL should feel more expansive: push text closer to the edge. */
+      /* DIGITAL should feel expansive */
       .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
-        inset: 4%;
-        padding: 4%;
+        inset: 2%;
+        padding: 2%;
       }
 
-      /* Extra assist for very wide canvases (hero banners, etc.) */
+      /* Ultra-wide hero banners: reduce horizontal fear, keep vertical safety */
       @media (min-aspect-ratio: 16/7) {
         .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
-          inset: 3%;
-          padding: 3.5%;
+          inset: 2% 1.5%;
+          padding: 2% 1.5%;
+
+          /* HORIZONTAL MODE BEHAVIOR (digital only):
+             Let content take the space that is available. */
+          grid-template-rows: auto auto auto 1fr auto;
+        }
+
+        /* In wide banners, "centered inside a band" reads timid—start at the top. */
+        .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-cell {
+          align-items: flex-start;
         }
       }
+
+      /* If the unit is basically a headline-only banner, let it claim the canvas.
+         Guarded so older browsers simply ignore it. */
+      @supports selector(.x:has(.y)) {
+        @media (min-aspect-ratio: 16/7) {
+          .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe:has(#canvas-subhead:empty):has(#canvas-cta:empty):has(#canvas-body:empty):has(#canvas-website:empty):has(#canvas-email:empty) {
+            grid-template-rows: 1fr 0 0 0 0;
+            gap: 0;
+          }
+
+          /* When headline is the only occupant, center it vertically for “hero” energy. */
+          .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe:has(#canvas-subhead:empty):has(#canvas-cta:empty):has(#canvas-body:empty):has(#canvas-website:empty):has(#canvas-email:empty) .artstart-canvas-cell {
+            align-items: center;
+          }
+        }
+      }      
 
       .artstart-canvas-cell {
         display: flex;
