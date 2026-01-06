@@ -1467,36 +1467,53 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     }
   }
 
-  function autoscaleCanvasBands() {
-    var safe = document.querySelector('.artstart-canvas-safe');
-    if (!safe) return;
+function autoscaleCanvasBands() {
+  var safe = document.querySelector('.artstart-canvas-safe');
+  if (!safe) return;
 
-    // Cells (bands) in order: 15/15/20/40/10
-    var cells = safe.querySelectorAll('.artstart-canvas-cell, .artstart-canvas-cell-meta');
-    if (!cells || cells.length < 5) return;
+  var cells = safe.querySelectorAll('.artstart-canvas-cell, .artstart-canvas-cell-meta');
+  if (!cells || cells.length < 5) return;
 
-    var headlineCell = cells[0];
-    var subheadCell = cells[1];
-    var ctaCell = cells[2];
-    var bodyCell = cells[3];
-    var metaCell = cells[4];
+  var headlineCell = cells[0];
+  var subheadCell = cells[1];
+  var ctaCell = cells[2];
+  var bodyCell = cells[3];
+  var metaCell = cells[4];
 
-    var headlineEl = document.getElementById('canvas-headline');
-    var subheadEl = document.getElementById('canvas-subhead');
-    var ctaEl = document.getElementById('canvas-cta');
-    var bodyEl = document.getElementById('canvas-body');
-    var websiteEl = document.getElementById('canvas-website');
-    var emailEl = document.getElementById('canvas-email');
+  var headlineEl = document.getElementById('canvas-headline');
+  var subheadEl = document.getElementById('canvas-subhead');
+  var ctaEl = document.getElementById('canvas-cta');
+  var bodyEl = document.getElementById('canvas-body');
+  var websiteEl = document.getElementById('canvas-website');
+  var emailEl = document.getElementById('canvas-email');
 
-    // Fit each band by true font-size autoscale.
-    _fitRowToCellByFontSize(headlineEl, headlineCell, 1.2, 6, 999);
-    _fitRowToCellByFontSize(subheadEl, subheadCell, 1.2, 6, 999);
-    _fitRowToCellByFontSize(ctaEl, ctaCell, 1.2, 6, 999);
-    _fitRowToCellByFontSize(bodyEl, bodyCell, 1.3, 6, 999);
+  // Detect headline-only state
+  var hasHeadline = headlineEl && headlineEl.textContent.trim();
+  var hasOtherText =
+    (subheadEl && subheadEl.textContent.trim()) ||
+    (ctaEl && ctaEl.textContent.trim()) ||
+    (bodyEl && bodyEl.textContent.trim()) ||
+    (websiteEl && websiteEl.textContent.trim()) ||
+    (emailEl && emailEl.textContent.trim());
 
-    // Meta: website + email share the same band and must both fit.
-    _fitMetaBlock(metaCell, websiteEl, emailEl, 1.2, 6, 999);
+  // Horizontal + digital hero behavior:
+  // allow headline to consume full vertical space
+  var box = document.getElementById('format-canvas-box');
+  var isDigital = box && box.getAttribute('data-media-kind') === 'digital';
+  var isHorizontal = safe.offsetWidth > safe.offsetHeight * 1.2;
+
+  if (hasHeadline && !hasOtherText && isDigital && isHorizontal) {
+    _fitRowToCellByFontSize(headlineEl, safe, 1.1, 6, 999);
+    return;
   }
+
+  // Default behavior (unchanged)
+  _fitRowToCellByFontSize(headlineEl, headlineCell, 1.2, 6, 999);
+  _fitRowToCellByFontSize(subheadEl, subheadCell, 1.2, 6, 999);
+  _fitRowToCellByFontSize(ctaEl, ctaCell, 1.2, 6, 999);
+  _fitRowToCellByFontSize(bodyEl, bodyCell, 1.3, 6, 999);
+  _fitMetaBlock(metaCell, websiteEl, emailEl, 1.2, 6, 999);
+}
 
   function syncCanvasTextFromFields() {
     var box = document.getElementById('format-canvas-box');
