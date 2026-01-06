@@ -2178,6 +2178,21 @@ function saveDraft(jobId, langOverride) {
 
   var isBase = (langToSave === baseLanguage);
 
+// Guard: on unload, never persist a blank Working Draft snapshot.
+// This prevents "Big Save" from clobbering a language with empty fields during boot/hydration races.
+try {
+  var h0 = String((payload && payload.workingHeadline) || '').trim();
+  var s0 = String((payload && payload.workingSubhead) || '').trim();
+  var c0 = String((payload && payload.workingCta) || '').trim();
+  var b0 = String((payload && payload.workingBullets) || '').trim();
+
+  // If the translatable quartet is blank, treat this as an unsafe unload-save and bail out.
+  // (Users do not intentionally clear *all* fields via tab-close; this is almost always a race/blank UI state.)
+  if (!h0 && !s0 && !c0 && !b0) {
+    return;
+  }
+} catch (_eBlank0) {}
+
   // Non-EN saves are translation-only: never persist EN-only meta fields or QR fields per-language.
   if (!isBase) {
     payload = {
