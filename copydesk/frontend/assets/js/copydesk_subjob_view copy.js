@@ -170,39 +170,6 @@
   }
 
   // ---------------------------
-  // Closed-state header helpers (Bucket B)
-  // ---------------------------
-  function applyClosedHeader_(job) {
-    document.body.classList.add('copydesk-is-closed');
-
-    var metaEl = document.getElementById('subjob-closed-meta');
-    if (!metaEl) return;
-
-    var translator = '';
-    var dateStr = '';
-
-    if (job && job.collaborators) {
-      if (typeof job.collaborators === 'string') translator = job.collaborators.trim();
-      else if (Array.isArray(job.collaborators) && job.collaborators.length) {
-        translator = String(job.collaborators[0] || '').trim();
-      }
-    }
-
-    if (job && job.finishedAt) {
-      try {
-        var d = new Date(job.finishedAt);
-        dateStr = d.toLocaleDateString();
-      } catch (e) {}
-    }
-
-    var parts = [];
-    if (translator) parts.push('Translated by ' + translator);
-    if (dateStr) parts.push(dateStr);
-
-    metaEl.textContent = parts.join(' · ');
-  }
-
-  // ---------------------------
   // Styles injection (authoritative)
   // ---------------------------
   function injectStylesCss_(cssText) {
@@ -660,13 +627,7 @@
     var btn = document.getElementById('subjob-finish-btn');
     if (!btn) return;
 
-    if (locked) {
-      btn.style.display = 'none';
-    } else {
-      btn.style.display = '';
-    }
-
-    btn.disabled = false;
+    btn.disabled = !!locked;
 
     if (btn.__bound) return;
     btn.__bound = true;
@@ -848,13 +809,8 @@
 
         var statusLower = String((job && job.status) || '').toLowerCase();
         var locked = (statusLower === 'locked' || statusLower === 'archived' || statusLower === 'final');
-
-        if (locked) {
-          setStatus_('ok', 'Locked. Editing is disabled.', false);
-          applyClosedHeader_(job);
-        } else {
-          setStatus_('ok', 'Ready (autosave on).', false);
-        }
+        if (locked) setStatus_('ok', 'Locked. Editing is disabled.', false);
+        else setStatus_('ok', 'Ready (autosave on).', false);
 
         bindFinishButton_(locked);
 
