@@ -493,7 +493,7 @@
       .artstart-canvas-safe {
         position: absolute;
 
-        /* Margin from bleed/trim zone */
+        /* Margin from bleed/trim zone (PRINT DEFAULT) */
         inset: 8%;
 
         box-sizing: border-box;
@@ -503,7 +503,7 @@
         /* Keep trim stroke */
         border: 1px solid #ec4899;
 
-        /* The actual “breathing room” you’re asking for */
+        /* Internal breathing room (PRINT DEFAULT) */
         padding: 6%;
 
         display: grid;
@@ -511,6 +511,20 @@
         gap: 4px;
 
         overflow: hidden;
+      }
+
+      /* DIGITAL should feel more expansive: push text closer to the edge. */
+      .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
+        inset: 4%;
+        padding: 4%;
+      }
+
+      /* Extra assist for very wide canvases (hero banners, etc.) */
+      @media (min-aspect-ratio: 16/7) {
+        .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
+          inset: 3%;
+          padding: 3.5%;
+        }
       }
 
       .artstart-canvas-cell {
