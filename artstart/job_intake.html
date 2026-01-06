@@ -93,6 +93,7 @@ const ARTSTART_PREVIEW_BASE_URL =
 
 const linkAreaEl = document.getElementById('link-area');
 const submitBtn = document.getElementById('submit-btn');
+const submitBtnLabel = submitBtn ? submitBtn.textContent : '';
 const statusEl = document.getElementById('status');
 const form = document.getElementById('intake-form');
 
@@ -440,6 +441,8 @@ const notesEl           = document.getElementById('notes');
       }
 
       submitBtn.disabled = true;
+      if (submitBtn) submitBtn.textContent = 'Working';
+
       statusEl.textContent = 'Creating job and sending Art Start...';
       statusEl.className = 'status';
 
@@ -486,8 +489,9 @@ const notesEl           = document.getElementById('notes');
         console.error(err);
         statusEl.textContent = 'Error: ' + err.message;
         statusEl.className = 'status error';
-      } finally {
+
         submitBtn.disabled = false;
+        if (submitBtn) submitBtn.textContent = submitBtnLabel;
       }
     });
   </script>
