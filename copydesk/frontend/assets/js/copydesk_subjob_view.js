@@ -708,8 +708,26 @@
             tas.forEach(function (ta) { ta.disabled = true; });
           }
 
+          // Bucket B: enter closed/read-only header state immediately
+          try {
+            // Mark status locally so applyClosedHeader_ can render a date if backend doesn’t echo one yet.
+            window.__copydeskSubjobJob = window.__copydeskSubjobJob || {};
+            window.__copydeskSubjobJob.status = 'final';
+
+            // Preserve collaborator identity already normalized in boot_()
+            // and use a local timestamp as a fallback “finishedAt”.
+            if (!window.__copydeskSubjobJob.finishedAt) {
+              window.__copydeskSubjobJob.finishedAt = new Date().toISOString();
+            }
+
+            applyClosedHeader_(window.__copydeskSubjobJob);
+          } catch (e) {}
+
+          // Hide Finish (not just disabled)
+          btn.style.display = 'none';
           btn.disabled = true;
-          setStatus_('ok', 'Finished. Editing is disabled.', false);
+
+          setStatus_('ok', 'Closed. Read-only.', false);
         });
       } catch (e) {
         console.error('finishSubjob error', e);
@@ -846,8 +864,20 @@
 
         window.__copydeskSubjobJob = job;
 
+        // Reset closed state UI each boot (defensive)
+        document.body.classList.remove('copydesk-is-closed');
+        var metaEl = document.getElementById('subjob-closed-meta');
+        if (metaEl) metaEl.textContent = '';
+
         var statusLower = String((job && job.status) || '').toLowerCase();
-        var locked = (statusLower === 'locked' || statusLower === 'archived' || statusLower === 'final');
+        var locked =
+          (statusLower === 'locked' ||
+           statusLower === 'archived' ||
+           statusLower === 'final' ||
+           statusLower === 'closed' ||
+           statusLower === 'finished' ||
+           statusLower === 'complete' ||
+           statusLower === 'completed');
 
         if (locked) {
           setStatus_('ok', 'Locked. Editing is disabled.', false);
