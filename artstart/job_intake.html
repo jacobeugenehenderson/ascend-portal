@@ -483,6 +483,12 @@ const notesEl           = document.getElementById('notes');
             'Open preview: <a href="' + linkUrl +
             '" target="_blank" rel="noopener noreferrer">' +
             visibleJobId + '</a>';
+
+          // ROUTE (same tab). This is the actual “job” of the intake page.
+          window.location.href = linkUrl;
+          return;
+        } else {
+          throw new Error('Backend did not return ascendJobId');
         }
 
       } catch (err) {
