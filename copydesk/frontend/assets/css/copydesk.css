@@ -679,32 +679,23 @@
    Closed / Read-only (Bucket B)
 ----------------------------- */
 
-/* Hidden by default; JS toggles body.copydesk-is-closed */
+/* Ribbon banner: absolute so it does NOT reflow the header */
+.ascend-app-header {
+  position: relative;
+}
+
+/* Hidden by default; shown when body.copydesk-is-closed */
 #subjob-closed-banner {
   display: none;
-}
 
-#subjob-closed-meta {
-  display: none;
-  margin-top: 6px;
-  font-size: 0.85rem;
-  color: var(--ascend-app-text-muted);
-}
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
 
-/* Closed state: show banner + meta, hide Finish */
-body.copydesk-is-closed .ascend-app-header {
-  flex-wrap: wrap;
-}
-
-body.copydesk-is-closed #subjob-closed-banner {
-  display: block;
-  width: 100%;
-
-  margin: 0 0 10px 0;
-  padding: 10px 12px;
-
+  padding: 8px 12px;
   border: 1px solid var(--ascend-app-border);
-  border-radius: 10px;
+  border-radius: 12px;
 
   background: linear-gradient(90deg,
     rgba(79,209,197,0.16),
@@ -712,8 +703,35 @@ body.copydesk-is-closed #subjob-closed-banner {
   );
 
   color: var(--ascend-app-text-main);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+
+  pointer-events: none;
+}
+
+/* Make room for the ribbon only in closed state */
+body.copydesk-is-closed .ascend-app-header {
+  padding-top: 46px;
+}
+
+/* Remove collaborator identity in closed mode (the email at top-right) */
+body.copydesk-is-closed #job-collaborators {
+  display: none !important;
+}
+
+/* Closed meta replaces Finish in the same slot */
+#subjob-closed-meta {
+  display: none;
+
+  text-align: right;
+  font-size: 12px;
   font-weight: 600;
+  color: var(--ascend-app-text-muted);
   letter-spacing: 0.02em;
+
+  white-space: pre-line;
+  line-height: 1.2;
 }
 
 body.copydesk-is-closed #subjob-finish-btn {
@@ -721,5 +739,9 @@ body.copydesk-is-closed #subjob-finish-btn {
 }
 
 body.copydesk-is-closed #subjob-closed-meta {
+  display: block;
+}
+
+body.copydesk-is-closed #subjob-closed-banner {
   display: block;
 }

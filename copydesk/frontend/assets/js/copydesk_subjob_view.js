@@ -179,7 +179,6 @@
     if (!metaEl) return;
 
     var translator = '';
-    var dateStr = '';
 
     if (job && job.collaborators) {
       if (typeof job.collaborators === 'string') translator = job.collaborators.trim();
@@ -188,18 +187,22 @@
       }
     }
 
-    if (job && job.finishedAt) {
-      try {
-        var d = new Date(job.finishedAt);
-        dateStr = d.toLocaleDateString();
-      } catch (e) {}
-    }
+    // Always show a date. Prefer finishedAt; fall back to “today”.
+    var when = (job && job.finishedAt) ? job.finishedAt : (new Date().toISOString());
+    var dateStr = '';
+    try {
+      var d = new Date(when);
+      dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (e) {}
 
-    var parts = [];
-    if (translator) parts.push('Translated by ' + translator);
-    if (dateStr) parts.push(dateStr);
+    // Two-line meta (same slot Finish occupied):
+    // {translator}
+    // {date}
+    var out = '';
+    if (translator) out += translator;
+    if (dateStr) out += (out ? '\n' : '') + dateStr;
 
-    metaEl.textContent = parts.join(' · ');
+    metaEl.textContent = out;
   }
 
   // ---------------------------
