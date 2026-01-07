@@ -962,7 +962,8 @@ body.ascend-app-body {
   outline: none;
 }
 
-.subjob-notes-toggle .ascend-hopper-progress {
+/* Copydesk Subjob notes glyph: force normal stack order (top→bottom) */
+#subjob-rows .subjob-notes-toggle .ascend-hopper-progress {
   display: inline-flex;
   flex-direction: column;
   gap: 2px;
