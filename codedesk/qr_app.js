@@ -1358,13 +1358,16 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(a, b){
 };
 
 window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
-  const rec = _getWorkingFileRecordById(id);
+  const wfId = String(id || '').trim();
+  const rec = _getWorkingFileRecordById(wfId);
   if (!rec || !rec.state) return false;
 
   _setActiveWorkingFileId(rec.id);
   try { window.__CODEDESK_CURRENT_WF_ID__ = String(rec.id || '').trim(); } catch(e){}
 
-  const ok = window.okqralImportState(rec.state);
+  // Defer import until AFTER setup/UI-gating removals so nothing overwrites loaded state.
+  let ok = false;
+  const __deferredState = rec.state;
 
   // Normalize URL on open: ensure refresh is reopen-safe and saved open_url is canonical.
   try {
@@ -1456,6 +1459,13 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
       setTimeout(() => { try { window.codedeskSyncFileRoomDebounced && window.codedeskSyncFileRoomDebounced('open'); } catch(e){} }, 250);
     }
   } catch(e){}
+
+  // Import saved state LAST (after all ceremony/gating teardown).
+  try {
+    ok = window.okqralImportState(__deferredState);
+  } catch(e) {
+    ok = false;
+  }
 
   return ok;
 };
