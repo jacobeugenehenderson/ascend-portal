@@ -743,6 +743,9 @@
             applyClosedHeader_(window.__copydeskSubjobJob);
           } catch (e) {}
 
+          // Re-render rows in CLOSED / artifact mode
+          renderRows_(__latestSegments, true);
+
           // Hide Finish (not just disabled)
           btn.style.display = 'none';
           btn.disabled = true;
