@@ -2668,6 +2668,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
     // Type change = rebuild the type fields, then re-wire dynamic controls, then render.
 typeSel.addEventListener('change', () => {
+  if (window.__CODEDESK_IMPORTING_STATE__) return;
   const t = typeSel.value;
 
   // 1) rebuild the form for this type
