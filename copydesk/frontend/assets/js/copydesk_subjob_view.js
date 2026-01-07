@@ -41,7 +41,8 @@
   var FIELD_MACHINE = 'machineText';
 
   // Notes field (optional)
-  var FIELD_NOTES = 'translatorNotes';
+  // Backend uses "notes" for translation subjobs (see copydesk_API.gs segments payload + updateSegment handler)
+  var FIELD_NOTES = 'notes';
 
   // ---------------------------
   // URL

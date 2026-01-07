@@ -15,6 +15,14 @@ const HOPPER_DB_PROP_KEY = 'COPYDESK_HOPPER_DB_ID';
 const HOPPER_SHEET_NAME = 'HOPPER';
 const DELIVERABLES_SHEET_NAME = 'DELIVERABLES';
 
+// FileRoom Registry API (used for close handoff; idempotent upsert)
+const FILEROOM_API_BASE_URL =
+  'https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec';
+
+// Frontend job view (used as OpenUrl in FileRoom)
+const COPYDESK_JOB_VIEW_URL =
+  'https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/job.html';
+
 // Normalize style labels for robust comparison
 function normalizeStyleLabel_(label) {
   if (label == null) return '';
@@ -61,24 +69,26 @@ function subjobStatusKey_(jobId, lang) {
   return 'SUBJOB_STATUS::' + String(jobId || '').trim() + '::' + String(lang || '').trim().toUpperCase();
 }
 function getSubjobStatus_(jobId, lang) {
-  if (!jobId || !lang) return { status: '', finishedAt: '' };
+  if (!jobId || !lang) return { status: '', finishedAt: '', touchedAt: '' };
   var raw = PropertiesService.getScriptProperties().getProperty(subjobStatusKey_(jobId, lang));
-  if (!raw) return { status: '', finishedAt: '' };
+  if (!raw) return { status: '', finishedAt: '', touchedAt: '' };
   try {
     var o = JSON.parse(raw);
     return {
       status: o && o.status ? String(o.status) : '',
-      finishedAt: o && o.finishedAt ? String(o.finishedAt) : ''
+      finishedAt: o && o.finishedAt ? String(o.finishedAt) : '',
+      touchedAt: o && o.touchedAt ? String(o.touchedAt) : ''
     };
   } catch (e) {
-    return { status: String(raw), finishedAt: '' };
+    return { status: String(raw), finishedAt: '', touchedAt: '' };
   }
 }
-function setSubjobStatus_(jobId, lang, status, finishedAtIso) {
+function setSubjobStatus_(jobId, lang, status, finishedAtIso, touchedAtIso) {
   if (!jobId || !lang) return;
   var payload = {
     status: String(status || ''),
-    finishedAt: finishedAtIso ? String(finishedAtIso) : ''
+    finishedAt: finishedAtIso ? String(finishedAtIso) : '',
+    touchedAt: touchedAtIso ? String(touchedAtIso) : ''
   };
   PropertiesService.getScriptProperties().setProperty(subjobStatusKey_(jobId, lang), JSON.stringify(payload));
 }
@@ -140,6 +150,13 @@ function buildTranslationSubjobsPayload_(ss, jobId) {
     var status = hasHumanEdits_(sh) ? 'human' : 'seed';
 
     var st = getSubjobStatus_(jobId, code);
+
+    // Explicit touched (meaningful human edit) beats seed/human.
+    if (st && (String(st.status || '').toLowerCase() === 'touched' || st.touchedAt)) {
+      status = 'touched';
+    }
+
+    // Finished wins last.
     if (st && String(st.status || '').toLowerCase() === 'finished') {
       status = 'finished';
     }
@@ -149,6 +166,8 @@ function buildTranslationSubjobsPayload_(ss, jobId) {
       language: langs[i].name,
       sheetName: shName,
       status: status,
+      finishedAt: (st && st.finishedAt) ? String(st.finishedAt) : '',
+      touchedAt: (st && st.touchedAt) ? String(st.touchedAt) : '',
       href: 'subjob.html?jobid=' + encodeURIComponent(String(jobId || '')) + '&lang=' + encodeURIComponent(code)
     });
   }
@@ -755,14 +774,18 @@ function handleUpdateSegment_(body) {
   var width = lang ? 9 : 6;
   const data = sheet.getRange(startRow, 1, numRows, width).getValues();
 
-  // Locate the matching segmentId in Column D and capture existing style
+  // Locate the matching segmentId in Column D and capture existing values
   let targetRow = null;
   let existingStyle = null;
+  let existingWorking = '';
+  let existingNotes = '';
 
   for (let i = 0; i < data.length; i++) {
     if (data[i][3] === segmentId) {  // Column D index = 3
       targetRow = startRow + i;
       existingStyle = data[i][1];    // Column B = StyleLabel
+      existingWorking = data[i][2];  // Column C = Working (translation) text
+      if (lang) existingNotes = data[i][8]; // Column I = Notes (lang sheets)
       break;
     }
   }
@@ -822,7 +845,28 @@ function handleUpdateSegment_(body) {
     }
   }
 
-  // Update Working English (Column C)
+  // If this is a translation sheet: first meaningful edit marks the subjob as TOUCHED.
+// (Meaningful = working text changes from its prior saved value.)
+  if (lang) {
+    var jobId = (body && body.jobId != null) ? String(body.jobId).trim() : '';
+    if (jobId) {
+      var st0 = getSubjobStatus_(jobId, lang);
+
+      var isFinished = (String(st0.status || '').toLowerCase() === 'finished');
+      var hasTouched = !!(st0 && st0.touchedAt);
+
+      if (!isFinished && !hasTouched) {
+        var prev = String(existingWorking == null ? '' : existingWorking);
+        var next = String(finalWorking == null ? '' : finalWorking);
+
+        if (prev !== next) {
+          setSubjobStatus_(jobId, lang, 'touched', (st0 && st0.finishedAt) ? st0.finishedAt : '', new Date().toISOString());
+        }
+      }
+    }
+  }
+
+// Update Working English (Column C)
   sheet.getRange(targetRow, 3).setValue(finalWorking);
 
   // Update Translator Notes (Column I) for language sheets only
@@ -2824,6 +2868,65 @@ function upsertDeliverableForClose_(jobId, ss, ownerEmail) {
 }
 
 function updateHopperAndDeliverablesOnClose_(jobId, ss, closedAtIso) {
+
+function upsertFileRoomRegistryOnClose_(jobId, ss, ownerEmail, closedAtIso) {
+  if (!jobId || !ss) return;
+
+  var jobName = '';
+  var createdAtIso = '';
+
+  try {
+    var sh = ss.getSheetByName(JOB_EN_SHEET_NAME);
+    if (sh) {
+      jobName = String(sh.getRange('B2').getValue() || '').trim();
+
+      var c = sh.getRange('B3').getValue();
+      if (c && Object.prototype.toString.call(c) === '[object Date]' && !isNaN(c.getTime())) {
+        createdAtIso = c.toISOString();
+      } else {
+        createdAtIso = String(c || '').trim();
+      }
+    }
+  } catch (e0) {}
+
+  var openUrl = COPYDESK_JOB_VIEW_URL + '?jobid=' + encodeURIComponent(jobId);
+
+  var params = {
+    action: 'upsertJob',
+    app: 'Copydesk',
+    source_id: jobId,
+    title: jobName || jobId,
+    subtitle: 'Copydesk',
+    status: 'closed',
+    open_url: openUrl,
+    owner_email: ownerEmail || '',
+    collaborators: '',
+    created_at: createdAtIso || '',
+    updated_at: closedAtIso || '',
+    last_touched_by: '',
+    tags: 'copydesk',
+    parent_ascend_job_key: '',
+    is_deleted: 'FALSE'
+  };
+
+  var parts = [];
+  for (var k in params) {
+    if (!params.hasOwnProperty(k)) continue;
+    parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(String(params[k])));
+  }
+
+  var url = FILEROOM_API_BASE_URL + (FILEROOM_API_BASE_URL.indexOf('?') >= 0 ? '&' : '?') + parts.join('&');
+
+  // Best-effort only: never block close.
+  try {
+    UrlFetchApp.fetch(url, {
+      method: 'get',
+      muteHttpExceptions: true,
+      followRedirects: true
+    });
+  } catch (e1) {}
+}
+
   try { updateHopperOnClose_(jobId, closedAtIso); } catch (e0) {}
 
   // Attempt to infer an owner email from hopper row, otherwise leave blank.
@@ -2836,6 +2939,9 @@ function updateHopperAndDeliverablesOnClose_(jobId, ss, closedAtIso) {
   } catch (e1) {}
 
   try { upsertDeliverableForClose_(jobId, ss, ownerEmail); } catch (e2) {}
+
+  // Handoff to FileRoom Registry (idempotent upsert; best-effort)
+  try { upsertFileRoomRegistryOnClose_(jobId, ss, ownerEmail, closedAtIso); } catch (e3) {}
 }
 
 function handleListCopydeskJobsForUser_(body) {
@@ -2909,6 +3015,18 @@ function handleListCopydeskJobsForUser_(body) {
 
     var jobName = String(r[1] || '').trim();
     var spreadsheetId = String(r[2] || '').trim();
+
+    // If Hopper DB name is missing but the job sheet exists, read the human name from the job file.
+    // This matches the fallback behavior used earlier in this function (B2 on the job sheet).
+    if (!jobName && spreadsheetId) {
+      try {
+        var ssName = SpreadsheetApp.openById(spreadsheetId);
+        var shName = ssName.getSheetByName(JOB_EN_SHEET_NAME);
+        if (shName) {
+          jobName = String(shName.getRange('B2').getValue() || '').trim();
+        }
+      } catch (eName) {}
+    }
     var createdAt = String(r[3] || '').trim();
     var cutoff = String(r[4] || '').trim();
     var status = String(r[5] || '').trim();
