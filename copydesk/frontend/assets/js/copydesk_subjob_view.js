@@ -792,13 +792,21 @@
         try {
           var openPops = container.querySelectorAll('.subjob-notes-pop:not([hidden])');
           openPops.forEach(function (p) { p.hidden = true; });
+
+          // Also clear any "open" visual state on other glyph buttons.
+          var openBtns = container.querySelectorAll('.subjob-notes-toggle.is-open');
+          openBtns.forEach(function (b) { b.classList.remove('is-open'); });
         } catch (_eClose) {}
 
         // If it was open, we just hid it above; stop here.
-        if (wasOpen) return;
+        if (wasOpen) {
+          btn.classList.remove('is-open');
+          return;
+        }
 
-        // Otherwise open this one.
+        // Otherwise open this one and mark the glyph as open.
         pop.hidden = false;
+        btn.classList.add('is-open');
         return;
       }
 

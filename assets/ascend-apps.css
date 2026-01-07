@@ -1019,3 +1019,9 @@ body.ascend-app-body {
   font-size: 0.95rem;
   line-height: 1.35;
 }
+
+/* Notes glyph: when pop is open, show hollow stack (signals "click to close") */
+#subjob-rows .subjob-notes-toggle.is-open .ascend-hopper-progress-dot {
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
