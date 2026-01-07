@@ -211,7 +211,25 @@
   // ---------------------------
   // Closed-state header helpers (Bucket B)
   // ---------------------------
-  function applyClosedHeader_(job) {
+
+  // Resolve THIS translation subjob meta from the job payload (defensive aliases).
+  function getSubjobMeta_(job, lang) {
+    lang = String(lang || '').trim().toUpperCase();
+    if (!job || !lang) return null;
+
+    var list = job.translations || job.translationSubjobs || job.translationJobs || [];
+    if (!Array.isArray(list) || !list.length) return null;
+
+    for (var i = 0; i < list.length; i++) {
+      var t = list[i] || {};
+      var code =
+        String(t.lang || t.code || t.locale || t.languageCode || '').trim().toUpperCase();
+      if (code === lang) return t;
+    }
+    return null;
+  }
+
+  function applyClosedHeader_(job, subMeta) {
     document.body.classList.add('copydesk-is-closed');
 
     var metaEl = document.getElementById('subjob-closed-meta');
@@ -226,8 +244,11 @@
       }
     }
 
-    // Always show a date. Prefer finishedAt; fall back to “today”.
-    var when = (job && job.finishedAt) ? job.finishedAt : (new Date().toISOString());
+    // Always show a date. Prefer THIS subjob finishedAt; fall back to “today”.
+    var when =
+      (subMeta && (subMeta.finishedAt || subMeta.completedAt)) ? (subMeta.finishedAt || subMeta.completedAt) :
+      (new Date().toISOString());
+
     var dateStr = '';
     try {
       var d = new Date(when);
@@ -967,19 +988,20 @@
         var metaEl = document.getElementById('subjob-closed-meta');
         if (metaEl) metaEl.textContent = '';
 
-        var statusLower = String((job && job.status) || '').toLowerCase();
+        var subMeta = getSubjobMeta_(job, __lang);
+        var statusLower = String((subMeta && (subMeta.status || subMeta.state)) || '').toLowerCase();
+
+        // Locked iff THIS translation is actually finished.
+        // Parent English being Closed must NOT lock translations.
         var locked =
-          (statusLower === 'locked' ||
-           statusLower === 'archived' ||
+          (statusLower === 'finished' ||
            statusLower === 'final' ||
-           statusLower === 'closed' ||
-           statusLower === 'finished' ||
-           statusLower === 'complete' ||
-           statusLower === 'completed');
+           statusLower === 'done' ||
+           !!(subMeta && (subMeta.finishedAt || subMeta.completedAt)));
 
         if (locked) {
           setStatus_('ok', 'Locked. Editing is disabled.', false);
-          applyClosedHeader_(job);
+          applyClosedHeader_(job, subMeta);
         } else {
           setStatus_('ok', 'Ready (autosave on).', false);
         }
