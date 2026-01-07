@@ -978,16 +978,19 @@ body.ascend-app-body {
 
 /* Force the exact color/shape configuration (all filled)
    Desired order (top→bottom): Blue, Teal, Orange */
+/* Notes stack uses Ascend hopper palette.
+   NOTE: .ascend-hopper-progress is column-reverse, so:
+   step 1 = bottom, step 3 = top. */
 .subjob-notes-toggle .ascend-hopper-progress-dot[data-step="1"] {
-  background: var(--ascend-color-info) !important;
+  background: var(--ascend-hopper-stage-1) !important; /* orange / bottom */
 }
 
 .subjob-notes-toggle .ascend-hopper-progress-dot[data-step="2"] {
-  background: var(--ascend-color-accent) !important;
+  background: var(--ascend-hopper-stage-2) !important; /* teal / middle */
 }
 
 .subjob-notes-toggle .ascend-hopper-progress-dot[data-step="3"] {
-  background: var(--ascend-color-warning) !important;
+  background: var(--ascend-hopper-stage-3) !important; /* blue / top */
 }
 
 /* CLOSED-mode pop panel (simple + sturdy; not a floating tooltip) */
