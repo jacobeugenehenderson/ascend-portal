@@ -583,6 +583,46 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       } catch (e) {}
     }
 
+    // --------------------------------------------
+    // Nuclear delete: manifest + dispatcher (local)
+    // --------------------------------------------
+    function buildDeletionManifestForWorkingFile_(wf) {
+      const wfId = (wf && wf.id) ? String(wf.id) : "";
+      const wfName = (wf && wf.name) ? String(wf.name) : "";
+      return {
+        request_id: "delreq_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000)),
+        object: {
+          kind: "codedesk_working_file",
+          id: wfId,
+          name: wfName
+        },
+        policy: {
+          mode: "nuclear",
+          drive: { action: "trash" }
+        },
+        targets: {
+          client_local: true,
+          hopper_db: true,
+          fileroom: true,
+          drive: true
+        }
+      };
+    }
+
+    function ascendNuke_(manifest, ctx) {
+      // ctx is optional metadata (the source row object, etc.)
+      try {
+        // Phase 1: keep behavior identical to today; just route through the manifest.
+        // - working-file X currently deletes local working registry and refreshes the lane.
+        if (manifest && manifest.object && manifest.object.kind === "codedesk_working_file") {
+          const id = String(manifest.object.id || "");
+          if (id) deleteWorking_(id);
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
     // Prefer API-spine working items (FileRoom registry projection), fall back to localStorage.
     let working = [];
     try {
@@ -661,7 +701,13 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       xBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        deleteWorking_(wfId);
+
+        const ok = window.confirm("Sure?");
+        if (!ok) return;
+
+        const manifest = buildDeletionManifestForWorkingFile_(wf);
+        try { ascendNuke_(manifest, { source: "ascend_codedesk_lane", wf: wf }); } catch (_e) {}
+
         renderCodeDeskHopper(items);
       });
 
@@ -1087,13 +1133,37 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         evt.preventDefault();
         evt.stopPropagation();
 
+        const ok = window.confirm("Sure?");
+        if (!ok) return;
+
+        // Build a manifest (even if Phase 1 keeps today’s behavior)
+        const manifest = {
+          request_id: "delreq_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000)),
+          object: {
+            kind: "fileroom_row",
+            id: String(item.RowId || item.Id || item.JobId || item.AssetId || item.FileId || ""),
+            name: String(item.title || item.Title || item.name || item.Name || "")
+          },
+          policy: {
+            mode: "nuclear",
+            drive: { action: "trash" }
+          },
+          targets: {
+            client_local: true,
+            hopper_db: true,
+            fileroom: true,
+            drive: true
+          }
+        };
+
+        try { window.__ASCEND_LAST_DELETE_MANIFEST__ = manifest; } catch(_e) {}
+
         // Immediate UI removal (authoritative visual behavior)
         card.remove();
 
         // Best-effort backend delete if an API exists (safe no-op if not)
         try {
-          const id =
-            item.RowId || item.Id || item.JobId || item.AssetId || item.FileId || "";
+          const id = manifest.object.id || "";
           if (FILEROOM_API_BASE && id) {
             fetch(FILEROOM_API_BASE, {
               method: "POST",
