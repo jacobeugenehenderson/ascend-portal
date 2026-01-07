@@ -1020,10 +1020,10 @@ body.ascend-app-body {
   line-height: 1.35;
 }
 
-/* Notes glyph: when pop is open, show hollow stack (signals "click to close") */
+/* Notes glyph: when pop is open, show translucent stack + stroke (signals "click to close") */
 #subjob-rows .subjob-notes-toggle.is-open .ascend-hopper-progress-dot {
-  background: transparent !important;
-  border: 1.5px solid transparent !important;
+  background: rgba(255, 255, 255, 0.55) !important; /* translucent fill */
+  border: 1.5px solid transparent !important;       /* stroke set per-step below */
 }
 
 /* Keep the “3 colors” identity, but as outlines when open */
