@@ -785,12 +785,19 @@ body.copydesk-is-closed .subjob-translation {
   cursor: default;
 }
 
+body.copydesk-is-closed .subjob-artifact-stack > .committed-seg {
+  border: none;
+  background: rgba(255,255,255,0.55);
+  box-shadow: none;
+}
+
 /* English subtitle under translation */
 body.copydesk-is-closed .subjob-english-subtitle {
-  background: rgba(255,255,255,0.70);
-  border-color: rgba(15, 23, 42, 0.10);
+  background: transparent;
+  border: none;
   box-shadow: none;
 
-  font-size: 0.92em;
-  opacity: 0.78;
+  font-size: 0.9em;
+  font-style: italic;
+  opacity: 0.72;
 }

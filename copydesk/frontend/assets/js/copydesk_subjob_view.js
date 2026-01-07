@@ -480,6 +480,7 @@
       if (taT) {
         taT.value = seededTranslation || '';
         taT.disabled = !!locked;
+        taT.readOnly = !!locked;
       }
 
       var taN = row.querySelector('textarea[data-role="notes"]');
