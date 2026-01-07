@@ -288,6 +288,17 @@
   // ---------------------------
   // Translation row rendering
   // ---------------------------
+
+  // Auto-size a textarea to its content (used for CLOSED artifact view).
+  function autoSizeTextarea_(ta) {
+    if (!ta) return;
+    try {
+      ta.style.height = 'auto';
+      ta.style.overflowY = 'hidden';
+      ta.style.height = (ta.scrollHeight || 0) + 'px';
+    } catch (e) {}
+  }
+
   function escapeHtml_(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -481,6 +492,9 @@
         taT.value = seededTranslation || '';
         taT.disabled = !!locked;
         taT.readOnly = !!locked;
+
+        // In CLOSED mode, expand to show the full frozen artifact text.
+        if (locked) autoSizeTextarea_(taT);
       }
 
       var taN = row.querySelector('textarea[data-role="notes"]');
