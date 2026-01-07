@@ -320,15 +320,15 @@
 }
 
 :root {
-  /* One authoritative unit height for both lanes */
-  --copydesk-unit-h: 220px;
+  /* One authoritative rhythm unit for both lanes (min height + content-fit) */
+  --copydesk-unit-min-h: 140px;   /* editorial “presence” without wasted air */
   --copydesk-unit-gap: 0.6rem;
 }
 
 .committed-list,
 .cards-list {
   display: grid;
-  grid-auto-rows: var(--copydesk-unit-h);
+  grid-auto-rows: minmax(var(--copydesk-unit-min-h), auto);
   row-gap: var(--copydesk-unit-gap);
 }
 
@@ -443,11 +443,14 @@
 }
 
 .card-slot {
-  height: var(--copydesk-unit-h);
+  min-height: var(--copydesk-unit-min-h);
+  height: auto;
 }
 
 .card {
-  height: var(--copydesk-unit-h);
+  min-height: var(--copydesk-unit-min-h);
+  height: auto;
+
   box-sizing: border-box;
   border: 1px solid var(--ascend-app-border);
   border-radius: 16px;
@@ -602,7 +605,8 @@
 
 /* Empty slot placeholder card */
 .card--empty {
-  height: var(--copydesk-unit-h);
+  min-height: var(--copydesk-unit-min-h);
+  height: auto;
   box-sizing: border-box;
 
   border: 1px dashed color-mix(in srgb, var(--ascend-app-border) 40%, rgba(148, 163, 184, 0.85) 60%);
