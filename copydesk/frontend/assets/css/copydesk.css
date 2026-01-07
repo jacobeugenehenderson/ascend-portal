@@ -321,8 +321,12 @@
 
 :root {
   /* One authoritative rhythm unit for both lanes (min height + content-fit) */
-  --copydesk-unit-min-h: 100px;   /* box height */
+  --copydesk-unit-min-h: 96px;   /* headline row should feel “single-row-ish” */
   --copydesk-unit-gap: 0.6rem;
+
+  /* Vertical rhythm inside the boxes */
+  --copydesk-box-pad: 14px;      /* a little more breathing room */
+  --copydesk-box-pad-tight: 12px;/* tighter for headline-style rows */
 }
 
 .committed-list,
@@ -338,7 +342,10 @@
   box-sizing: border-box;
   border: 1px solid var(--ascend-app-border);
   border-radius: 16px;
-  padding: 12px;
+
+  /* slightly airier default */
+  padding: var(--copydesk-box-pad);
+
   background: rgba(255,255,255,0.92);
   cursor: pointer;
 
@@ -355,6 +362,12 @@
   box-shadow:
     0 1px 0 rgba(15, 23, 42, 0.04),
     0 14px 42px rgba(15, 23, 42, 0.08);
+}
+
+/* Headline rows: tighter padding so they read as a single intentional band */
+.committed-seg.style-headline,
+.subjob-english.style-headline {
+  padding: var(--copydesk-box-pad-tight);
 }
 
 .committed-list .committed-seg.style-bullet,
@@ -454,7 +467,10 @@
   box-sizing: border-box;
   border: 1px solid var(--ascend-app-border);
   border-radius: 16px;
-  padding: 12px;
+
+  /* match the committed lane’s vertical rhythm knobs */
+  padding: var(--copydesk-box-pad);
+
   background: rgba(255,255,255,0.92);
 
   /* Two-column card: main + right rail */
