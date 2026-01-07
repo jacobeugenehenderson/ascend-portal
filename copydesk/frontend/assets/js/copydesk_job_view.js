@@ -1121,6 +1121,11 @@ function uuid_() {
   }
 
   async function saveNowForCard_(cardEl) {
+    // Closed means: inert but selectable/copy-able. Never write anything.
+    if (document.body && document.body.classList && document.body.classList.contains('copydesk-is-closed')) {
+      return Promise.resolve();
+    }
+
     var snap = getCardSnapshot_(cardEl);
     if (!snap.cardId) return;
 
@@ -1172,6 +1177,11 @@ function uuid_() {
   }
 
   function scheduleSaveForCard_(cardEl) {
+    // Closed means: inert but selectable/copy-able. Never schedule writes.
+    if (document.body && document.body.classList && document.body.classList.contains('copydesk-is-closed')) {
+      return;
+    }
+
     var snap = getCardSnapshot_(cardEl);
     var cardId = snap.cardId;
     if (!cardId) return;
@@ -1186,6 +1196,14 @@ function uuid_() {
   }
 
   async function flushAllCardSaves_() {
+    // Closed means: inert but selectable/copy-able. Never flush writes.
+    if (document.body && document.body.classList && document.body.classList.contains('copydesk-is-closed')) {
+      // Still clear timers so nothing fires after close.
+      try { cardSaveTimers && cardSaveTimers.forEach(function (t) { try { window.clearTimeout(t); } catch (e0) {} }); } catch (e1) {}
+      try { cardSaveTimers && cardSaveTimers.clear && cardSaveTimers.clear(); } catch (e2) {}
+      return;
+    }
+
     var list = document.getElementById('cards-list');
     if (!list) return;
 
