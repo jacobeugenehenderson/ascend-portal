@@ -505,6 +505,19 @@
     }
 
     bindOnce_(locked);
+
+    // In CLOSED mode, do a second-pass autosize after layout/fonts settle,
+    // so frozen translation textareas expand to show all content.
+    if (locked) {
+      setTimeout(function () {
+        try {
+          var container = document.getElementById('subjob-rows');
+          if (!container) return;
+          var tas = container.querySelectorAll('textarea[data-role="translation"]');
+          tas.forEach(function (ta) { autoSizeTextarea_(ta); });
+        } catch (e) {}
+      }, 0);
+    }
   }
 
   // ---------------------------
