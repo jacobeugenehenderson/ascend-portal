@@ -943,11 +943,14 @@ body.ascend-app-body {
  * - Scoped ONLY to the notes glyph button in subjob rows
  * ======================================= */
 
-.subjob-notes-toggle {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  margin: 0;
+/* Notes glyph must NOT inherit global app button styling */
+.ascend-app-panel button.subjob-notes-toggle {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
   cursor: pointer;
   line-height: 0;
   display: inline-flex;
@@ -973,9 +976,10 @@ body.ascend-app-body {
   opacity: 1 !important;
 }
 
-/* Force the exact color/shape configuration (all filled) */
+/* Force the exact color/shape configuration (all filled)
+   Desired order (top→bottom): Blue, Teal, Orange */
 .subjob-notes-toggle .ascend-hopper-progress-dot[data-step="1"] {
-  background: var(--ascend-color-warning) !important;
+  background: var(--ascend-color-info) !important;
 }
 
 .subjob-notes-toggle .ascend-hopper-progress-dot[data-step="2"] {
@@ -983,7 +987,7 @@ body.ascend-app-body {
 }
 
 .subjob-notes-toggle .ascend-hopper-progress-dot[data-step="3"] {
-  background: var(--ascend-color-info) !important;
+  background: var(--ascend-color-warning) !important;
 }
 
 /* CLOSED-mode pop panel (simple + sturdy; not a floating tooltip) */

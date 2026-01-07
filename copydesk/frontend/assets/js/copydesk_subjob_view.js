@@ -572,7 +572,7 @@
       }
     }
 
-    bindOnce_(locked);
+    bindOnce_();
 
     // In CLOSED mode, do a second-pass autosize after layout/fonts settle,
     // so frozen translation textareas expand to show all content.
@@ -778,7 +778,10 @@
         .replace(/\\/g, '\\\\')
         .replace(/"/g, '\\"');
 
-      if (locked) {
+      var lockedNow = false;
+      try { lockedNow = document.body && document.body.classList.contains('copydesk-is-closed'); } catch (_eLk) { lockedNow = false; }
+
+      if (lockedNow) {
         // Close other open pops first (keeps the page tidy).
         try {
           var openPops = container.querySelectorAll('.subjob-notes-pop:not([hidden])');
