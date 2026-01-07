@@ -1222,8 +1222,12 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
           const job = jobs[i];
 
           // Clock-driven exit: once Cutoff day has passed (EOFD Eastern),
+          // OR the job is explicitly closed,
           // the job leaves Copydesk lane and appears in FileRoom.
-          if (job && job.Cutoff && isPastEofdEastern_(job.Cutoff, nowMs)) {
+          const statusCd = normalizeStatus_(job && job.Status);
+          const isClosedCd = (statusCd === "closed");
+
+          if (isClosedCd || (job && job.Cutoff && isPastEofdEastern_(job.Cutoff, nowMs))) {
             const sourceId = job.JobId || "";
             const title =
               job.JobName ||
@@ -1246,6 +1250,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
             maybeUpsertToFileRoomOnce_("copydesk", sourceId, {
               app: "copydesk",
+              kind: "output",
               source_id: sourceId,
               title: title,
               subtitle: subtitle,
