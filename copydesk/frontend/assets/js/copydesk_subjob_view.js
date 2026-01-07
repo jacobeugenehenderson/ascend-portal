@@ -436,6 +436,37 @@
       var translation = getTranslation_(seg);
       var notes = getNotes_(seg);
 
+      var hasNotes = !!String(notes || '').trim();
+
+      // Solid 3-stack (orange/teal/blue) used elsewhere in Ascend, but here ALWAYS filled.
+      // Only render when notes exist.
+      var notesBtnHtml = hasNotes
+        ? (
+            ''
+            + '<button type="button" class="subjob-notes-toggle" '
+            +   'data-segid="' + escapeHtml_(segId) + '" '
+            +   'aria-label="Translator notes" '
+            +   'title="Translator notes">'
+            +   '<span class="ascend-hopper-progress" data-stage="3" aria-hidden="true">'
+            +     '<span class="ascend-hopper-progress-dot" data-step="1"></span>'
+            +     '<span class="ascend-hopper-progress-dot" data-step="2"></span>'
+            +     '<span class="ascend-hopper-progress-dot" data-step="3"></span>'
+            +   '</span>'
+            + '</button>'
+          )
+        : '';
+
+      // In CLOSED mode we need somewhere for notes to live (popover).
+      var notesPopHtml = (locked && hasNotes)
+        ? (
+            ''
+            + '<div class="subjob-notes-pop" data-segid="' + escapeHtml_(segId) + '" hidden>'
+            +   '<div class="subjob-notes-pop__title">Translator Notes</div>'
+            +   '<div class="subjob-notes-pop__body">' + escapeHtml_(notes) + '</div>'
+            + '</div>'
+          )
+        : '';
+
       // Seed translation: prefer existing translation; else machine; else blank
       var seededTranslation = (typeof translation === 'string' && translation.length) ? translation : (machine || '');
 
@@ -461,31 +492,20 @@
           left.innerHTML = ''
             + '<div class="subjob-segmeta">'
             +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
-            +   '<button type="button" class="subjob-notes-stack" '
-            +     'data-role="notes-toggle" '
-            +     'data-segid="' + escapeHtml_(segId) + '" '
-            +     'data-has-notes="' + (notes ? '1' : '0') + '" '
-            +     'aria-label="Translator notes"></button>'
+            +   notesBtnHtml
             + '</div>'
             + '<div class="subjob-stack subjob-artifact-stack">'
             +   '<div class="committed-seg subjob-english subjob-translation-wrap ' + styleClass + '">'
             +   '<textarea class="subjob-textarea subjob-translation committed-seg ' + styleClass + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
             +   '</div>'
             +   '<div class="committed-seg subjob-english subjob-english-subtitle ' + styleClass + '">' + escapeHtml_(committedEn) + '</div>'
-            +   '<div class="subjob-notes-inline is-hidden" data-role="notes-inline" data-segid="' + escapeHtml_(segId) + '">'
-            +     '<div class="subjob-notes-inline__label">Translator Notes</div>'
-            +     '<div class="subjob-notes-inline__body">' + escapeHtml_(notes || '') + '</div>'
-            +   '</div>'
-            + '</div>';
+            + '</div>'
+            + notesPopHtml;
         } else {
           left.innerHTML = ''
             + '<div class="subjob-segmeta">'
             +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
-            +   '<button type="button" class="subjob-notes-stack" '
-            +     'data-role="notes-toggle" '
-            +     'data-segid="' + escapeHtml_(segId) + '" '
-            +     'data-has-notes="' + (notes ? '1' : '0') + '" '
-            +     'aria-label="Translator notes"></button>'
+            +   notesBtnHtml
             + '</div>'
             + '<div class="subjob-stack">'
             +   '<div class="subjob-card__label">Committed English</div>'
@@ -728,8 +748,7 @@
       var t = e.target;
       if (!t) return;
 
-      var btn = (t.classList && t.classList.contains('subjob-notes-stack')) ? t :
-                (t.closest ? t.closest('.subjob-notes-stack') : null);
+      var btn = (t.closest ? t.closest('.subjob-notes-toggle') : null);
       if (!btn) return;
 
       e.preventDefault();
@@ -737,28 +756,31 @@
       var segId = btn.getAttribute('data-segid') || '';
       if (!segId) return;
 
-      // If no notes exist, do nothing (still keeps the affordance present for styling/state work later)
-      var hasNotes = (btn.getAttribute('data-has-notes') === '1');
+      var row = btn.closest ? btn.closest('.subjob-row') : null;
+      if (!row) return;
+
+      // Safe for use inside a double-quoted attribute selector.
+      // Avoids relying on CSS.escape() being present.
+      var sid = String(segId)
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"');
 
       if (locked) {
-        if (!hasNotes) return;
+        // Close other open pops first (keeps the page tidy).
+        try {
+          var openPops = container.querySelectorAll('.subjob-notes-pop:not([hidden])');
+          openPops.forEach(function (p) { p.hidden = true; });
+        } catch (_eClose) {}
 
-        // Toggle the inline notes panel for this segment
-        var row = btn.closest ? btn.closest('.subjob-row') : null;
-        if (!row) return;
+        var pop = row.querySelector('.subjob-notes-pop[data-segid="' + sid + '"]');
+        if (!pop) return;
 
-        var panel = row.querySelector('.subjob-notes-inline[data-segid="' + CSS.escape(segId) + '"]');
-        if (!panel) return;
-
-        panel.classList.toggle('is-hidden');
+        pop.hidden = !pop.hidden;
         return;
       }
 
       // OPEN state: focus the notes textarea on the right (if present)
-      var row2 = btn.closest ? btn.closest('.subjob-row') : null;
-      if (!row2) return;
-
-      var ta = row2.querySelector('textarea[data-role="notes"][data-segid="' + CSS.escape(segId) + '"]');
+      var ta = row.querySelector('textarea[data-role="notes"][data-segid="' + sid + '"]');
       if (!ta) return;
 
       try {
