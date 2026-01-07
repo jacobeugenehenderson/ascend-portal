@@ -346,7 +346,21 @@
   }
 
   function getNotes_(seg) {
-    return (seg && (seg[FIELD_NOTES] || seg.notes || seg.translatorNotes)) || '';
+    var v = (seg && (seg[FIELD_NOTES] || seg.notes || seg.translatorNotes)) || '';
+
+    // Defensive: some payloads rename the field after finishing.
+    // If still empty, scan for any key that looks like notes.
+    if (!v && seg) {
+      for (var k in seg) {
+        if (!Object.prototype.hasOwnProperty.call(seg, k)) continue;
+        if (/note/i.test(k)) {
+          v = seg[k];
+          if (v) break;
+        }
+      }
+    }
+
+    return v || '';
   }
 
   // ---------------------------
@@ -435,6 +449,36 @@
       var machine = getMachine_(seg);
       var translation = getTranslation_(seg);
       var notes = getNotes_(seg);
+
+      var hasNotes = !!String(notes || '').trim();
+
+      // Notes glyph should exist ONLY in LOCKED mode, and ONLY when notes exist.
+      var notesBtnHtml = (locked && hasNotes)
+        ? (
+            ''
+            + '<button type="button" class="subjob-notes-toggle" '
+            +   'data-segid="' + escapeHtml_(segId) + '" '
+            +   'aria-label="Translator notes" '
+            +   'title="Translator notes">'
+            +   '<span class="ascend-subjob-notes-stack" aria-hidden="true">'
+            +     '<span data-step="1"></span>'
+            +     '<span data-step="2"></span>'
+            +     '<span data-step="3"></span>'
+            +   '</span>'
+            + '</button>'
+          )
+        : '';
+
+      // Locked-only popover target (starts hidden)
+      var notesPopHtml = (locked && hasNotes)
+        ? (
+            ''
+            + '<div class="subjob-notes-pop" data-segid="' + escapeHtml_(segId) + '" hidden>'
+            +   '<div class="subjob-notes-pop__title">Translator Notes</div>'
+            +   '<div class="subjob-notes-pop__body">' + escapeHtml_(notes) + '</div>'
+            + '</div>'
+          )
+        : '';
 
       var hasNotes = !!String(notes || '').trim();
 
@@ -866,7 +910,7 @@
           setStatus_('loading', 'Finishing…', false);
 
           // Best-effort flush of any pending autosaves before finalizing
-          flushAll_();
+          await flushAll_();
 
           var spreadsheetId = getSpreadsheetId_();
 
