@@ -782,16 +782,23 @@
       try { lockedNow = document.body && document.body.classList.contains('copydesk-is-closed'); } catch (_eLk) { lockedNow = false; }
 
       if (lockedNow) {
+        var pop = row.querySelector('.subjob-notes-pop[data-segid="' + sid + '"]');
+        if (!pop) return;
+
+        // If THIS pop is already open, clicking the glyph should hide it.
+        var wasOpen = !pop.hidden;
+
         // Close other open pops first (keeps the page tidy).
         try {
           var openPops = container.querySelectorAll('.subjob-notes-pop:not([hidden])');
           openPops.forEach(function (p) { p.hidden = true; });
         } catch (_eClose) {}
 
-        var pop = row.querySelector('.subjob-notes-pop[data-segid="' + sid + '"]');
-        if (!pop) return;
+        // If it was open, we just hid it above; stop here.
+        if (wasOpen) return;
 
-        pop.hidden = !pop.hidden;
+        // Otherwise open this one.
+        pop.hidden = false;
         return;
       }
 
