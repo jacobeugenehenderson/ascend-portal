@@ -386,37 +386,23 @@
         left.innerHTML = ''
           + '<div class="subjob-divider" aria-hidden="true"></div>';
       } else {
-        if (locked) {
-          left.innerHTML = ''
-            + '<div class="subjob-segmeta">'
-            +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
-            + '</div>'
-            + '<div class="subjob-stack subjob-artifact-stack">'
-            +   '<div class="committed-seg subjob-english subjob-translation-wrap ' + styleClass + '">'
-            +   '<textarea class="subjob-textarea subjob-translation committed-seg ' + styleClass + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
-            +   '</div>'
-            +   '<div class="committed-seg subjob-english subjob-english-subtitle ' + styleClass + '">' + escapeHtml_(committedEn) + '</div>'
-            + '</div>';
-        } else {
-          left.innerHTML = ''
-            + '<div class="subjob-segmeta">'
-            +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
-            + '</div>'
-            + '<div class="subjob-stack">'
-            +   '<div class="subjob-card__label">Committed English</div>'
-            +   '<div class="committed-seg subjob-english ' + styleClass + '">' + escapeHtml_(committedEn) + '</div>'
-            +   '<div class="subjob-card__label" style="margin-top:2px;">Translation</div>'
-            +   '<div class="committed-seg subjob-english subjob-translation-wrap ' + styleClass + '">'
-            +   '<textarea class="subjob-textarea subjob-translation committed-seg ' + styleClass + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
-            +   '</div>'
-            + '</div>';
-        }
+        left.innerHTML = ''
+          + '<div class="subjob-segmeta">'
+          +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
+          + '</div>'
+          + '<div class="subjob-stack">'
+          +   '<div class="subjob-card__label">Committed English</div>'
+          +   '<div class="committed-seg subjob-english ' + styleClass + '">' + escapeHtml_(committedEn) + '</div>'
+          +   '<div class="subjob-card__label" style="margin-top:2px;">Translation</div>'
+          +   '<div class="committed-seg subjob-english subjob-translation-wrap ' + styleClass + '">'
+          +   '<textarea class="subjob-textarea subjob-translation committed-seg ' + styleClass + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
+          +   '</div>'
+          + '</div>';
       }
 
       row.appendChild(left);
-
-      // RIGHT: per-segment translator notes (OPEN STATE ONLY)
-      if (!isDivider && !locked) {
+      // RIGHT: per-segment translator notes (NO per-segment label)
+      if (!isDivider) {
         var right = document.createElement('div');
         right.className = 'subjob-card subjob-notes-col';
 
@@ -436,20 +422,17 @@
         continue;
       }
 
-      // OPEN STATE: hydrate + lock textareas
-      if (!locked) {
-        var taT = row.querySelector('textarea[data-role="translation"]');
+      var taT = row.querySelector('textarea[data-role="translation"]');
 
-        if (taT) {
-          taT.value = seededTranslation || '';
-          taT.disabled = false;
-        }
+      if (taT) {
+        taT.value = seededTranslation || '';
+        taT.disabled = !!locked;
+      }
 
-        var taN = row.querySelector('textarea[data-role="notes"]');
-        if (taN) {
-          taN.value = notes || '';
-          taN.disabled = false;
-        }
+      var taN = row.querySelector('textarea[data-role="notes"]');
+      if (taN) {
+        taN.value = notes || '';
+        taN.disabled = !!locked;
       }
     }
 
