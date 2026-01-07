@@ -480,37 +480,6 @@
           )
         : '';
 
-      var hasNotes = !!String(notes || '').trim();
-
-      // Solid 3-stack (orange/teal/blue) used elsewhere in Ascend, but here ALWAYS filled.
-      // Only render when notes exist.
-      var notesBtnHtml = hasNotes
-        ? (
-            ''
-            + '<button type="button" class="subjob-notes-toggle" '
-            +   'data-segid="' + escapeHtml_(segId) + '" '
-            +   'aria-label="Translator notes" '
-            +   'title="Translator notes">'
-            +   '<span class="ascend-hopper-progress" data-stage="3" aria-hidden="true">'
-            +     '<span class="ascend-hopper-progress-dot" data-step="1"></span>'
-            +     '<span class="ascend-hopper-progress-dot" data-step="2"></span>'
-            +     '<span class="ascend-hopper-progress-dot" data-step="3"></span>'
-            +   '</span>'
-            + '</button>'
-          )
-        : '';
-
-      // In CLOSED mode we need somewhere for notes to live (popover).
-      var notesPopHtml = (locked && hasNotes)
-        ? (
-            ''
-            + '<div class="subjob-notes-pop" data-segid="' + escapeHtml_(segId) + '" hidden>'
-            +   '<div class="subjob-notes-pop__title">Translator Notes</div>'
-            +   '<div class="subjob-notes-pop__body">' + escapeHtml_(notes) + '</div>'
-            + '</div>'
-          )
-        : '';
-
       // Seed translation: prefer existing translation; else machine; else blank
       var seededTranslation = (typeof translation === 'string' && translation.length) ? translation : (machine || '');
 
