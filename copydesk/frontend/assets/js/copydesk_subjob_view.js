@@ -461,17 +461,31 @@
           left.innerHTML = ''
             + '<div class="subjob-segmeta">'
             +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
+            +   '<button type="button" class="subjob-notes-stack" '
+            +     'data-role="notes-toggle" '
+            +     'data-segid="' + escapeHtml_(segId) + '" '
+            +     'data-has-notes="' + (notes ? '1' : '0') + '" '
+            +     'aria-label="Translator notes"></button>'
             + '</div>'
             + '<div class="subjob-stack subjob-artifact-stack">'
             +   '<div class="committed-seg subjob-english subjob-translation-wrap ' + styleClass + '">'
             +   '<textarea class="subjob-textarea subjob-translation committed-seg ' + styleClass + '" data-role="translation" data-segid="' + escapeHtml_(segId) + '" spellcheck="true"></textarea>'
             +   '</div>'
             +   '<div class="committed-seg subjob-english subjob-english-subtitle ' + styleClass + '">' + escapeHtml_(committedEn) + '</div>'
+            +   '<div class="subjob-notes-inline is-hidden" data-role="notes-inline" data-segid="' + escapeHtml_(segId) + '">'
+            +     '<div class="subjob-notes-inline__label">Translator Notes</div>'
+            +     '<div class="subjob-notes-inline__body">' + escapeHtml_(notes || '') + '</div>'
+            +   '</div>'
             + '</div>';
         } else {
           left.innerHTML = ''
             + '<div class="subjob-segmeta">'
             +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
+            +   '<button type="button" class="subjob-notes-stack" '
+            +     'data-role="notes-toggle" '
+            +     'data-segid="' + escapeHtml_(segId) + '" '
+            +     'data-has-notes="' + (notes ? '1' : '0') + '" '
+            +     'aria-label="Translator notes"></button>'
             + '</div>'
             + '<div class="subjob-stack">'
             +   '<div class="subjob-card__label">Committed English</div>'
@@ -706,14 +720,58 @@
     if (__bound) return;
     __bound = true;
 
+    var container = document.getElementById('subjob-rows');
+    if (!container) return;
+
+    // Notes toggle / jump (works in OPEN and CLOSED)
+    container.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t) return;
+
+      var btn = (t.classList && t.classList.contains('subjob-notes-stack')) ? t :
+                (t.closest ? t.closest('.subjob-notes-stack') : null);
+      if (!btn) return;
+
+      e.preventDefault();
+
+      var segId = btn.getAttribute('data-segid') || '';
+      if (!segId) return;
+
+      // If no notes exist, do nothing (still keeps the affordance present for styling/state work later)
+      var hasNotes = (btn.getAttribute('data-has-notes') === '1');
+
+      if (locked) {
+        if (!hasNotes) return;
+
+        // Toggle the inline notes panel for this segment
+        var row = btn.closest ? btn.closest('.subjob-row') : null;
+        if (!row) return;
+
+        var panel = row.querySelector('.subjob-notes-inline[data-segid="' + CSS.escape(segId) + '"]');
+        if (!panel) return;
+
+        panel.classList.toggle('is-hidden');
+        return;
+      }
+
+      // OPEN state: focus the notes textarea on the right (if present)
+      var row2 = btn.closest ? btn.closest('.subjob-row') : null;
+      if (!row2) return;
+
+      var ta = row2.querySelector('textarea[data-role="notes"][data-segid="' + CSS.escape(segId) + '"]');
+      if (!ta) return;
+
+      try {
+        ta.focus();
+        ta.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } catch (_e) {}
+    });
+
     if (locked) {
       // Still bind flush events so we don’t crash; inputs are disabled anyway.
       hookFlushEvents_();
       return;
     }
-
-    var container = document.getElementById('subjob-rows');
-    if (!container) return;
 
     // Debounced input save
     container.addEventListener('input', function (e) {
