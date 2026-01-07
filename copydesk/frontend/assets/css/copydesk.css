@@ -321,7 +321,7 @@
 
 :root {
   /* One authoritative rhythm unit for both lanes (min height + content-fit) */
-  --copydesk-unit-min-h: 140px;   /* editorial “presence” without wasted air */
+  --copydesk-unit-min-h: 120px;   /* box height */
   --copydesk-unit-gap: 0.6rem;
 }
 
