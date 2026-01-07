@@ -1022,6 +1022,17 @@ body.ascend-app-body {
 
 /* Notes glyph: when pop is open, show hollow stack (signals "click to close") */
 #subjob-rows .subjob-notes-toggle.is-open .ascend-hopper-progress-dot {
-  background: transparent;
-  border: 1.5px solid currentColor;
+  background: transparent !important;
+  border: 1.5px solid transparent !important;
+}
+
+/* Keep the “3 colors” identity, but as outlines when open */
+#subjob-rows .subjob-notes-toggle.is-open .ascend-hopper-progress-dot[data-step="1"] {
+  border-color: var(--ascend-hopper-stage-1) !important;
+}
+#subjob-rows .subjob-notes-toggle.is-open .ascend-hopper-progress-dot[data-step="2"] {
+  border-color: var(--ascend-hopper-stage-2) !important;
+}
+#subjob-rows .subjob-notes-toggle.is-open .ascend-hopper-progress-dot[data-step="3"] {
+  border-color: var(--ascend-hopper-stage-3) !important;
 }
