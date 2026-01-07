@@ -53,10 +53,49 @@
 
   function getLangFromQuery() {
     var params = new URLSearchParams(window.location.search || '');
-    var v = params.get('lang') || params.get('language') || params.get('locale') || '';
+
+    // Tolerate multiple param conventions.
+    var v =
+      params.get('lang') ||
+      params.get('language') ||
+      params.get('locale') ||
+      params.get('subjob') ||
+      params.get('subjobLang') ||
+      params.get('target') ||
+      params.get('to') ||
+      params.get('tl') ||
+      '';
+
     v = String(v || '').trim();
+
+    // If URL omitted lang entirely, try storage fallbacks (job-scoped first).
+    if (!v) {
+      try {
+        var jobIdNow = getJobIdFromQuery();
+
+        var keys = [
+          'copydesk_lang_' + jobIdNow,
+          'copydesk_active_lang_' + jobIdNow,
+          'copydesk_subjob_lang_' + jobIdNow,
+          'copydesk_lang',
+          'copydesk_active_lang',
+          'copydesk_subjob_lang'
+        ];
+
+        for (var i = 0; i < keys.length && !v; i++) {
+          try { v = (sessionStorage && sessionStorage.getItem(keys[i])) || ''; } catch (_eSS) { v = ''; }
+          if (!v) {
+            try { v = (localStorage && localStorage.getItem(keys[i])) || ''; } catch (_eLS) { v = ''; }
+          }
+          v = String(v || '').trim();
+        }
+      } catch (_e) {
+        v = '';
+      }
+    }
+
     if (!v) return '';
-    return v.toUpperCase(); // "fr" -> "FR"
+    return String(v).toUpperCase(); // "fr" -> "FR"
   }
 
   // ---------------------------
@@ -436,20 +475,17 @@
         continue;
       }
 
-      // OPEN STATE: hydrate + lock textareas
-      if (!locked) {
-        var taT = row.querySelector('textarea[data-role="translation"]');
+      // Hydrate any present textareas (open OR closed).
+      var taT = row.querySelector('textarea[data-role="translation"]');
+      if (taT) {
+        taT.value = seededTranslation || '';
+        taT.disabled = !!locked;
+      }
 
-        if (taT) {
-          taT.value = seededTranslation || '';
-          taT.disabled = false;
-        }
-
-        var taN = row.querySelector('textarea[data-role="notes"]');
-        if (taN) {
-          taN.value = notes || '';
-          taN.disabled = false;
-        }
+      var taN = row.querySelector('textarea[data-role="notes"]');
+      if (taN) {
+        taN.value = notes || '';
+        taN.disabled = !!locked;
       }
     }
 
@@ -849,6 +885,17 @@
         if (!__lang && res && res.lang) {
           __lang = String(res.lang).toUpperCase();
         }
+
+        // Persist lang into the URL once known (stabilizes refresh + copy/paste links)
+        try {
+          if (__lang) {
+            var u = new URL(window.location.href);
+            if (!u.searchParams.get('lang')) {
+              u.searchParams.set('lang', __lang);
+              window.history.replaceState({}, '', u.toString());
+            }
+          }
+        } catch (_eUrl) {}
         // Normalize collaborators (same idea as main view)
         if (res && typeof res.collaborators === 'string') job.collaborators = res.collaborators;
         else if (res && res.header && typeof res.header.collaborators === 'string') job.collaborators = res.header.collaborators;
