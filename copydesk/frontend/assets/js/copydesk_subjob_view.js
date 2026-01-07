@@ -505,7 +505,6 @@
           left.innerHTML = ''
             + '<div class="subjob-segmeta">'
             +   '<div class="subjob-card__label">Segment ' + (i + 1) + '</div>'
-            +   notesBtnHtml
             + '</div>'
             + '<div class="subjob-stack">'
             +   '<div class="subjob-card__label">Committed English</div>'
