@@ -2668,7 +2668,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
     // Type change = rebuild the type fields, then re-wire dynamic controls, then render.
 typeSel.addEventListener('change', () => {
-  if (window.__CODEDESK_IMPORTING_STATE__) return;
+  const __importing = (window.__CODEDESK_IMPORTING_STATE__ === true);
   const t = typeSel.value;
 
   // 1) rebuild the form for this type
@@ -2687,8 +2687,10 @@ typeSel.addEventListener('change', () => {
   if (typeof refreshCenter === 'function') refreshCenter();
   if (typeof render === 'function') render();
 
-  // 4) analytics
-  try { typeof sendEvent === 'function' && sendEvent('type_change', (typeof currentUiState === 'function' ? currentUiState() : {})); } catch (e) {}
+  // 4) analytics (skip during import/hydration)
+  if (!__importing) {
+    try { typeof sendEvent === 'function' && sendEvent('type_change', (typeof currentUiState === 'function' ? currentUiState() : {})); } catch (e) {}
+  }
 });
 
 // First-load hydration: build Mechanical controls + preview for the default type immediately
