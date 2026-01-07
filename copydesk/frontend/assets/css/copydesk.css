@@ -325,7 +325,7 @@
   --copydesk-unit-gap: 0.6rem;
 
   /* Vertical rhythm inside the boxes */
-  --copydesk-box-pad: 14px;      /* a little more breathing room */
+  --copydesk-box-pad: 20px;      /* a little more breathing room */
   --copydesk-box-pad-tight: 12px;/* tighter for headline-style rows */
 }
 
@@ -364,10 +364,16 @@
     0 14px 42px rgba(15, 23, 42, 0.08);
 }
 
-/* Headline rows: tighter padding so they read as a single intentional band */
+/* Headline rows: SAME padding as everything else */
 .committed-seg.style-headline,
 .subjob-english.style-headline {
-  padding: var(--copydesk-box-pad-tight);
+  padding: var(--copydesk-box-pad);
+}
+
+/* Headline rows: smaller minimum height than the global grid min */
+.committed-seg.style-headline,
+.subjob-english.style-headline {
+  min-height: 72px;
 }
 
 .committed-list .committed-seg.style-bullet,
