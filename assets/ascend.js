@@ -1266,6 +1266,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       deleteBtn.addEventListener("click", (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
+        try { evt.stopImmediatePropagation(); } catch (e) {}
         dismissCopydeskJob(job.JobId);
       });
 
@@ -1469,6 +1470,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       deleteBtn.addEventListener("click", (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
+        try { evt.stopImmediatePropagation(); } catch (e) {}
         deleteArtStartJob(job.AscendJobId);
       });
 
