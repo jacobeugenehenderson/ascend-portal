@@ -420,10 +420,11 @@
 <!-- Your app code (sequenced modules; order matters) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-<script src="./qr_app-bootstrapper.js?v=9" defer></script>
-<script src="./qr_ui_toolkit.js?v=9" defer></script>
-<script src="./qr_state_engine.js?v=9" defer></script>
-<script src="./qr_sync_pipeline.js?v=9" defer></script>
+<!-- CodeDesk split modules (ordered, deterministic) -->
+<script src="./qr_app-bootstrapper.js" defer></script>
+<script src="./qr_ui_toolkit.js" defer></script>
+<script src="./qr_state_engine.js" defer></script>
+<script src="./qr_sync_pipeline.js" defer></script>
 
 <!-- Emoji picker wiring -->
 <script type="module">
