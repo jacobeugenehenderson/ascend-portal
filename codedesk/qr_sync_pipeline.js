@@ -900,34 +900,40 @@ function codedeskPngDataUrlFromCurrentSvg(){
 }
 
 window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
-  const workingId = String(window.__CODEDESK_CURRENT_WF_ID__ || _getActiveWorkingFileId() || '').trim();
+
+  // HARD GATE: never sync until setup is done (filename ceremony).
+  if (window.__CODEDESK_SETUP_DONE__ !== true) return false;
+
+  const workingId = (window.__CODEDESK_CURRENT_WF_ID__ || window.codedeskGetActiveWorkingFileId?.() || '').trim();
   if (!workingId) return false;
 
-  const rec = window.codedeskGetWorkingFileRecord && window.codedeskGetWorkingFileRecord(workingId);
+  const rec = window.codedeskGetWorkingFileRecord ? window.codedeskGetWorkingFileRecord(workingId) : null;
   if (!rec) return false;
 
   const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
   if (!folderId) return false;
 
-  const svgNode = (typeof getCurrentSvgNode === 'function') ? getCurrentSvgNode() : null;
-  if (!svgNode) return false;
+  // Always prefer the live filename field as the caption/base name
+  const caption = String(document.getElementById('codedeskFilename')?.value || '').trim() || String(rec.name || '').trim() || 'codedesk';
 
-  // DestinationUrl: canonical QR payload (includes Mechanical knobs like UTM)
+  // sanitize filename
+  const safeName = caption
+    .replace(/[^\w\d-_]+/g, '_')   // replace spaces/punct with _
+    .replace(/^_+|_+$/g, '')       // trim leading/trailing _
+    .substring(0, 40);             // max 40 chars
+
+  const base = safeName;
+
+  // Owner email (for dashboard prefs + FileRoom ownership)
+  const ownerEmail = (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? String(window.CODEDESK_ENTRY.user_email) : '';
+
+  // Canonical destination url (payload)
   let destinationUrl = '';
   try { destinationUrl = (typeof buildText === 'function') ? String(buildText() || '') : ''; } catch(e){ destinationUrl = ''; }
 
-  // Canonical display name: CodeDesk filename (live), falling back to record name
-  const caption =
-    String(document.getElementById('codedeskFilename')?.value || '').trim() ||
-    String(rec.name || '').trim() ||
-    'codedesk';
-  const base = caption.replace(/[^\w\d-_]+/g, '_').replace(/^_+|_+$/g, '').substring(0, 40) || 'codedesk';
-
-  // --- Canonical state blob (includes all styling knobs) ---
+  // Export canonical state blob for portability (single source of truth)
   let stateObj = null;
   try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
-
-  // Stamp canonical destination_url into the exported state blob (portable single source of truth).
   try {
     if (stateObj && typeof stateObj === 'object') {
       stateObj.destination_url = destinationUrl;
@@ -935,98 +941,131 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
       stateObj.payloadText = destinationUrl;    // compatibility alias
     }
   } catch(e){}
-
   let stateJson = '';
   try { stateJson = (typeof stateObj === 'string') ? stateObj : JSON.stringify(stateObj || {}); } catch(e){ stateJson = ''; }
 
-  // Render a PNG for Drive (best effort; canonical export helper if present)
-  let pngDataUrl = '';
-  try { pngDataUrl = codedeskPngDataUrlFromCurrentSvg() || ''; } catch(e){ pngDataUrl = ''; }
+  // Template linkage (when present)
+  const templateId = String((rec && (rec.template_id || rec.templateId)) ? (rec.template_id || rec.templateId) : '').trim();
 
-  // Ensure we have a Drive file id (create once, then update)
-  let driveFileId = '';
-  try { driveFileId = String((rec.fileroom && rec.fileroom.drive_file_id) ? rec.fileroom.drive_file_id : '').trim(); } catch(e){ driveFileId = ''; }
-
+  // 2) Upload PNG to Drive + upsert delivered row
   try {
-    const payload = {
-      action: 'upsertDriveFile',
-      folder_id: folderId,
-      drive_file_id: driveFileId,
-      filename: (base || 'CODEDESK') + '.png',
-      mime: 'image/png',
-      png_data_url: pngDataUrl
-    };
+    const pngDataUrl = await codedeskPngDataUrlFromCurrentSvg(3);
+    if (pngDataUrl) {
 
-    const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
-      method: 'POST',
-      credentials: 'omit',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
+      // canonical filename (always .png)
+      const fileName = (base || 'CODEDESK') + '.png';
 
-    try {
-      const txt = await res.text();
-      const j = JSON.parse(txt || '{}');
-      if (j && j.drive_file_id) driveFileId = String(j.drive_file_id || '').trim();
-    } catch(_e){}
-  } catch (e) {
-    // If Drive upsert fails, do not clear dirty.
-    return false;
-  }
+      const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+        method: 'POST',
+        credentials: 'omit',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'upsertQrPngAsset',
+          folder_id: folderId,
+          png_data_url: pngDataUrl,
+          file_name: fileName,
+          source_id: workingId,
+          ascend_job_key: 'CODEDESK_PNG:' + workingId,
+          title: base || 'CODEDESK QR',
+          subtitle: 'CODEDESK — FLATTENED (PNG)',
+          status: 'delivered',
+          owner_email: ownerEmail,
+          kind: 'output',
+          asset_type: 'qr',
+          template_id: templateId,
+          destination_url: destinationUrl,
+          state_json: stateJson
+        })
+      });
 
-  // Upsert DELIVERABLE row (green FileRoom lane) — references Drive file id
-  try {
-    await fetch(window.CODEDESK_FILEROOM_API_BASE, {
-      method: 'POST',
-      credentials: 'omit',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'upsertJob',
-        ascend_job_key: 'CODEDESK:' + workingId,
-        app: 'codedesk',
-        source_id: workingId,
-        title: base || 'CODEDESK QR',
-        subtitle: 'CODEDESK — QR',
-        status: 'open',
-        open_url: String(location && location.href ? location.href : ''),
-        owner_email: ((window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '') || getCurrentUserEmail_(),
-        kind: 'deliverable',
-        asset_type: 'qr',
-        asset_id: id,
-        filename: filename,
-        template_id: template_id ? String(template_id) : '',
-        destination_url: dest ? String(dest) : '',
-        created_at: (new Date()).toISOString(),
-        updated_at: (new Date()).toISOString(),
-        user_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? String(window.CODEDESK_ENTRY.user_email) : '',
-        user_name_full: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_name_full) ? String(window.CODEDESK_ENTRY.user_name_full) : '',
-        parent_ascend_job_key: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.parent_ascend_job_key) ? String(window.CODEDESK_ENTRY.parent_ascend_job_key) : '',
-        // keep template linkage where possible
-        template_name: (rec && (rec.template_name || rec.templateName)) ? String(rec.template_name || rec.templateName) : '',
-        template_type: (rec && (rec.template_type || rec.templateType)) ? String(rec.template_type || rec.templateType) : '',
-        template_id_hint: (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '',
-        destination_url: dest
-      };
+      const j = await res.json();
+      if (!j || !j.ok) return false;
 
-      // push (no-cors; silent failures)
+      const data = j.data || {};
+      const driveId = String(data.drive_file_id || '').trim();
+      const openUrl = String(data.open_url || '').trim();
+      const jobKey  = String(data.ascend_job_key || '').trim();
+
+      // Persist any updated metadata (e.g., file name changes)
+      rec.fileroom = { drive_file_id: driveId, open_url: openUrl, ascend_job_key: jobKey };
+      rec.updatedAt = Date.now();
+      window.codedeskSaveWorkingFile(rec);
+
+      // ALSO: ensure this export appears in the right Ascend lanes (Dashboard prefs).
       try {
-        fetch(URL, {
+        const workingKey = String((data && data.working_ascend_job_key) ? data.working_ascend_job_key : ('CODEDESK_WORKFILE:' + workingId)).trim();
+
+        // FileRoom lane for the delivered PNG row
+        await fetch(window.CODEDESK_FILEROOM_API_BASE, {
           method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          credentials: 'omit',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'setDashboardPref',
+            user_email: ownerEmail,
+            ascend_job_key: jobKey,
+            lane: 'FILEROOM'
+          })
         });
-      } catch(e) {}
+
+        // Hopper lane for the working file row
+        await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+          method: 'POST',
+          credentials: 'omit',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'setDashboardPref',
+            user_email: ownerEmail,
+            ascend_job_key: workingKey,
+            lane: 'HOPPER'
+          })
+        });
+
+        // Keep the explicit "working file" upsert so the record stays fresh + has open_url/state.
+      } catch (e) {}
+
+      // Upsert WORKFILE row (orange hopper lane) — NO PNG
+      try {
+        await fetch(window.CODEDESK_FILEROOM_API_BASE, {
+          method: 'POST',
+          credentials: 'omit',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'upsertJob',
+            ascend_job_key: 'CODEDESK_WORKFILE:' + workingId,
+            app: 'codedesk',
+            source_id: workingId,
+            title: base || 'CODEDESK QR',
+            subtitle: 'CODEDESK — WORKING FILE',
+            status: 'open',
+            open_url: String(location && location.href ? location.href : ''),
+            owner_email: ownerEmail,
+            kind: 'workfile',
+            asset_type: 'qr',
+            template_id: templateId,
+            destination_url: destinationUrl,
+            state_json: stateJson,
+            tags: 'codedesk,workfile'
+          })
+        });
+        } catch (e) {}
+
+      // Successful full export (includes PNG) — clear dirty
+      try {
+        window.__CODEDESK_DIRTY__ = false;
+        window.__CODEDESK_LAST_EXPORT_AT__ = Date.now();
+      } catch(e){}
 
       return true;
-    } catch (e) {
-      return false;
     }
-  };
+  } catch (e) {}
 
-})();
+  return false;
+};
 
 /* === DOM READY (boot) ========================================= */
 (function(){
@@ -1456,130 +1495,222 @@ function composeCardSvg(opts) {
 }
 
 function render() {
+  let preview = document.getElementById('qrPreview');
+  let mount   = document.getElementById('qrMount');
 
-  // Template + working file gating: UI draws, but we do not autosave unless ceremony complete.
-  // (render itself is safe to run any time)
+  // If the host HTML is a different/older variant, self-heal by creating
+  // the required nodes inside the existing preview-stage wrapper.
+  if (!preview || !mount) {
+    const stage = document.querySelector('.preview-stage');
+    if (stage) {
+      if (!preview) {
+        preview = document.createElement('div');
+        preview.id = 'qrPreview';
+        stage.appendChild(preview);
+      }
+      if (!mount) {
+        mount = document.createElement('div');
+        mount.id = 'qrMount';
+        preview.appendChild(mount);
+      }
+    }
+  }
 
-  // Read type
-  const mode = String(val('qrType','url') || 'url').trim().toLowerCase();
+  if (!preview || !mount) return;
 
-  // Read inputs
-  const data = {
-    url: val('url',''),
-    email: val('email',''),
-    phone: val('phone',''),
-    sms_body: val('sms_body',''),
-    geo: val('geo',''),
-    title: val('title',''),
-    note: val('note',''),
+  // QRCode lib loads async; if it isn't ready yet, retry soon.
+  // Without this, buildQrSvg() can throw and the preview mounts nothing (blank card).
+  if (!window.QRCode || !window.QRCode.CorrectLevel) {
+    try { mount.innerHTML = ''; } catch (e) {}
+    clearTimeout(render._qrRetry);
+    render._qrRetry = setTimeout(render, 60);
+    return;
+  }
 
-    // vcard
-    first: val('first',''),
-    last: val('last',''),
-    org: val('org',''),
-    phone2: val('phone2',''),
-    email2: val('email2',''),
-    url2: val('url2','')
+  // ---- helpers (local, no global pollution)
+  const toHex = (v) => {
+    if (!v) return null;
+    v = String(v).trim();
+    const short = /^#([0-9a-f]{3})$/i;
+    const full  = /^#([0-9a-f]{6})$/i;
+    if (short.test(v)) return ('#' + v.slice(1).split('').map(c => c + c).join('')).toUpperCase();
+    if (full.test(v))  return v.toUpperCase();
+    return null;
   };
 
-  // QR text
-  const text = buildText(mode, data);
+  const hexPair = (colorId, textId, fallback) => {
+    const t = toHex(document.getElementById(textId)?.value);
+    if (t) return t;
+    const c = toHex(document.getElementById(colorId)?.value);
+    return c || fallback;
+  };
 
-  // ECC + colors
-  const ecc = (typeof getECC === 'function') ? getECC() : String(val('ecc','M') || 'M').toUpperCase();
-  const modulesColor = colorHex('modulesColor', '#000000');
-  const eyesColor = colorHex('eyesColor', modulesColor);
+  const num = (id, fallback) => {
+    const v = parseFloat(document.getElementById(id)?.value);
+    return Number.isFinite(v) ? v : fallback;
+  };
 
-  // Background (transparent vs fill)
-  const bgTop = colorHex('bgTopColor', '#FFFFFF');
-  const bgBot = colorHex('bgBottomColor', '#FFFFFF');
-  const topRaw = parseFloat(val('bgTopAlpha','100'));
-  const botRaw = parseFloat(val('bgBottomAlpha','100'));
-  const topA = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
-  const botA = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
+  // ---- background mode + CSS paint
+  try { if (typeof window.refreshBackground === 'function') window.refreshBackground(); } catch {}
+
+  // ---- caption (implicit: any text enables caption + rectangular card)
+  const headline = (document.getElementById('campaign')?.value || '').trim().slice(0, 20);
+  const body     = (document.getElementById('captionBody')?.value || '').trim().slice(0, 60);
+  const hasCaption = !!(headline || body);
+
+  // Preview stage must match the same two-state geometry as composeCardSvg()
+  // - no caption: square
+  // - caption present: wallet card (0.63 : 1 width : height)
+  const stageEl = preview.closest('.preview-stage');
+  if (stageEl) {
+    stageEl.style.aspectRatio = hasCaption ? '0.63 / 1' : '1 / 1';
+  }
+
+  // ---- QR type + data
+  const type = (document.getElementById('qrType')?.value || 'url').trim().toLowerCase();
+  const data = {
+    url:      document.getElementById('url')?.value || '',
+    email:    document.getElementById('email')?.value || '',
+    phone:    document.getElementById('phone')?.value || '',
+    sms_body: document.getElementById('sms_body')?.value || '',
+    geo:      document.getElementById('geo')?.value || '',
+    title:    document.getElementById('title')?.value || '',
+    note:     document.getElementById('note')?.value || '',
+
+    first:  document.getElementById('first')?.value || '',
+    last:   document.getElementById('last')?.value || '',
+    org:    document.getElementById('org')?.value || '',
+    phone2: document.getElementById('phone2')?.value || '',
+    email2: document.getElementById('email2')?.value || '',
+    url2:   document.getElementById('url2')?.value || ''
+  };
+
+  const text = buildText(type, data);
+
+  // ---- ECC
+  const ecc = (document.getElementById('ecc')?.value || 'M').toUpperCase();
+
+  // ---- colors
+  const bgTop = hexPair('bgTopColor',    'bgTopHex',    '#FFFFFF');
+  const bgBot = hexPair('bgBottomColor', 'bgBottomHex', '#FFFFFF');
+
+  const topA = num('bgTopAlpha', 100) / 100;
+  const botA = num('bgBottomAlpha', 100) / 100;
   const bgIsTransparent = (topA <= 0.001 && botA <= 0.001);
 
-  // Render QR svg
-  const qrSvg = buildQrSvg(text, {
-    ecc,
-    size: 420,
-    modulesColor,
-    eyesColor,
-    background: bgIsTransparent ? 'transparent' : '#ffffff'
-  });
+  const modulesColor = hexPair('bodyColor', 'bodyHex', '#000000');
+  const eyesColor    = hexPair('eyeRingColor', 'eyeRingHex', modulesColor);
 
-  // Caption + fonts
+  // ---- render QR SVG
+  let svg;
+  try {
+    svg = buildQrSvg(text, {
+      ecc,
+      size: 420,
+      modulesColor,
+      eyesColor,
+      background: bgIsTransparent ? 'transparent' : '#ffffff'
+    });
+  } catch (e) {
+    console.error('❌ render(): buildQrSvg failed', e);
+    mount.innerHTML = '';
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font: 12px/1.4 system-ui; padding: 10px; color: #b00020;';
+    msg.textContent = 'Preview error: ' + (e && e.message ? e.message : String(e));
+    mount.appendChild(msg);
+    return;
+  }
+
+  // ---- caption layout + card composition
   const fontFamily = (typeof getFont === 'function') ? getFont() : 'Work Sans';
   const caption = layoutCaptionLines({
-    headline: String(val('campaign','') || '').trim(),
-    body: String(val('captionBody','') || '').trim(),
+    headline: headline,
+    body: body,
     maxWidthPx: 520,
     fontFamily
   });
 
-  // Text color (caption)
-  const textColor = colorHex('bodyColor', '#000000');
+  const cardWidth = hasCaption ? 640 : 640;
+  try {
+    svg = composeCardSvg({
+      width: cardWidth,
+      height: hasCaption ? 1000 : 640,
+      radius: 44,
+      bgPaint: '#ffffff',
+      strokeOn: bgIsTransparent,
+      strokeColor: '#d9d9d9',
+      strokeWidth: 6,
+      qrSvg: svg,
+      qrSize: 420,
+      caption,
+      textColor: modulesColor,
+      fontFamily,
+      // Additional design controls (read from DOM to preserve canonical behavior)
+      modulesMode:    document.getElementById('modulesMode')?.value || 'Shape',
+      modulesScale:   parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
+      modulesEmoji:   document.getElementById('modulesEmoji')?.value || '😀',
 
-  // Card composition
-  const cardSvg = composeCardSvg({
-    width: 640,
-    height: 1000,
-    radius: 44,
-    bgPaint: '#ffffff',
-    strokeOn: bgIsTransparent,
-    strokeColor: '#d9d9d9',
-    strokeWidth: 6,
-    qrSvg,
-    qrSize: 420,
-    caption,
-    textColor,
-    fontFamily
-  });
-
-  // Mount to DOM
-  const mount = document.getElementById('qrMount');
-  if (mount) {
-    mount.innerHTML = cardSvg;
+      centerMode:     document.getElementById('centerMode')?.value || 'None',
+      centerScale:    parseFloat(document.getElementById('centerScale')?.value || '1'),
+      centerEmoji:    document.getElementById('centerEmoji')?.value || '😊',
+    });
+  } catch (e) {
+    console.error('❌ render(): composeCardSvg failed', e);
+    mount.innerHTML = '';
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font: 12px/1.4 system-ui; padding: 10px; color: #b00020;';
+    msg.textContent = 'Preview error: ' + (e && e.message ? e.message : String(e));
+    mount.appendChild(msg);
+    return;
   }
 
-  // Paint background gradient to preview element (CSS)
-  try {
-    if (typeof refreshBackground === 'function') refreshBackground();
-  } catch (e) {}
+  // MOUNT DEBUG
+  console.log('✅ render() running:', { svg, cardWidth });
 
-  // Update UI modes
+  // Paint
+  mount.innerHTML = '';
+  mount.appendChild(svg);
+
+  // Ensure no opaque mount background blocks true transparency
   try {
-    if (typeof refreshModulesMode === 'function') refreshModulesMode();
-  } catch (e) {}
-  try {
-    if (typeof refreshCenter === 'function') refreshCenter();
+    mount.style.background = 'transparent';
+    mount.style.backgroundColor = 'transparent';
+    const svgEl = mount.querySelector('svg');
+    if (svgEl) {
+      svgEl.style.background = 'transparent';
+      svgEl.style.backgroundColor = 'transparent';
+    }
   } catch (e) {}
 }
 
-// Ensure render is global (canonical behavior)
-window.render = render;
+;window.render = render;
 
-// One-time wiring for mode toggles (non-fatal)
-try {
+  // One-time lightweight listeners that re-render
   if (!render._wired) {
-    // Re-render when inputs change (delegated)
-    document.addEventListener('input', function(e){
-      const t = e && e.target;
-      if (!t) return;
-      // ignore file inputs etc
-      if (t.type === 'file') return;
-      if (typeof render === 'function') render();
+    const _rerender = () => {
+      if (window.__CODEDESK_IMPORTING_STATE__ || window.__CODEDESK_APPLYING_TEMPLATE__) return;
+      clearTimeout(render._t);
+      render._t = setTimeout(render, 30);
+    };
+
+    // Live updates while typing (Mechanicals must regenerate QR immediately)
+    document.addEventListener('input',  _rerender, true);
+    document.addEventListener('change', _rerender, true);
+
+    // Safety net for any “non-input” controls / contenteditable / weird UI widgets
+    document.addEventListener('keyup', (e) => {
+      if (!e) return;
+      _rerender();
     }, true);
 
-    document.addEventListener('change', function(e){
-      const t = e && e.target;
-      if (!t) return;
-      if (typeof render === 'function') render();
-    }, true);
+    window.addEventListener('resize', () => _rerender());
+    document.getElementById('qrType')?.addEventListener('change', () => setTimeout(_rerender, 0));
+
+    // Ensure we generate *something* immediately (even before the user blurs a field)
+    queueMicrotask(() => { try { _rerender(); } catch (e) {} });
 
     render._wired = true;
   }
-} catch(e){}
 
 // --- Modules mode toggle (hide QR modules vs show)
 function refreshModulesMode(){
@@ -1732,3 +1863,4 @@ try {
 try {
   if (typeof render === 'function') render();
 } catch (e) {}
+
