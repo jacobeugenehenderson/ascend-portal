@@ -680,10 +680,24 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
         const __isReturn0 = (!!__wf0 && !!__rec0 && String(__aid0 || '') === String(__wf0 || ''));
 
+        console.log('🧪 filename ceremony attach decision', {
+          mode: __mode0,
+          forcedNew: __forcedNew0,
+          url_working_file_id: __wf0,
+          activeId: __aid0,
+          hasActiveRec: !!__rec0,
+          isReturn: __isReturn0,
+          willAttach: (!__isReturn0 || __forcedNew0)
+        });
+
         if (!__isReturn0 || __forcedNew0) {
           inp.addEventListener('keydown', codedeskFilenameEnterCeremony, true);
+          console.log('🧪 filename ceremony: keydown listener ATTACHED');
+        } else {
+          console.warn('🧪 filename ceremony: keydown listener SKIPPED (return-visit detected)');
         }
       } catch(_e){
+        console.error('🧨 filename ceremony attach: threw; attaching anyway', _e);
         inp.addEventListener('keydown', codedeskFilenameEnterCeremony, true);
       }
 
@@ -1093,9 +1107,24 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 
     // Render once if available
     try {
-      if (typeof window.render === 'function') window.render();
-      else if (typeof render === 'function') render();
-    } catch (e) {}
+      console.log('🧪 boot(): render availability', {
+        hasWindowRender: (typeof window.render === 'function'),
+        hasRender: (typeof render === 'function'),
+        readyState: document.readyState
+      });
+
+      if (typeof window.render === 'function') {
+        console.log('🧪 boot(): calling window.render()');
+        window.render();
+      } else if (typeof render === 'function') {
+        console.log('🧪 boot(): calling render()');
+        render();
+      } else {
+        console.warn('🧪 boot(): NO render() found at boot time');
+      }
+    } catch (e) {
+      console.error('🧨 boot(): render threw', e);
+    }
   }
 
   if (document.readyState === 'loading') {
