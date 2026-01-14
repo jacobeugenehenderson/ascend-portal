@@ -1143,33 +1143,42 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   }
 })();
 
-(function () {
+if (typeof window.$ !== 'function') (function () {
   const $ = (id) => document.getElementById(id);
 
-  window.$ = $;
-  window.preview = $("qrPreview");
-  window.typeSel = $("qrType");
+  // Do not stomp globals owned by canonical modules.
+  try { if (typeof window.$ !== 'function') window.$ = $; } catch(e){}
+  try { if (!window.preview) window.preview = $("qrPreview"); } catch(e){}
+  try { if (!window.typeSel) window.typeSel = $("qrType"); } catch(e){}
 
-  window.colorHex = function (id, fallback) {
-    const node = $(id);
-    const v = (node && node.value) ? String(node.value).trim() : "";
-    const ok = /^#?[0-9a-f]{6}$/i.test(v);
-    const s = ok ? (v[0] === "#" ? v : "#" + v) : (fallback || "#000000");
-    if (node && ok) node.value = s;
-    return s;
-  };
+  try {
+    if (typeof window.colorHex !== 'function') {
+      window.colorHex = function (id, fallback) {
+        const node = $(id);
+        const v = (node && node.value) ? String(node.value).trim() : "";
+        const ok = /^#?[0-9a-f]{6}$/i.test(v);
+        const s = ok ? (v[0] === "#" ? v : "#" + v) : (fallback || "#000000");
+        if (node && ok) node.value = s;
+        return s;
+      };
+    }
+  } catch(e){}
 
-  window.val = function (id, fallback) {
-    const node = $(id);
-    if (!node) return fallback;
-    if (node.type === "checkbox") return !!node.checked;
-    const v = (node.value == null ? "" : String(node.value));
-    if (v === "" && fallback != null) return fallback;
-    return v;
-  };
+  try {
+    if (typeof window.val !== 'function') {
+      window.val = function (id, fallback) {
+        const node = $(id);
+        if (!node) return fallback;
+        if (node.type === "checkbox") return !!node.checked;
+        const v = (node.value == null ? "" : String(node.value));
+        if (v === "" && fallback != null) return fallback;
+        return v;
+      };
+    }
+  } catch(e){}
 })();
 
-function buildText(mode, data) {
+function buildText__LEGACY_DO_NOT_USE(mode, data) {
   data = data || {};
   // Normalized / trimmed inputs
   const link = String(data.url || data.link || "").trim();
