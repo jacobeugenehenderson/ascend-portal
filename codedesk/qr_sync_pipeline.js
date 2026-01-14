@@ -1664,7 +1664,9 @@ function render() {
   const ecc = getECC();
 
   // PreviewModel (pure data): QR inputs (ALWAYS non-empty; fallback slug allowed)
-  const rawTrim = String(buildText() || "").trim();
+  let __enc = "";
+  try { __enc = (typeof buildText === 'function') ? buildText() : ""; } catch(_e){}
+  const rawTrim = String(__enc || "").trim();
   const qrText = rawTrim || 'CODEDESK QR';
 
   previewModel.qr = {
