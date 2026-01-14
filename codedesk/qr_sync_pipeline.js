@@ -1533,13 +1533,6 @@ function composeCardSvg(opts) {
 }
 
 function render() {
-  console.log('🟢 render() ENTER', {
-    importing: window.__CODEDESK_IMPORTING_STATE__,
-    applyingTemplate: window.__CODEDESK_APPLYING_TEMPLATE__,
-    filenameAccepted: window.__CODEDESK_FILENAME_ACCEPTED__,
-    setupDone: window.__CODEDESK_SETUP_DONE__
-  });
-
   let preview = document.getElementById('qrPreview');
   let mount   = document.getElementById('qrMount');
 
@@ -1561,42 +1554,22 @@ function render() {
     }
   }
 
-  if (!preview || !mount) {
-    console.error('❌ render(): preview/mount missing after self-heal', {
-      preview: !!preview,
-      mount: !!mount,
-      stage: !!document.querySelector('.preview-stage')
-    });
-    return;
-  }
+  if (!preview || !mount) return;
 
-  console.log('🟦 render(): preview DOM ready', {
-    preview: preview.id,
-    mount: mount.id
-  });
-
-  // QRCode lib loads async; if it isn't ready yet, retry soon.
-  // Without this, buildQrSvg() can throw and the preview mounts nothing (blank card).
-  if (!window.QRCode || !window.QRCode.CorrectLevel) {
-    console.warn('⏳ render(): QRCode not ready, retrying', {
-      QRCode: !!window.QRCode,
-      CorrectLevel: !!(window.QRCode && window.QRCode.CorrectLevel)
-    });
-    try { mount.innerHTML = ''; } catch (e) {}
-    clearTimeout(render._qrRetry);
-    render._qrRetry = setTimeout(render, 60);
-    return;
-  }
-
-  // ---- helpers (local, no global pollution)
   const toHex = (v) => {
+    v = String(v || '').trim();
     if (!v) return null;
-    v = String(v).trim();
+    if (!v.startsWith('#')) v = '#' + v;
     const short = /^#([0-9a-f]{3})$/i;
     const full  = /^#([0-9a-f]{6})$/i;
     if (short.test(v)) return ('#' + v.slice(1).split('').map(c => c + c).join('')).toUpperCase();
     if (full.test(v))  return v.toUpperCase();
     return null;
+  };
+
+  const colorHex = (id, fallback) => {
+    const c = toHex(document.getElementById(id)?.value);
+    return c || fallback;
   };
 
   const hexPair = (colorId, textId, fallback) => {
@@ -1627,122 +1600,76 @@ function render() {
     stageEl.style.aspectRatio = hasCaption ? '0.63 / 1' : '1 / 1';
   }
 
-  // ---- QR type + data
-  const type = (document.getElementById('qrType')?.value || 'url').trim().toLowerCase();
-  const data = {
-    url:      document.getElementById('url')?.value || '',
-    email:    document.getElementById('email')?.value || '',
-    phone:    document.getElementById('phone')?.value || '',
-    sms_body: document.getElementById('sms_body')?.value || '',
-    geo:      document.getElementById('geo')?.value || '',
-    title:    document.getElementById('title')?.value || '',
-    note:     document.getElementById('note')?.value || '',
+  // Toggle visual style (stroke vs fill card)
+  // “Transparent background” = both gradient alphas are 0
+  const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
+  const botRaw = parseFloat(document.getElementById('bgBottomAlpha')?.value);
+  const topA = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
+  const botA = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
+  const isTransparent = (topA <= 0.001 && botA <= 0.001);
 
-    first:  document.getElementById('first')?.value || '',
-    last:   document.getElementById('last')?.value || '',
-    org:    document.getElementById('org')?.value || '',
-    phone2: document.getElementById('phone2')?.value || '',
-    email2: document.getElementById('email2')?.value || '',
-    url2:   document.getElementById('url2')?.value || ''
-  };
+  preview.classList.toggle('card--stroke', isTransparent);
+  preview.classList.toggle('card--fill',  !isTransparent);
 
-  const text = buildText(type, data);
+  // Stable card width (height via CSS aspect-ratio)
+  const rect      = preview.getBoundingClientRect();
+  const cardWidth = Math.max(rect.width || preview.clientWidth || 320, 320);
 
-  // ---- ECC
-  const ecc = (document.getElementById('ecc')?.value || 'M').toUpperCase();
+  // Build composed SVG
+  const ecc = getECC();
 
-  // ---- colors
-  const bgTop = hexPair('bgTopColor',    'bgTopHex',    '#FFFFFF');
-  const bgBot = hexPair('bgBottomColor', 'bgBottomHex', '#FFFFFF');
+  // If empty, export empty (no placeholder payloads)
+  const rawTrim = String(buildText() || "").trim();
+  if (!rawTrim) { try { mount.innerHTML = ''; } catch (e) {} return; }
 
-  const topA = num('bgTopAlpha', 100) / 100;
-  const botA = num('bgBottomAlpha', 100) / 100;
-  const bgIsTransparent = (topA <= 0.001 && botA <= 0.001);
-
-  const modulesColor = hexPair('bodyColor', 'bodyHex', '#000000');
-  const eyesColor    = hexPair('eyeRingColor', 'eyeRingHex', modulesColor);
-
-  // ---- render QR SVG
   let svg;
   try {
-    svg = buildQrSvg(text, {
-      ecc,
-      size: 420,
-      modulesColor,
-      eyesColor,
-      background: bgIsTransparent ? 'transparent' : '#ffffff'
-    });
-  } catch (e) {
-    console.error('❌ render(): buildQrSvg failed', e);
-    mount.innerHTML = '';
-    const msg = document.createElement('div');
-    msg.style.cssText = 'font: 12px/1.4 system-ui; padding: 10px; color: #b00020;';
-    msg.textContent = 'Preview error: ' + (e && e.message ? e.message : String(e));
-    mount.appendChild(msg);
-    return;
-  }
-
-  // ---- caption layout + card composition
-  const fontFamily = (typeof getFont === 'function') ? getFont() : 'Work Sans';
-  const caption = layoutCaptionLines({
-    headline: headline,
-    body: body,
-    maxWidthPx: 520,
-    fontFamily
-  });
-
-  const cardWidth = hasCaption ? 640 : 640;
-  try {
     svg = composeCardSvg({
-      width: cardWidth,
-      height: hasCaption ? 1000 : 640,
-      radius: 44,
-      bgPaint: '#ffffff',
-      strokeOn: bgIsTransparent,
-      strokeColor: '#d9d9d9',
-      strokeWidth: 6,
-      qrSvg: svg,
-      qrSize: 420,
-      caption,
-      textColor: modulesColor,
-      fontFamily,
-      // Additional design controls (read from DOM to preserve canonical behavior)
-      modulesMode:    document.getElementById('modulesMode')?.value || 'Shape',
-      modulesScale:   parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
-      modulesEmoji:   document.getElementById('modulesEmoji')?.value || '😀',
+      cardWidth,
+      transparentBg: isTransparent,
 
-      centerMode:     document.getElementById('centerMode')?.value || 'None',
-      centerScale:    parseFloat(document.getElementById('centerScale')?.value || '1'),
-      centerEmoji:    document.getElementById('centerEmoji')?.value || '😊',
+      // gradient pieces
+      bgTopColor:     colorHex('bgTopColor',    '#FFFFFF') || '#FFFFFF',
+      bgBottomColor:  colorHex('bgBottomColor', '#FFFFFF') || '#FFFFFF',
+      bgTopAlpha:     Math.max(0, Math.min(100, parseFloat(document.getElementById('bgTopAlpha')?.value || '100'))),
+      bgBottomAlpha:  Math.max(0, Math.min(100, parseFloat(document.getElementById('bgBottomAlpha')?.value || '100'))),
+
+      captionHeadline: hasCaption ? headline : '',
+      captionBody:     hasCaption ? body : '',
+      captionColor:    colorHex('captionColor', '#000000'),
+      ecc,
+
+      // QR colors + geometry
+      bodyColor:       colorHex('bodyColor', '#000000'),
+      eyeRingColor:    colorHex('eyeRingColor', colorHex('bodyColor', '#000000')),
+      eyeDotColor:     colorHex('eyeDotColor',  colorHex('eyeRingColor', colorHex('bodyColor', '#000000'))),
+
+      eyeDotScale:     num('eyeDotScale', 0.4),
+      margin:          num('margin', 4),
+
+      // typography
+      fontFamily:      (document.getElementById('fontFamily')?.value || 'Work Sans'),
+      captionScale:    num('captionScale', 1),
+      captionEmoji:    document.getElementById('captionEmoji')?.value || '',
+      captionEmojiScale: num('captionEmojiScale', 1),
+
+      // modules / eyes variants
+      modulesMode:     document.getElementById('modulesMode')?.value || 'Shape',
+      modulesScale:    parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
+      modulesEmoji:    document.getElementById('modulesEmoji')?.value || '😀',
+
+      eyeMode:         document.getElementById('eyeMode')?.value || 'Classic',
+      eyeScale:        parseFloat(document.getElementById('eyeScale')?.value || '0.85'),
+      eyeEmoji:        document.getElementById('eyeEmoji')?.value || '👁️'
     });
   } catch (e) {
-    console.error('❌ render(): composeCardSvg failed', e);
-    mount.innerHTML = '';
-    const msg = document.createElement('div');
-    msg.style.cssText = 'font: 12px/1.4 system-ui; padding: 10px; color: #b00020;';
-    msg.textContent = 'Preview error: ' + (e && e.message ? e.message : String(e));
-    mount.appendChild(msg);
+    console.warn('render() failed', e);
     return;
   }
-
-  // MOUNT DEBUG
-  console.log('✅ render() running:', { svg, cardWidth });
 
   // Paint
   mount.innerHTML = '';
-
-  if (typeof svg === 'string') {
-    mount.innerHTML = svg;
-  } else if (svg && svg.nodeType) {
-    mount.appendChild(svg);
-  } else {
-    console.error('❌ render(): invalid svg payload', svg);
-  }
-
-  console.log('✅ render(): SVG mounted', {
-    hasSVG: !!mount.querySelector('svg'),
-    childCount: mount.childNodes.length
-  });
+  mount.appendChild(svg);
 
   // Ensure no opaque mount background blocks true transparency
   try {
