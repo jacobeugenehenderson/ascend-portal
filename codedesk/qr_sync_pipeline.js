@@ -1022,3 +1022,33 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 
   return true;
 };
+
+(function codedeskBootOnce(){
+  if (window.__CODEDESK_BOOTED__) return;
+  window.__CODEDESK_BOOTED__ = true;
+
+  function boot(){
+    // 1. Wire UI systems that depend on full DOM
+    try { wireRightAccordionBehaviorOnce?.(); } catch(e){}
+    try { wireCaptionInputs?.(); } catch(e){}
+    try { wireFontSelect?.(); } catch(e){}
+    try { wireECCPill?.(); } catch(e){}
+    try { wireECCLegacySelect?.(); } catch(e){}
+
+    // 2. Establish initial lock state
+    const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
+    try { codedeskSetLocked?.(!accepted); } catch(e){}
+
+    // 3. First render (this is what you’re missing)
+    requestAnimationFrame(() => {
+      try { typeof render === 'function' && render(); } catch(e){}
+      document.documentElement.classList.add('ui-ready');
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
