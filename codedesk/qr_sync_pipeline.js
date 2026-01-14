@@ -606,6 +606,12 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         const isEnter = (e.key === 'Enter' || e.keyCode === 13);
         if (!isEnter) return;
 
+        console.log('⌨️ ENTER ceremony', {
+          value: String(inp.value || '').trim(),
+          acceptedBefore: window.__CODEDESK_FILENAME_ACCEPTED__,
+          activeWF: (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null
+        });
+
         try { e.preventDefault(); } catch(_e){}
         try { e.stopPropagation(); } catch(_e){}
 
@@ -1070,6 +1076,8 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 /* === DOM READY (boot) ========================================= */
 (function(){
   function boot(){
+    console.log('🚀 boot() fired', { readyState: document.readyState });
+
     // Mark body as ready once JS is alive
     try {
       const documentElement = document.documentElement;
@@ -1079,14 +1087,15 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
     // Expose a no-op safety hook for other modules
     try {
       if (typeof window.refreshModulesMode !== 'function') {
-        window.refreshModulesMode = function(){};
+        window.refreshModulesMode = function () {};
       }
-    } catch(e){}
+    } catch (e) {}
 
     // Render once if available
     try {
-      if (typeof render === 'function') render();
-    } catch(e){}
+      if (typeof window.render === 'function') window.render();
+      else if (typeof render === 'function') render();
+    } catch (e) {}
   }
 
   if (document.readyState === 'loading') {
@@ -1495,6 +1504,13 @@ function composeCardSvg(opts) {
 }
 
 function render() {
+  console.log('🟢 render() ENTER', {
+    importing: window.__CODEDESK_IMPORTING_STATE__,
+    applyingTemplate: window.__CODEDESK_APPLYING_TEMPLATE__,
+    filenameAccepted: window.__CODEDESK_FILENAME_ACCEPTED__,
+    setupDone: window.__CODEDESK_SETUP_DONE__
+  });
+
   let preview = document.getElementById('qrPreview');
   let mount   = document.getElementById('qrMount');
 
@@ -1516,11 +1532,27 @@ function render() {
     }
   }
 
-  if (!preview || !mount) return;
+  if (!preview || !mount) {
+    console.error('❌ render(): preview/mount missing after self-heal', {
+      preview: !!preview,
+      mount: !!mount,
+      stage: !!document.querySelector('.preview-stage')
+    });
+    return;
+  }
+
+  console.log('🟦 render(): preview DOM ready', {
+    preview: preview.id,
+    mount: mount.id
+  });
 
   // QRCode lib loads async; if it isn't ready yet, retry soon.
   // Without this, buildQrSvg() can throw and the preview mounts nothing (blank card).
   if (!window.QRCode || !window.QRCode.CorrectLevel) {
+    console.warn('⏳ render(): QRCode not ready, retrying', {
+      QRCode: !!window.QRCode,
+      CorrectLevel: !!(window.QRCode && window.QRCode.CorrectLevel)
+    });
     try { mount.innerHTML = ''; } catch (e) {}
     clearTimeout(render._qrRetry);
     render._qrRetry = setTimeout(render, 60);
@@ -1670,6 +1702,11 @@ function render() {
   // Paint
   mount.innerHTML = '';
   mount.appendChild(svg);
+
+  console.log('✅ render(): SVG mounted', {
+    hasSVG: !!mount.querySelector('svg'),
+    childCount: mount.childNodes.length
+  });
 
   // Ensure no opaque mount background blocks true transparency
   try {
