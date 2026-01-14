@@ -1574,6 +1574,16 @@ function render() {
 
   if (!preview || !mount) return;
 
+  // PreviewModel state: prevent blank frames by keeping last-good SVG
+  if (!render._previewState) {
+    render._previewState = {
+      stageState: 'ready',
+      lastGoodSvg: null,
+      errorMessage: null
+    };
+  }
+  const _previewState = render._previewState;
+
   const toHex = (v) => {
     v = String(v || '').trim();
     if (!v) return null;
@@ -1610,12 +1620,29 @@ function render() {
   const body     = (document.getElementById('captionBody')?.value || '').trim().slice(0, 60);
   const hasCaption = !!(headline || body);
 
+  // PreviewModel (pure data): stage + semantic content
+  const previewModel = {
+    stage: {
+      shape: hasCaption ? 'wallet' : 'square',
+      aspectRatio: hasCaption ? 0.63 : 1
+    },
+    content: {
+      hasCaption,
+      headline,
+      body
+    },
+    qr: null,
+    presentation: null,
+    overlays: null,
+    state: _previewState
+  };
+
   // Preview stage must match the same two-state geometry as composeCardSvg()
   // - no caption: square
   // - caption present: wallet card (0.63 : 1 width : height)
   const stageEl = preview.closest('.preview-stage');
   if (stageEl) {
-    stageEl.style.aspectRatio = hasCaption ? '0.63 / 1' : '1 / 1';
+    stageEl.style.aspectRatio = (previewModel.stage.shape === 'wallet') ? '0.63 / 1' : '1 / 1';
   }
 
   // Toggle visual style (stroke vs fill card)
@@ -1636,58 +1663,111 @@ function render() {
   // Build composed SVG
   const ecc = getECC();
 
-  // If empty, export empty (no placeholder payloads)
+  // PreviewModel (pure data): QR inputs (ALWAYS non-empty; fallback slug allowed)
   const rawTrim = String(buildText() || "").trim();
-  if (!rawTrim) { try { mount.innerHTML = ''; } catch (e) {} return; }
+  const qrText = rawTrim || 'CODEDESK QR';
 
-  let svg;
+  previewModel.qr = {
+    text: qrText,
+    eccLevel: ecc,
+    moduleStyle: (document.getElementById('modulesMode')?.value || 'Shape'),
+    size: null,
+    quietZonePolicy: num('margin', 4)
+  };
+
+  // PreviewModel (pure data): presentation (surface-only; background stays via CSS)
+  previewModel.presentation = {
+    background: {
+      mode: isTransparent ? 'card--stroke' : 'card--fill',
+      token: null,
+      intensity: null
+    },
+    layout: {
+      center: true,
+      marginMode: null
+    },
+    qrDisplay: {
+      modules: (document.getElementById('modulesMode')?.value || 'Shape'),
+      invert: false,
+      pixelSnap: false
+    }
+  };
+
+  // PreviewModel (pure data): overlays (surface-only; not in SVG)
+  previewModel.overlays = {
+    grid: false,
+    bleed: false,
+    bounds: false,
+    debug: false
+  };
+
+  _previewState.stageState = 'loading';
+  _previewState.errorMessage = null;
+
+  let svgStr = '';
   try {
-    svg = composeCardSvg({
-      cardWidth,
-      transparentBg: isTransparent,
+    const fontFamily = (document.getElementById('fontFamily')?.value || 'Work Sans');
 
-      // gradient pieces
-      bgTopColor:     colorHex('bgTopColor',    '#FFFFFF') || '#FFFFFF',
-      bgBottomColor:  colorHex('bgBottomColor', '#FFFFFF') || '#FFFFFF',
-      bgTopAlpha:     Math.max(0, Math.min(100, parseFloat(document.getElementById('bgTopAlpha')?.value || '100'))),
-      bgBottomAlpha:  Math.max(0, Math.min(100, parseFloat(document.getElementById('bgBottomAlpha')?.value || '100'))),
+    const capLayout = layoutCaptionLines({
+      headline,
+      body,
+      fontFamily
+    });
 
-      captionHeadline: hasCaption ? headline : '',
-      captionBody:     hasCaption ? body : '',
-      captionColor:    colorHex('captionColor', '#000000'),
+    const qrSvg = buildQrSvg(previewModel.qr.text, {
       ecc,
+      modulesColor: colorHex('bodyColor', '#000000'),
+      eyesColor: colorHex('eyeRingColor', colorHex('bodyColor', '#000000')),
+      background: 'transparent'
+    });
 
-      // QR colors + geometry
-      bodyColor:       colorHex('bodyColor', '#000000'),
-      eyeRingColor:    colorHex('eyeRingColor', colorHex('bodyColor', '#000000')),
-      eyeDotColor:     colorHex('eyeDotColor',  colorHex('eyeRingColor', colorHex('bodyColor', '#000000'))),
+    svgStr = composeCardSvg({
+      bgPaint: 'transparent',
+      strokeOn: isTransparent,
 
-      eyeDotScale:     num('eyeDotScale', 0.4),
-      margin:          num('margin', 4),
+      qrSvg,
 
-      // typography
-      fontFamily:      (document.getElementById('fontFamily')?.value || 'Work Sans'),
-      captionScale:    num('captionScale', 1),
-      captionEmoji:    document.getElementById('captionEmoji')?.value || '',
-      captionEmojiScale: num('captionEmojiScale', 1),
+      caption: hasCaption ? {
+        headLines: capLayout.headLines,
+        bodyLines: capLayout.bodyLines,
+        headSize: capLayout.headSize,
+        bodySize: capLayout.bodySize,
+        headLeading: capLayout.headLeading,
+        bodyLeading: capLayout.bodyLeading,
+        fontFamily
+      } : {
+        headLines: [],
+        bodyLines: [],
+        headSize: 0,
+        bodySize: 0,
+        headLeading: 0,
+        bodyLeading: 0,
+        fontFamily
+      },
 
-      // modules / eyes variants
-      modulesMode:     document.getElementById('modulesMode')?.value || 'Shape',
-      modulesScale:    parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
-      modulesEmoji:    document.getElementById('modulesEmoji')?.value || '😀',
-
-      eyeMode:         document.getElementById('eyeMode')?.value || 'Classic',
-      eyeScale:        parseFloat(document.getElementById('eyeScale')?.value || '0.85'),
-      eyeEmoji:        document.getElementById('eyeEmoji')?.value || '👁️'
+      textColor: colorHex('captionColor', '#000000')
     });
   } catch (e) {
+    _previewState.stageState = 'error';
+    try { _previewState.errorMessage = String(e && e.message ? e.message : e); } catch(_e){}
     console.warn('render() failed', e);
     return;
   }
 
-  // Paint
-  mount.innerHTML = '';
-  mount.appendChild(svg);
+  // Paint (never clear unless replacing in the same pass)
+  try {
+    mount.innerHTML = svgStr;
+    const svgEl = mount.querySelector('svg');
+    if (svgEl) {
+      _previewState.lastGoodSvg = svgEl;
+    }
+    _previewState.stageState = 'ready';
+  } catch (e) {
+    _previewState.stageState = 'error';
+    try { _previewState.errorMessage = String(e && e.message ? e.message : e); } catch(_e){}
+    console.warn('render() mount failed', e);
+    return;
+  }
 
   // Ensure no opaque mount background blocks true transparency
   try {
