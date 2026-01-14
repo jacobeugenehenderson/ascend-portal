@@ -1682,7 +1682,6 @@ function render() {
     }
   } catch (e) {}
 }
-
 ;window.render = render;
 
   // One-time lightweight listeners that re-render
