@@ -618,14 +618,22 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         const fname = String(inp.value || '').trim();
         if (!fname) return;
 
-        // If a working file already exists, this listener should not be active.
-        // (Defensive: remove itself if it ever fires in that state.)
+        // Disable ceremony only on a TRUE return-visit:
+        // URL working_file_id matches active working id AND not mode=new/portal_new.
         try {
-          const _aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
-          const _rec = _aid && (typeof window.codedeskGetWorkingFileRecord === 'function'
-            ? window.codedeskGetWorkingFileRecord(_aid)
+          const __u1 = new URL(window.location.href);
+          const __mode1 = String(__u1.searchParams.get('mode') || '').trim().toLowerCase();
+          const __forcedNew1 = (__mode1 === 'new' || __mode1 === 'portal_new');
+          const __wf1 = String(__u1.searchParams.get('working_file_id') || __u1.searchParams.get('wf') || '').trim();
+
+          const __aid1 = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
+          const __rec1 = __aid1 && (typeof window.codedeskGetWorkingFileRecord === 'function'
+            ? window.codedeskGetWorkingFileRecord(__aid1)
             : null);
-          if (_rec) {
+
+          const __isReturn1 = (!!__wf1 && !!__rec1 && String(__aid1 || '') === String(__wf1 || ''));
+
+          if (__isReturn1 && !__forcedNew1) {
             try { inp.removeEventListener('keydown', codedeskFilenameEnterCeremony, true); } catch(__e){}
             return;
           }
@@ -633,6 +641,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
         try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
         try { codedeskSetLocked(false); } catch(_e){}
+        try { if (typeof window.render === 'function') window.render(); } catch(_e){}
 
         // If the stepper was late-mounted, ensure the right-side controls are actually wired.
         try { wireRightAccordionBehaviorOnce(); } catch(_e){}
