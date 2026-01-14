@@ -417,9 +417,13 @@
     '1x882jC2h_2YJsIXQrV1K56nqKvCPzJ4N';
 </script>
 
-<!-- Your app code (keep this if you already have it) -->
+<!-- Your app code (sequenced modules; order matters) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="./qr_app.js?v=9" defer></script>
+
+<script src="./qr_app-bootstrapper.js?v=9" defer></script>
+<script src="./qr_ui_toolkit.js?v=9" defer></script>
+<script src="./qr_state_engine.js?v=9" defer></script>
+<script src="./qr_sync_pipeline.js?v=9" defer></script>
 
 <!-- Emoji picker wiring -->
 <script type="module">
