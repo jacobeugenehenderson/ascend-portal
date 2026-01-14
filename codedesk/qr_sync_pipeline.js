@@ -994,56 +994,60 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
         owner_email: ((window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? window.CODEDESK_ENTRY.user_email : '') || getCurrentUserEmail_(),
         kind: 'deliverable',
         asset_type: 'qr',
-        template_id: (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '',
-        destination_url: destinationUrl,
-        state_json: stateJson,
-        drive_file_id: driveFileId,
-        tags: 'codedesk,qr'
-      })
-    });
-  } catch (e) {
-    // If deliverable upsert fails, do not clear dirty.
-    return false;
-  }
+        asset_id: id,
+        filename: filename,
+        template_id: template_id ? String(template_id) : '',
+        destination_url: dest ? String(dest) : '',
+        created_at: (new Date()).toISOString(),
+        updated_at: (new Date()).toISOString(),
+        user_email: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_email) ? String(window.CODEDESK_ENTRY.user_email) : '',
+        user_name_full: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.user_name_full) ? String(window.CODEDESK_ENTRY.user_name_full) : '',
+        parent_ascend_job_key: (window.CODEDESK_ENTRY && window.CODEDESK_ENTRY.parent_ascend_job_key) ? String(window.CODEDESK_ENTRY.parent_ascend_job_key) : '',
+        // keep template linkage where possible
+        template_name: (rec && (rec.template_name || rec.templateName)) ? String(rec.template_name || rec.templateName) : '',
+        template_type: (rec && (rec.template_type || rec.templateType)) ? String(rec.template_type || rec.templateType) : '',
+        template_id_hint: (rec && (rec.template_id || rec.templateId)) ? String(rec.template_id || rec.templateId) : '',
+        destination_url: dest
+      };
 
-  // Record pairing in the working-file record (so return-visits know pairing is done)
-  try {
-    const next = Object.assign({}, rec.fileroom || {});
-    next.drive_file_id = driveFileId;
-    rec.fileroom = next;
-    try { window.codedeskSaveWorkingFile && window.codedeskSaveWorkingFile(String(rec.name || ''), { id: workingId }); } catch(_e){}
-  } catch(e){}
+      // push (no-cors; silent failures)
+      try {
+        fetch(URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch(e) {}
 
-  // Successful full export — clear dirty
-  try {
-    window.__CODEDESK_DIRTY__ = false;
-    window.__CODEDESK_LAST_EXPORT_AT__ = Date.now();
-  } catch(e){}
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
 
-  return true;
-};
+})();
 
-(function codedeskBootOnce(){
-  if (window.__CODEDESK_BOOTED__) return;
-  window.__CODEDESK_BOOTED__ = true;
-
+/* === DOM READY (boot) ========================================= */
+(function(){
   function boot(){
-    // 1. Wire UI systems that depend on full DOM
-    try { wireRightAccordionBehaviorOnce?.(); } catch(e){}
-    try { wireCaptionInputs?.(); } catch(e){}
-    try { wireFontSelect?.(); } catch(e){}
-    try { wireECCPill?.(); } catch(e){}
-    try { wireECCLegacySelect?.(); } catch(e){}
+    // Mark body as ready once JS is alive
+    try {
+      const documentElement = document.documentElement;
+      if (documentElement) documentElement.classList.add('ui-ready');
+    } catch(e){}
 
-    // 2. Establish initial lock state
-    const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
-    try { codedeskSetLocked?.(!accepted); } catch(e){}
+    // Expose a no-op safety hook for other modules
+    try {
+      if (typeof window.refreshModulesMode !== 'function') {
+        window.refreshModulesMode = function(){};
+      }
+    } catch(e){}
 
-    // 3. First render (this is what you’re missing)
-    requestAnimationFrame(() => {
-      try { typeof render === 'function' && render(); } catch(e){}
-      document.documentElement.classList.add('ui-ready');
-    });
+    // Render once if available
+    try {
+      if (typeof render === 'function') render();
+    } catch(e){}
   }
 
   if (document.readyState === 'loading') {
@@ -1052,3 +1056,679 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
     boot();
   }
 })();
+
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  window.$ = $;
+  window.preview = $("qrPreview");
+  window.typeSel = $("qrType");
+
+  window.colorHex = function (id, fallback) {
+    const node = $(id);
+    const v = (node && node.value) ? String(node.value).trim() : "";
+    const ok = /^#?[0-9a-f]{6}$/i.test(v);
+    const s = ok ? (v[0] === "#" ? v : "#" + v) : (fallback || "#000000");
+    if (node && ok) node.value = s;
+    return s;
+  };
+
+  window.val = function (id, fallback) {
+    const node = $(id);
+    if (!node) return fallback;
+    if (node.type === "checkbox") return !!node.checked;
+    const v = (node.value == null ? "" : String(node.value));
+    if (v === "" && fallback != null) return fallback;
+    return v;
+  };
+})();
+
+function buildText(mode, data) {
+  data = data || {};
+  // Normalized / trimmed inputs
+  const link = String(data.url || data.link || "").trim();
+  const email = String(data.email || "").trim();
+  const phone = String(data.phone || "").trim();
+  const smsBody = String(data.sms_body || data.smsBody || "").trim();
+  const geo = String(data.geo || "").trim();
+  const title = String(data.title || "").trim();
+  const note = String(data.note || "").trim();
+
+  // URL type (default)
+  if (mode === "url" || mode === "link" || mode === "website" || !mode) {
+    return link || "";
+  }
+
+  // Mailto
+  if (mode === "email") {
+    const subj = String(data.subject || "").trim();
+    const body = String(data.body || "").trim();
+    const q = [];
+    if (subj) q.push("subject=" + encodeURIComponent(subj));
+    if (body) q.push("body=" + encodeURIComponent(body));
+    const qs = q.length ? "?" + q.join("&") : "";
+    return email ? ("mailto:" + email + qs) : "";
+  }
+
+  // Tel
+  if (mode === "phone" || mode === "tel") {
+    return phone ? ("tel:" + phone.replace(/\s+/g, "")) : "";
+  }
+
+  // SMS
+  if (mode === "sms") {
+    // Format: sms:+15551234567?body=hi
+    const q = smsBody ? ("?body=" + encodeURIComponent(smsBody)) : "";
+    return phone ? ("sms:" + phone.replace(/\s+/g, "") + q) : "";
+  }
+
+  // Geo
+  if (mode === "geo") {
+    // geo:lat,lng?q=label
+    return geo || "";
+  }
+
+  // Plain text / note
+  if (mode === "text" || mode === "note") {
+    const parts = [];
+    if (title) parts.push(title);
+    if (note) parts.push(note);
+    return parts.join("\n").trim();
+  }
+
+  // vCard (basic)
+  if (mode === "vcard") {
+    const first = String(data.first || "").trim();
+    const last = String(data.last || "").trim();
+    const org = String(data.org || "").trim();
+    const phone2 = String(data.phone2 || "").trim();
+    const email2 = String(data.email2 || "").trim();
+    const url2 = String(data.url2 || "").trim();
+
+    const lines = [];
+    lines.push("BEGIN:VCARD");
+    lines.push("VERSION:3.0");
+    lines.push("N:" + last + ";" + first + ";;;");
+    lines.push("FN:" + [first, last].filter(Boolean).join(" "));
+    if (org) lines.push("ORG:" + org);
+    if (phone) lines.push("TEL;TYPE=CELL:" + phone);
+    if (phone2) lines.push("TEL;TYPE=WORK:" + phone2);
+    if (email2 || email) lines.push("EMAIL:" + (email2 || email));
+    if (url2 || link) lines.push("URL:" + (url2 || link));
+    lines.push("END:VCARD");
+    return lines.join("\n");
+  }
+
+  // Fallback to URL
+  return link || "";
+}
+
+// Small helper to measure a text line in SVG space (rough; uses canvas)
+function measureTextPx(text, fontFamily, fontSizePx, fontWeight) {
+  try {
+    const c = measureTextPx._c || (measureTextPx._c = document.createElement('canvas'));
+    const ctx = c.getContext('2d');
+    ctx.font = `${fontWeight || 600} ${fontSizePx || 18}px ${fontFamily || 'Work Sans'}`;
+    const m = ctx.measureText(String(text || ''));
+    return m.width || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// Layout caption lines to fit within a target width.
+// Returns { headLines: [...], bodyLines: [...], headSize, bodySize, headLeading, bodyLeading }
+function layoutCaptionLines(opts) {
+  opts = opts || {};
+  const head = String(opts.headline || '').trim();
+  const body = String(opts.body || '').trim();
+
+  const maxW = Number(opts.maxWidthPx || 520);
+  const fontFamily = String(opts.fontFamily || 'Work Sans');
+  const headWeight = Number(opts.headWeight || 700);
+  const bodyWeight = Number(opts.bodyWeight || 600);
+
+  const headMaxSize = Number(opts.headMaxSize || 28);
+  const headMinSize = Number(opts.headMinSize || 16);
+  const bodyMaxSize = Number(opts.bodyMaxSize || 18);
+  const bodyMinSize = Number(opts.bodyMinSize || 12);
+
+  // Greedy word-wrap helper
+  function wrap(text, sizePx, weight) {
+    if (!text) return [];
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines = [];
+    let cur = '';
+    for (let i = 0; i < words.length; i++) {
+      const next = cur ? (cur + ' ' + words[i]) : words[i];
+      const w = measureTextPx(next, fontFamily, sizePx, weight);
+      if (w <= maxW || !cur) {
+        cur = next;
+      } else {
+        lines.push(cur);
+        cur = words[i];
+      }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  function fit(text, maxSize, minSize, weight, maxLines) {
+    let size = maxSize;
+    let lines = wrap(text, size, weight);
+    while (size > minSize && (lines.length > maxLines || (lines.some(l => measureTextPx(l, fontFamily, size, weight) > maxW)))) {
+      size -= 1;
+      lines = wrap(text, size, weight);
+    }
+    return { size, lines };
+  }
+
+  // Headline: aim for <= 2 lines
+  const headFit = fit(head, headMaxSize, headMinSize, headWeight, 2);
+
+  // Body: aim for <= 2 lines (optional)
+  const bodyFit = fit(body, bodyMaxSize, bodyMinSize, bodyWeight, 2);
+
+  return {
+    headLines: headFit.lines,
+    bodyLines: bodyFit.lines,
+    headSize: headFit.size,
+    bodySize: bodyFit.size,
+    headLeading: Math.round(headFit.size * 1.15),
+    bodyLeading: Math.round(bodyFit.size * 1.2),
+    fontFamily
+  };
+}
+
+// Build an SVG element for the QR, including background, modules, and eyes.
+// Returns SVG string
+function buildQrSvg(text, opts) {
+  opts = opts || {};
+  const ecc = String(opts.ecc || 'M').toUpperCase();
+  const size = Number(opts.size || 256);
+  const margin = Number(opts.margin || 0);
+
+  // colors
+  const modColor = String(opts.modulesColor || '#000000');
+  const eyeColor = String(opts.eyesColor || modColor);
+  const bg = String(opts.background || 'transparent');
+
+  // module shape presets (segno style)
+  const segno = window.segno || null;
+
+  // Fallback to QRCode.js if segno isn't present
+  // (Canonical file expects segno; keep behavior as-is when present.)
+  let matrix = null;
+  try {
+    if (segno && typeof segno.make === 'function') {
+      const qr = segno.make(text || '', { error: ecc });
+      matrix = qr.matrix;
+    }
+  } catch (e) {
+    matrix = null;
+  }
+
+  // If segno isn't present, use QRCode.js to generate a matrix-like raster and paint as modules
+  if (!matrix && window.QRCode && window.QRCode.CorrectLevel) {
+    // QRCode.js renders to DOM; we only need its internal data if accessible.
+    // Canonical file still supports QRCode.js path; keep it minimal.
+    const tmp = document.createElement('div');
+    tmp.style.position = 'absolute';
+    tmp.style.left = '-99999px';
+    tmp.style.top = '-99999px';
+    document.body.appendChild(tmp);
+    try {
+      const qr = new window.QRCode(tmp, {
+        text: text || '',
+        width: size,
+        height: size,
+        colorDark: modColor,
+        colorLight: 'transparent',
+        correctLevel: window.QRCode.CorrectLevel[ecc] || window.QRCode.CorrectLevel.M
+      });
+      // Try to read the canvas pixels and infer matrix (crude fallback)
+      const canvas = tmp.querySelector('canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        const img = ctx.getImageData(0, 0, size, size).data;
+        // infer module count by scanning first row for transitions
+        // (best-effort fallback; canonical path prefers segno)
+        const row = [];
+        for (let x = 0; x < size; x++) {
+          const i = (0 * size + x) * 4;
+          row.push(img[i + 3] > 0 ? 1 : 0);
+        }
+        // guess moduleCount
+        let transitions = 0;
+        for (let i = 1; i < row.length; i++) {
+          if (row[i] !== row[i - 1]) transitions++;
+        }
+        const moduleCount = Math.max(21, Math.min(177, Math.round(transitions / 2)));
+        matrix = [];
+        const step = size / moduleCount;
+        for (let y = 0; y < moduleCount; y++) {
+          const line = [];
+          for (let x = 0; x < moduleCount; x++) {
+            const cx = Math.floor((x + 0.5) * step);
+            const cy = Math.floor((y + 0.5) * step);
+            const j = (cy * size + cx) * 4;
+            const on = img[j + 3] > 0 && img[j] < 200;
+            line.push(!!on);
+          }
+          matrix.push(line);
+        }
+      }
+    } catch (e) {
+      // noop
+    } finally {
+      try { tmp.remove(); } catch(e){}
+    }
+  }
+
+  if (!matrix) {
+    // last-ditch empty svg
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"></svg>`;
+  }
+
+  const n = matrix.length;
+  const scale = (size - margin * 2) / n;
+
+  function rect(x, y, w, h, fill) {
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
+  }
+
+  // Identify eyes (finder patterns) - top-left, top-right, bottom-left
+  function isInEye(x, y) {
+    const inTL = (x < 7 && y < 7);
+    const inTR = (x >= n - 7 && y < 7);
+    const inBL = (x < 7 && y >= n - 7);
+    return inTL || inTR || inBL;
+  }
+
+  let parts = [];
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`);
+
+  if (bg !== 'transparent') {
+    parts.push(rect(0, 0, size, size, bg));
+  }
+
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      if (!matrix[y][x]) continue;
+      const px = margin + x * scale;
+      const py = margin + y * scale;
+      const fill = isInEye(x, y) ? eyeColor : modColor;
+      parts.push(rect(px, py, scale, scale, fill));
+    }
+  }
+
+  parts.push(`</svg>`);
+  return parts.join('');
+}
+
+// Compose the full card SVG: background, caption, QR, border radius, etc.
+function composeCardSvg(opts) {
+  opts = opts || {};
+  const w = Number(opts.width || 640);
+  const h = Number(opts.height || 1000);
+  const r = Number(opts.radius || 44);
+
+  const bgPaint = String(opts.bgPaint || 'white');
+  const strokeOn = !!opts.strokeOn;
+  const strokeColor = String(opts.strokeColor || '#e6e6e6');
+  const strokeWidth = Number(opts.strokeWidth || 6);
+
+  const qrSvg = String(opts.qrSvg || '');
+  const qrSize = Number(opts.qrSize || 420);
+
+  const cap = opts.caption || {};
+  const headLines = cap.headLines || [];
+  const bodyLines = cap.bodyLines || [];
+  const fontFamily = String(cap.fontFamily || 'Work Sans');
+  const headSize = Number(cap.headSize || 24);
+  const bodySize = Number(cap.bodySize || 16);
+  const headLeading = Number(cap.headLeading || Math.round(headSize * 1.15));
+  const bodyLeading = Number(cap.bodyLeading || Math.round(bodySize * 1.2));
+
+  const textColor = String(opts.textColor || '#000000');
+
+  // Positioning
+  const padX = Number(opts.padX || 64);
+  const topY = Number(opts.topY || 84);
+  const qrY = Number(opts.qrY || 360);
+  const qrX = Math.round((w - qrSize) / 2);
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Clip path for rounded corners
+  const clipId = 'clip_' + Math.random().toString(16).slice(2);
+
+  let parts = [];
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`);
+  parts.push(`<defs><clipPath id="${clipId}"><rect x="0" y="0" width="${w}" height="${h}" rx="${r}" ry="${r}"/></clipPath></defs>`);
+  parts.push(`<g clip-path="url(#${clipId})">`);
+
+  // Background paint can be CSS gradient in preview; in SVG we use a flat fill fallback.
+  // If passed bgPaint already is an SVG-friendly color, use it.
+  parts.push(`<rect x="0" y="0" width="${w}" height="${h}" rx="${r}" ry="${r}" fill="${bgPaint}"/>`);
+
+  // Optional stroke (when background is transparent)
+  if (strokeOn) {
+    parts.push(`<rect x="${strokeWidth/2}" y="${strokeWidth/2}" width="${w-strokeWidth}" height="${h-strokeWidth}" rx="${r}" ry="${r}" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>`);
+  }
+
+  // Caption (headline + body)
+  let y = topY;
+
+  if (headLines.length) {
+    parts.push(`<text x="${padX}" y="${y}" fill="${textColor}" font-family="${esc(fontFamily)}" font-size="${headSize}" font-weight="700">`);
+    headLines.forEach((line, i) => {
+      const dy = i === 0 ? 0 : headLeading;
+      parts.push(`<tspan x="${padX}" dy="${dy}">${esc(line)}</tspan>`);
+    });
+    parts.push(`</text>`);
+    y += headLeading * headLines.length + 18;
+  }
+
+  if (bodyLines.length) {
+    parts.push(`<text x="${padX}" y="${y}" fill="${textColor}" font-family="${esc(fontFamily)}" font-size="${bodySize}" font-weight="600">`);
+    bodyLines.forEach((line, i) => {
+      const dy = i === 0 ? 0 : bodyLeading;
+      parts.push(`<tspan x="${padX}" dy="${dy}">${esc(line)}</tspan>`);
+    });
+    parts.push(`</text>`);
+  }
+
+  // QR SVG (nested)
+  if (qrSvg) {
+    // Strip outer <svg ...> wrapper and inject its inner content into a group with scaling.
+    const inner = qrSvg.replace(/^[\s\S]*?<svg[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
+    parts.push(`<g transform="translate(${qrX},${qrY})">`);
+    // We assume qrSvg viewBox corresponds to its own size; scale to qrSize if needed.
+    parts.push(inner);
+    parts.push(`</g>`);
+  }
+
+  parts.push(`</g></svg>`);
+  return parts.join('');
+}
+
+function render() {
+
+  // Template + working file gating: UI draws, but we do not autosave unless ceremony complete.
+  // (render itself is safe to run any time)
+
+  // Read type
+  const mode = String(val('qrType','url') || 'url').trim().toLowerCase();
+
+  // Read inputs
+  const data = {
+    url: val('url',''),
+    email: val('email',''),
+    phone: val('phone',''),
+    sms_body: val('sms_body',''),
+    geo: val('geo',''),
+    title: val('title',''),
+    note: val('note',''),
+
+    // vcard
+    first: val('first',''),
+    last: val('last',''),
+    org: val('org',''),
+    phone2: val('phone2',''),
+    email2: val('email2',''),
+    url2: val('url2','')
+  };
+
+  // QR text
+  const text = buildText(mode, data);
+
+  // ECC + colors
+  const ecc = (typeof getECC === 'function') ? getECC() : String(val('ecc','M') || 'M').toUpperCase();
+  const modulesColor = colorHex('modulesColor', '#000000');
+  const eyesColor = colorHex('eyesColor', modulesColor);
+
+  // Background (transparent vs fill)
+  const bgTop = colorHex('bgTopColor', '#FFFFFF');
+  const bgBot = colorHex('bgBottomColor', '#FFFFFF');
+  const topRaw = parseFloat(val('bgTopAlpha','100'));
+  const botRaw = parseFloat(val('bgBottomAlpha','100'));
+  const topA = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
+  const botA = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
+  const bgIsTransparent = (topA <= 0.001 && botA <= 0.001);
+
+  // Render QR svg
+  const qrSvg = buildQrSvg(text, {
+    ecc,
+    size: 420,
+    modulesColor,
+    eyesColor,
+    background: bgIsTransparent ? 'transparent' : '#ffffff'
+  });
+
+  // Caption + fonts
+  const fontFamily = (typeof getFont === 'function') ? getFont() : 'Work Sans';
+  const caption = layoutCaptionLines({
+    headline: String(val('campaign','') || '').trim(),
+    body: String(val('captionBody','') || '').trim(),
+    maxWidthPx: 520,
+    fontFamily
+  });
+
+  // Text color (caption)
+  const textColor = colorHex('bodyColor', '#000000');
+
+  // Card composition
+  const cardSvg = composeCardSvg({
+    width: 640,
+    height: 1000,
+    radius: 44,
+    bgPaint: '#ffffff',
+    strokeOn: bgIsTransparent,
+    strokeColor: '#d9d9d9',
+    strokeWidth: 6,
+    qrSvg,
+    qrSize: 420,
+    caption,
+    textColor,
+    fontFamily
+  });
+
+  // Mount to DOM
+  const mount = document.getElementById('qrMount');
+  if (mount) {
+    mount.innerHTML = cardSvg;
+  }
+
+  // Paint background gradient to preview element (CSS)
+  try {
+    if (typeof refreshBackground === 'function') refreshBackground();
+  } catch (e) {}
+
+  // Update UI modes
+  try {
+    if (typeof refreshModulesMode === 'function') refreshModulesMode();
+  } catch (e) {}
+  try {
+    if (typeof refreshCenter === 'function') refreshCenter();
+  } catch (e) {}
+}
+
+// Ensure render is global (canonical behavior)
+window.render = render;
+
+// One-time wiring for mode toggles (non-fatal)
+try {
+  if (!render._wired) {
+    // Re-render when inputs change (delegated)
+    document.addEventListener('input', function(e){
+      const t = e && e.target;
+      if (!t) return;
+      // ignore file inputs etc
+      if (t.type === 'file') return;
+      if (typeof render === 'function') render();
+    }, true);
+
+    document.addEventListener('change', function(e){
+      const t = e && e.target;
+      if (!t) return;
+      if (typeof render === 'function') render();
+    }, true);
+
+    render._wired = true;
+  }
+} catch(e){}
+
+// --- Modules mode toggle (hide QR modules vs show)
+function refreshModulesMode(){
+  const mode      = document.getElementById('modulesMode');
+  const label     = document.getElementById('modulesModeLabel');
+  const isOn      = !!(mode && mode.checked);
+  const previewEl = document.getElementById('qrPreview') || document.getElementById('qrMount') || null;
+
+  if (label) label.textContent = isOn ? 'Modules: ON' : 'Modules: OFF';
+  if (previewEl) {
+    previewEl.classList.toggle('modules-off', !isOn);
+    previewEl.classList.toggle('modules-on', !!isOn);
+  }
+
+  // Disable module color when modules off
+  const modInput = document.getElementById('modulesColor') || document.querySelector('#modulesColor');
+  if (modInput) modInput.disabled = !isOn;
+}
+
+// --- Centering mode toggle
+function refreshCenter(){
+  const mode      = document.getElementById('centerMode');
+  const label     = document.getElementById('centerModeLabel');
+  const isOn      = !!(mode && mode.checked);
+  const previewEl = document.getElementById('qrPreview') || document.getElementById('qrMount') || null;
+
+  if (label) label.textContent = isOn ? 'Center: ON' : 'Center: OFF';
+  if (previewEl) {
+    previewEl.classList.toggle('center-off', !isOn);
+    previewEl.classList.toggle('center-on', !!isOn);
+  }
+}
+
+// --- Export helpers ---
+function getCurrentSvgNode() {
+  return document.querySelector('#qrMount svg');
+}
+
+function downloadSvg(filename = 'qr.svg') {
+  const src = getCurrentSvgNode();
+  if (!src) return;
+
+  const blob = new Blob([src.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function svgToPngBlob(svgNode, width, height) {
+  return new Promise((resolve) => {
+    try {
+      const svg = new Blob([svgNode.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svg);
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((b) => resolve(b), 'image/png');
+      };
+      img.src = url;
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+async function downloadPng(filename = 'qr.png') {
+  const src = getCurrentSvgNode();
+  if (!src) return;
+
+  const w = parseInt(src.getAttribute('width') || '640', 10) || 640;
+  const h = parseInt(src.getAttribute('height') || '1000', 10) || 1000;
+
+  const blob = await svgToPngBlob(src, w, h);
+  if (!blob) return;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function _sanitizeFileBase(name) {
+  return String(name || 'qr')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\-_\s]+/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .substring(0, 40);
+}
+
+function buildSuggestedFilename(ext) {
+  const type = String(val('qrType','url') || 'qr').trim().toLowerCase();
+  const head = String(val('campaign','') || '').trim();
+  const base = head ? _sanitizeFileBase(head) : type;
+  return `${base}.${ext || 'png'}`;
+}
+
+function uaHints(){
+  const nav = navigator || {};
+  const ua  = String(nav.userAgent || '');
+  const plat= String(nav.platform || '');
+  return { ua, platform: plat };
+}
+
+// Bind export buttons if present
+(function wireExportButtonsOnce(){
+  if (window.__CODEDESK_EXPORT_WIRED__) return;
+  window.__CODEDESK_EXPORT_WIRED__ = true;
+
+  const bSvg = document.getElementById('downloadSvg');
+  const bPng = document.getElementById('downloadPng');
+
+  if (bSvg) {
+    bSvg.addEventListener('click', (e) => {
+      try { e.preventDefault(); } catch(_){}
+      downloadSvg(buildSuggestedFilename('svg'));
+    });
+  }
+  if (bPng) {
+    bPng.addEventListener('click', async (e) => {
+      try { e.preventDefault(); } catch(_){}
+      await downloadPng(buildSuggestedFilename('png'));
+    });
+  }
+})();
+
+// Ensure preview reflows after fonts load (best-effort)
+try {
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => typeof render === 'function' && render());
+  }
+} catch (e) {}
+
+// Render once at load if QR libs are ready
+try {
+  if (typeof render === 'function') render();
+} catch (e) {}
