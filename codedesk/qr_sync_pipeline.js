@@ -1730,7 +1730,14 @@ function render() {
 
   // Paint
   mount.innerHTML = '';
-  mount.appendChild(svg);
+
+  if (typeof svg === 'string') {
+    mount.innerHTML = svg;
+  } else if (svg && svg.nodeType) {
+    mount.appendChild(svg);
+  } else {
+    console.error('❌ render(): invalid svg payload', svg);
+  }
 
   console.log('✅ render(): SVG mounted', {
     hasSVG: !!mount.querySelector('svg'),
