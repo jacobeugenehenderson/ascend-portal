@@ -1570,6 +1570,13 @@ function render() {
   let preview = document.getElementById('qrPreview');
   let mount   = document.getElementById('qrMount');
 
+  // ===== PROBES (instrumentation only) =====
+  const __mark = (label, data) => {
+    try { window.__CODEDESK_RENDER_LAST_MARK__ = label; } catch(_e){}
+    try { console.log(label, data || ''); } catch(_e){}
+  };
+  __mark('🟩 RENDER:ENTER', { preview: !!preview, mount: !!mount, t: Date.now() });
+
   // If the host HTML is a different/older variant, self-heal by creating
   // the required nodes inside the existing preview-stage wrapper.
   if (!preview || !mount) {
@@ -1588,10 +1595,25 @@ function render() {
     }
   }
 
+  if (!preview || !mount) {
+    __mark('🟥 RENDER:ABORT:NO_STAGE_NODES', {
+      preview: !!preview,
+      mount: !!mount,
+      stage: !!document.querySelector('.preview-stage')
+    });
+  }
+
   if (!preview || !mount) return;
 
 // QRCode lib loads async; retry until ready
 if (!window.QRCode || !window.QRCode.CorrectLevel) {
+    __mark('🟥 RENDER:GATE:QRCODE_NOT_READY', {
+      hasQRCode: !!window.QRCode,
+      hasCorrectLevel: !!(window.QRCode && window.QRCode.CorrectLevel),
+      QRCodeType: typeof window.QRCode,
+      CorrectLevelType: (window.QRCode ? typeof window.QRCode.CorrectLevel : null),
+      mountId: (mount && mount.id) || null
+    });
   try { mount.innerHTML = ''; } catch (e) {}
   clearTimeout(render._qrRetry);
   render._qrRetry = setTimeout(render, 60);
@@ -1599,6 +1621,7 @@ if (!window.QRCode || !window.QRCode.CorrectLevel) {
 }
 
 if (typeof buildText !== 'function') {
+  __mark('🟥 RENDER:GATE:BUILDTEXT_NOT_READY', { t: Date.now(), buildTextType: typeof buildText });
   clearTimeout(render._btRetry);
   render._btRetry = setTimeout(render, 30);
   return;
@@ -1738,6 +1761,7 @@ if (typeof buildText !== 'function') {
 
   let svgStr = '';
   try {
+    __mark('🟨 RENDER:TRY:COMPOSE_ENTER', { t: Date.now() });
     const fontFamily = (document.getElementById('fontFamily')?.value || 'Work Sans');
 
     const capLayout = layoutCaptionLines({
@@ -1779,17 +1803,25 @@ if (typeof buildText !== 'function') {
 
       textColor: colorHex('captionColor', '#000000')
     });
+    __mark('🟩 RENDER:COMPOSE_OK', { svgLen: (svgStr ? String(svgStr).length : 0) });
   } catch (e) {
     _previewState.stageState = 'error';
     try { _previewState.errorMessage = String(e && e.message ? e.message : e); } catch(_e){}
     console.warn('render() failed', e);
+    __mark('🟥 RENDER:ABORT:COMPOSE_EXCEPTION', {
+      msg: (e && e.message) ? e.message : String(e),
+      name: (e && e.name) ? e.name : null,
+      stack: (e && e.stack) ? String(e.stack).slice(0, 500) : null
+    });
     return;
   }
 
   // Paint (never clear unless replacing in the same pass)
   try {
+    __mark('🟨 RENDER:TRY:MOUNT_ENTER', { hasMount: !!mount, svgLen: (svgStr ? String(svgStr).length : 0) });
     mount.innerHTML = svgStr;
     const svgEl = mount.querySelector('svg');
+    __mark('🟩 RENDER:MOUNT_QUERY', { svgFound: !!svgEl });
     if (svgEl) {
       _previewState.lastGoodSvg = svgEl;
     }
@@ -1798,6 +1830,11 @@ if (typeof buildText !== 'function') {
     _previewState.stageState = 'error';
     try { _previewState.errorMessage = String(e && e.message ? e.message : e); } catch(_e){}
     console.warn('render() mount failed', e);
+    __mark('🟥 RENDER:ABORT:MOUNT_EXCEPTION', {
+      msg: (e && e.message) ? e.message : String(e),
+      name: (e && e.name) ? e.name : null,
+      stack: (e && e.stack) ? String(e.stack).slice(0, 500) : null
+    });
     return;
   }
 
