@@ -1283,12 +1283,14 @@ function buildText__LEGACY_DO_NOT_USE(mode, data) {
 // =====================================================
 
 // ---- ECC helper (used by render) ----
-const ECC_KEY = 'okqral_ecc';
-const ECC_DEFAULT = 'M';
+// ---- ECC helper (used by render) ----
+// Canonical synthesis: define once globally to avoid const redeclare across split files.
+if (typeof window.ECC_KEY === 'undefined') window.ECC_KEY = 'okqral_ecc';
+if (typeof window.ECC_DEFAULT === 'undefined') window.ECC_DEFAULT = 'M';
 
 function getECC(){
-  const v = sessionStorage.getItem(ECC_KEY);
-  return /^[LMQH]$/.test(v) ? v : ECC_DEFAULT;
+  const v = sessionStorage.getItem(window.ECC_KEY);
+  return /^[LMQH]$/.test(v) ? v : window.ECC_DEFAULT;
 }
 
 // ---- Background helper (used by render) ----
@@ -1310,7 +1312,9 @@ window.refreshBackground = function refreshBackground () {
   card.classList.toggle('card--fill', !isTransparent);
 
   // paint the CSS gradient var used by ::before
-  updatePreviewBackground();
+  try {
+    if (typeof updatePreviewBackground === 'function') updatePreviewBackground();
+  } catch (_e) {}
 }
 
 // ---- buildText(): QR payload encoder (type/mechanicals) ----
