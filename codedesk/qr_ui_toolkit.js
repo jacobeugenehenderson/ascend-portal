@@ -731,7 +731,27 @@ try { wireBackgroundKnobsOnce(); } catch (e) {}
   
 })();
 
-    // --- helpers to create inputs ---
+// ---- Type → fields lookup (manifest-backed; types is a map) ----
+function getTypeFields(type){
+  const t = (type || "").toString().trim();
+  const m = window.manifest || {};
+  const safeTypes = (m && m.types && typeof m.types === 'object') ? m.types : {};
+  const key = Object.keys(safeTypes).find(k => k.toLowerCase() === t.toLowerCase()) || t;
+  const ids = safeTypes[key];
+  return Array.isArray(ids) ? ids : [];
+}
+
+    // ---- Type → fields lookup (manifest-backed; types is a map) ----
+function getTypeFields(type){
+  const t = (type || "").toString().trim();
+  const m = window.manifest || {};
+  const safeTypes = (m && m.types && typeof m.types === 'object') ? m.types : {};
+  const key = Object.keys(safeTypes).find(k => k.toLowerCase() === t.toLowerCase()) || t;
+  const ids = safeTypes[key];
+  return Array.isArray(ids) ? ids : [];
+}
+
+// --- helpers to create inputs ---
   function el(tag, props, kids){
     const n = document.createElement(tag);
     props = props || {};

@@ -147,7 +147,12 @@ try {
   console.warn("Template load failed, continuing without templates", e);
 }
   // Expose for debugging + Ascend/console introspection
-window.CODEDESK_TEMPLATES = templates;
+  // IMPORTANT: Do not replace the manifest object if something else captured it.
+  // Mutate in place to preserve references across split modules.
+  window.manifest = window.manifest || {};
+  try { Object.assign(window.manifest, manifest); } catch(_e) { window.manifest = manifest; }
+
+  window.CODEDESK_TEMPLATES = templates;
 
 const _codedeskResolveTemplateById_ = function(id){
   if (!id) return null;
