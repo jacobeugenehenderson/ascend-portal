@@ -630,15 +630,16 @@ try { wireBackgroundKnobsOnce(); } catch (e) {}
 })();
 
   // --- Build QR "text" for each Type (simple, pragmatic encoders for preview) ---
-  function buildText(){
+function buildText(){
     const _typeSel = document.getElementById('qrType');
     const t = _typeSel ? (_typeSel.value || '') : '';
     switch(t){
-      case 'url':
-      case 'link': {
-        // raw URL / destination; support multiple possible ids
-        const raw =
+      case "URL": {
+        // NOTE: field IDs come from qr_type_manifest.json; support common variants
+                const raw =
+          val("urlData") ||
           val("url") ||
+          val("href") ||
           val("link") ||
           val("destination") ||
           val("targetUrl") ||
@@ -652,109 +653,105 @@ try { wireBackgroundKnobsOnce(); } catch (e) {}
         const s = (val("utmSource")   || val("utm_source")   || "").trim();
         const m = (val("utmMedium")   || val("utm_medium")   || "").trim();
         const c = (val("utmCampaign") || val("utm_campaign") || "").trim();
+        const t = (val("utmTerm")     || val("utm_term")     || "").trim();
+        const k = (val("utmContent")  || val("utm_content")  || "").trim();
 
-        // If nothing extra was entered, return as-is
-        if (!s && !m && !c) return rawTrim;
+        // If no UTMs, return raw as-is
+        const has = (s || m || c || t || k);
+        if (!has) return rawTrim;
 
-        try {
-          // Robust path when rawTrim is a valid absolute URL
+        // Append/merge UTMs preserving existing query/hash
+        try{
           const u = new URL(rawTrim);
-          if (s) u.searchParams.set("utm_source",   s);
-          if (m) u.searchParams.set("utm_medium",   m);
+          if (s) u.searchParams.set("utm_source", s);
+          if (m) u.searchParams.set("utm_medium", m);
           if (c) u.searchParams.set("utm_campaign", c);
+          if (t) u.searchParams.set("utm_term", t);
+          if (k) u.searchParams.set("utm_content", k);
           return u.toString();
-        } catch {
-          // Fallback for non-absolute or invalid URLs:
-          // append query the "old-fashioned" way without breaking existing params
-          const join = rawTrim.includes("?") ? "&" : "?";
-          const parts = [];
-          if (s) parts.push(`utm_source=${encodeURIComponent(s)}`);
-          if (m) parts.push(`utm_medium=${encodeURIComponent(m)}`);
-          if (c) parts.push(`utm_campaign=${encodeURIComponent(c)}`);
-          return rawTrim + join + parts.join("&");
+        }catch(e){
+          // If raw isn't a valid URL for URL(), do a pragmatic string append
+          const parts = rawTrim.split("#");
+          const base = parts[0];
+          const hash = parts.length > 1 ? ("#" + parts.slice(1).join("#")) : "";
+          const hasQ = base.indexOf("?") >= 0;
+          const q = [];
+          if (s) q.push("utm_source=" + encodeURIComponent(s));
+          if (m) q.push("utm_medium=" + encodeURIComponent(m));
+          if (c) q.push("utm_campaign=" + encodeURIComponent(c));
+          if (t) q.push("utm_term=" + encodeURIComponent(t));
+          if (k) q.push("utm_content=" + encodeURIComponent(k));
+          return base + (hasQ ? "&" : "?") + q.join("&") + hash;
         }
       }
 
-      case 'text': {
-        const raw =
-          val("text") ||
-          val("message") ||
-          val("body") ||
-          "";
-        return String(raw || "").trim() || "LGBTQRCode";
+      case "EMAIL": {
+        const to = (val("emailTo") || val("to") || val("email") || "").trim();
+        const subj = (val("emailSubject") || val("subject") || "").trim();
+        const body = (val("emailBody") || val("body") || val("message") || "").trim();
+        const qp = [];
+        if (subj) qp.push("subject=" + encodeURIComponent(subj));
+        if (body) qp.push("body=" + encodeURIComponent(body));
+        return "mailto:" + encodeURIComponent(to) + (qp.length ? ("?" + qp.join("&")) : "");
       }
 
-      case 'email': {
-        const to   = String(val("email") || val("to") || "").trim();
-        const subj = String(val("subject") || "").trim();
-        const body = String(val("body") || val("message") || "").trim();
-
-        // mailto requires at least something; allow blank to become a stub
-        const addr = encodeURIComponent(to);
-        const qs = [];
-        if (subj) qs.push("subject=" + encodeURIComponent(subj));
-        if (body) qs.push("body=" + encodeURIComponent(body));
-        return `mailto:${addr}${qs.length ? "?" + qs.join("&") : ""}`;
+      case "PHONE": {
+        const p = (val("phoneNumber") || val("phone") || val("tel") || "").trim();
+        return p ? ("tel:" + p.replace(/[^\d+]/g, "")) : "tel:";
       }
 
-      case 'sms': {
-        const phone = String(val("phone") || val("number") || "").trim();
-        const msg   = String(val("message") || val("body") || "").trim();
-        // Basic sms: scheme (platform-dependent); keep simple
-        const p = encodeURIComponent(phone);
-        const qs = msg ? `?body=${encodeURIComponent(msg)}` : "";
-        return `sms:${p}${qs}`;
+      case "SMS": {
+        const p = (val("smsNumber") || val("phoneNumber") || val("phone") || val("tel") || "").trim();
+        const msg = (val("smsMessage") || val("message") || val("body") || "").trim();
+        const base = p ? ("sms:" + p.replace(/[^\d+]/g, "")) : "sms:";
+        return msg ? (base + "?body=" + encodeURIComponent(msg)) : base;
       }
 
-      case 'wifi': {
-        // WIFI:T:WPA;S:mynetwork;P:mypass;;
-        const ssid = String(val("ssid") || "").trim();
-        const pass = String(val("password") || val("pass") || "").trim();
-        const sec  = String(val("security") || val("auth") || "WPA").trim();
-        const hidden = !!val("hidden");
-        // Escape special chars per spec (\,;,:," with backslash)
-        const esc = (s) => String(s || "").replace(/([\\;,:"])/g, "\\$1");
-        if (!ssid) return "LGBTQRCode";
-        return `WIFI:T:${esc(sec)};S:${esc(ssid)};P:${esc(pass)};H:${hidden ? "true" : "false"};;`;
+      case "WIFI": {
+        const ssid = (val("wifiSsid") || val("ssid") || "").trim();
+        const pass = (val("wifiPassword") || val("password") || val("pass") || "").trim();
+        const sec  = (val("wifiSecurity") || val("security") || val("encryption") || "WPA").trim();
+        const hidden = !!val("wifiHidden");
+        if (!ssid) return "";
+        return `WIFI:T:${sec};S:${ssid};P:${pass};H:${hidden ? "true" : "false"};;`;
       }
 
-      case 'vcard': {
-        // Minimal VCARD 3.0
-        const fn   = String(val("fullName") || val("fn") || "").trim();
-        const org  = String(val("org") || "").trim();
-        const tel  = String(val("phone") || val("tel") || "").trim();
-        const mail = String(val("email") || "").trim();
-        const url  = String(val("url") || "").trim();
-        const lines = [
+      case "VCARD": {
+        const fn   = (val("vcardName") || val("name") || "").trim();
+        const org  = (val("vcardOrg") || val("org") || "").trim();
+        const title= (val("vcardTitle") || val("title") || "").trim();
+        const tel  = (val("vcardPhone") || val("phone") || "").trim();
+        const email= (val("vcardEmail") || val("email") || "").trim();
+        const url  = (val("vcardUrl") || val("url") || "").trim();
+
+        // Minimal vCard 3.0
+        return [
           "BEGIN:VCARD",
           "VERSION:3.0",
-          fn ? `FN:${fn}` : "",
-          org ? `ORG:${org}` : "",
-          tel ? `TEL:${tel}` : "",
-          mail ? `EMAIL:${mail}` : "",
-          url ? `URL:${url}` : "",
+          fn ? ("FN:" + fn) : "",
+          org ? ("ORG:" + org) : "",
+          title ? ("TITLE:" + title) : "",
+          tel ? ("TEL:" + tel) : "",
+          email ? ("EMAIL:" + email) : "",
+          url ? ("URL:" + url) : "",
           "END:VCARD"
-        ].filter(Boolean);
-        return lines.join("\n");
+        ].filter(Boolean).join("\n");
       }
 
-      case 'geo': {
-        const lat = String(val("lat") || "").trim();
-        const lng = String(val("lng") || "").trim();
-        if (lat && lng) {
-          // geo:lat,lng
-          return `geo:${lat},${lng}`;
+      case "MAP": {
+        const q   = val("mapQuery");
+        const lat = val("mapLat");
+        const lng = val("mapLng");
+        const prov= val("mapProvider");
+        if(lat && lng){
+          if(prov==="geo"){ return `geo:${lat},${lng}`; }
+          // default to Google maps link
+          return `https://maps.google.com/?q=${lat},${lng}`;
         }
-        // fall back to google maps query if only one is present
-        const q = lat || lng;
-        if (q) {
-          return `https://www.google.com/?q=${lat},${lng}`;
-        }
-        return q ? `https://www.google.com/?q=${lat},${lng}` : "LGBTQRCode";
+        return q ? `https://maps.google.com/?q=${encodeURIComponent(q)}` : "https://maps.google.com";
       }
-
       default:
-        return "LGBTQRCode";
+        return "CODEDESK";
     }
   }
 
