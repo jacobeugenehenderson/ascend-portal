@@ -1001,5 +1001,3 @@ function applyClickThroughForMobile() {
 
 window.addEventListener('resize', applyClickThroughForMobile, { passive: true });
 window.addEventListener('orientationchange', applyClickThroughForMobile, { passive: true });
-
-})();
