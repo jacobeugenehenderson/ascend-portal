@@ -1275,225 +1275,591 @@ function buildText__LEGACY_DO_NOT_USE(mode, data) {
 }
 
 // Small helper to measure a text line in SVG space (rough; uses canvas)
-function measureTextPx(text, fontFamily, fontSizePx, fontWeight) {
-  try {
-    const c = measureTextPx._c || (measureTextPx._c = document.createElement('canvas'));
-    const ctx = c.getContext('2d');
-    ctx.font = `${fontWeight || 600} ${fontSizePx || 18}px ${fontFamily || 'Work Sans'}`;
-    const m = ctx.measureText(String(text || ''));
-    return m.width || 0;
-  } catch (e) {
-    return 0;
-  }
+// =====================================================
+//  EXTRACTED: CodeDesk Custom QR Code Regime
+//  Source: qr_app-011326.js
+//  Purpose: isolate custom SVG QR + card composition + render path
+//  Note: This file is NOT expected to run standalone.
+// =====================================================
+
+// ---- ECC helper (used by render) ----
+const ECC_KEY = 'okqral_ecc';
+const ECC_DEFAULT = 'M';
+
+function getECC(){
+  const v = sessionStorage.getItem(ECC_KEY);
+  return /^[LMQH]$/.test(v) ? v : ECC_DEFAULT;
 }
 
-// Layout caption lines to fit within a target width.
-// Returns { headLines: [...], bodyLines: [...], headSize, bodySize, headLeading, bodyLeading }
-function layoutCaptionLines(opts) {
-  opts = opts || {};
-  const head = String(opts.headline || '').trim();
-  const body = String(opts.body || '').trim();
+// ---- Background helper (used by render) ----
+window.refreshBackground = function refreshBackground () {
+  const card = document.getElementById('qrPreview');
+  if (!card) return;
 
-  const maxW = Number(opts.maxWidthPx || 520);
-  const fontFamily = String(opts.fontFamily || 'Work Sans');
-  const headWeight = Number(opts.headWeight || 700);
-  const bodyWeight = Number(opts.bodyWeight || 600);
+  // IMPORTANT: do NOT use `|| 0` here; 0 is valid and must stay 0.
+  const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
+  const botRaw = parseFloat(document.getElementById('bgBottomAlpha')?.value);
+  const topA = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
+  const botA = (Number.isFinite(botRaw) ? botRaw : 100) / 100;
 
-  const headMaxSize = Number(opts.headMaxSize || 28);
-  const headMinSize = Number(opts.headMinSize || 16);
-  const bodyMaxSize = Number(opts.bodyMaxSize || 18);
-  const bodyMinSize = Number(opts.bodyMinSize || 12);
+  // “Transparent background” = both alphas are 0
+  const isTransparent = (topA <= 0.001 && botA <= 0.001);
 
-  // Greedy word-wrap helper
-  function wrap(text, sizePx, weight) {
-    if (!text) return [];
-    const words = text.split(/\s+/).filter(Boolean);
-    const lines = [];
-    let cur = '';
-    for (let i = 0; i < words.length; i++) {
-      const next = cur ? (cur + ' ' + words[i]) : words[i];
-      const w = measureTextPx(next, fontFamily, sizePx, weight);
-      if (w <= maxW || !cur) {
-        cur = next;
-      } else {
-        lines.push(cur);
-        cur = words[i];
+  // class gating (stroke vs fill)
+  card.classList.toggle('card--stroke', isTransparent);
+  card.classList.toggle('card--fill', !isTransparent);
+
+  // paint the CSS gradient var used by ::before
+  updatePreviewBackground();
+}
+
+// ---- buildText(): QR payload encoder (type/mechanicals) ----
+function buildText(){
+    const _typeSel = document.getElementById('qrType');
+    const t = _typeSel ? (_typeSel.value || '') : '';
+    switch(t){
+      case "URL": {
+        // NOTE: field IDs come from qr_type_manifest.json; support common variants
+                const raw =
+          val("urlData") ||
+          val("url") ||
+          val("href") ||
+          val("link") ||
+          val("destination") ||
+          val("targetUrl") ||
+          "";
+
+        // If empty, export empty (no placeholder payloads)
+        const rawTrim = String(raw || "").trim();
+        if (!rawTrim) return "https://jacobhenderson.studio";
+
+        // read optional utm fields (support common variants)
+        const s = (val("utmSource")   || val("utm_source")   || "").trim();
+        const m = (val("utmMedium")   || val("utm_medium")   || "").trim();
+        const c = (val("utmCampaign") || val("utm_campaign") || "").trim();
+
+        // If nothing extra was entered, return as-is
+        if (!s && !m && !c) return rawTrim;
+
+        try {
+          // Robust path when rawTrim is a valid absolute URL
+          const u = new URL(rawTrim);
+          if (s) u.searchParams.set("utm_source",   s);
+          if (m) u.searchParams.set("utm_medium",   m);
+          if (c) u.searchParams.set("utm_campaign", c);
+          return u.toString();
+        } catch {
+          // Fallback for non-absolute or invalid URLs:
+          // append query the "old-fashioned" way without breaking existing params
+          const join = rawTrim.includes("?") ? "&" : "?";
+          const parts = [];
+          if (s) parts.push(`utm_source=${encodeURIComponent(s)}`);
+          if (m) parts.push(`utm_medium=${encodeURIComponent(m)}`);
+          if (c) parts.push(`utm_campaign=${encodeURIComponent(c)}`);
+          return parts.length ? `${rawTrim}${join}${parts.join("&")}` : rawTrim;
+        }
+      }
+      case "Payment": {
+        const mode = val("payMode");
+        const user = val("payUser");
+        const link = val("payLink");
+        const amt  = val("payAmount");
+        const note = val("payNote");
+        const q = new URLSearchParams();
+        if(amt) q.set("amount", amt);
+        if(note) q.set("note", note);
+
+        if(mode==="Generic Link" || mode==="Stripe Payment Link"){
+          return link || "https://pay.example.com/your-link";
+        }
+        if(mode==="PayPal.me"){
+          return `https://paypal.me/${(user||"yourname").replace(/^@/,"")}${amt?"/"+amt:""}`;
+        }
+        if(mode==="Venmo"){
+          // venmo:// is not universally supported in scanners; https fallback:
+          const u = (user||"yourname").replace(/^@/,"");
+          return q.toString()
+            ? `https://venmo.com/${u}?${q.toString()}`
+            : `https://venmo.com/${u}`;
+        }
+        if(mode==="Cash App"){
+          const u = (user||"$yourname");
+          return q.toString()
+            ? `https://cash.app/${u.replace(/^\$/,"$")}?${q.toString()}`
+            : `https://cash.app/${u.replace(/^\$/,"$")}`;
+        }
+        return link || "https://example.org/pay";
+      }
+      case "WiFi": {
+        const ssid = val("wifiSsid");
+        const pwd  = val("wifiPwd");
+        const sec  = val("wifiSec") || "WPA";
+        const hid  = $("wifiHidden")?.checked ? "true" : "false";
+        // WIFI:T:WPA;S:mynetwork;P:mypass;H:true;;
+        return `WIFI:T:${sec};S:${ssid};P:${pwd};H:${hid};;`;
+      }
+      case "Contact": {
+        // Minimal vCard 3.0 (keeps preview simple)
+        const first = val("vFirst"), last = val("vLast");
+        const org   = val("vOrg"),   title= val("vTitle");
+        const phone = val("vPhone1"), email= val("vEmail1");
+        return [
+          "BEGIN:VCARD",
+          "VERSION:3.0",
+          `N:${last||""};${first||""};;;`,
+          `FN:${[first,last].filter(Boolean).join(" ")}`,
+          org ? `ORG:${org}` : "",
+          title ? `TITLE:${title}` : "",
+          phone ? `TEL;TYPE=CELL:${phone}` : "",
+          email ? `EMAIL;TYPE=INTERNET:${email}` : "",
+          "END:VCARD"
+        ].filter(Boolean).join("\n");
+      }
+      case "Message": {
+        const num = val("smsNumber") || "5551234567";
+        const txt = encodeURIComponent(val("smsText") || "Hello");
+        // SMS URI (broadly supported): sms:+15551234567?&body=Hello
+        return `sms:${num}?&body=${txt}`;
+      }
+      case "Event": {
+        // Very light VEVENT for preview
+        const title = val("evtTitle") || "Event";
+        const start = (val("evtStart") || "2025-10-16 12:00:00").replace(/[-: ]/g,"").slice(0,14)+"Z";
+        const end   = (val("evtEnd")   || "2025-10-16 13:00:00").replace(/[-: ]/g,"").slice(0,14)+"Z";
+        const loc   = val("evtLoc") || "";
+        const det   = val("evtDet") || "";
+        return [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "BEGIN:VEVENT",
+          `SUMMARY:${title}`,
+          `DTSTART:${start}`,
+          `DTEND:${end}`,
+          loc ? `LOCATION:${loc}` : "",
+          det ? `DESCRIPTION:${det}` : "",
+          "END:VEVENT",
+          "END:VCALENDAR"
+        ].filter(Boolean).join("\n");
+      }
+      case "Map": {
+        const q   = val("mapQuery");
+        const lat = val("mapLat");
+        const lng = val("mapLng");
+        const prov= val("mapProvider");
+        if(lat && lng){
+          if(prov==="geo"){ return `geo:${lat},${lng}`; }
+          // default to Google maps link
+          return `https://maps.google.com/?q=${lat},${lng}`;
+        }
+        return q ? `https://maps.google.com/?q=${encodeURIComponent(q)}` : "https://maps.google.com";
+      }
+      default:
+        return "LGBTQRCode";
+    }
+  }
+
+// ---- Caption layout helper (used by compose/build) ----
+function layoutCaptionLines(ns, {
+  text,
+  family,
+  weight = '600',
+  maxWidth,
+  startSize,
+  minSize,
+  maxLines = 2,
+  charBudget = 0,       // total characters across all lines
+  twoLineTrigger = 14    // if > this, prefer wrapping first
+}) {
+  const raw = (text || '').replace(/\s+/g, ' ').trim();
+  const s   = charBudget > 0 ? raw.slice(0, charBudget) : raw;
+
+  const measure = (fs, str) => measureSvgText(ns, family, weight, fs, str);
+
+  /* === NEW: single-line fast path (no ellipses) ===================== */
+  if (maxLines === 1) {
+    for (let fs = startSize; fs >= Math.max(5, minSize); fs--) {
+      if (measure(fs, s) <= maxWidth) {
+        return { fontSize: fs, lines: [s] };
       }
     }
-    if (cur) lines.push(cur);
+    // If nothing fits wider than minSize, still return the full string at minSize.
+    return { fontSize: Math.max(5, minSize), lines: [s] };
+  }
+  /* ================================================================== */
+
+  // Greedy wrap (<= maxLines) at a given font size
+  function wrapAt(fs) {
+    const words = s.split(' ');
+    const lines = [];
+    let line = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const test = line ? line + ' ' + words[i] : words[i];
+      if (measure(fs, test) <= maxWidth) {
+        line = test;
+      } else {
+        if (line) { lines.push(line); line = words[i]; }
+        else      { lines.push(words[i]); line = ''; }
+      }
+      if (lines.length === maxLines) {
+        // shove the remainder
+        if (i < words.length - 1) {
+          const rest = words.slice(i + 1).join(' ');
+          lines[maxLines - 1] = (lines[maxLines - 1] + ' ' + rest).trim();
+        }
+        break;
+      }
+    }
+    if (line && lines.length < maxLines) lines.push(line);
     return lines;
   }
 
-  function fit(text, maxSize, minSize, weight, maxLines) {
-    let size = maxSize;
-    let lines = wrap(text, size, weight);
-    while (size > minSize && (lines.length > maxLines || (lines.some(l => measureTextPx(l, fontFamily, size, weight) > maxW)))) {
-      size -= 1;
-      lines = wrap(text, size, weight);
+  // Try two-line wrap first when long
+  const preferWrap = s.length > twoLineTrigger;
+
+  for (let fs = startSize; fs >= minSize; fs--) {
+    const lines = wrapAt(fs);
+
+    if (lines.length <= maxLines) {
+      // If all lines fit, accept.
+      let ok = true;
+      for (const ln of lines) {
+        if (measure(fs, ln) > maxWidth) { ok = false; break; }
+      }
+      if (ok) return { fontSize: fs, lines };
     }
-    return { size, lines };
+
+    // If preferWrap is false, allow single-line shrinking earlier
+    if (!preferWrap && measure(fs, s) <= maxWidth) {
+      return { fontSize: fs, lines: [s] };
+    }
   }
 
-  // Headline: aim for <= 2 lines
-  const headFit = fit(head, headMaxSize, headMinSize, headWeight, 2);
+  // Fallback: clamp at minSize and ellipsize last line
+  const fs = minSize;
+  let lines = wrapAt(fs);
+  if (lines.length > maxLines) lines = lines.slice(0, maxLines);
 
-  // Body: aim for <= 2 lines (optional)
-  const bodyFit = fit(body, bodyMaxSize, bodyMinSize, bodyWeight, 2);
+  // Ellipsis on last line
+  const lastIdx = Math.min(lines.length, maxLines) - 1;
+  let last = lines[lastIdx] || '';
+  while (last && measure(fs, last + '…') > maxWidth) {
+    last = last.slice(0, -1);
+  }
+  lines[lastIdx] = last ? (last + '…') : '…';
 
-  return {
-    headLines: headFit.lines,
-    bodyLines: bodyFit.lines,
-    headSize: headFit.size,
-    bodySize: bodyFit.size,
-    headLeading: Math.round(headFit.size * 1.15),
-    bodyLeading: Math.round(bodyFit.size * 1.2),
-    fontFamily
-  };
+  return { fontSize: fs, lines };
 }
 
-// Legacy buildQrSvg() compatibility shim.
-// Delegates to the canonical custom QR renderer if present (custom_qr_regime_extracted.js).
-function buildQrSvg(text, opts) {
-  opts = opts || {};
+// ---- buildQrSvg(): custom SVG QR generator ----
+function buildQrSvg({
+  text, size, level,
+  modulesShape, bodyColor,
+  bgColor, transparentBg,
+  eyeRingColor, eyeCenterColor,
+  eyeRingShape = 'Square',
+  eyeCenterShape = 'Square',
 
-  // Prefer the canonical global buildQrSvg (from custom_qr_regime_extracted.js).
-  // Avoid self-recursion if this shim is the global.
-  const fn = (typeof window.buildQrSvg === 'function' && window.buildQrSvg !== buildQrSvg)
-    ? window.buildQrSvg
-    : null;
+  // Module fill mode + scale + emoji
+  modulesMode = 'Shape',         // 'Shape' | 'Emoji'
+  emoji = '',
+  emojiSize = 1.0,
+  moduleScale = 1.0,
 
-  if (!fn) {
-    throw new Error('Canonical buildQrSvg not found (window.buildQrSvg).');
+  // Quiet zone
+  quietZone = 4,
+
+  // Caption (optional)
+  captionHeadline = '',
+  captionBody1 = '',
+  captionBody2 = '',
+  captionColor = '#000',
+  captionFontFamily = 'Work Sans',
+  captionWeightHead = '700',
+  captionWeightBody = '600',
+}) {
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+
+  const n = getQrModuleCount(text, level);
+  const q = quietZone;
+  const dim = n + q * 2;
+
+  svg.setAttribute('xmlns', ns);
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+  // BG
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('x', '0');
+  bg.setAttribute('y', '0');
+  bg.setAttribute('width', String(size));
+  bg.setAttribute('height', String(size));
+  bg.setAttribute('fill', transparentBg ? 'transparent' : (bgColor || '#fff'));
+  svg.appendChild(bg);
+
+  // Module size in px
+  const u = size / dim;
+  const scale = Math.max(0.2, Math.min(1.4, Number(moduleScale || 1.0)));
+  const u2 = u * scale;
+  const offset = (u - u2) / 2;
+
+  // Emoji “cell”
+  const wantsEmoji = (modulesMode === 'Emoji') && String(emoji || '').trim();
+  const emojiChar = String(emoji || '').trim();
+  const emojiScale = Math.max(0.4, Math.min(2.0, Number(emojiSize || 1.0)));
+
+  // Eyes locations
+  const eyes = [
+    { x: 0, y: 0 },
+    { x: n - 7, y: 0 },
+    { x: 0, y: n - 7 },
+  ];
+
+  function isEyeArea(r, c){
+    // finder patterns are 7x7 squares at the three corners
+    return (
+      (r <= 6 && c <= 6) ||
+      (r <= 6 && c >= n - 7) ||
+      (r >= n - 7 && c <= 6)
+    );
   }
 
-  const level = (opts && opts.ecc) ? opts.ecc : (opts && opts.level ? opts.level : 'M');
-  const size  = (opts && opts.size) ? Number(opts.size) : 512;
+  // Draw modules
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
 
-  const bodyColor = (opts && (opts.modulesColor || opts.bodyColor)) || '#000000';
-  const eyesColor = (opts && (opts.eyesColor || opts.eyeRingColor)) || bodyColor;
+      // Skip eye area; rendered separately
+      if (isEyeArea(r, c)) continue;
 
-  const svgEl = fn({
-    text: String(text || ''),
-    size,
-    level,
+      if (!qrIsDark(text, level, r, c)) continue;
 
-    bodyColor,
-    eyeRingColor: eyesColor,
-    eyeCenterColor: (opts && opts.eyeCenterColor) || eyesColor,
+      const x = (c + q) * u + offset;
+      const y = (r + q) * u + offset;
 
-    // Inner QR only (card/caption composed externally)
+      if (wantsEmoji) {
+        const t = document.createElementNS(ns, 'text');
+        t.setAttribute('x', String(x + u2 / 2));
+        t.setAttribute('y', String(y + u2 / 2));
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('dominant-baseline', 'central');
+        t.setAttribute('font-size', String(u2 * 0.9 * emojiScale));
+        t.textContent = emojiChar;
+        svg.appendChild(t);
+      } else {
+        const el = moduleRect(ns, modulesShape, x, y, u2, u2, bodyColor || '#000');
+        svg.appendChild(el);
+      }
+    }
+  }
+
+  // Draw eyes
+  for (const e of eyes) {
+    const ox = (e.x + q) * u;
+    const oy = (e.y + q) * u;
+    drawFinderEye(ns, svg, {
+      x: ox,
+      y: oy,
+      u: u,
+      ringColor: eyeRingColor || bodyColor || '#000',
+      centerColor: eyeCenterColor || eyeRingColor || bodyColor || '#000',
+      ringShape: eyeRingShape,
+      centerShape: eyeCenterShape,
+    });
+  }
+
+  return svg;
+}
+
+// ---- composeCardSvg(): composes card + QR + caption ----
+function composeCardSvg({
+  cardWidth,
+  transparentBg,
+
+  // gradient inputs
+  bgTopColor,
+  bgBottomColor,
+  bgTopAlpha,
+  bgBottomAlpha,
+
+  // caption
+  captionHeadline,
+  captionBody1,
+  captionBody2,
+  captionColor,
+  captionFontFamily,
+
+  // qr styling
+  qrText,
+  ecc,
+  modulesShape,
+  modulesMode,
+  bodyColor,
+  eyeRingColor,
+  eyeCenterColor,
+  eyeRingShape,
+  eyeCenterShape,
+  emoji,
+  emojiSize,
+  moduleScale,
+  quietZone
+}) {
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+
+  const w = Number(cardWidth || 640);
+  const h = Math.round(w / 0.63); // aspect
+  const r = 44;
+
+  svg.setAttribute('xmlns', ns);
+  svg.setAttribute('width', String(w));
+  svg.setAttribute('height', String(h));
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+  // Clip path (rounded card)
+  const defs = document.createElementNS(ns, 'defs');
+  const clip = document.createElementNS(ns, 'clipPath');
+  clip.setAttribute('id', 'rclip');
+  const clipRect = document.createElementNS(ns, 'rect');
+  clipRect.setAttribute('x', '0');
+  clipRect.setAttribute('y', '0');
+  clipRect.setAttribute('width', String(w));
+  clipRect.setAttribute('height', String(h));
+  clipRect.setAttribute('rx', String(r));
+  clipRect.setAttribute('ry', String(r));
+  clip.appendChild(clipRect);
+  defs.appendChild(clip);
+  svg.appendChild(defs);
+
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('clip-path', 'url(#rclip)');
+  svg.appendChild(g);
+
+  // Background (transparent; CSS handles gradient fill on the host)
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('x', '0');
+  bg.setAttribute('y', '0');
+  bg.setAttribute('width', String(w));
+  bg.setAttribute('height', String(h));
+  bg.setAttribute('fill', 'transparent');
+  g.appendChild(bg);
+
+  // Caption (top)
+  const headline = String(captionHeadline || '').trim();
+  const b1 = String(captionBody1 || '').trim();
+  const b2 = String(captionBody2 || '').trim();
+
+  const hasCaption = !!(headline || b1 || b2);
+
+  const padX = Math.round(w * 0.08);
+  const maxW = Math.round(w * 0.84);
+
+  let captionBottomY = Math.round(w * 0.22);
+
+  if (hasCaption) {
+    const headFit = layoutCaptionLines(ns, {
+      text: headline,
+      family: captionFontFamily || 'Work Sans',
+      weight: '700',
+      maxWidth: maxW,
+      startSize: 34,
+      minSize: 18,
+      maxLines: 2,
+      charBudget: 64,
+      twoLineTrigger: 16
+    });
+
+    const bodyFit = layoutCaptionLines(ns, {
+      text: [b1, b2].filter(Boolean).join('  '),
+      family: captionFontFamily || 'Work Sans',
+      weight: '600',
+      maxWidth: maxW,
+      startSize: 22,
+      minSize: 14,
+      maxLines: 2,
+      charBudget: 90,
+      twoLineTrigger: 18
+    });
+
+    let y = Math.round(w * 0.09);
+
+    // Head lines
+    for (const ln of (headFit.lines || [])) {
+      y += headFit.fontSize;
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('x', String(padX));
+      t.setAttribute('y', String(y));
+      t.setAttribute('font-family', captionFontFamily || 'Work Sans');
+      t.setAttribute('font-size', String(headFit.fontSize));
+      t.setAttribute('font-weight', '700');
+      t.setAttribute('fill', captionColor || '#000');
+      t.textContent = ln;
+      g.appendChild(t);
+      y += Math.round(headFit.fontSize * 0.18);
+    }
+
+    // Body lines
+    for (const ln of (bodyFit.lines || [])) {
+      y += bodyFit.fontSize;
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('x', String(padX));
+      t.setAttribute('y', String(y));
+      t.setAttribute('font-family', captionFontFamily || 'Work Sans');
+      t.setAttribute('font-size', String(bodyFit.fontSize));
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', captionColor || '#000');
+      t.textContent = ln;
+      g.appendChild(t);
+      y += Math.round(bodyFit.fontSize * 0.22);
+    }
+
+    captionBottomY = y + Math.round(w * 0.05);
+  }
+
+  // QR positioning
+  const qrPad = Math.round(w * 0.06);
+  const qrSize = Math.round(w - qrPad * 2);
+  const qrX = qrPad;
+  const qrY = hasCaption ? Math.max(captionBottomY, Math.round(w * 0.30)) : qrPad;
+
+  const qrSvg = buildQrSvg({
+    text: qrText,
+    size: qrSize,
+    level: ecc || 'M',
+    modulesShape: modulesShape || 'Square',
+    modulesMode: modulesMode || 'Shape',
+    bodyColor: bodyColor || '#000',
+    bgColor: '#fff',
     transparentBg: true,
-    bgColor: '#000000', // ignored when transparent
-    bare: true
+    eyeRingColor: eyeRingColor || bodyColor || '#000',
+    eyeCenterColor: eyeCenterColor || eyeRingColor || bodyColor || '#000',
+    eyeRingShape: eyeRingShape || 'Square',
+    eyeCenterShape: eyeCenterShape || 'Square',
+    emoji: emoji || '',
+    emojiSize: emojiSize || 1.0,
+    moduleScale: moduleScale || 1.0,
+    quietZone: quietZone || 4
   });
 
-  // The legacy caller expects a string to feed into composeCardSvg().
-  try {
-    return (svgEl && svgEl.outerHTML) ? svgEl.outerHTML : String(svgEl || '');
-  } catch (e) {
-    return String(svgEl || '');
-  }
+  // Mount QR as inner markup
+  const holder = document.createElementNS(ns, 'g');
+  holder.setAttribute('transform', `translate(${qrX},${qrY})`);
+  // Strip outer svg and inject inner nodes
+  const inner = (qrSvg && qrSvg.outerHTML) ? qrSvg.outerHTML : '';
+  holder.innerHTML = inner.replace(/^\s*<svg[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
+  g.appendChild(holder);
+
+  return svg.outerHTML;
 }
 
-// Compose the full card SVG: background, caption, QR, border radius, etc.
-function composeCardSvg(opts) {
-  opts = opts || {};
-  const w = Number(opts.width || 640);
-  const h = Number(opts.height || 1000);
-  const r = Number(opts.radius || 44);
-
-  const bgPaint = String(opts.bgPaint || 'white');
-  const strokeOn = !!opts.strokeOn;
-  const strokeColor = String(opts.strokeColor || '#e6e6e6');
-  const strokeWidth = Number(opts.strokeWidth || 6);
-
-  const qrSvg = String(opts.qrSvg || '');
-  const qrSize = Number(opts.qrSize || 420);
-
-  const cap = opts.caption || {};
-  const headLines = cap.headLines || [];
-  const bodyLines = cap.bodyLines || [];
-  const fontFamily = String(cap.fontFamily || 'Work Sans');
-  const headSize = Number(cap.headSize || 24);
-  const bodySize = Number(cap.bodySize || 16);
-  const headLeading = Number(cap.headLeading || Math.round(headSize * 1.15));
-  const bodyLeading = Number(cap.bodyLeading || Math.round(bodySize * 1.2));
-
-  const textColor = String(opts.textColor || '#000000');
-
-  // Positioning
-  const padX = Number(opts.padX || 64);
-  const topY = Number(opts.topY || 84);
-  const qrY = Number(opts.qrY || 360);
-  const qrX = Math.round((w - qrSize) / 2);
-
-  function esc(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // Clip path for rounded corners
-  const clipId = 'clip_' + Math.random().toString(16).slice(2);
-
-  let parts = [];
-  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`);
-  parts.push(`<defs><clipPath id="${clipId}"><rect x="0" y="0" width="${w}" height="${h}" rx="${r}" ry="${r}"/></clipPath></defs>`);
-  parts.push(`<g clip-path="url(#${clipId})">`);
-
-  // Background paint can be CSS gradient in preview; in SVG we use a flat fill fallback.
-  // If passed bgPaint already is an SVG-friendly color, use it.
-  parts.push(`<rect x="0" y="0" width="${w}" height="${h}" rx="${r}" ry="${r}" fill="${bgPaint}"/>`);
-
-  // Optional stroke (when background is transparent)
-  if (strokeOn) {
-    parts.push(`<rect x="${strokeWidth/2}" y="${strokeWidth/2}" width="${w-strokeWidth}" height="${h-strokeWidth}" rx="${r}" ry="${r}" fill="none" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>`);
-  }
-
-  // Caption (headline + body)
-  let y = topY;
-
-  if (headLines.length) {
-    parts.push(`<text x="${padX}" y="${y}" fill="${textColor}" font-family="${esc(fontFamily)}" font-size="${headSize}" font-weight="700">`);
-    headLines.forEach((line, i) => {
-      const dy = i === 0 ? 0 : headLeading;
-      parts.push(`<tspan x="${padX}" dy="${dy}">${esc(line)}</tspan>`);
-    });
-    parts.push(`</text>`);
-    y += headLeading * headLines.length + 18;
-  }
-
-  if (bodyLines.length) {
-    parts.push(`<text x="${padX}" y="${y}" fill="${textColor}" font-family="${esc(fontFamily)}" font-size="${bodySize}" font-weight="600">`);
-    bodyLines.forEach((line, i) => {
-      const dy = i === 0 ? 0 : bodyLeading;
-      parts.push(`<tspan x="${padX}" dy="${dy}">${esc(line)}</tspan>`);
-    });
-    parts.push(`</text>`);
-  }
-
-  // QR SVG (nested)
-  if (qrSvg) {
-    // Strip outer <svg ...> wrapper and inject its inner content into a group with scaling.
-    const inner = qrSvg.replace(/^[\s\S]*?<svg[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
-    parts.push(`<g transform="translate(${qrX},${qrY})">`);
-    // We assume qrSvg viewBox corresponds to its own size; scale to qrSize if needed.
-    parts.push(inner);
-    parts.push(`</g>`);
-  }
-
-  parts.push(`</g></svg>`);
-  return parts.join('');
-}
-
+// ---- render(): assembles PreviewModel and mounts SVG ----
 function render() {
+
   let preview = document.getElementById('qrPreview');
   let mount   = document.getElementById('qrMount');
-
-  // ===== PROBES (instrumentation only) =====
-  const __mark = (label, data) => {
-    try { window.__CODEDESK_RENDER_LAST_MARK__ = label; } catch(_e){}
-    try { console.log(label, data || ''); } catch(_e){}
-  };
-  __mark('🟩 RENDER:ENTER', { preview: !!preview, mount: !!mount, t: Date.now() });
 
   // If the host HTML is a different/older variant, self-heal by creating
   // the required nodes inside the existing preview-stage wrapper.
@@ -1513,38 +1879,15 @@ function render() {
     }
   }
 
-  if (!preview || !mount) {
-    __mark('🟥 RENDER:ABORT:NO_STAGE_NODES', {
-      preview: !!preview,
-      mount: !!mount,
-      stage: !!document.querySelector('.preview-stage')
-    });
-  }
-
   if (!preview || !mount) return;
 
-// QRCode lib loads async; retry until ready
-if (!window.QRCode || !window.QRCode.CorrectLevel) {
-    __mark('🟥 RENDER:GATE:QRCODE_NOT_READY', {
-      hasQRCode: !!window.QRCode,
-      hasCorrectLevel: !!(window.QRCode && window.QRCode.CorrectLevel),
-      QRCodeType: typeof window.QRCode,
-      CorrectLevelType: (window.QRCode ? typeof window.QRCode.CorrectLevel : null),
-      mountId: (mount && mount.id) || null
-    });
-  // IMPORTANT: do NOT clear qrMount while waiting for QRCode.js.
-  // Clearing the mount allows other writers (fallback QRCode regime) to “win” visually.
-  clearTimeout(render._qrRetry);
-  render._qrRetry = setTimeout(render, 60);
-  return;
-}
-
-if (typeof buildText !== 'function') {
-  __mark('🟥 RENDER:GATE:BUILDTEXT_NOT_READY', { t: Date.now(), buildTextType: typeof buildText });
-  clearTimeout(render._btRetry);
-  render._btRetry = setTimeout(render, 30);
-  return;
-}
+  // QRCode lib loads async; retry until ready
+  if (!window.QRCode || !window.QRCode.CorrectLevel) {
+    try { mount.innerHTML = ''; } catch (e) {}
+    clearTimeout(render._qrRetry);
+    render._qrRetry = setTimeout(render, 60);
+    return;
+  }
 
   // PreviewModel state: prevent blank frames by keeping last-good SVG
   if (!render._previewState) {
@@ -1562,63 +1905,34 @@ if (typeof buildText !== 'function') {
     if (!v.startsWith('#')) v = '#' + v;
     const short = /^#([0-9a-f]{3})$/i;
     const full  = /^#([0-9a-f]{6})$/i;
-    if (short.test(v)) return ('#' + v.slice(1).split('').map(c => c + c).join('')).toUpperCase();
-    if (full.test(v))  return v.toUpperCase();
+    if (short.test(v)) {
+      const m = v.slice(1).split('').map(c => c + c).join('');
+      return ('#' + m).toUpperCase();
+    }
+    if (full.test(v)) return v.toUpperCase();
     return null;
   };
 
-  const colorHex = (id, fallback) => {
-    const c = toHex(document.getElementById(id)?.value);
-    return c || fallback;
-  };
-
-  const hexPair = (colorId, textId, fallback) => {
-    const t = toHex(document.getElementById(textId)?.value);
-    if (t) return t;
-    const c = toHex(document.getElementById(colorId)?.value);
-    return c || fallback;
-  };
-
   const num = (id, fallback) => {
-    const v = parseFloat(document.getElementById(id)?.value);
-    return Number.isFinite(v) ? v : fallback;
+    const el = document.getElementById(id);
+    const raw = el ? el.value : '';
+    const n = parseFloat(raw);
+    return Number.isFinite(n) ? n : fallback;
   };
 
-  // ---- background mode + CSS paint
-  try { if (typeof window.refreshBackground === 'function') window.refreshBackground(); } catch {}
-
-  // ---- caption (implicit: any text enables caption + rectangular card)
-  const headline = (document.getElementById('campaign')?.value || '').trim().slice(0, 20);
-  const body     = (document.getElementById('captionBody')?.value || '').trim().slice(0, 60);
-  const hasCaption = !!(headline || body);
-
-  // PreviewModel (pure data): stage + semantic content
-  const previewModel = {
-    stage: {
-      shape: hasCaption ? 'wallet' : 'square',
-      aspectRatio: hasCaption ? 0.63 : 1
-    },
-    content: {
-      hasCaption,
-      headline,
-      body
-    },
-    qr: null,
-    presentation: null,
-    overlays: null,
-    state: _previewState
+  const colorHex = (id, fallback) => {
+    const el = document.getElementById(id);
+    const raw = el ? el.value : '';
+    return toHex(raw) || toHex(fallback) || '#000000';
   };
 
-  // Preview stage must match the same two-state geometry as composeCardSvg()
-  // - no caption: square
-  // - caption present: wallet card (0.63 : 1 width : height)
-  const stageEl = preview.closest('.preview-stage');
-  if (stageEl) {
-    stageEl.style.aspectRatio = (previewModel.stage.shape === 'wallet') ? '0.63 / 1' : '1 / 1';
-  }
+  // Caption gating
+  const headline = String(document.getElementById('captionHeadline')?.value || '').trim();
+  const body1    = String(document.getElementById('captionBody1')?.value || '').trim();
+  const body2    = String(document.getElementById('captionBody2')?.value || '').trim();
+  const hasCaption = !!(headline || body1 || body2);
 
-  // Toggle visual style (stroke vs fill card)
-  // “Transparent background” = both gradient alphas are 0
+  // Build background alpha-based class gating
   const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
   const botRaw = parseFloat(document.getElementById('bgBottomAlpha')?.value);
   const topA = (Number.isFinite(topRaw) ? topRaw : 100) / 100;
@@ -1641,155 +1955,62 @@ if (typeof buildText !== 'function') {
   const rawTrim = String(__enc || "").trim();
   const qrText = rawTrim || 'CODEDESK QR';
 
-  previewModel.qr = {
-    text: qrText,
-    eccLevel: ecc,
-    moduleStyle: (document.getElementById('modulesMode')?.value || 'Shape'),
-    size: null,
-    quietZonePolicy: num('margin', 4)
-  };
-
-  // PreviewModel (pure data): presentation (surface-only; background stays via CSS)
-  previewModel.presentation = {
-    background: {
-      mode: isTransparent ? 'card--stroke' : 'card--fill',
-      token: null,
-      intensity: null
-    },
-    layout: {
-      center: true,
-      marginMode: null
-    },
-    qrDisplay: {
-      modules: (document.getElementById('modulesMode')?.value || 'Shape'),
-      invert: false,
-      pixelSnap: false
-    }
-  };
-
-  // PreviewModel (pure data): overlays (surface-only; not in SVG)
-  previewModel.overlays = {
-    grid: false,
-    bleed: false,
-    bounds: false,
-    debug: false
-  };
-
   _previewState.stageState = 'loading';
   _previewState.errorMessage = null;
 
   let svgStr = '';
   try {
-    __mark('🟨 RENDER:TRY:COMPOSE_ENTER', { t: Date.now() });
     const fontFamily = (document.getElementById('fontFamily')?.value || 'Work Sans');
 
-    const capLayout = layoutCaptionLines({
-      headline,
-      body,
-      fontFamily
-    });
-
-    const qrSvg = buildQrSvg(previewModel.qr.text, {
-      ecc,
-      modulesColor: colorHex('bodyColor', '#000000'),
-      eyesColor: colorHex('eyeRingColor', colorHex('bodyColor', '#000000')),
-      background: 'transparent'
-    });
-
     svgStr = composeCardSvg({
-      bgPaint: 'transparent',
-      strokeOn: isTransparent,
-
-      qrSvg,
-
-      caption: hasCaption ? {
-        headLines: capLayout.headLines,
-        bodyLines: capLayout.bodyLines,
-        headSize: capLayout.headSize,
-        bodySize: capLayout.bodySize,
-        headLeading: capLayout.headLeading,
-        bodyLeading: capLayout.bodyLeading,
-        fontFamily
-      } : {
-        headLines: [],
-        bodyLines: [],
-        headSize: 0,
-        bodySize: 0,
-        headLeading: 0,
-        bodyLeading: 0,
-        fontFamily
-      },
-
-      textColor: colorHex('captionColor', '#000000')
-    });
-    __mark('🟩 RENDER:COMPOSE_OK', { svgLen: (svgStr ? String(svgStr).length : 0) });
-  } catch (e) {
-    _previewState.stageState = 'error';
-    try { _previewState.errorMessage = String(e && e.message ? e.message : e); } catch(_e){}
-    console.warn('render() failed', e);
-    __mark('🟥 RENDER:ABORT:COMPOSE_EXCEPTION', {
-      msg: (e && e.message) ? e.message : String(e),
-      name: (e && e.name) ? e.name : null,
-      stack: (e && e.stack) ? String(e.stack).slice(0, 500) : null
-    });
-    return;
-  }
-
-  // Paint — custom SVG regime is the ONLY preview authority
-  try {
-    __mark('🟨 RENDER:TRY:MOUNT_ENTER', { hasMount: !!mount, mode: 'custom-svg' });
-
-    // Hard gate: no fallback writers allowed
-    mount.innerHTML = '';
-
-    // --- Canonical custom SVG mount ---
-    const svg = composeCardSvg({
-      cardWidth,
+      cardWidth: Math.round(cardWidth),
       transparentBg: isTransparent,
 
-      // gradient pieces
-      bgTopColor:     colorHex('bgTopColor',    '#FFFFFF') || '#FFFFFF',
-      bgBottomColor:  colorHex('bgBottomColor', '#FFFFFF') || '#FFFFFF',
-      bgTopAlpha:     Math.max(0, Math.min(100, parseFloat(document.getElementById('bgTopAlpha')?.value || '100'))),
-      bgBottomAlpha:  Math.max(0, Math.min(100, parseFloat(document.getElementById('bgBottomAlpha')?.value || '100'))),
+      bgTopColor: colorHex('bgTopColor', '#ffffff'),
+      bgBottomColor: colorHex('bgBottomColor', '#ffffff'),
+      bgTopAlpha: num('bgTopAlpha', 100),
+      bgBottomAlpha: num('bgBottomAlpha', 100),
 
-      captionHeadline: hasCaption ? headline : '',
-      captionBody:     hasCaption ? body : '',
-      captionColor:    colorHex('captionColor', '#000000'),
-      ecc,
+      captionHeadline: headline,
+      captionBody1: body1,
+      captionBody2: body2,
+      captionColor: colorHex('captionColor', '#000000'),
+      captionFontFamily: fontFamily,
 
-      // look controls
-      modulesShape:   document.getElementById('moduleShape')?.value || 'Square',
-      bodyColor:      colorHex('bodyColor',   '#000000'),
-      eyeRingColor:   colorHex('eyeRingColor',   '#000000'),
-      eyeCenterColor: colorHex('eyeCenterColor', '#000000'),
-      eyeRingShape:   document.getElementById('eyeRingShape')?.value   || 'Square',
-      eyeCenterShape: document.getElementById('eyeCenterShape')?.value || 'Square',
-
-      modulesMode:    document.getElementById('modulesMode')?.value || 'Shape',
-      modulesScale:   parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
-      modulesEmoji:   document.getElementById('modulesEmoji')?.value || '😀',
-
-      centerMode:     document.getElementById('centerMode')?.value || 'None',
-      centerScale:    parseFloat(document.getElementById('centerScale')?.value || '1'),
-      centerEmoji:    document.getElementById('centerEmoji')?.value || '😊',
+      qrText: qrText,
+      ecc: ecc,
+      modulesShape: (document.getElementById('modulesShape')?.value || 'Square'),
+      modulesMode: (document.getElementById('modulesMode')?.value || 'Shape'),
+      bodyColor: colorHex('bodyColor', '#000000'),
+      eyeRingColor: colorHex('eyeRingColor', colorHex('bodyColor', '#000000')),
+      eyeCenterColor: colorHex('eyeCenterColor', colorHex('eyeRingColor', colorHex('bodyColor', '#000000'))),
+      eyeRingShape: (document.getElementById('eyeRingShape')?.value || 'Square'),
+      eyeCenterShape: (document.getElementById('eyeCenterShape')?.value || 'Square'),
+      emoji: String(document.getElementById('emojiChar')?.value || ''),
+      emojiSize: num('emojiSize', 1),
+      moduleScale: num('moduleScale', 1),
+      quietZone: num('margin', 4)
     });
 
-    mount.appendChild(svg);
-
-    __mark('🟩 RENDER:MOUNT_QUERY', { svgFound: !!svg });
-    _previewState.lastGoodSvg = svg;
-    _previewState.stageState = 'ready';
+    if (svgStr && svgStr.length > 50) {
+      _previewState.lastGoodSvg = svgStr;
+      _previewState.stageState = 'ready';
+    } else {
+      throw new Error('compose returned empty svg');
+    }
   } catch (e) {
     _previewState.stageState = 'error';
-    try { _previewState.errorMessage = String(e && e.message ? e.message : e); } catch(_e){}
-    console.warn('render() mount failed', e);
-    __mark('🟥 RENDER:ABORT:MOUNT_EXCEPTION', {
-      msg: (e && e.message) ? e.message : String(e),
-      name: (e && e.name) ? e.name : null,
-      stack: (e && e.stack) ? String(e.stack).slice(0, 500) : null
-    });
-    return;
+    _previewState.errorMessage = (e && e.message) ? e.message : String(e);
+
+    // fall back to last-good frame
+    svgStr = _previewState.lastGoodSvg || '';
+  }
+
+  // Mount
+  try {
+    mount.innerHTML = svgStr || '';
+  } catch (e) {
+    // If innerHTML fails (rare), do nothing.
   }
 
   // Ensure true transparency
@@ -1803,8 +2024,6 @@ if (typeof buildText !== 'function') {
     }
   } catch (e) {}
 }
-;window.render = render;
-
   // One-time lightweight listeners that re-render
   if (!render._wired) {
     const _rerender = () => {
