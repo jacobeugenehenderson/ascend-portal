@@ -1351,130 +1351,10 @@ function layoutCaptionLines(opts) {
   };
 }
 
-// Build an SVG element for the QR, including background, modules, and eyes.
-// Returns SVG string
-function buildQrSvg(text, opts) {
-  opts = opts || {};
-  const ecc = String(opts.ecc || 'M').toUpperCase();
-  const size = Number(opts.size || 256);
-  const margin = Number(opts.margin || 0);
-
-  // colors
-  const modColor = String(opts.modulesColor || '#000000');
-  const eyeColor = String(opts.eyesColor || modColor);
-  const bg = String(opts.background || 'transparent');
-
-  // module shape presets (segno style)
-  const segno = window.segno || null;
-
-  // Fallback to QRCode.js if segno isn't present
-  // (Canonical file expects segno; keep behavior as-is when present.)
-  let matrix = null;
-  try {
-    if (segno && typeof segno.make === 'function') {
-      const qr = segno.make(text || '', { error: ecc });
-      matrix = qr.matrix;
-    }
-  } catch (e) {
-    matrix = null;
-  }
-
-  // If segno isn't present, use QRCode.js to generate a matrix-like raster and paint as modules
-  if (!matrix && window.QRCode && window.QRCode.CorrectLevel) {
-    // QRCode.js renders to DOM; we only need its internal data if accessible.
-    // Canonical file still supports QRCode.js path; keep it minimal.
-    const tmp = document.createElement('div');
-    tmp.style.position = 'absolute';
-    tmp.style.left = '-99999px';
-    tmp.style.top = '-99999px';
-    document.body.appendChild(tmp);
-    try {
-      const qr = new window.QRCode(tmp, {
-        text: text || '',
-        width: size,
-        height: size,
-        colorDark: modColor,
-        colorLight: 'transparent',
-        correctLevel: window.QRCode.CorrectLevel[ecc] || window.QRCode.CorrectLevel.M
-      });
-      // Try to read the canvas pixels and infer matrix (crude fallback)
-      const canvas = tmp.querySelector('canvas');
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        const img = ctx.getImageData(0, 0, size, size).data;
-        // infer module count by scanning first row for transitions
-        // (best-effort fallback; canonical path prefers segno)
-        const row = [];
-        for (let x = 0; x < size; x++) {
-          const i = (0 * size + x) * 4;
-          row.push(img[i + 3] > 0 ? 1 : 0);
-        }
-        // guess moduleCount
-        let transitions = 0;
-        for (let i = 1; i < row.length; i++) {
-          if (row[i] !== row[i - 1]) transitions++;
-        }
-        const moduleCount = Math.max(21, Math.min(177, Math.round(transitions / 2)));
-        matrix = [];
-        const step = size / moduleCount;
-        for (let y = 0; y < moduleCount; y++) {
-          const line = [];
-          for (let x = 0; x < moduleCount; x++) {
-            const cx = Math.floor((x + 0.5) * step);
-            const cy = Math.floor((y + 0.5) * step);
-            const j = (cy * size + cx) * 4;
-            const on = img[j + 3] > 0 && img[j] < 200;
-            line.push(!!on);
-          }
-          matrix.push(line);
-        }
-      }
-    } catch (e) {
-      // noop
-    } finally {
-      try { tmp.remove(); } catch(e){}
-    }
-  }
-
-  if (!matrix) {
-    // last-ditch empty svg
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"></svg>`;
-  }
-
-  const n = matrix.length;
-  const scale = (size - margin * 2) / n;
-
-  function rect(x, y, w, h, fill) {
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
-  }
-
-  // Identify eyes (finder patterns) - top-left, top-right, bottom-left
-  function isInEye(x, y) {
-    const inTL = (x < 7 && y < 7);
-    const inTR = (x >= n - 7 && y < 7);
-    const inBL = (x < 7 && y >= n - 7);
-    return inTL || inTR || inBL;
-  }
-
-  let parts = [];
-  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`);
-
-  if (bg !== 'transparent') {
-    parts.push(rect(0, 0, size, size, bg));
-  }
-
-  for (let y = 0; y < n; y++) {
-    for (let x = 0; x < n; x++) {
-      if (!matrix[y][x]) continue;
-      const px = margin + x * scale;
-      const py = margin + y * scale;
-      const fill = isInEye(x, y) ? eyeColor : modColor;
-      parts.push(rect(px, py, scale, scale, fill));
-    }
-  }
-
-  parts.push(`</svg>`);
-  return parts.join('');
+// Legacy buildQrSvg() disabled.
+// Canonical custom QR renderer is defined later in this file.
+function buildQrSvg() {
+  throw new Error('Legacy buildQrSvg disabled — canonical custom renderer should be used.');
 }
 
 // Compose the full card SVG: background, caption, QR, border radius, etc.
@@ -1817,15 +1697,50 @@ if (typeof buildText !== 'function') {
     return;
   }
 
-  // Paint (never clear unless replacing in the same pass)
+  // Paint — custom SVG regime is the ONLY preview authority
   try {
-    __mark('🟨 RENDER:TRY:MOUNT_ENTER', { hasMount: !!mount, svgLen: (svgStr ? String(svgStr).length : 0) });
-    mount.innerHTML = svgStr;
-    const svgEl = mount.querySelector('svg');
-    __mark('🟩 RENDER:MOUNT_QUERY', { svgFound: !!svgEl });
-    if (svgEl) {
-      _previewState.lastGoodSvg = svgEl;
-    }
+    __mark('🟨 RENDER:TRY:MOUNT_ENTER', { hasMount: !!mount, mode: 'custom-svg' });
+
+    // Hard gate: no fallback writers allowed
+    mount.innerHTML = '';
+
+    // --- Canonical custom SVG mount ---
+    const svg = composeCardSvg({
+      cardWidth,
+      transparentBg: isTransparent,
+
+      // gradient pieces
+      bgTopColor:     colorHex('bgTopColor',    '#FFFFFF') || '#FFFFFF',
+      bgBottomColor:  colorHex('bgBottomColor', '#FFFFFF') || '#FFFFFF',
+      bgTopAlpha:     Math.max(0, Math.min(100, parseFloat(document.getElementById('bgTopAlpha')?.value || '100'))),
+      bgBottomAlpha:  Math.max(0, Math.min(100, parseFloat(document.getElementById('bgBottomAlpha')?.value || '100'))),
+
+      captionHeadline: hasCaption ? headline : '',
+      captionBody:     hasCaption ? body : '',
+      captionColor:    colorHex('captionColor', '#000000'),
+      ecc,
+
+      // look controls
+      modulesShape:   document.getElementById('moduleShape')?.value || 'Square',
+      bodyColor:      colorHex('bodyColor',   '#000000'),
+      eyeRingColor:   colorHex('eyeRingColor',   '#000000'),
+      eyeCenterColor: colorHex('eyeCenterColor', '#000000'),
+      eyeRingShape:   document.getElementById('eyeRingShape')?.value   || 'Square',
+      eyeCenterShape: document.getElementById('eyeCenterShape')?.value || 'Square',
+
+      modulesMode:    document.getElementById('modulesMode')?.value || 'Shape',
+      modulesScale:   parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
+      modulesEmoji:   document.getElementById('modulesEmoji')?.value || '😀',
+
+      centerMode:     document.getElementById('centerMode')?.value || 'None',
+      centerScale:    parseFloat(document.getElementById('centerScale')?.value || '1'),
+      centerEmoji:    document.getElementById('centerEmoji')?.value || '😊',
+    });
+
+    mount.appendChild(svg);
+
+    __mark('🟩 RENDER:MOUNT_QUERY', { svgFound: !!svg });
+    _previewState.lastGoodSvg = svg;
     _previewState.stageState = 'ready';
   } catch (e) {
     _previewState.stageState = 'error';
@@ -1839,7 +1754,7 @@ if (typeof buildText !== 'function') {
     return;
   }
 
-  // Ensure no opaque mount background blocks true transparency
+  // Ensure true transparency
   try {
     mount.style.background = 'transparent';
     mount.style.backgroundColor = 'transparent';
