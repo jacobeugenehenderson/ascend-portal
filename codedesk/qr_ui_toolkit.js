@@ -27,6 +27,79 @@ if (typeof window.buildText !== 'function') {
 
 console.log('[PROBE ui_toolkit]', { href: String(location && location.href || ''), topEqSelf: (window === window.top), selfName: String(window.name || ''), hasWinBuildText: (typeof window.buildText === 'function'), hasLexBuildText: (typeof buildText === 'function') });
 
+/* =====================================================
+ *  Preview Authority Guard — block legacy QRCode.js from
+ *  writing into #qrMount after custom SVG render.
+ *
+ *  Why here:
+ *   - bootstrapper injects QRCode.js async
+ *   - any late "helpful" fallback draw can clobber SVG
+ *   - this gates only the competing writer, not render()
+ * ===================================================== */
+(function guardQrMountFromLegacyQRCodeOnce(){
+  if (window.__CODEDESK_QRMOUNT_QRCODE_GUARD__) return;
+  window.__CODEDESK_QRMOUNT_QRCODE_GUARD__ = true;
+
+  const MOUNT_ID = 'qrMount';
+
+  function isQrMountTarget(el){
+    try {
+      if (!el) return false;
+      if (el === document.getElementById(MOUNT_ID)) return true;
+      if (el && el.id === MOUNT_ID) return true;
+      // Some legacy calls pass a selector string instead of an element
+      if (typeof el === 'string' && el.replace(/^#/, '') === MOUNT_ID) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  function wrapQRCodeCtor(Real){
+    if (typeof Real !== 'function') return Real;
+    if (Real.__CODEDESK_WRAPPED__) return Real;
+
+    function WrappedQRCode(el, opts){
+      if (isQrMountTarget(el)) {
+        try {
+          console.warn('🛑 Blocked legacy QRCode() write into #qrMount (custom SVG owns this mount).');
+          console.warn(new Error('QRCode clobber attempt').stack);
+        } catch (e) {}
+        // Return a harmless shim (some callers call .makeCode())
+        return { makeCode: function(){}, clear: function(){} };
+      }
+      return new Real(el, opts);
+    }
+
+    // Preserve prototype (instance methods) and static properties (e.g., CorrectLevel)
+    try { WrappedQRCode.prototype = Real.prototype; } catch (e) {}
+    try {
+      Object.keys(Real).forEach((k) => { try { WrappedQRCode[k] = Real[k]; } catch (e) {} });
+    } catch (e) {}
+
+    try { WrappedQRCode.__CODEDESK_WRAPPED__ = true; } catch (e) {}
+    return WrappedQRCode;
+  }
+
+  // Install a setter so async-injected QRCode.js also gets wrapped
+  try {
+    let _real = window.QRCode;
+
+    Object.defineProperty(window, 'QRCode', {
+      configurable: true,
+      enumerable: true,
+      get: function(){ return _real; },
+      set: function(v){
+        _real = wrapQRCodeCtor(v);
+      }
+    });
+
+    // Wrap immediately if already present
+    window.QRCode = _real;
+  } catch (e) {
+    // If defineProperty fails for any reason, do a best-effort direct wrap
+    try { if (typeof window.QRCode === 'function') window.QRCode = wrapQRCodeCtor(window.QRCode); } catch (_e) {}
+  }
+})();
+
 (function wireWheelScrollOnce(){
   if (window.__CODEDESK_WHEEL_SCROLL_WIRED__) return;
   window.__CODEDESK_WHEEL_SCROLL_WIRED__ = true;
