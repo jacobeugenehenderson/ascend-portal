@@ -731,7 +731,99 @@ try { wireBackgroundKnobsOnce(); } catch (e) {}
   
 })();
 
-  // --- Build QR "text" for each Type (simple, pragmatic encoders for preview) ---
+    // --- helpers to create inputs ---
+  function el(tag, props, kids){
+    const n = document.createElement(tag);
+    props = props || {};
+    Object.entries(props).forEach(([k,v])=>{
+      if(k==='class') n.className = v;
+      else if(k==='text') n.textContent = v;
+      else if(k==='html') n.innerHTML = v;
+      else if(k==='for') n.htmlFor = v;
+      else if(k==='style') n.setAttribute('style', v);
+      else n.setAttribute(k, v);
+    });
+    (kids||[]).forEach(k=>{
+      if(k==null) return;
+      if(typeof k === 'string') n.appendChild(document.createTextNode(k));
+      else n.appendChild(k);
+    });
+    return n;
+  }
+  function buildField(field){
+    // field: { key, label, type, placeholder, max, pattern, hint, default }
+    const key = String(field.key || '').trim();
+    if(!key) return null;
+
+    const id = 'm_' + key.replace(/[^a-z0-9_]/ig,'_');
+    const label = el('label', { class:'fldLbl', for:id, text:String(field.label||key) });
+
+    const t = String(field.type||'text').toLowerCase();
+    const inputType = (t==='number' || t==='email' || t==='url') ? t : 'text';
+    const inp = el('input', {
+      class:'fldInp',
+      id,
+      type: inputType,
+      placeholder: String(field.placeholder||''),
+      value: (field.default != null ? String(field.default) : '')
+    });
+
+    try { if(field.max != null && String(field.max).trim()) inp.maxLength = Number(field.max) || undefined; } catch (e) {}
+    try { if(field.pattern != null && String(field.pattern).trim()) inp.setAttribute('pattern', String(field.pattern)); } catch (e) {}
+
+    // Store mapping to manifest key
+    inp.dataset.mkey = key;
+
+    // seed from existing value if present
+    try {
+      const current = (typeof window._getValueById === 'function') ? window._getValueById(key) : undefined;
+      if(current != null && String(current).length) inp.value = String(current);
+    } catch (e) {}
+
+    // propagate to hidden/real field id == key (canonical storage)
+    inp.addEventListener('input', ()=>{
+      try { if(typeof window._setValueById === 'function') window._setValueById(key, inp.value); } catch (e) {}
+      try { if(typeof window.render === 'function') window.render(); } catch (e) {}
+    });
+
+    const hint = field.hint ? el('div', { class:'fldHint', text:String(field.hint) }) : null;
+    const row = el('div', { class:'fldRow' }, [label, inp, hint].filter(Boolean));
+    return row;
+  }
+
+  function renderTypeForm(typeKey){
+    const details = document.getElementById('detailsPanel');
+    if(!details) return;
+
+    const fields = (typeof window.getTypeFields === 'function') ? window.getTypeFields(typeKey) : [];
+    details.innerHTML = '';
+
+    if(!fields || !fields.length){
+      details.appendChild(el('div', { class:'fldEmpty', text:'No fields for this type.' }));
+      return;
+    }
+
+    fields.forEach(f=>{
+      const row = buildField(f);
+      if(row) details.appendChild(row);
+    });
+  }
+
+  // --- Type select: rebuild fields on change ---
+  const typeSel = document.getElementById('qrType');
+  if(typeSel){
+    typeSel.addEventListener('change', ()=>{
+      try { renderTypeForm(typeSel.value); } catch (e) {}
+      // Refresh color hex bindings after dynamic field changes
+      try { if(typeof window.wireColorHexSync === 'function') window.wireColorHexSync(); } catch (e) {}
+      try { if(typeof window.render === 'function') window.render(); } catch (e) {}
+    });
+  }
+
+  // First-load hydration: build Mechanicals once without requiring a manual type flip.
+  try { if(typeSel) typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+
+// --- Build QR "text" for each Type (simple, pragmatic encoders for preview) ---
 function buildText(){
     const _typeSel = document.getElementById('qrType');
     const t = _typeSel ? (_typeSel.value || '') : '';
