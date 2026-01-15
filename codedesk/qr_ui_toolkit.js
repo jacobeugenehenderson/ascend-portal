@@ -25,6 +25,8 @@ if (typeof window.buildText !== 'function') {
   };
 }
 
+console.log('[PROBE ui_toolkit]', { href: String(location && location.href || ''), topEqSelf: (window === window.top), selfName: String(window.name || ''), hasWinBuildText: (typeof window.buildText === 'function'), hasLexBuildText: (typeof buildText === 'function') });
+
 (function wireWheelScrollOnce(){
   if (window.__CODEDESK_WHEEL_SCROLL_WIRED__) return;
   window.__CODEDESK_WHEEL_SCROLL_WIRED__ = true;
@@ -1010,6 +1012,9 @@ document.addEventListener('click', window.__okqr_park_handler__);
 function applyClickThroughForMobile() {
   const pass  = window.matchMedia('(max-width: 1279px)').matches;
   const stage = document.querySelector('.preview-stage');
+
+  console.log('[PROBE render]', { href: String(location && location.href || ''), topEqSelf: (window === window.top), selfName: String(window.name || ''), hasWinBuildText: (typeof window.buildText === 'function'), hasLexBuildText: (typeof buildText === 'function') });
+  
   if (!stage) return;
 
   const wrap   = stage.querySelector('.absolute'); // inner absolute inset wrapper
