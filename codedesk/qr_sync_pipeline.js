@@ -648,10 +648,19 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
         try { window.__CODEDESK_FILENAME_ACCEPTED__ = true; } catch(_e){}
         try { codedeskSetLocked(false); } catch(_e){}
-        try { if (typeof window.render === 'function') window.render(); } catch(_e){}
 
         // If the stepper was late-mounted, ensure the right-side controls are actually wired.
         try { wireRightAccordionBehaviorOnce(); } catch(_e){}
+
+        // Render twice:
+        //  - once immediately (best-effort)
+        //  - once on a short delay to allow template/manifest/import-state to finish
+        try { if (typeof window.render === 'function') window.render(); } catch(_e){}
+        try {
+          setTimeout(function(){
+            try { if (typeof window.render === 'function') window.render(); } catch(__e){}
+          }, 60);
+        } catch(_e){}
 
                 // New filename ceremony = new job. Clear any prior active working-file pointer so ✨ can run once.
         try {
@@ -1580,6 +1589,20 @@ function render() {
   }
 
   if (!preview || !mount) return;
+
+// QRCode lib loads async; retry until ready
+if (!window.QRCode || !window.QRCode.CorrectLevel) {
+  try { mount.innerHTML = ''; } catch (e) {}
+  clearTimeout(render._qrRetry);
+  render._qrRetry = setTimeout(render, 60);
+  return;
+}
+
+if (typeof buildText !== 'function') {
+  clearTimeout(render._btRetry);
+  render._btRetry = setTimeout(render, 30);
+  return;
+}
 
   // PreviewModel state: prevent blank frames by keeping last-good SVG
   if (!render._previewState) {
