@@ -258,6 +258,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   try { typeof codedeskRemoveSetupStep === 'function' && codedeskRemoveSetupStep(); } catch(e){}
   try { typeof codedeskSetSetupSparkleVisible === 'function' && codedeskSetSetupSparkleVisible(false); } catch(e){}
   try { typeof codedeskSetLocked === 'function' && codedeskSetLocked(false); } catch(e){}
+  try { typeof render === 'function' && render(); } catch(e){}
 
   // IMPORTANT: after Finish, lock the URL to this working file.
   // Otherwise a refresh on mode=new/template will clear the active id during bootstrap.
@@ -317,6 +318,7 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         try { codedeskSetLocked(false); } catch(_e){}
         try { codedeskSetSetupSparkleVisible(false); } catch(_e){}
         try { typeof codedeskRemoveSetupStep === 'function' && codedeskRemoveSetupStep(); } catch(_e){}
+        try { typeof render === 'function' && render(); } catch(_e){}
         return;
       }
     } catch(e){}
@@ -591,6 +593,11 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       if (window.__CODEDESK_FILENAME_ACCEPTED__ !== true) {
         try { codedeskSetLocked(true); } catch(e){}
         try { codedeskSetSetupSparkleVisible(false); } catch(e){}
+      } else {
+        // If we skipped the Enter ceremony (true return-visit), unlock + wire + render now.
+        try { codedeskSetLocked(false); } catch(e){}
+        try { if (typeof window.render === 'function') window.render(); } catch(e){}
+        try { wireRightAccordionBehaviorOnce(); } catch(e){}
       }
       try { syncFinishEnabled(); } catch(e){}
 

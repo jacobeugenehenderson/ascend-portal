@@ -607,3 +607,402 @@ function wireBackgroundKnobsOnce() {
 }
 
 try { wireBackgroundKnobsOnce(); } catch (e) {}
+
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // expose to the later script
+  window.$ = $;
+  window.preview = $("qrPreview");
+  window.typeSel = $("qrType");
+
+  window.colorHex = function (id, fallback) {
+    const node = $(id);
+    const v = (node && node.value || "").trim();
+    return /^#[0-9a-fA-F]{6}$/.test(v) ? v : (fallback || "#000000");
+  };
+
+  window.val = function (id) {
+    const n = $(id);
+    return n ? (n.type === "checkbox" ? n.checked : (n.value || "")) : "";
+  };
+  
+})();
+
+  // --- Build QR "text" for each Type (simple, pragmatic encoders for preview) ---
+  function buildText(){
+    const _typeSel = document.getElementById('qrType');
+    const t = _typeSel ? (_typeSel.value || '') : '';
+    switch(t){
+      case 'url':
+      case 'link': {
+        // raw URL / destination; support multiple possible ids
+        const raw =
+          val("url") ||
+          val("link") ||
+          val("destination") ||
+          val("targetUrl") ||
+          "";
+
+        // If empty, export empty (no placeholder payloads)
+        const rawTrim = String(raw || "").trim();
+        if (!rawTrim) return "https://jacobhenderson.studio";
+
+        // read optional utm fields (support common variants)
+        const s = (val("utmSource")   || val("utm_source")   || "").trim();
+        const m = (val("utmMedium")   || val("utm_medium")   || "").trim();
+        const c = (val("utmCampaign") || val("utm_campaign") || "").trim();
+
+        // If nothing extra was entered, return as-is
+        if (!s && !m && !c) return rawTrim;
+
+        try {
+          // Robust path when rawTrim is a valid absolute URL
+          const u = new URL(rawTrim);
+          if (s) u.searchParams.set("utm_source",   s);
+          if (m) u.searchParams.set("utm_medium",   m);
+          if (c) u.searchParams.set("utm_campaign", c);
+          return u.toString();
+        } catch {
+          // Fallback for non-absolute or invalid URLs:
+          // append query the "old-fashioned" way without breaking existing params
+          const join = rawTrim.includes("?") ? "&" : "?";
+          const parts = [];
+          if (s) parts.push(`utm_source=${encodeURIComponent(s)}`);
+          if (m) parts.push(`utm_medium=${encodeURIComponent(m)}`);
+          if (c) parts.push(`utm_campaign=${encodeURIComponent(c)}`);
+          return rawTrim + join + parts.join("&");
+        }
+      }
+
+      case 'text': {
+        const raw =
+          val("text") ||
+          val("message") ||
+          val("body") ||
+          "";
+        return String(raw || "").trim() || "LGBTQRCode";
+      }
+
+      case 'email': {
+        const to   = String(val("email") || val("to") || "").trim();
+        const subj = String(val("subject") || "").trim();
+        const body = String(val("body") || val("message") || "").trim();
+
+        // mailto requires at least something; allow blank to become a stub
+        const addr = encodeURIComponent(to);
+        const qs = [];
+        if (subj) qs.push("subject=" + encodeURIComponent(subj));
+        if (body) qs.push("body=" + encodeURIComponent(body));
+        return `mailto:${addr}${qs.length ? "?" + qs.join("&") : ""}`;
+      }
+
+      case 'sms': {
+        const phone = String(val("phone") || val("number") || "").trim();
+        const msg   = String(val("message") || val("body") || "").trim();
+        // Basic sms: scheme (platform-dependent); keep simple
+        const p = encodeURIComponent(phone);
+        const qs = msg ? `?body=${encodeURIComponent(msg)}` : "";
+        return `sms:${p}${qs}`;
+      }
+
+      case 'wifi': {
+        // WIFI:T:WPA;S:mynetwork;P:mypass;;
+        const ssid = String(val("ssid") || "").trim();
+        const pass = String(val("password") || val("pass") || "").trim();
+        const sec  = String(val("security") || val("auth") || "WPA").trim();
+        const hidden = !!val("hidden");
+        // Escape special chars per spec (\,;,:," with backslash)
+        const esc = (s) => String(s || "").replace(/([\\;,:"])/g, "\\$1");
+        if (!ssid) return "LGBTQRCode";
+        return `WIFI:T:${esc(sec)};S:${esc(ssid)};P:${esc(pass)};H:${hidden ? "true" : "false"};;`;
+      }
+
+      case 'vcard': {
+        // Minimal VCARD 3.0
+        const fn   = String(val("fullName") || val("fn") || "").trim();
+        const org  = String(val("org") || "").trim();
+        const tel  = String(val("phone") || val("tel") || "").trim();
+        const mail = String(val("email") || "").trim();
+        const url  = String(val("url") || "").trim();
+        const lines = [
+          "BEGIN:VCARD",
+          "VERSION:3.0",
+          fn ? `FN:${fn}` : "",
+          org ? `ORG:${org}` : "",
+          tel ? `TEL:${tel}` : "",
+          mail ? `EMAIL:${mail}` : "",
+          url ? `URL:${url}` : "",
+          "END:VCARD"
+        ].filter(Boolean);
+        return lines.join("\n");
+      }
+
+      case 'geo': {
+        const lat = String(val("lat") || "").trim();
+        const lng = String(val("lng") || "").trim();
+        if (lat && lng) {
+          // geo:lat,lng
+          return `geo:${lat},${lng}`;
+        }
+        // fall back to google maps query if only one is present
+        const q = lat || lng;
+        if (q) {
+          return `https://www.google.com/?q=${lat},${lng}`;
+        }
+        return q ? `https://www.google.com/?q=${lat},${lng}` : "LGBTQRCode";
+      }
+
+      default:
+        return "LGBTQRCode";
+    }
+  }
+
+function codedeskSetLocked(locked){
+    // Reflect lock state on <body> (styling + debugging sanity)
+    try { document.body && document.body.classList && document.body.classList.toggle('codedesk-locked', !!locked); } catch(e){}
+
+    // Always start with all drawers closed (Caption/Design/Mechanicals/Finish)
+    try {
+      const stepper = document.getElementById('stepper');
+      if (stepper) {
+        stepper.querySelectorAll('[data-step-panel]').forEach((p) => { p.style.display = 'none'; });
+        stepper.querySelectorAll('[data-step-toggle]').forEach((b) => {
+          try { b.setAttribute('aria-expanded', 'false'); } catch(e){}
+        });
+
+        // Disable/enable the accordion buttons (they must feel inert until filename is accepted)
+        stepper.querySelectorAll('[data-step-toggle]').forEach((b) => {
+          try { b.disabled = !!locked; } catch(e){}
+          try { b.setAttribute('aria-disabled', locked ? 'true' : 'false'); } catch(e){}
+        });
+
+        // Prevent stray pointer events on the rail itself
+        stepper.style.pointerEvents = locked ? 'none' : 'auto';
+      }
+    } catch(e){}
+  }
+
+let _right_wired = false;
+
+function wireRightAccordionBehaviorOnce() {
+
+  if (_right_wired) return;
+
+  const right = document.getElementById('stepper');
+  if (!right) {
+    // Stepper may be late-mounted; retry a few times.
+    if (!wireRightAccordionBehaviorOnce._retrying) {
+      wireRightAccordionBehaviorOnce._retrying = true;
+      let tries = 0;
+      const maxTries = 40; // ~10s @ 250ms
+      const iv = setInterval(function(){
+        tries++;
+        try {
+          const r = document.getElementById('stepper');
+          if (r) {
+            clearInterval(iv);
+            wireRightAccordionBehaviorOnce._retrying = false;
+            try { wireRightAccordionBehaviorOnce(); } catch(e){}
+            return;
+          }
+        } catch(e){}
+        if (tries >= maxTries) {
+          clearInterval(iv);
+          wireRightAccordionBehaviorOnce._retrying = false;
+        }
+      }, 250);
+    }
+    return;
+  }
+
+  const captionCard     = right.querySelector('.step-card[data-step="caption"]');
+  const designCard      = right.querySelector('.step-card[data-step="design"]');
+  const mechanicalsCard = right.querySelector('.step-card[data-step="mechanicals"]');
+  const finishCard      = right.querySelector('.step-card[data-step="finish"]');
+
+  const designBtn      = designCard?.querySelector('[data-step-toggle]');
+  const mechanicalsBtn = mechanicalsCard?.querySelector('[data-step-toggle]');
+  const finishBtn      = finishCard?.querySelector('[data-step-toggle]');
+
+    function setMode(mode) {
+    right.classList.toggle('mech-active',   mode === 'mechanicals');
+    right.classList.toggle('finish-active', mode === 'finish');
+    if (mode === 'design') right.classList.remove('mech-active', 'finish-active');
+
+  }
+
+  const isOpen = (card) => {
+  const panel = card?.querySelector('[data-step-panel]');
+  // visible if it participates in layout
+  return !!panel && panel.offsetParent !== null;
+};
+
+  designBtn     ?.addEventListener('click', () => setMode('design'));
+  mechanicalsBtn?.addEventListener('click', () => setMode('mechanicals'));
+  finishBtn     ?.addEventListener('click', () => setMode('finish'));
+
+  setMode(isOpen(mechanicalsCard) ? 'mechanicals'
+       : isOpen(finishCard)       ? 'finish'
+       : 'design');
+
+  // Mark wired so we don’t duplicate listeners
+  _right_wired = true;
+}
+
+function computeParkOffset(){
+    const R = document.documentElement;
+    const stage = document.querySelector('.preview-stage');
+    if (!stage) return null;
+
+    // Use the visible QR card if present
+    const preview = document.getElementById('qrPreview');
+    const previewH = preview?.getBoundingClientRect().height || 0;
+
+    // Header height
+    const headerH = document.querySelector('.header-bar')
+        ?.getBoundingClientRect().height || 56;
+    // Make header height available to CSS so scroll-margin/padding can do exact parking
+    R.style.setProperty('--header-h', headerH + 'px');
+
+    // Read CSS knobs
+    const getNum = (name, fallback) => {
+      const v = getComputedStyle(R).getPropertyValue(name).trim();
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : fallback;
+    };
+
+    const overlap = getNum('--preview-overlap', 180);
+    const gap     = getNum('--preview-gap', 8);
+    const nudge   = getNum('--park-nudge', 16);
+
+    // Phone height - overlap + gap + nudge
+    const park = Math.max(0, Math.round(previewH - overlap + gap + nudge));
+
+    // Expose as CSS var so CSS scroll-* rules can use it if needed
+    R.style.setProperty('--park-offset', park + 'px');
+
+    // Helpful if you keep inner scrolling elsewhere; harmless otherwise
+    const stepper = document.getElementById('stepper');
+    if (stepper){
+      stepper.style.scrollPaddingTop = `calc(${headerH}px + ${park}px)`;
+    }
+    return park;
+  }
+
+  // Make it globally callable (you already call window.reflowStepper elsewhere)
+  window.reflowStepper = function reflowStepper(){
+    computeParkOffset();
+  };
+
+  // Keep it fresh
+  window.addEventListener('resize', computeParkOffset, { passive: true });
+  window.addEventListener('orientationchange', computeParkOffset, { passive: true });
+  document.fonts?.ready?.then?.(computeParkOffset);
+
+// --- Uniform "park under QR" on open (stacked only, stable + deterministic) ---
+document.removeEventListener?.('click', window.__okqr_park_handler__);
+window.__okqr_park_handler__ = function (e) {
+  const btn  = e.target.closest?.('[data-step-toggle]');
+  const card = btn?.closest?.('.step-card');
+  if (!card) return;
+
+  // Respect lock state: buttons are disabled while locked, but we also guard here.
+  try {
+    if (btn.disabled) return;
+    if (btn.getAttribute && btn.getAttribute('aria-disabled') === 'true') return;
+    if (document.body && document.body.classList && document.body.classList.contains('codedesk-locked')) return;
+  } catch (e) {}
+
+      // --- Accordion behavior: panels ship as display:none in HTML, so we must toggle them here ---
+  try {
+    const stepper = document.getElementById('stepper') || card.closest('#stepper');
+    if (stepper) {
+      const panel = card.querySelector('[data-step-panel]');
+      const step  = String(card.getAttribute('data-step') || '');
+
+      const isOpen = !!(panel && panel.offsetParent !== null && getComputedStyle(panel).display !== 'none');
+
+      // Close all drawers first (true accordion)
+      stepper.querySelectorAll('[data-step-panel]').forEach((p) => { p.style.display = 'none'; });
+      stepper.querySelectorAll('[data-step-toggle]').forEach((b) => {
+        try { b.setAttribute('aria-expanded', 'false'); } catch(e){}
+      });
+
+      // Clear open state tracking (needed for pill visibility + header paint rules)
+      stepper.querySelectorAll('.step-card').forEach((c) => { try { c.classList.remove('is-open'); } catch(e){} });
+
+      // Finish should NOT fold down: it never opens a panel; it only toggles finish-active styling.
+      if (step === 'finish') {
+        stepper.classList.remove('mech-active');
+        stepper.classList.add('finish-active');
+        return;
+      }
+
+      // If it was closed, open it; if it was open, leave everything closed.
+      if (panel && !isOpen) {
+        panel.style.display = '';
+        try { btn.setAttribute('aria-expanded', 'true'); } catch(e){}
+        try { card.classList.add('is-open'); } catch(e){}
+
+        // Mode styling parity with wide-mode setMode()
+        if (step === 'mechanicals') {
+          stepper.classList.remove('finish-active');
+          stepper.classList.add('mech-active');
+        } else {
+          stepper.classList.remove('mech-active', 'finish-active');
+        }
+      } else {
+        // Closing (or clicking an already-open drawer) returns to neutral
+        stepper.classList.remove('mech-active', 'finish-active');
+      }
+    }
+  } catch (e) {}
+
+  // Wait one microtask so header pills can expand before measuring
+  setTimeout(() => {
+    if (!window.matchMedia('(max-width: 1279px)').matches) return;
+    window.reflowStepper?.(); // recompute --park-offset after header reflows
+
+    // ✅ scroll to the wrapper (includes pills) — avoids post-scroll jump
+    const header = card.querySelector('.step-header-wrap')
+                || card.querySelector('.step-header')
+                || card;
+
+    const preferSmooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    header.scrollIntoView({
+      block: 'start',
+      behavior: preferSmooth ? 'smooth' : 'auto'
+    });
+  }, 0);
+};
+
+document.addEventListener('click', window.__okqr_park_handler__);
+
+// --- Safety: ensure headers remain clickable under the phone on mobile ---
+function applyClickThroughForMobile() {
+  const pass  = window.matchMedia('(max-width: 1279px)').matches;
+  const stage = document.querySelector('.preview-stage');
+  if (!stage) return;
+
+  const wrap   = stage.querySelector('.absolute'); // inner absolute inset wrapper
+  const qr     = stage.querySelector('#qrPreview');
+  const mount  = stage.querySelector('#qrMount');
+  const svg    = stage.querySelector('#qrMount > svg');
+  const arrows = stage.querySelectorAll('.nav-arrow');
+
+  // Allow clicks to pass through overlayed preview area except for QR itself + nav arrows
+  // so accordion headers remain tappable.
+  try {
+    if (wrap) wrap.style.pointerEvents = pass ? 'none' : '';
+    if (qr)   qr.style.pointerEvents   = pass ? 'auto' : '';
+    if (mount) mount.style.pointerEvents = pass ? 'auto' : '';
+    if (svg)  svg.style.pointerEvents  = pass ? 'auto' : '';
+    arrows.forEach(a => { try { a.style.pointerEvents = pass ? 'auto' : ''; } catch(e){} });
+  } catch(e){}
+}
+
+window.addEventListener('resize', applyClickThroughForMobile, { passive: true });
+window.addEventListener('orientationchange', applyClickThroughForMobile, { passive: true });
+
+})();
