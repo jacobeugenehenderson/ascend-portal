@@ -1351,10 +1351,48 @@ function layoutCaptionLines(opts) {
   };
 }
 
-// Legacy buildQrSvg() disabled.
-// Canonical custom QR renderer is defined later in this file.
-function buildQrSvg() {
-  throw new Error('Legacy buildQrSvg disabled — canonical custom renderer should be used.');
+// Legacy buildQrSvg() compatibility shim.
+// Delegates to the canonical custom QR renderer if present (custom_qr_regime_extracted.js).
+function buildQrSvg(text, opts) {
+  opts = opts || {};
+
+  // Prefer the canonical global buildQrSvg (from custom_qr_regime_extracted.js).
+  // Avoid self-recursion if this shim is the global.
+  const fn = (typeof window.buildQrSvg === 'function' && window.buildQrSvg !== buildQrSvg)
+    ? window.buildQrSvg
+    : null;
+
+  if (!fn) {
+    throw new Error('Canonical buildQrSvg not found (window.buildQrSvg).');
+  }
+
+  const level = (opts && opts.ecc) ? opts.ecc : (opts && opts.level ? opts.level : 'M');
+  const size  = (opts && opts.size) ? Number(opts.size) : 512;
+
+  const bodyColor = (opts && (opts.modulesColor || opts.bodyColor)) || '#000000';
+  const eyesColor = (opts && (opts.eyesColor || opts.eyeRingColor)) || bodyColor;
+
+  const svgEl = fn({
+    text: String(text || ''),
+    size,
+    level,
+
+    bodyColor,
+    eyeRingColor: eyesColor,
+    eyeCenterColor: (opts && opts.eyeCenterColor) || eyesColor,
+
+    // Inner QR only (card/caption composed externally)
+    transparentBg: true,
+    bgColor: '#000000', // ignored when transparent
+    bare: true
+  });
+
+  // The legacy caller expects a string to feed into composeCardSvg().
+  try {
+    return (svgEl && svgEl.outerHTML) ? svgEl.outerHTML : String(svgEl || '');
+  } catch (e) {
+    return String(svgEl || '');
+  }
 }
 
 // Compose the full card SVG: background, caption, QR, border radius, etc.
