@@ -232,7 +232,7 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
 
 // force UI refresh now that templates are in memory
 try {
-  if (typeof render === "function" && window.QRCode && window.QRCode.CorrectLevel) {
+  if (typeof render === "function") {
     render();
   }
 } catch (e) {}
@@ -321,8 +321,9 @@ const __prev = sessionStorage.getItem(CODEDESK_BOOTSTRAP_SESSION_KEY) || '';
 
       // Nothing to do
     });
-  } catch (e) {
-    console.warn('CodeDesk URL bootstrap failed (non-fatal)', e);
+ } catch (e) {
+    console.warn("Manifest load failed, continuing with inline fallback", e);
+    // Canonical: types is an object map (not an array)
   }
 
   // after manifest = ... is set
