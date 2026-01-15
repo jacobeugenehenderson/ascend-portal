@@ -1,3 +1,30 @@
+// =====================================================
+//  Render-plane invariant: buildText() must always exist
+//  - Prevents render() structural block if earlier UI wiring throws.
+//  - Real buildText() (below) will overwrite this once reached.
+// =====================================================
+if (typeof window.buildText !== 'function') {
+  window.buildText = function buildText() {
+    try {
+      const sel = document.getElementById('qrType');
+      const t = sel ? String(sel.value || '') : '';
+
+      // Minimal always-on payload; mirrors canonical URL fallback behavior.
+      if (t === 'URL') {
+        const el =
+          document.getElementById('urlData') ||
+          document.getElementById('url') ||
+          document.getElementById('URL');
+        const raw = el ? String(el.value || '') : '';
+        const s = raw.trim();
+        return s || 'https://jacobhenderson.studio';
+      }
+    } catch (_e) {}
+
+    return 'https://jacobhenderson.studio';
+  };
+}
+
 (function wireWheelScrollOnce(){
   if (window.__CODEDESK_WHEEL_SCROLL_WIRED__) return;
   window.__CODEDESK_WHEEL_SCROLL_WIRED__ = true;
@@ -754,6 +781,9 @@ function buildText(){
         return "CODEDESK";
     }
   }
+
+// Ensure buildText is global (render-plane invariant)
+window.buildText = buildText;
 
 function codedeskSetLocked(locked){
     // Reflect lock state on <body> (styling + debugging sanity)
