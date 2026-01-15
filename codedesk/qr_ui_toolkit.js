@@ -771,25 +771,29 @@ function getTypeFields(type){
     return n;
   }
   function buildField(field){
-    // field: { key, label, type, placeholder, max, pattern, hint, default }
-    const key = String(field.key || '').trim();
+    // field can be:
+    //  - string field id from manifest.types[typeKey] (canonical)
+    //  - object: { key, label, type, placeholder, max, pattern, hint, default }
+    const isStr = (typeof field === 'string');
+    const key = String(isStr ? field : (field && field.key) || '').trim();
     if(!key) return null;
 
     const id = 'm_' + key.replace(/[^a-z0-9_]/ig,'_');
-    const label = el('label', { class:'fldLbl', for:id, text:String(field.label||key) });
+    const labelText = isStr ? key : String((field && field.label) || key);
+    const label = el('label', { class:'fldLbl', for:id, text: labelText });
 
-    const t = String(field.type||'text').toLowerCase();
+    const t = String(isStr ? 'text' : ((field && field.type) || 'text')).toLowerCase();
     const inputType = (t==='number' || t==='email' || t==='url') ? t : 'text';
     const inp = el('input', {
       class:'fldInp',
       id,
       type: inputType,
-      placeholder: String(field.placeholder||''),
-      value: (field.default != null ? String(field.default) : '')
+      placeholder: String(isStr ? '' : ((field && field.placeholder) || '')),
+      value: (isStr ? '' : (field && field.default != null ? String(field.default) : ''))
     });
 
-    try { if(field.max != null && String(field.max).trim()) inp.maxLength = Number(field.max) || undefined; } catch (e) {}
-    try { if(field.pattern != null && String(field.pattern).trim()) inp.setAttribute('pattern', String(field.pattern)); } catch (e) {}
+    try { if(!isStr && field.max != null && String(field.max).trim()) inp.maxLength = Number(field.max) || undefined; } catch (e) {}
+    try { if(!isStr && field.pattern != null && String(field.pattern).trim()) inp.setAttribute('pattern', String(field.pattern)); } catch (e) {}
 
     // Store mapping to manifest key
     inp.dataset.mkey = key;
@@ -806,7 +810,8 @@ function getTypeFields(type){
       try { if(typeof window.render === 'function') window.render(); } catch (e) {}
     });
 
-    const hint = field.hint ? el('div', { class:'fldHint', text:String(field.hint) }) : null;
+    const hintText = (!isStr && field && field.hint) ? String(field.hint) : '';
+    const hint = hintText ? el('div', { class:'fldHint', text: hintText }) : null;
     const row = el('div', { class:'fldRow' }, [label, inp, hint].filter(Boolean));
     return row;
   }

@@ -1614,7 +1614,8 @@ if (!window.QRCode || !window.QRCode.CorrectLevel) {
       CorrectLevelType: (window.QRCode ? typeof window.QRCode.CorrectLevel : null),
       mountId: (mount && mount.id) || null
     });
-  try { mount.innerHTML = ''; } catch (e) {}
+  // IMPORTANT: do NOT clear qrMount while waiting for QRCode.js.
+  // Clearing the mount allows other writers (fallback QRCode regime) to “win” visually.
   clearTimeout(render._qrRetry);
   render._qrRetry = setTimeout(render, 60);
   return;

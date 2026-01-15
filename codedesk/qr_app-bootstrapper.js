@@ -119,9 +119,10 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
     const res = await fetch(manifestUrl, { cache: "no-store" });
     if (!res.ok) throw new Error("manifest not found: " + res.status);
     manifest = await res.json();
-  } catch (e) {
+ } catch (e) {
     console.warn("Manifest load failed, continuing with inline fallback", e);
-    manifest = { types: [] };
+    // Canonical: types is an object map (not an array)
+    manifest = { types: {} };
   }
 
 // --- Load templates (separate from type manifest) ---
@@ -325,5 +326,6 @@ const __prev = sessionStorage.getItem(CODEDESK_BOOTSTRAP_SESSION_KEY) || '';
   }
 
   // after manifest = ... is set
-  window.manifest = manifest;
+  // IMPORTANT: Do not overwrite window.manifest (other split files may have captured the object reference).
+  // Keep the in-place publish done above via Object.assign(...).
 })();
