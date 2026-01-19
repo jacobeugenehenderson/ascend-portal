@@ -230,6 +230,14 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
   return true;
 };
 
+// Build the type-specific form fields now that manifest is loaded
+try {
+  const typeSel = document.getElementById('qrType');
+  if (typeSel && typeof window.renderTypeForm === 'function') {
+    window.renderTypeForm(typeSel.value || 'URL');
+  }
+} catch (e) {}
+
 // force UI refresh now that templates are in memory
 try {
   if (typeof render === "function") {

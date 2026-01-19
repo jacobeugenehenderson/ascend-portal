@@ -774,50 +774,81 @@ function getTypeFields(type){
     });
     return n;
   }
-  function buildField(field){
-    // field can be:
-    //  - string field id from manifest.types[typeKey] (canonical)
-    //  - object: { key, label, type, placeholder, max, pattern, hint, default }
-    const isStr = (typeof field === 'string');
-    const key = String(isStr ? field : (field && field.key) || '').trim();
-    if(!key) return null;
+  function buildField(fieldId){
+    // fieldId is a string key from manifest.types[typeKey] (e.g., "urlData")
+    // Look up metadata from manifest.fields[fieldId]
+    const id = String(fieldId || '').trim();
+    if (!id) return null;
 
-    const id = 'm_' + key.replace(/[^a-z0-9_]/ig,'_');
-    const labelText = isStr ? key : String((field && field.label) || key);
-    const label = el('label', { class:'fldLbl', for:id, text: labelText });
+    const meta = ((window.manifest && window.manifest.fields) || {})[id];
+    if (!meta) {
+      console.warn('No field meta for', id);
+      return null;
+    }
 
-    const t = String(isStr ? 'text' : ((field && field.type) || 'text')).toLowerCase();
-    const inputType = (t==='number' || t==='email' || t==='url') ? t : 'text';
-    const inp = el('input', {
-      class:'fldInp',
-      id,
-      type: inputType,
-      placeholder: String(isStr ? '' : ((field && field.placeholder) || '')),
-      value: (isStr ? '' : (field && field.default != null ? String(field.default) : ''))
-    });
+    const wrap = el('div', { class: 'fldRow' });
+    const labelText = meta.label || id;
+    let input;
 
-    try { if(!isStr && field.max != null && String(field.max).trim()) inp.maxLength = Number(field.max) || undefined; } catch (e) {}
-    try { if(!isStr && field.pattern != null && String(field.pattern).trim()) inp.setAttribute('pattern', String(field.pattern)); } catch (e) {}
+    if (meta.type === 'select') {
+      // Select dropdown
+      const label = el('label', { class: 'fldLbl', for: id, text: labelText });
+      input = el('select', { id: id, class: 'fldInp' });
+      (meta.options || []).forEach(opt => {
+        const option = el('option', { text: opt });
+        option.value = opt;
+        input.appendChild(option);
+      });
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+    } else if (meta.type === 'checkbox') {
+      // Inline checkbox
+      const row = el('label', { class: 'fldCheckRow' });
+      const cb = el('input', { id: id, type: 'checkbox', class: 'fldCheck' });
+      row.appendChild(cb);
+      row.appendChild(el('span', { class: 'fldCheckLabel', text: labelText }));
+      input = cb;
+      return row; // checkbox returns its own row
+    } else if (meta.type === 'textarea') {
+      // Textarea
+      const label = el('label', { class: 'fldLbl', for: id, text: labelText });
+      input = el('textarea', { id: id, class: 'fldInp' });
+      input.rows = meta.rows || 2;
+      if (meta.placeholder) input.placeholder = meta.placeholder;
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+    } else {
+      // text / email / number / url / password
+      const label = el('label', { class: 'fldLbl', for: id, text: labelText });
+      input = el('input', { id: id, type: meta.type || 'text', class: 'fldInp' });
+      if (meta.placeholder) input.placeholder = meta.placeholder;
+      if (meta.step) input.step = meta.step;
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+    }
 
     // Store mapping to manifest key
-    inp.dataset.mkey = key;
+    input.dataset.mkey = id;
 
-    // seed from existing value if present
+    // Seed from existing value if present
     try {
-      const current = (typeof window._getValueById === 'function') ? window._getValueById(key) : undefined;
-      if(current != null && String(current).length) inp.value = String(current);
+      const current = (typeof window._getValueById === 'function') ? window._getValueById(id) : undefined;
+      if (current != null && String(current).length) {
+        if (input.type === 'checkbox') {
+          input.checked = !!current;
+        } else {
+          input.value = String(current);
+        }
+      }
     } catch (e) {}
 
-    // propagate to hidden/real field id == key (canonical storage)
-    inp.addEventListener('input', ()=>{
-      try { if(typeof window._setValueById === 'function') window._setValueById(key, inp.value); } catch (e) {}
-      try { if(typeof window.render === 'function') window.render(); } catch (e) {}
+    // Re-render on changes
+    const eventType = (input.tagName === 'SELECT' || input.type === 'checkbox') ? 'change' : 'input';
+    input.addEventListener(eventType, () => {
+      try { if (typeof window.render === 'function') window.render(); } catch (e) {}
     });
 
-    const hintText = (!isStr && field && field.hint) ? String(field.hint) : '';
-    const hint = hintText ? el('div', { class:'fldHint', text: hintText }) : null;
-    const row = el('div', { class:'fldRow' }, [label, inp, hint].filter(Boolean));
-    return row;
+    return wrap;
   }
 
   function renderTypeForm(typeKey){
@@ -849,8 +880,9 @@ function getTypeFields(type){
     });
   }
 
-  // First-load hydration: build Mechanicals once without requiring a manual type flip.
-  try { if(typeSel) typeSel.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+  // First-load hydration: moved to bootstrapper (after manifest loads)
+  // The bootstrapper will call renderTypeForm after window.manifest is ready.
+  window.renderTypeForm = renderTypeForm;
 
 // --- Build QR "text" for each Type (simple, pragmatic encoders for preview) ---
 function buildText(){
