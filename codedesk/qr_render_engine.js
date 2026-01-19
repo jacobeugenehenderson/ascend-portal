@@ -734,7 +734,7 @@ function composeCardSvg({
   const capWidth = cardWidth - CAP_SIDE * 2;
   const capMaxH = (cardHeight - OUTER_PAD) - CAP_BOTPAD - capY0;
   const centerX = cardWidth / 2;
-  const fontFamily = typeof getPreviewFont === 'function' ? getPreviewFont() : 'Work Sans, system-ui, sans-serif';
+  const fontFamily = typeof window.getPreviewFont === 'function' ? window.getPreviewFont() : 'Work Sans, system-ui, sans-serif';
   const lineGap = 1.15;
 
   const segments = [];
@@ -925,10 +925,10 @@ function render() {
   const cardWidth = Math.max(rect.width || preview.clientWidth || 320, 320);
 
   // ECC
-  const ecc = typeof getECC === 'function' ? getECC() : 'M';
+  const ecc = typeof window.getECC === 'function' ? window.getECC() : 'M';
 
   // Build text
-  const rawTrim = String(typeof buildText === 'function' ? buildText() : '').trim();
+  const rawTrim = String(typeof window.buildText === 'function' ? window.buildText() : '').trim();
   if (!rawTrim) { try { mount.innerHTML = ''; } catch (e) {} return; }
 
   let svg;

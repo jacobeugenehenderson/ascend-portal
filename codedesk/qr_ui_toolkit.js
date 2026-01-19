@@ -709,8 +709,43 @@ function wireBackgroundKnobsOnce() {
   bindAlpha(topA, botA, topANum, botANum);
   bindAlpha(botA, topA, botANum, topANum);
 
+  // Wire the bgLink button to toggle linked state
+  const bgLinkBtn = document.getElementById('bgLink');
+  if (bgLinkBtn && !bgLinkBtn.__bg_link_wired) {
+    bgLinkBtn.__bg_link_wired = true;
+
+    function updateLinkButtonUI() {
+      const linked = isLinked();
+      bgLinkBtn.textContent = linked ? '🔗' : '⛓️‍💥';
+      bgLinkBtn.setAttribute('aria-pressed', linked ? 'true' : 'false');
+      bgLinkBtn.setAttribute('title', linked ? 'Background linked' : 'Background unlinked');
+      bgLinkBtn.setAttribute('aria-label', linked ? 'Background linked' : 'Background unlinked');
+      bgLinkBtn.classList.toggle('is-on', linked);
+    }
+
+    bgLinkBtn.addEventListener('click', function() {
+      setLinked(!isLinked());
+      updateLinkButtonUI();
+    });
+
+    // Initialize button UI
+    updateLinkButtonUI();
+  }
+
   // Initialize numeric boxes
   try { paintAlphaNums(); } catch (e) {}
+
+  // Defer initial background paint until render engine is loaded
+  // (qr_render_engine.js loads after this file)
+  function deferredInitialPaint() {
+    if (typeof window.refreshBackground === 'function') {
+      try { repaint(); } catch (e) {}
+    } else {
+      // Retry until render engine loads
+      setTimeout(deferredInitialPaint, 50);
+    }
+  }
+  setTimeout(deferredInitialPaint, 0);
 
   _bg_knobs_wired = true;
 }
