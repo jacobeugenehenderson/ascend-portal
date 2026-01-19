@@ -1230,10 +1230,20 @@ textarea::placeholder{
   align-items: start;          /* top-anchor like wallet mode */
 }
 
+/* QR background paint layer (real element for better browser support) */
+#qrBgPaint{
+  position: absolute;
+  inset: 0;
+  z-index: 0;                         /* behind the QR mount */
+  border-radius: inherit;
+  pointer-events: none;
+  background: #ffffff;                /* default white, JS will update */
+}
+
 /* QR mount = container for the SVG */
 #qrMount{
   position: relative;
-  z-index: 1;                         /* above the ::before paint plate */
+  z-index: 1;                         /* above the background paint layer */
   margin: 0 !important;
   padding: 0 !important;
   border: 0 !important;

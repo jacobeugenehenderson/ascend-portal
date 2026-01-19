@@ -58,6 +58,12 @@ function updatePreviewBackground() {
   // Paint BOTH vars: some skins use --bg-paint, some older code uses --frame-bg.
   card.style.setProperty('--bg-paint', g);
   card.style.setProperty('--frame-bg', g);
+
+  // Also paint the dedicated background element directly (fallback for ::before issues)
+  const bgEl = document.getElementById('qrBgPaint');
+  if (bgEl) {
+    bgEl.style.background = g;
+  }
 }
 
 window.refreshBackground = function refreshBackground() {
@@ -77,7 +83,13 @@ window.refreshBackground = function refreshBackground() {
   card.classList.toggle('card--stroke', isTransparent);
   card.classList.toggle('card--fill', !isTransparent);
 
-  // paint the CSS gradient var used by ::before
+  // Show/hide the dedicated background element
+  const bgEl = document.getElementById('qrBgPaint');
+  if (bgEl) {
+    bgEl.style.display = isTransparent ? 'none' : 'block';
+  }
+
+  // paint the CSS gradient var used by ::before AND the dedicated element
   updatePreviewBackground();
 };
 

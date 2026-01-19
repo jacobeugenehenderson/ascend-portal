@@ -94,6 +94,8 @@
       <div class="absolute inset-0 p-0" style="overflow:visible">
         <!-- Single card: stroke/fill live here; SVG stays transparent -->
         <div id="qrPreview" class="w-full h-full overflow-visible flex flex-col relative">
+          <!-- Background paint layer (real element, not ::before) -->
+          <div id="qrBgPaint" class="absolute inset-0 rounded-[inherit] pointer-events-none" style="z-index:0;"></div>
           <!-- live SVG mounts here -->
           <div id="qrMount" class="flex-1 min-h-[200px] grid justify-items-center items-start w-full"></div>
         </div>
