@@ -171,6 +171,7 @@ function getECC(){
   const v = sessionStorage.getItem(ECC_KEY);
   return /^[LMQH]$/.test(v) ? v : ECC_DEFAULT;
 }
+window.getECC = getECC;
 
 function setECC(val, { trigger = true } = {}){
   const v = (val || '').toUpperCase();
@@ -193,6 +194,7 @@ function setECC(val, { trigger = true } = {}){
   // Live re-render (non-invasive)
   if (typeof render === 'function') render();
 }
+window.setECC = setECC;
 
 function wireECCPill(){
   const pill = document.getElementById('eccPill');
@@ -268,6 +270,7 @@ function getPreviewFont() {
   const host = document.getElementById('qrPreview');
   return getComputedStyle(host || document.body).fontFamily;
 }
+window.getPreviewFont = getPreviewFont;
 
 function getFont() {
   const stored = sessionStorage.getItem(FONT_KEY);
@@ -295,6 +298,7 @@ function setFont(val) {
     render();
   }
 }
+window.setFont = setFont;
 
 function wireFontSelect(){
   const sel = document.getElementById('fontFamily');
@@ -1001,6 +1005,7 @@ function codedeskSetLocked(locked){
       }
     } catch(e){}
   }
+window.codedeskSetLocked = codedeskSetLocked;
 
 let _right_wired = false;
 
