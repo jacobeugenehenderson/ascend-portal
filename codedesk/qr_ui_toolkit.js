@@ -579,11 +579,13 @@ function wireBackgroundKnobsOnce() {
   }
 
   function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+  function clamp100(x){ return Math.max(0, Math.min(100, x)); }
 
   function paintAlphaNums(){
     try {
-      if (topANum) topANum.value = String(clamp01(num(topA.value, 1)).toFixed(2));
-      if (botANum) botANum.value = String(clamp01(num(botA.value, 1)).toFixed(2));
+      // Both sliders and numeric inputs use 0-100 range
+      if (topANum) topANum.value = String(Math.round(clamp100(num(topA.value, 100))));
+      if (botANum) botANum.value = String(Math.round(clamp100(num(botA.value, 100))));
     } catch (e) {}
   }
 
@@ -603,8 +605,8 @@ function wireBackgroundKnobsOnce() {
       if (window.__CODEDESK_APPLYING_TEMPLATE__) return;
     } catch (e) {}
 
-    try { if (typeof refreshBackground === 'function') refreshBackground(); } catch (e) {}
-    try { if (typeof render === 'function') render(); } catch (e) {}
+    try { if (typeof window.refreshBackground === 'function') window.refreshBackground(); } catch (e) {}
+    try { if (typeof window.render === 'function') window.render(); } catch (e) {}
   }
 
   function isLinked(){
@@ -636,12 +638,12 @@ function wireBackgroundKnobsOnce() {
       try { e.stopImmediatePropagation(); } catch (e) {}
       try { e.stopPropagation(); } catch (e) {}
 
-      // Preserve 0; clamp
-      const v = clamp01(num(el.value, 1));
-      el.value = String(v);
+      // Clamp slider value to 0-100 range (sliders use 0-100, not 0-1)
+      const v = clamp100(num(el.value, 100));
+      el.value = String(Math.round(v));
 
-      // Link top/bottom
-      linkPair(el, otherEl, (x) => String(clamp01(num(x, 1))));
+      // Link top/bottom (both use 0-100)
+      linkPair(el, otherEl, (x) => String(Math.round(clamp100(num(x, 100)))));
 
       // Sync numeric boxes
       paintAlphaNums();
@@ -655,12 +657,13 @@ function wireBackgroundKnobsOnce() {
         try { e.stopImmediatePropagation(); } catch (e) {}
         try { e.stopPropagation(); } catch (e) {}
 
-        const v = clamp01(num(numEl.value, 1));
-        numEl.value = String(v.toFixed(2));
-        el.value = String(v);
+        // Numeric inputs also use 0-100 range
+        const v = clamp100(num(numEl.value, 100));
+        numEl.value = String(Math.round(v));
+        el.value = String(Math.round(v));
 
         // Link
-        linkPair(el, otherEl, (x) => String(clamp01(num(x, 1))));
+        linkPair(el, otherEl, (x) => String(Math.round(clamp100(num(x, 100)))));
 
         paintAlphaNums();
         repaint();
@@ -807,7 +810,16 @@ function getTypeFields(type){
       const cb = el('input', { id: id, type: 'checkbox', class: 'fldCheck' });
       row.appendChild(cb);
       row.appendChild(el('span', { class: 'fldCheckLabel', text: labelText }));
-      input = cb;
+      cb.dataset.mkey = id;
+      // Seed from existing value
+      try {
+        const current = (typeof window._getValueById === 'function') ? window._getValueById(id) : undefined;
+        if (current != null) cb.checked = !!current;
+      } catch (e) {}
+      // Re-render on change
+      cb.addEventListener('change', () => {
+        try { if (typeof window.render === 'function') window.render(); } catch (e) {}
+      });
       return row; // checkbox returns its own row
     } else if (meta.type === 'textarea') {
       // Textarea
