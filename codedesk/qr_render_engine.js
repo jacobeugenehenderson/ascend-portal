@@ -7,6 +7,7 @@
 //  - Export helpers (PNG/SVG)
 // =====================================================
 "use strict";
+console.log('[qr_render_engine.js] LOADING (v2024-DEBUG)');
 
 // Guard against duplicate loading
 if (window.__CODEDESK_RENDER_ENGINE_LOADED__) {
@@ -74,8 +75,12 @@ function updatePreviewBackground() {
 }
 
 window.refreshBackground = function refreshBackground() {
+  console.log('[refreshBackground] called');
   const card = document.getElementById('qrPreview');
-  if (!card) return;
+  if (!card) {
+    console.warn('[refreshBackground] qrPreview not found!');
+    return;
+  }
 
   // IMPORTANT: do NOT use `|| 0` here; 0 is valid and must stay 0.
   const topRaw = parseFloat(document.getElementById('bgTopAlpha')?.value);
