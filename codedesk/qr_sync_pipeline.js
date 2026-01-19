@@ -1313,7 +1313,7 @@ window.refreshBackground = function refreshBackground () {
 
   // paint the CSS gradient var used by ::before
   try {
-    if (typeof updatePreviewBackground === 'function') updatePreviewBackground();
+    if (typeof window.updatePreviewBackground === 'function') window.updatePreviewBackground();
   } catch (_e) {}
 }
 

@@ -74,6 +74,9 @@ function updatePreviewBackground() {
   }
 }
 
+// Expose globally so qr_sync_pipeline.js can call it
+window.updatePreviewBackground = updatePreviewBackground;
+
 window.refreshBackground = function refreshBackground() {
   console.log('[refreshBackground] called');
   const card = document.getElementById('qrPreview');
