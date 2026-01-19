@@ -1,3 +1,5 @@
+console.log('[qr_ui_toolkit.js] SCRIPT LOADING... (v2024-DEBUG)');
+
 // =====================================================
 //  Render-plane invariant: buildText() must always exist
 //  - Prevents render() structural block if earlier UI wiring throws.
@@ -547,8 +549,16 @@ function wireCaptionInputs(){
 // Also: default-link top/bottom (alpha + color), and prevent 0% → 100% snapback
 let _bg_knobs_wired = false;
 function wireBackgroundKnobsOnce() {
-  if (_bg_knobs_wired) return;
-  if (window.__CODEDESK_BG_KNOBS_WIRED__) return;
+  console.log('[wireBackgroundKnobsOnce] starting...');
+
+  if (_bg_knobs_wired) {
+    console.log('[wireBackgroundKnobsOnce] already wired (local flag)');
+    return;
+  }
+  if (window.__CODEDESK_BG_KNOBS_WIRED__) {
+    console.log('[wireBackgroundKnobsOnce] already wired (global flag)');
+    return;
+  }
   window.__CODEDESK_BG_KNOBS_WIRED__ = true;
 
   const topColor = document.getElementById('bgTopColor');
@@ -563,10 +573,24 @@ function wireBackgroundKnobsOnce() {
   const topANum = document.getElementById('bgTopAlphaNum');
   const botANum = document.getElementById('bgBottomAlphaNum');
 
+  console.log('[wireBackgroundKnobsOnce] elements found:', {
+    topColor: !!topColor,
+    botColor: !!botColor,
+    topHex: !!topHex,
+    botHex: !!botHex,
+    topA: !!topA,
+    botA: !!botA,
+    topANum: !!topANum,
+    botANum: !!botANum
+  });
+
   const LINK_KEY = 'codedesk_bg_link_v1';
 
   // Not present in minimal builds; bail safely.
-  if (!topA || !botA) return;
+  if (!topA || !botA) {
+    console.warn('[wireBackgroundKnobsOnce] missing alpha sliders, bailing');
+    return;
+  }
 
   // One source of truth: checkbox "bgTransparent" (if present) owns the transparent mode.
   // NOTE: bgTransparent is used in buildText() to decide whether to omit bg.
@@ -599,14 +623,31 @@ function wireBackgroundKnobsOnce() {
   }
 
   function repaint(){
-    // IMPORTANT: do not trigger preset application during import/template apply
-    try {
-      if (window.__CODEDESK_IMPORTING_STATE__) return;
-      if (window.__CODEDESK_APPLYING_TEMPLATE__) return;
-    } catch (e) {}
+    console.log('[repaint] called');
 
-    try { if (typeof window.refreshBackground === 'function') window.refreshBackground(); } catch (e) {}
-    try { if (typeof window.render === 'function') window.render(); } catch (e) {}
+    // IMPORTANT: do not trigger preset application during import/template apply
+    if (window.__CODEDESK_IMPORTING_STATE__) {
+      console.log('[repaint] blocked by IMPORTING_STATE');
+      return;
+    }
+    if (window.__CODEDESK_APPLYING_TEMPLATE__) {
+      console.log('[repaint] blocked by APPLYING_TEMPLATE');
+      return;
+    }
+
+    if (typeof window.refreshBackground === 'function') {
+      console.log('[repaint] calling refreshBackground');
+      window.refreshBackground();
+    } else {
+      console.warn('[repaint] refreshBackground not found!');
+    }
+
+    if (typeof window.render === 'function') {
+      console.log('[repaint] calling render');
+      window.render();
+    } else {
+      console.warn('[repaint] render not found!');
+    }
   }
 
   function isLinked(){
@@ -635,6 +676,7 @@ function wireBackgroundKnobsOnce() {
     if (!el) return;
 
     el.addEventListener('input', function(e){
+      console.log('[bindAlpha] slider input event:', el.id, el.value);
       try { e.stopImmediatePropagation(); } catch (e) {}
       try { e.stopPropagation(); } catch (e) {}
 
@@ -675,6 +717,7 @@ function wireBackgroundKnobsOnce() {
   function bindColor(colorEl, hexEl, otherColorEl, otherHexEl){
     if (colorEl){
       colorEl.addEventListener('input', function(e){
+        console.log('[bindColor] color input event:', colorEl.id, colorEl.value);
         try { e.stopImmediatePropagation(); } catch (e) {}
         try { e.stopPropagation(); } catch (e) {}
         syncHexAndColor(colorEl, hexEl);
@@ -686,6 +729,7 @@ function wireBackgroundKnobsOnce() {
 
     if (hexEl){
       hexEl.addEventListener('input', function(e){
+        console.log('[bindColor] hex input event:', hexEl.id, hexEl.value);
         try { e.stopImmediatePropagation(); } catch (e) {}
         try { e.stopPropagation(); } catch (e) {}
         syncHexAndColor(hexEl, colorEl);
@@ -739,18 +783,27 @@ function wireBackgroundKnobsOnce() {
   // (qr_render_engine.js loads after this file)
   function deferredInitialPaint() {
     if (typeof window.refreshBackground === 'function') {
-      try { repaint(); } catch (e) {}
+      console.log('[deferredInitialPaint] refreshBackground found, calling repaint');
+      repaint();
     } else {
       // Retry until render engine loads
+      console.log('[deferredInitialPaint] refreshBackground not ready, retrying...');
       setTimeout(deferredInitialPaint, 50);
     }
   }
   setTimeout(deferredInitialPaint, 0);
 
   _bg_knobs_wired = true;
+  console.log('[wireBackgroundKnobsOnce] completed successfully');
 }
 
-try { wireBackgroundKnobsOnce(); } catch (e) {}
+console.log('[qr_ui_toolkit.js] About to call wireBackgroundKnobsOnce...');
+try {
+  wireBackgroundKnobsOnce();
+} catch (e) {
+  console.error('[wireBackgroundKnobsOnce] error:', e);
+}
+console.log('[qr_ui_toolkit.js] After wireBackgroundKnobsOnce call');
 
 (function () {
   const $ = (id) => document.getElementById(id);

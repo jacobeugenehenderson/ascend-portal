@@ -52,8 +52,12 @@ function _bgGradientFromKnobs() {
 
 function updatePreviewBackground() {
   const card = document.getElementById('qrPreview');
-  if (!card) return;
+  if (!card) {
+    console.warn('[updatePreviewBackground] qrPreview not found!');
+    return;
+  }
   const g = _bgGradientFromKnobs();
+  console.log('[updatePreviewBackground] gradient:', g);
 
   // Paint BOTH vars: some skins use --bg-paint, some older code uses --frame-bg.
   card.style.setProperty('--bg-paint', g);
@@ -63,6 +67,9 @@ function updatePreviewBackground() {
   const bgEl = document.getElementById('qrBgPaint');
   if (bgEl) {
     bgEl.style.background = g;
+    console.log('[updatePreviewBackground] set bgEl.style.background');
+  } else {
+    console.warn('[updatePreviewBackground] qrBgPaint not found!');
   }
 }
 
