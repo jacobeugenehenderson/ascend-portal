@@ -750,11 +750,12 @@ function applyTranslatedFields_(f) {
 
       linkEl.href = href;
 
-      // Prefer direct view; fallback to thumbnail if needed.
+      // Use Google's CDN URL format (better CORS support than drive.google.com/uc)
       imgEl.onerror = null;
-      imgEl.src = 'https://drive.google.com/uc?export=view&id=' + fid;
+      imgEl.src = 'https://lh3.googleusercontent.com/d/' + fid;
       imgEl.onerror = function () {
         try { this.onerror = null; } catch (e) {}
+        // Fallback to thumbnail endpoint
         this.src = 'https://drive.google.com/thumbnail?id=' + fid + '&sz=w512';
       };
 

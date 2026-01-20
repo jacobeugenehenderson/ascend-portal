@@ -27,6 +27,12 @@ const DASHBOARD_SHEET_NAME = 'DASHBOARD';
 // Bump to bust caches if you want.
 const FILEROOM_API_VERSION = 'fileroom_v0_2025-12-19';
 
+// ADMIN: allowlist for nuclear delete actions
+const FILEROOM_ADMIN_EMAILS = [
+  'jacob@jacobhenderson.studio',
+  'jacobhenderson@gmail.com'
+];
+
 function authorizeDrive_() {
   // 1) proves Drive scope + authorization prompt works
   DriveApp.getRootFolder().getName();
@@ -82,6 +88,10 @@ function doGet(e) {
         data = hideJob_(p);
         break;
 
+      case 'nukeJob':
+        data = nukeJob_(p);
+        break;
+
       default:
         throw new Error('Unknown action: ' + action);
     }
@@ -131,6 +141,10 @@ function doPost(e) {
 
       case 'upsertQrPngAsset':
         data = upsertQrPngAsset_(body);
+        break;
+
+      case 'nukeJob':
+        data = nukeJob_(body);
         break;
 
       default:
@@ -293,6 +307,13 @@ function upsertQrPngAsset_(p) {
   }
 
   if (!fileId) throw new Error('upsertQrPngAsset: failed to obtain Drive file id');
+
+  // Share the file publicly so it can be embedded in artstart previews
+  try {
+    DriveApp.getFileById(fileId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (shareErr) {
+    // Best effort - continue even if sharing fails
+  }
 
   // Prefer Drive API webViewLink/alternateLink if available
   let openUrl = '';
@@ -653,6 +674,171 @@ function setDashboardPref_(p) {
 function hideJob_(p) {
   p.hidden = 'TRUE';
   return setDashboardPref_(p);
+}
+
+/**
+ * nukeJob (ADMIN ONLY)
+ * Required:
+ *  - user_email  (caller identity)
+ *  - ascend_job_key (the JOBS.AscendJobKey to delete)
+ * Optional:
+ *  - delete_drive=TRUE/FALSE  (default TRUE) -> trashes DrivePngFileId if present
+ *  - delete_dashboard=TRUE/FALSE (default TRUE) -> removes DASHBOARD rows for this key (all users)
+ *  - delete_working=TRUE/FALSE (default TRUE) -> if this is a CODEDESK output, also deletes CODEDESK_WF:<SourceId>
+ *
+ * Behavior:
+ *  - Deletes the JOBS row physically (not just IsDeleted)
+ *  - Optionally trashes linked Drive PNG file (DrivePngFileId)
+ *  - Optionally deletes all DASHBOARD prefs rows that reference the key
+ */
+function nukeJob_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    const caller = String(req_(p, 'user_email')).toLowerCase().trim();
+    if (!isAdminEmail_(caller)) throw new Error('nukeJob: not authorized');
+
+    const key = String(req_(p, 'ascend_job_key')).trim();
+
+    const deleteDrive = (('delete_drive' in p) ? toBool_(opt_(p, 'delete_drive', 'TRUE')) : true);
+    const deleteDash  = (('delete_dashboard' in p) ? toBool_(opt_(p, 'delete_dashboard', 'TRUE')) : true);
+    const deleteWorking = (('delete_working' in p) ? toBool_(opt_(p, 'delete_working', 'TRUE')) : true);
+
+    const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
+    const jobsSh = getSheet_(ss, JOBS_SHEET_NAME);
+    const dashSh = getSheet_(ss, DASHBOARD_SHEET_NAME);
+
+    const jobsHeader = getHeaderMap_(jobsSh);
+    ensureHeaders_(jobsHeader, [
+      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
+      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl'
+    ]);
+
+    const dashHeader = getHeaderMap_(dashSh);
+    ensureHeaders_(dashHeader, ['UserEmail','AscendJobKey','Lane','Pinned','Hidden','SortWeight','Note','UpdatedAt']);
+
+    // Locate JOBS row by AscendJobKey
+    const keyCol = jobsHeader['AscendJobKey'];
+    const lastRow = jobsSh.getLastRow();
+
+    let foundRow = -1;
+    let jobObj = null;
+
+    if (lastRow >= 2) {
+      const keyValues = jobsSh.getRange(2, keyCol, lastRow - 1, 1).getValues();
+      for (let i = 0; i < keyValues.length; i++) {
+        if (String(keyValues[i][0]).trim() === key) {
+          foundRow = 2 + i;
+          break;
+        }
+      }
+    }
+
+    if (foundRow === -1) {
+      // Still allow dashboard cleanup for orphaned keys
+      if (deleteDash) {
+        const removedDash = deleteDashboardRowsByKey_(dashSh, dashHeader, key);
+        return { ok: true, ascend_job_key: key, jobs_row: null, dash_rows_deleted: removedDash, drive_trashed: false, working_deleted: false };
+      }
+      return { ok: true, ascend_job_key: key, jobs_row: null, dash_rows_deleted: 0, drive_trashed: false, working_deleted: false };
+    }
+
+    jobObj = readRowByHeader_(jobsSh, jobsHeader, foundRow);
+
+    // Trash linked Drive PNG (if present)
+    let driveTrashed = false;
+    if (deleteDrive) {
+      const pngId = String(jobObj.DrivePngFileId || '').trim();
+      if (pngId) {
+        try {
+          DriveApp.getFileById(pngId).setTrashed(true);
+          driveTrashed = true;
+        } catch (e) {
+          // Don't fail the nuke if Drive trash fails
+        }
+      }
+    }
+
+    // If this is a CodeDesk OUTPUT row and caller asked to delete working row too, delete CODEDESK_WF:<SourceId>
+    let workingDeleted = false;
+    if (deleteWorking) {
+      const app = String(jobObj.App || '').toUpperCase().trim();
+      const kind = String(jobObj.Kind || '').toLowerCase().trim();
+      const sourceId = String(jobObj.SourceId || '').trim();
+
+      if (app === 'CODEDESK' && sourceId && (kind === 'output' || kind === '')) {
+        try {
+          const workingKey = 'CODEDESK_WF:' + sourceId;
+          const wr = deleteJobsRowByKey_(jobsSh, jobsHeader, workingKey);
+          if (wr && wr.deleted) workingDeleted = true;
+        } catch (e) {}
+      }
+    }
+
+    // Delete JOBS row (physical)
+    jobsSh.deleteRow(foundRow);
+
+    // Delete DASHBOARD rows (all users) that point at the key
+    let dashDeleted = 0;
+    if (deleteDash) {
+      dashDeleted = deleteDashboardRowsByKey_(dashSh, dashHeader, key);
+    }
+
+    return {
+      ok: true,
+      ascend_job_key: key,
+      deleted_title: String(jobObj.Title || ''),
+      deleted_kind: String(jobObj.Kind || ''),
+      deleted_app: String(jobObj.App || ''),
+      deleted_source_id: String(jobObj.SourceId || ''),
+      drive_trashed: driveTrashed,
+      dash_rows_deleted: dashDeleted,
+      working_deleted: workingDeleted
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function isAdminEmail_(email) {
+  const e = String(email || '').toLowerCase().trim();
+  for (let i = 0; i < FILEROOM_ADMIN_EMAILS.length; i++) {
+    if (String(FILEROOM_ADMIN_EMAILS[i] || '').toLowerCase().trim() === e) return true;
+  }
+  return false;
+}
+
+function deleteDashboardRowsByKey_(dashSh, dashHeader, key) {
+  const lastRow = dashSh.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const keyCol = dashHeader['AscendJobKey'];
+  const values = dashSh.getRange(2, keyCol, lastRow - 1, 1).getValues();
+
+  // Delete bottom-up to preserve indices
+  let deleted = 0;
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (String(values[i][0] || '').trim() === String(key).trim()) {
+      dashSh.deleteRow(2 + i);
+      deleted++;
+    }
+  }
+  return deleted;
+}
+
+function deleteJobsRowByKey_(jobsSh, jobsHeader, key) {
+  const keyCol = jobsHeader['AscendJobKey'];
+  const lastRow = jobsSh.getLastRow();
+  if (lastRow < 2) return { deleted: false };
+
+  const keyValues = jobsSh.getRange(2, keyCol, lastRow - 1, 1).getValues();
+  for (let i = 0; i < keyValues.length; i++) {
+    if (String(keyValues[i][0]).trim() === String(key).trim()) {
+      jobsSh.deleteRow(2 + i);
+      return { deleted: true, row: 2 + i };
+    }
+  }
+  return { deleted: false };
 }
 
 /** =========================
