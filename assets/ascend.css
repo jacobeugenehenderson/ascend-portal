@@ -1240,25 +1240,13 @@ textarea:focus {
   opacity: 1;
 }
 
-/* Trash row styling */
-.ascend-row-trash {
-  opacity: 0.7;
-  border-top: 1px dashed rgba(255, 255, 255, 0.12);
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-}
-
-.ascend-row-trash .ascend-row-label {
-  color: var(--ascend-color-text-muted);
-}
-
-/* Trashed item card styling */
+/* Trashed item card styling (used in modal) */
 .ascend-trash-card {
-  opacity: 0.75;
+  opacity: 0.85;
 }
 
 .ascend-trash-card .ascend-job-card-provenance.is-trashed {
-  filter: grayscale(0.4);
+  filter: grayscale(0.3);
 }
 
 /* Empty-state text inside a lane */
@@ -1308,4 +1296,214 @@ textarea:focus {
 
 .ascend-row--disabled .ascend-row-action-btn {
   cursor: default;
+}
+
+/* =========================================================
+ * Trash trigger button (footer of dashboard)
+ * ======================================================= */
+
+.ascend-trash-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ascend-color-text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background-color var(--ascend-transition-fast),
+    border-color var(--ascend-transition-fast),
+    color var(--ascend-transition-fast);
+}
+
+.ascend-trash-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--ascend-color-text-main);
+}
+
+.ascend-trash-trigger-icon {
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.ascend-trash-trigger-label {
+  font-weight: var(--ascend-weight-medium);
+  letter-spacing: 0.02em;
+}
+
+.ascend-trash-trigger-count {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ascend-color-text-muted);
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+.ascend-trash-trigger-count:empty {
+  display: none;
+}
+
+/* =========================================================
+ * Trash modal (FileRoom picker style)
+ * ======================================================= */
+
+.ascend-trash-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.ascend-trash-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 20, 0.75);
+}
+
+.ascend-trash-modal-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, calc(100vw - 28px));
+  max-height: min(560px, calc(100vh - 28px));
+  background: var(--ascend-color-surface);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.ascend-trash-modal-header {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ascend-trash-modal-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ascend-color-text-main);
+  letter-spacing: 0.02em;
+}
+
+.ascend-trash-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ascend-trash-modal-x {
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ascend-color-text-muted);
+  opacity: 0.7;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color var(--ascend-transition-fast),
+    opacity var(--ascend-transition-fast);
+}
+
+.ascend-trash-modal-x:hover {
+  background: rgba(255, 255, 255, 0.08);
+  opacity: 1;
+}
+
+.ascend-trash-modal-body {
+  padding: 14px 18px 18px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+
+  background: linear-gradient(
+    180deg,
+    rgba(13, 18, 36, 0.95),
+    rgba(5, 8, 20, 0.98)
+  );
+}
+
+.ascend-trash-modal-note {
+  font-size: 0.75rem;
+  color: var(--ascend-color-text-muted);
+  margin-bottom: 12px;
+}
+
+/* Trash list inside modal */
+.ascend-trash-list {
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(5, 9, 23, 0.9);
+}
+
+/* Trash cards use same styling as fileroom cards */
+.ascend-trash-list .ascend-job-card {
+  display: flex;
+  align-items: stretch;
+}
+
+.ascend-trash-list .ascend-job-card-main {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  border-radius: 0;
+  padding: 0.65rem 1rem;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  transition: background-color var(--ascend-transition-fast);
+}
+
+.ascend-trash-list .ascend-job-card:nth-child(odd) .ascend-job-card-main {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ascend-trash-list .ascend-job-card:nth-child(even) .ascend-job-card-main {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ascend-trash-list .ascend-job-card:hover .ascend-job-card-main {
+  background: rgba(72, 187, 120, 0.08);
+}
+
+.ascend-trash-list .ascend-job-card:first-child .ascend-job-card-main {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.ascend-trash-list .ascend-job-card:last-child .ascend-job-card-main {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border-bottom: none;
+}
+
+/* Trash empty state inside modal */
+.ascend-trash-list .ascend-job-list-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  border-radius: 12px;
 }

@@ -724,11 +724,10 @@ function trashJob_(p) {
     const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
     const sh = getSheet_(ss, JOBS_SHEET_NAME);
 
-    const header = getHeaderMap_(sh);
-    ensureHeaders_(header, [
-      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
-      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl','TrashedAt','TrashedBy'
-    ]);
+    let header = getHeaderMap_(sh);
+    // Only require base columns, add trash columns if missing
+    ensureHeaders_(header, ['AscendJobKey','UpdatedAt']);
+    header = ensureOrAddColumns_(sh, header, ['TrashedAt', 'TrashedBy']);
 
     const keyCol = header['AscendJobKey'];
     const lastRow = sh.getLastRow();
@@ -784,11 +783,9 @@ function restoreJob_(p) {
     const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
     const sh = getSheet_(ss, JOBS_SHEET_NAME);
 
-    const header = getHeaderMap_(sh);
-    ensureHeaders_(header, [
-      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
-      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl','TrashedAt','TrashedBy'
-    ]);
+    let header = getHeaderMap_(sh);
+    ensureHeaders_(header, ['AscendJobKey','UpdatedAt']);
+    header = ensureOrAddColumns_(sh, header, ['TrashedAt', 'TrashedBy']);
 
     const keyCol = header['AscendJobKey'];
     const lastRow = sh.getLastRow();
@@ -839,11 +836,12 @@ function listTrashedJobsForUser_(p) {
   const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
   const jobsSh = getSheet_(ss, JOBS_SHEET_NAME);
 
-  const jobsHeader = getHeaderMap_(jobsSh);
-  ensureHeaders_(jobsHeader, [
-    'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
-    'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl','TrashedAt','TrashedBy'
-  ]);
+  let jobsHeader = getHeaderMap_(jobsSh);
+  ensureHeaders_(jobsHeader, ['AscendJobKey','OwnerEmail']);
+  // If TrashedAt column doesn't exist, return empty (nothing trashed yet)
+  if (!jobsHeader['TrashedAt']) {
+    return { user_email: userEmail, jobs: [], count: 0 };
+  }
 
   const lastRow = jobsSh.getLastRow();
   if (lastRow < 2) return { user_email: userEmail, jobs: [], count: 0 };
@@ -860,10 +858,12 @@ function listTrashedJobsForUser_(p) {
     const trashedAt = String(job.TrashedAt || '').trim();
     if (!trashedAt) continue;
 
+    // Check ownership - also include items trashed by this user, or items with no owner
     const owner = String(job.OwnerEmail || '').toLowerCase().trim();
     const collabs = String(job.Collaborators || '').toLowerCase();
+    const trashedBy = String(job.TrashedBy || '').toLowerCase().trim();
 
-    const isMine = owner === userEmail || (collabs && collabs.indexOf(userEmail) !== -1);
+    const isMine = !owner || owner === userEmail || trashedBy === userEmail || (collabs && collabs.indexOf(userEmail) !== -1);
     if (!isMine) continue;
 
     out.push({
@@ -1103,6 +1103,20 @@ function ensureHeaders_(headerMap, required) {
       throw new Error('Missing required header "' + required[i] + '" in sheet.');
     }
   }
+}
+
+function ensureOrAddColumns_(sh, headerMap, columns) {
+  // Add any missing columns to the end of the sheet
+  let lastCol = sh.getLastColumn();
+  for (let i = 0; i < columns.length; i++) {
+    const col = columns[i];
+    if (!headerMap[col]) {
+      lastCol++;
+      sh.getRange(1, lastCol).setValue(col);
+      headerMap[col] = lastCol;
+    }
+  }
+  return headerMap;
 }
 
 function writeRowByHeader_(sh, headerMap, rowIndex, obj) {

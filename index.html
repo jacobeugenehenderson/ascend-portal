@@ -192,25 +192,41 @@
                 </div>
               </article>
 
-              <!-- Trash -->
-              <article class="ascend-row ascend-row-trash">
-                <div class="ascend-row-primary">
-                  <div class="ascend-row-label">Trash</div>
-                  <div class="ascend-row-title">
-                    Recently removed
-                  </div>
-                  <div class="ascend-row-description">
-                    Items here can be restored.
-                  </div>
-                </div>
-                <div class="ascend-row-secondary">
-                  <strong>Trashed Items</strong>
-                  <div id="ascend-trash-list"></div>
-                </div>
-              </article>
             </div>
+
+            <!-- Trash trigger button (opens modal) -->
+            <button type="button" class="ascend-trash-trigger" id="ascend-trash-trigger">
+              <span class="ascend-trash-trigger-icon">🗑</span>
+              <span class="ascend-trash-trigger-label">Recently Removed</span>
+              <span class="ascend-trash-trigger-count" id="ascend-trash-count"></span>
+            </button>
           </section>
         </main>
+      </div>
+    </div>
+
+    <!-- Trash modal -->
+    <div class="ascend-trash-modal" id="ascend-trash-modal" style="display:none;" aria-hidden="true">
+      <div class="ascend-trash-modal-backdrop" id="ascend-trash-modal-backdrop" data-modal-close="1"></div>
+
+      <div class="ascend-trash-modal-panel" role="dialog" aria-modal="true" aria-labelledby="ascend-trash-modal-title">
+        <div class="ascend-trash-modal-header">
+          <div class="ascend-trash-modal-title" id="ascend-trash-modal-title">Recently Removed</div>
+
+          <div class="ascend-trash-modal-actions">
+            <button type="button" class="ascend-trash-modal-x" id="ascend-trash-modal-close" aria-label="Close">×</button>
+          </div>
+        </div>
+
+        <div class="ascend-trash-modal-body">
+          <div class="ascend-trash-modal-note" id="ascend-trash-modal-note">
+            Items here can be restored to your workspace.
+          </div>
+
+          <div class="ascend-trash-list" id="ascend-trash-list">
+            <!-- rows injected by JS -->
+          </div>
+        </div>
       </div>
     </div>
 

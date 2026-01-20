@@ -796,22 +796,20 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         e.preventDefault();
         e.stopPropagation();
 
-        const ok = window.confirm("Move to trash?");
-        if (!ok) return;
-
         // Working files have AscendJobKey format: CODEDESK_WF:<id>
         const workingKey = "CODEDESK_WF:" + wfId;
 
         // Immediate UI removal for responsiveness
         card.remove();
 
-        // Call trash API
+        // Call trash API - only trashes the working file, outputs stay in FileRoom
         trashFileRoomJob_(workingKey, function(result) {
           // Also clean up localStorage working file
           const manifest = buildDeletionManifestForWorkingFile_(wf);
           try { ascendNuke_(manifest, { source: "ascend_codedesk_lane", wf: wf }); } catch (_e) {}
           // Refresh hoppers
           try { requestFileRoomOutput(); } catch (e) {}
+          try { requestAndRenderTrash(); } catch (e) {}
         });
       });
 
@@ -1237,9 +1235,6 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         evt.preventDefault();
         evt.stopPropagation();
 
-        const ok = window.confirm("Move to trash?");
-        if (!ok) return;
-
         // Get the AscendJobKey for this item
         const ascendJobKey = item.AscendJobKey || item.ascend_job_key || "";
 
@@ -1249,6 +1244,24 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
           return;
         }
 
+        // Check if this is a CodeDesk output with an active working file
+        const itemApp = String(item.App || item.app || "").toLowerCase();
+        const itemKind = String(item.Kind || item.kind || "").toLowerCase();
+        const sourceId = item.SourceId || item.sourceId || item.source_id || "";
+
+        if (itemApp === "codedesk" && itemKind === "output" && sourceId) {
+          // Check if working file still exists (not trashed)
+          const workingFiles = window.__ASCEND_CODEDESK_WORKING_ITEMS__ || [];
+          const hasActiveWorking = workingFiles.some(function(wf) {
+            return String(wf.id || "") === String(sourceId);
+          });
+
+          if (hasActiveWorking) {
+            alert("Can't trash this output while its working file is still active. Trash the working file first.");
+            return;
+          }
+        }
+
         // Immediate UI removal for responsiveness
         card.remove();
 
@@ -1256,6 +1269,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         trashFileRoomJob_(ascendJobKey, function(result) {
           // Refresh the hopper to ensure consistency
           try { requestFileRoomOutput(); } catch (e) {}
+          try { requestAndRenderTrash(); } catch (e) {}
         });
       });
 
@@ -1265,13 +1279,45 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     });
   }
 
-  // ---- Trash Lane ----
+  // ---- Trash Modal ----
+
+  function openTrashModal_() {
+    const modal = document.getElementById("ascend-trash-modal");
+    if (!modal) return;
+
+    modal.style.display = "";
+    modal.setAttribute("aria-hidden", "false");
+
+    requestAndRenderTrash();
+  }
+
+  function closeTrashModal_() {
+    const modal = document.getElementById("ascend-trash-modal");
+    if (!modal) return;
+
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  function updateTrashCount_(count) {
+    const countEl = document.getElementById("ascend-trash-count");
+    if (!countEl) return;
+
+    if (count > 0) {
+      countEl.textContent = String(count);
+    } else {
+      countEl.textContent = "";
+    }
+  }
 
   function renderTrashLane(jobs) {
     const lane = document.getElementById("ascend-trash-list");
     if (!lane) return;
 
     lane.innerHTML = "";
+
+    // Update count badge on trigger button
+    updateTrashCount_(jobs ? jobs.length : 0);
 
     if (!jobs || !jobs.length) {
       const empty = document.createElement("div");
@@ -1560,11 +1606,6 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     if (!session || !session.userEmail) return;
     if (!jobId) return;
 
-    const confirmed = window.confirm(
-      "Remove this document from your dashboard?"
-    );
-    if (!confirmed) return;
-
     const callbackName = "ascendDismissCopydeskJobCallback";
 
     window[callbackName] = function (payload) {
@@ -1850,11 +1891,6 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     }
     if (!jobId) return;
 
-    const confirmed = window.confirm(
-      "Remove this job from your dashboard? This won't delete any working files."
-    );
-    if (!confirmed) return;
-
     const callbackName = "ascendDeleteArtStartJobCallback";
 
     window[callbackName] = function (payload) {
@@ -1886,14 +1922,44 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
   window.AscendDebug.requestAndRenderTrash = requestAndRenderTrash;
   window.AscendDebug.trashFileRoomJob = trashFileRoomJob_;
   window.AscendDebug.restoreFileRoomJob = restoreFileRoomJob_;
+  window.AscendDebug.openTrashModal = openTrashModal_;
+  window.AscendDebug.closeTrashModal = closeTrashModal_;
   window.AscendDebug.CODEDESK_MANIFEST_URL = CODEDESK_MANIFEST_URL;
   window.AscendDebug.loadSession = loadSession;
+
+  function initTrashModal() {
+    const trigger = document.getElementById("ascend-trash-trigger");
+    const closeBtn = document.getElementById("ascend-trash-modal-close");
+    const backdrop = document.getElementById("ascend-trash-modal-backdrop");
+
+    if (trigger) {
+      trigger.addEventListener("click", function () {
+        openTrashModal_();
+      });
+    }
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        closeTrashModal_();
+      });
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener("click", function (evt) {
+        const t = evt.target;
+        if (t && t.getAttribute && t.getAttribute("data-modal-close") === "1") {
+          closeTrashModal_();
+        }
+      });
+    }
+  }
 
     // ---- bootstrap ----
 
   function bootstrap() {
     initLogoutButton();
     initPrimaryButtons();
+    initTrashModal();
 
     const existing = loadSession();
     if (isSessionValid(existing)) {
