@@ -1046,6 +1046,10 @@ function handleSaveCard_(body) {
   });
 
   if (!ok) return { ok: false, error: 'Card not found: ' + cardId };
+
+  // Mark job as edited for hopper indicator (stage 2: two lights)
+  try { markJobAsEdited_(jobId); } catch (e) { /* best effort */ }
+
   return { ok: true };
 }
 
