@@ -786,11 +786,12 @@ body.copydesk-is-closed .copydesk-col--committed .copydesk-col-title {
   display: none !important;
 }
 
-/* Copydesk Job View: remove column wrapper styling in closed mode */
+/* Copydesk Job View: column wrapper becomes a light surface in closed mode */
 body.copydesk-is-closed .copydesk-col--committed {
   border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  padding: 2rem !important;
+  border-radius: 16px !important;
 }
 
 /* Copydesk Job View: rows expand to fit content in closed mode */
