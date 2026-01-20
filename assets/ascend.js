@@ -705,14 +705,20 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     function deleteWorking_(id) {
       try {
         const dead = String(id);
-        const list = listWorking_().filter((x) => String(x.id) !== dead);
+        // Read directly from localStorage, not listWorking_() which prefers API list
+        const raw = localStorage.getItem(CODEDESK_STORE_KEY) || "[]";
+        const currentList = JSON.parse(raw);
+        const list = (Array.isArray(currentList) ? currentList : []).filter((x) => String(x.id) !== dead);
         localStorage.setItem(CODEDESK_STORE_KEY, JSON.stringify(list));
+        console.log("[Ascend] deleteWorking_: removed", dead, "from localStorage, remaining:", list.length);
 
-        // If the deleted file is currently “active” in CodeDesk, clear that pointer too.
+        // If the deleted file is currently "active" in CodeDesk, clear that pointer too.
         const ACTIVE_KEY = "codedesk_active_working_file_v1";
         const cur = String(localStorage.getItem(ACTIVE_KEY) || "");
         if (cur && cur === dead) localStorage.removeItem(ACTIVE_KEY);
-      } catch (e) {}
+      } catch (e) {
+        console.warn("[Ascend] deleteWorking_ error:", e);
+      }
     }
 
     // --------------------------------------------
