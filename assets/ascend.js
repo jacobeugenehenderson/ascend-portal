@@ -1857,7 +1857,8 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
                 template_id: templateId
               };
             })
-            .filter((x) => x && x.id);
+            .filter((x) => x && x.id)
+            .filter((x) => !PENDING_WF_DELETIONS[x.id]);
         } catch (e) {
           window.__ASCEND_CODEDESK_WORKING_ITEMS__ = [];
         }
