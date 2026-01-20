@@ -35,7 +35,39 @@
   const CODEDESK_STORE_KEY = "codedesk_working_files_v1";
 
   // Track working files pending deletion to prevent bounce-back from server refresh
-  const PENDING_WF_DELETIONS = {};
+  // Persisted to localStorage to survive page refresh
+  const PENDING_WF_DELETIONS_KEY = "ascend_pending_wf_deletions_v1";
+
+  function loadPendingWfDeletions_() {
+    try {
+      const raw = localStorage.getItem(PENDING_WF_DELETIONS_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function savePendingWfDeletions_(map) {
+    try {
+      localStorage.setItem(PENDING_WF_DELETIONS_KEY, JSON.stringify(map || {}));
+    } catch (e) {}
+  }
+
+  function markWfPendingDeletion_(id) {
+    const map = loadPendingWfDeletions_();
+    map[id] = Date.now();
+    savePendingWfDeletions_(map);
+  }
+
+  function isWfPendingDeletion_(id) {
+    const map = loadPendingWfDeletions_();
+    return !!map[id];
+  }
+
+  // Legacy in-memory reference for compatibility
+  const PENDING_WF_DELETIONS = loadPendingWfDeletions_();
 
   // FileRoom (output / delivery layer)
   const FILEROOM_URL =
@@ -748,7 +780,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       if (!wfId) return;
 
       // Skip items pending deletion (prevents bounce-back from server refresh)
-      if (PENDING_WF_DELETIONS[wfId]) return;
+      if (PENDING_WF_DELETIONS[wfId] || isWfPendingDeletion_(wfId)) return;
 
       const card = document.createElement("div");
       card.className = "ascend-job-card";
@@ -805,7 +837,8 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         // Working files have AscendJobKey format: CODEDESK_WF:<id>
         const workingKey = "CODEDESK_WF:" + wfId;
 
-        // Mark as pending deletion to prevent bounce-back from server refresh
+        // Mark as pending deletion to prevent bounce-back from server refresh (persisted)
+        markWfPendingDeletion_(wfId);
         PENDING_WF_DELETIONS[wfId] = true;
 
         // Immediate UI removal for responsiveness
@@ -1268,7 +1301,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
           const hasActiveWorking = workingFiles.some(function(wf) {
             const wfId = String(wf.id || "");
             // Skip if this working file is pending deletion
-            if (PENDING_WF_DELETIONS[wfId]) return false;
+            if (PENDING_WF_DELETIONS[wfId] || isWfPendingDeletion_(wfId)) return false;
             return wfId === String(sourceId);
           });
 
@@ -1861,7 +1894,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
               };
             })
             .filter((x) => x && x.id)
-            .filter((x) => !PENDING_WF_DELETIONS[x.id]);
+            .filter((x) => !PENDING_WF_DELETIONS[x.id] && !isWfPendingDeletion_(x.id));
         } catch (e) {
           window.__ASCEND_CODEDESK_WORKING_ITEMS__ = [];
         }
