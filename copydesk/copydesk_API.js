@@ -552,7 +552,8 @@ function updateCardRowFields_(ss, cardId, fields) {
 
   // Columns:
   // A CardId | B SegmentId | C OrderIndex | D WorkingStyle | E WorkingText | F Notes | G UpdatedAt
-  if (fields.orderIndex != null) sh.getRange(row, 3).setValue(Number(fields.orderIndex));
+  if (fields.segmentId != null)   sh.getRange(row, 2).setValue(String(fields.segmentId));
+  if (fields.orderIndex != null)  sh.getRange(row, 3).setValue(Number(fields.orderIndex));
   if (fields.workingStyle != null) sh.getRange(row, 4).setValue(String(fields.workingStyle));
   if (fields.workingText != null) sh.getRange(row, 5).setValue(String(fields.workingText));
   if (fields.notes != null)       sh.getRange(row, 6).setValue(String(fields.notes));
@@ -1072,6 +1073,9 @@ function handleMoveCard_(body) {
   var workingStyle = (body && body.workingStyle != null) ? String(body.workingStyle) : null;
   var workingText  = (body && body.workingText  != null) ? String(body.workingText)  : null;
 
+  // Disassociation: moving a card changes its segmentId to 'new:xxx'
+  var segmentId = (body && body.segmentId != null) ? String(body.segmentId) : null;
+
   if (!jobId) return { ok: false, error: 'Missing jobId' };
   if (!cardId) return { ok: false, error: 'Missing cardId' };
 
@@ -1110,6 +1114,7 @@ function handleMoveCard_(body) {
   var movingFields = { orderIndex: target };
   if (workingStyle != null) movingFields.workingStyle = workingStyle;
   if (workingText  != null) movingFields.workingText  = workingText;
+  if (segmentId    != null) movingFields.segmentId    = segmentId;
 
   if (!occupant) {
     // Move into empty slot: update only moving row
@@ -1120,6 +1125,7 @@ function handleMoveCard_(body) {
     moving.orderIndex = target;
     if (workingStyle != null) moving.workingStyle = workingStyle;
     if (workingText  != null) moving.workingText  = workingText;
+    if (segmentId    != null) moving.segmentId    = segmentId;
 
     return { ok: true, cards: cards };
   }
@@ -1135,6 +1141,7 @@ function handleMoveCard_(body) {
   moving.orderIndex = target;
   if (workingStyle != null) moving.workingStyle = workingStyle;
   if (workingText  != null) moving.workingText  = workingText;
+  if (segmentId    != null) moving.segmentId    = segmentId;
   occupant.orderIndex = cur;
 
   return { ok: true, cards: cards };
@@ -1162,7 +1169,8 @@ function handleMutateCard_(body) {
     return handleMoveCard_({
       jobId: jobId,
       cardId: payload.cardId,
-      direction: payload.direction
+      direction: payload.direction,
+      segmentId: payload.segmentId  // Disassociation: new segmentId after move
     });
   }
 

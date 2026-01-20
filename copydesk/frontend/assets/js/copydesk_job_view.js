@@ -466,6 +466,7 @@ function applyStyleToRow_(row, styleLabel) {
   }
 
   // Move a card up or down in __latestCards
+  // Moving disassociates the card from its original segment (becomes a "new" card)
   function moveCardOptimistic_(cardId, direction) {
     var cardIdx = -1;
     var card = null;
@@ -489,6 +490,12 @@ function applyStyleToRow_(row, styleLabel) {
         card.orderIndex = targetOrder;
         break;
       }
+    }
+
+    // Disassociate: if card was linked to a real segment, change to new:xxx
+    // This frees the original committed segment to spawn a new child card
+    if (card.segmentId && card.segmentId.indexOf('new:') !== 0) {
+      card.segmentId = 'new:' + uuid_();
     }
 
     // Re-sort
@@ -1898,12 +1905,16 @@ if (currentVal2 === ZWSP) currentVal2 = '';
 
           var dir = (role === 'move-up') ? 'up' : 'down';
 
-          // Optimistic update first
+          // Optimistic update first (this also disassociates the card)
           moveCardOptimistic_(cardId, dir);
           renderBothLanes_(isLocked);
 
+          // Get the new segmentId (moveCardOptimistic_ changes it to new:xxx)
+          var movedCard = __latestCards.find(function (c) { return c && c.cardId === cardId; });
+          var newSegmentId = movedCard ? movedCard.segmentId : null;
+
           // Then persist to server (fire-and-forget with error recovery)
-          window.copydeskMoveCard(jobId, cardId, dir).catch(function (err) {
+          window.copydeskMoveCard(jobId, cardId, dir, newSegmentId).catch(function (err) {
             console.error('moveCard error, reloading:', err);
             boot(); // Recovery: reload from server on error
           });

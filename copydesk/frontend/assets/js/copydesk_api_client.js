@@ -183,9 +183,10 @@
     return postJson_({ action: 'deleteCard', jobId: jobId, cardId: cardId });
   };
 
-  // moveCard(jobId, cardId, direction, workingStyle, workingText)
-  // Kept for convenience; implemented as a mutateCard op so server owns the mechanics.
-  window.copydeskMoveCard = async function (jobId, cardId, direction, workingStyle, workingText) {
+  // moveCard(jobId, cardId, direction, newSegmentId)
+  // Moving a card disassociates it from its original segment.
+  // newSegmentId should be 'new:xxx' to indicate this card will create a new segment on push.
+  window.copydeskMoveCard = async function (jobId, cardId, direction, newSegmentId) {
     if (!jobId) throw new Error('Missing jobId');
     if (!cardId) throw new Error('Missing cardId');
     direction = direction === 'up' ? 'up' : 'down';
@@ -196,7 +197,8 @@
       op: 'move',
       payload: {
         cardId: cardId,
-        direction: direction
+        direction: direction,
+        segmentId: newSegmentId || null
       }
     });
   };
