@@ -802,11 +802,16 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         // Immediate UI removal for responsiveness
         card.remove();
 
+        // Immediately clean up localStorage and in-memory cache to prevent bounce-back
+        const manifest = buildDeletionManifestForWorkingFile_(wf);
+        try { ascendNuke_(manifest, { source: "ascend_codedesk_lane", wf: wf }); } catch (_e) {}
+        try {
+          window.__ASCEND_CODEDESK_WORKING_ITEMS__ = (window.__ASCEND_CODEDESK_WORKING_ITEMS__ || [])
+            .filter(function(x) { return String(x.id || "") !== String(wfId); });
+        } catch (_e) {}
+
         // Call trash API - only trashes the working file, outputs stay in FileRoom
         trashFileRoomJob_(workingKey, function(result) {
-          // Also clean up localStorage working file
-          const manifest = buildDeletionManifestForWorkingFile_(wf);
-          try { ascendNuke_(manifest, { source: "ascend_codedesk_lane", wf: wf }); } catch (_e) {}
           // Refresh hoppers
           try { requestFileRoomOutput(); } catch (e) {}
           try { requestAndRenderTrash(); } catch (e) {}
