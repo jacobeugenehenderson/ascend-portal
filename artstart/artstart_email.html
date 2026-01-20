@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>ArtStart – Job Summary</title>
+    <style>
+      /* Basic reset for email */
+      body {
+        margin: 0;
+        padding: 0;
+        background:
+          radial-gradient(circle at top, rgba(79, 209, 197, 0.22), transparent 55%),
+          #e5edf7;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #111827;
+      }
+
+      .wrapper {
+        width: 100%;
+        background-color: transparent;
+        padding: 16px 0;
+      }
+
+      .card {
+        max-width: 640px;
+        margin: 0 auto;
+        background:
+          radial-gradient(circle at top right, rgba(129, 230, 217, 0.18), transparent 60%),
+          #ffffff;
+        border-radius: 10px;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        box-shadow: 0 26px 70px rgba(15, 23, 42, 0.25);
+        padding: 20px 22px 22px;
+      }
+
+      .brand-bar {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #0891b2;
+        margin: 0 0 10px;
+      }
+
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .meta,
+      .meta-inline {
+        font-size: 12px;
+        color: #4b5563;
+        margin: 0 0 4px;
+      }
+
+      .label {
+        font-weight: 600;
+      }
+
+      .section {
+        margin-top: 18px;
+      }
+
+      .section h2 {
+        font-size: 13px;
+        margin: 0 0 8px;
+        font-weight: 600;
+        color: #0f172a;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.65);
+        padding-bottom: 3px;
+      }
+
+      .section p {
+        margin: 0 0 6px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .muted {
+        color: #6b7280;
+        font-size: 12px;
+      }
+
+      /* Format & canvas layout */
+      .format-meta {
+        display: table;
+        width: 100%;
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      .format-meta-col {
+        display: table-cell;
+        vertical-align: top;
+        padding-right: 24px;
+      }
+
+      @media (max-width: 600px) {
+        .format-meta {
+          display: block;
+        }
+        .format-meta-col {
+          display: block;
+          padding-right: 0;
+          margin-bottom: 8px;
+        }
+      }
+
+      /* Canvas preview (graphic only) */
+      .canvas-wrapper {
+        margin-top: 10px;
+      }
+
+      .canvas-frame {
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        background-image:
+          linear-gradient(to right, rgba(148,163,184,.35) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(148,163,184,.35) 1px, transparent 1px),
+          linear-gradient(to right, rgba(148,163,184,.15) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(148,163,184,.15) 1px, transparent 1px);
+        background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+        padding: 14px;
+      }
+
+      .canvas-outer {
+        width: 100%;
+        max-width: 440px;
+        margin: 0 auto;
+        padding-top: 62.5%; /* 16:10-ish aspect for email preview */
+        position: relative;
+      }
+
+      .canvas-bleed {
+        position: absolute;
+        inset: 0;
+        border: 2px dashed rgba(79, 209, 197, 0.9);
+        background-color: rgba(79, 209, 197, 0.06);
+        box-sizing: border-box;
+      }
+
+      .canvas-safe {
+        position: absolute;
+        inset: 6%;
+        border: 1px solid rgba(15, 23, 42, 0.25);
+        background-color: #ffffff;
+        box-sizing: border-box;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+      }
+
+      /* Digital mode: no bleed, full canvas safe area
+         (backend can choose to toggle a data attribute if desired) */
+
+      .canvas-caption {
+        margin: 6px 0 0;
+        font-size: 11px;
+        color: #6b7280;
+      }
+
+      /* Button */
+      .button-row {
+        margin-top: 12px;
+        margin-bottom: 4px;
+      }
+
+      .btn-primary {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        background-image: linear-gradient(135deg, #14b8a6, #0f172a);
+        background-color: #0f172a;
+        border: 1px solid rgba(15, 23, 42, 0.85);
+        color: #f9fafb;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+      }
+
+      .btn-primary:hover {
+        background-image: linear-gradient(135deg, #0f172a, #14b8a6);
+        background-color: #020617;
+      }
+
+      .footer-note {
+        margin-top: 20px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(148, 163, 184, 0.6);
+        font-size: 11px;
+        color: #e5e7eb;
+        background: linear-gradient(to right, #020617, #0b1120);
+        border-radius: 0 0 6px 6px;
+        margin-left: -22px;
+        margin-right: -22px;
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="card">
+        <!-- Brand bar -->
+        <p class="brand-bar">Ascend Visualization Studio – ArtStart Job Summary</p>
+
+        <!-- Job title + top meta -->
+        <h1>
+          <? if (data.jobTitle) { ?>
+            <?= data.jobTitle ?>
+          <? } else { ?>
+            New job created
+          <? } ?>
+        </h1>
+
+        <p class="meta-inline">
+          <? if (data.nordsonJobCode) { ?>
+            <span class="label">Job ID:</span> <?= data.nordsonJobCode ?>
+          <? } ?>
+          <? if (data.createdDate) { ?>
+            <? if (data.nordsonJobCode) { ?>&nbsp;•&nbsp;<? } ?>
+            <span class="label">Created:</span> <?= data.createdDate ?>
+          <? } ?>
+        </p>
+
+        <? if (data.requesterName || data.requesterEmail) { ?>
+          <p class="meta">
+            <span class="label">Requested by:</span>
+            <? if (data.requesterName) { ?>
+              <?= data.requesterName ?>
+            <? } ?>
+            <? if (data.requesterEmail) { ?>
+              <? if (data.requesterName) { ?>&nbsp;<? } ?>
+              &lt;<?= data.requesterEmail ?>&gt;
+            <? } ?>
+          </p>
+        <? } ?>
+
+        <!-- Format & canvas -->
+        <div class="section">
+          <h2>Format &amp; canvas</h2>
+
+          <div class="format-meta">
+            <div class="format-meta-col">
+              <? if (data.publication) { ?>
+                <p>
+                  <span class="label">Publication / channel:</span>
+                  <?= data.publication ?>
+                </p>
+              <? } ?>
+              <? if (data.placement) { ?>
+                <p>
+                  <span class="label">Placement / format:</span>
+                  <?= data.placement ?>
+                </p>
+              <? } ?>
+            </div>
+            <div class="format-meta-col">
+              <? if (data.trimSizePretty) { ?>
+                <p>
+                  <span class="label">Size:</span>
+                  <?= data.trimSizePretty ?>
+                </p>
+              <? } ?>
+              <? if (data.bleedPretty) { ?>
+                <p>
+                  <span class="label">Bleed:</span>
+                  <?= data.bleedPretty ?>
+                </p>
+              <? } ?>
+              <? if (data.colorExportSummary) { ?>
+                <p>
+                  <span class="label">Output:</span>
+                  <?= data.colorExportSummary ?>
+                </p>
+              <? } ?>
+              <? if (data.materialsDeadlinePretty) { ?>
+                <p>
+                  <span class="label">Materials deadline:</span>
+                  <?= data.materialsDeadlinePretty ?>
+                </p>
+              <? } ?>
+              <? if (data.runDatePretty) { ?>
+                <p>
+                  <span class="label">Run / go-live:</span>
+                  <?= data.runDatePretty ?>
+                </p>
+              <? } ?>
+            </div>
+          </div>
+
+          <!-- Static graphic preview: format-only, no job text -->
+          <div class="canvas-wrapper">
+            <div class="canvas-frame">
+              <div class="canvas-outer">
+                <div class="canvas-bleed">
+                  <div class="canvas-safe"></div>
+                </div>
+              </div>
+            </div>
+            <p class="canvas-caption">
+              Canvas preview reflects size &amp; format only. Final layout will be built in design tools.
+            </p>
+          </div>
+        </div>
+
+        <!-- Editorial notes -->
+        <div class="section">
+          <h2>Editorial notes</h2>
+          <? if (data.topic) { ?>
+            <p>
+              <span class="label">Topic / editorial notes:</span><br>
+              <?= data.topic ?>
+            </p>
+          <? } ?>
+          <? if (data.notes) { ?>
+            <p>
+              <span class="label">Notes:</span><br>
+              <?= data.notes ?>
+            </p>
+          <? } ?>
+          <? if (!data.topic && !data.notes) { ?>
+            <p class="muted">No editorial notes were provided in the intake.</p>
+          <? } ?>
+        </div>
+
+        <!-- ArtStart workspace CTA -->
+        <div class="section">
+          <h2>ArtStart workspace</h2>
+          <p class="muted">
+            Use the ArtStart workspace to collaborate on this job and prepare working content before final layout.
+          </p>
+          <div class="button-row">
+            <a href="<?= data.artStartUrl ?>" class="btn-primary">Open this job in ArtStart</a>
+          </div>
+        </div>
+
+        <p class="footer-note">
+          Sent by Ascend Visualization Studio.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

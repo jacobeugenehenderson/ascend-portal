@@ -2213,15 +2213,21 @@ function handleCreateEnglishJob_(body) {
   try {
     var createdAtIso = Utilities.formatDate(new Date(), 'Etc/UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'");
 
-    var ownerEmail0 = (body && body.user_email) ? String(body.user_email) : '';
+    // Robust owner attribution:
+    // Prefer explicit client user_email, then first collaborator, then Session.getActiveUser (may be blank in web-app contexts).
+    var ownerEmail0 = '';
+    try {
+      ownerEmail0 = (body && (body.user_email || body.userEmail)) ? String(body.user_email || body.userEmail) : '';
+    } catch (e0) {}
     ownerEmail0 = String(ownerEmail0 || '').trim();
-    if (!ownerEmail0) {
-      try { ownerEmail0 = String(Session.getActiveUser().getEmail() || '').trim(); } catch (e0) {}
+
+    if (!ownerEmail0 && collaborators && collaborators.length) {
+      ownerEmail0 = String(collaborators[0] || '').trim();
     }
 
-    var ownerEmail0 =
-      (body && body.user_email) ? String(body.user_email).trim() :
-      (Session.getActiveUser().getEmail() || '');
+    if (!ownerEmail0) {
+      try { ownerEmail0 = String(Session.getActiveUser().getEmail() || '').trim(); } catch (e1) {}
+    }
 
     recordCopydeskJobInHopper_({
       jobId: jobId,
@@ -2900,7 +2906,7 @@ function upsertFileRoomRegistryOnClose_(jobId, ss, ownerEmail, closedAtIso) {
     status: 'closed',
     open_url: openUrl,
     owner_email: ownerEmail || '',
-    collaborators: '',
+    collaborators: collaboratorsCsv0 || '',
     created_at: createdAtIso || '',
     updated_at: closedAtIso || '',
     last_touched_by: '',
@@ -2929,14 +2935,24 @@ function upsertFileRoomRegistryOnClose_(jobId, ss, ownerEmail, closedAtIso) {
 
   try { updateHopperOnClose_(jobId, closedAtIso); } catch (e0) {}
 
-  // Attempt to infer an owner email from hopper row, otherwise leave blank.
+  // Attempt to infer an owner email from hopper row.
+  // If OwnerEmail is blank (web-app contexts), fall back to first collaborator from CollaboratorsCsv.
   var ownerEmail = '';
+  var collaboratorsCsv0 = '';
   try {
     var db = openHopperDb_();
     var hs = ensureHopperSheet_(db);
     var r = findRowByJobId_(hs, jobId);
-    if (r) ownerEmail = String(hs.getRange(r, 7).getValue() || '').trim(); // OwnerEmail col
+    if (r) {
+      ownerEmail = String(hs.getRange(r, 7).getValue() || '').trim(); // OwnerEmail col
+      collaboratorsCsv0 = String(hs.getRange(r, 8).getValue() || '').trim(); // CollaboratorsCsv col
+    }
   } catch (e1) {}
+
+  if (!ownerEmail && collaboratorsCsv0) {
+    var c0 = arrayFromCsv_(collaboratorsCsv0);
+    if (c0 && c0.length) ownerEmail = String(c0[0] || '').trim();
+  }
 
   try { upsertDeliverableForClose_(jobId, ss, ownerEmail); } catch (e2) {}
 

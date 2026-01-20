@@ -15,6 +15,9 @@
  *  ?action=upsertJob&...&callback=cb
  *  ?action=setDashboardPref&...&callback=cb
  *  ?action=hideJob&user_email=...&ascend_job_key=...&callback=cb
+ *  ?action=trashJob&user_email=...&ascend_job_key=...&callback=cb
+ *  ?action=restoreJob&user_email=...&ascend_job_key=...&callback=cb
+ *  ?action=listTrashedJobsForUser&user_email=...&callback=cb
  */
 
 /** =========================
@@ -88,6 +91,18 @@ function doGet(e) {
         data = hideJob_(p);
         break;
 
+      case 'trashJob':
+        data = trashJob_(p);
+        break;
+
+      case 'restoreJob':
+        data = restoreJob_(p);
+        break;
+
+      case 'listTrashedJobsForUser':
+        data = listTrashedJobsForUser_(p);
+        break;
+
       case 'nukeJob':
         data = nukeJob_(p);
         break;
@@ -141,6 +156,14 @@ function doPost(e) {
 
       case 'upsertQrPngAsset':
         data = upsertQrPngAsset_(body);
+        break;
+
+      case 'trashJob':
+        data = trashJob_(body);
+        break;
+
+      case 'restoreJob':
+        data = restoreJob_(body);
         break;
 
       case 'nukeJob':
@@ -406,7 +429,7 @@ function upsertJob_(p) {
     const header = getHeaderMap_(sh);
     ensureHeaders_(header, [
       'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
-      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl'
+      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl','TrashedAt','TrashedBy'
     ]);
 
     const app = req_(p, 'app');
@@ -442,7 +465,9 @@ function upsertJob_(p) {
       StateJson: opt_(p, 'state_json', ''),
       DriveFolderId: opt_(p, 'drive_folder_id', ''),
       DrivePngFileId: opt_(p, 'drive_png_file_id', ''),
-      DrivePngOpenUrl: opt_(p, 'drive_png_open_url', '')
+      DrivePngOpenUrl: opt_(p, 'drive_png_open_url', ''),
+      TrashedAt: opt_(p, 'trashed_at', ''),
+      TrashedBy: opt_(p, 'trashed_by', '')
     };
 
     // Find existing row by AscendJobKey
@@ -493,6 +518,7 @@ function listJobsForUser_(p) {
   const userEmail = String(req_(p, 'user_email')).toLowerCase().trim();
   const includeHidden = toBool_(opt_(p, 'include_hidden', 'FALSE'));
   const includeDeleted = toBool_(opt_(p, 'include_deleted', 'FALSE'));
+  const includeTrashed = toBool_(opt_(p, 'include_trashed', 'FALSE'));
 
   const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
   const jobsSh = getSheet_(ss, JOBS_SHEET_NAME);
@@ -524,6 +550,9 @@ function listJobsForUser_(p) {
 
     const isDeleted = toBool_(String(job.IsDeleted || 'FALSE'));
     if (isDeleted && !includeDeleted) continue;
+
+    const isTrashed = !!(job.TrashedAt && String(job.TrashedAt).trim());
+    if (isTrashed && !includeTrashed) continue;
 
     const owner = String(job.OwnerEmail || '').toLowerCase().trim();
     const collabs = String(job.Collaborators || '').toLowerCase();
@@ -559,7 +588,9 @@ function listJobsForUser_(p) {
       Hidden: hidden,
       Lane: pref && pref.Lane ? pref.Lane : 'AUTO',
       SortWeight: pref && pref.SortWeight !== '' ? Number(pref.SortWeight) : null,
-      ParentAscendJobKey: job.ParentAscendJobKey || ''
+      ParentAscendJobKey: job.ParentAscendJobKey || '',
+      TrashedAt: job.TrashedAt || '',
+      TrashedBy: job.TrashedBy || ''
     });
   }
 
@@ -677,6 +708,192 @@ function hideJob_(p) {
 }
 
 /**
+ * trashJob
+ * Soft-deletes a job by setting TrashedAt timestamp.
+ * Required:
+ *  - user_email (caller identity)
+ *  - ascend_job_key
+ */
+function trashJob_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    const userEmail = String(req_(p, 'user_email')).toLowerCase().trim();
+    const key = String(req_(p, 'ascend_job_key')).trim();
+
+    const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
+    const sh = getSheet_(ss, JOBS_SHEET_NAME);
+
+    const header = getHeaderMap_(sh);
+    ensureHeaders_(header, [
+      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
+      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl','TrashedAt','TrashedBy'
+    ]);
+
+    const keyCol = header['AscendJobKey'];
+    const lastRow = sh.getLastRow();
+    let foundRow = -1;
+
+    if (lastRow >= 2) {
+      const keyValues = sh.getRange(2, keyCol, lastRow - 1, 1).getValues();
+      for (let i = 0; i < keyValues.length; i++) {
+        if (String(keyValues[i][0]).trim() === key) {
+          foundRow = 2 + i;
+          break;
+        }
+      }
+    }
+
+    if (foundRow === -1) {
+      return { ok: false, error: 'Job not found', ascend_job_key: key };
+    }
+
+    const nowIso = new Date().toISOString();
+
+    // Set TrashedAt and TrashedBy
+    sh.getRange(foundRow, header['TrashedAt']).setValue(nowIso);
+    sh.getRange(foundRow, header['TrashedBy']).setValue(userEmail);
+    sh.getRange(foundRow, header['UpdatedAt']).setValue(nowIso);
+
+    return {
+      ok: true,
+      action: 'trash',
+      ascend_job_key: key,
+      trashed_at: nowIso,
+      trashed_by: userEmail
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * restoreJob
+ * Restores a trashed job by clearing TrashedAt.
+ * Required:
+ *  - user_email (caller identity)
+ *  - ascend_job_key
+ */
+function restoreJob_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    const userEmail = String(req_(p, 'user_email')).toLowerCase().trim();
+    const key = String(req_(p, 'ascend_job_key')).trim();
+
+    const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
+    const sh = getSheet_(ss, JOBS_SHEET_NAME);
+
+    const header = getHeaderMap_(sh);
+    ensureHeaders_(header, [
+      'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
+      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl','TrashedAt','TrashedBy'
+    ]);
+
+    const keyCol = header['AscendJobKey'];
+    const lastRow = sh.getLastRow();
+    let foundRow = -1;
+
+    if (lastRow >= 2) {
+      const keyValues = sh.getRange(2, keyCol, lastRow - 1, 1).getValues();
+      for (let i = 0; i < keyValues.length; i++) {
+        if (String(keyValues[i][0]).trim() === key) {
+          foundRow = 2 + i;
+          break;
+        }
+      }
+    }
+
+    if (foundRow === -1) {
+      return { ok: false, error: 'Job not found', ascend_job_key: key };
+    }
+
+    const nowIso = new Date().toISOString();
+
+    // Clear TrashedAt and TrashedBy
+    sh.getRange(foundRow, header['TrashedAt']).setValue('');
+    sh.getRange(foundRow, header['TrashedBy']).setValue('');
+    sh.getRange(foundRow, header['UpdatedAt']).setValue(nowIso);
+
+    return {
+      ok: true,
+      action: 'restore',
+      ascend_job_key: key,
+      restored_at: nowIso,
+      restored_by: userEmail
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * listTrashedJobsForUser
+ * Returns all trashed jobs for a user.
+ * Required:
+ *  - user_email
+ */
+function listTrashedJobsForUser_(p) {
+  const userEmail = String(req_(p, 'user_email')).toLowerCase().trim();
+
+  const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
+  const jobsSh = getSheet_(ss, JOBS_SHEET_NAME);
+
+  const jobsHeader = getHeaderMap_(jobsSh);
+  ensureHeaders_(jobsHeader, [
+    'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
+    'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl','TrashedAt','TrashedBy'
+  ]);
+
+  const lastRow = jobsSh.getLastRow();
+  if (lastRow < 2) return { user_email: userEmail, jobs: [], count: 0 };
+
+  const lastCol = jobsSh.getLastColumn();
+  const values = jobsSh.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  const out = [];
+  for (let i = 0; i < values.length; i++) {
+    const row = values[i];
+    const job = rowToObj_(row, jobsHeader);
+
+    // Only include trashed items
+    const trashedAt = String(job.TrashedAt || '').trim();
+    if (!trashedAt) continue;
+
+    const owner = String(job.OwnerEmail || '').toLowerCase().trim();
+    const collabs = String(job.Collaborators || '').toLowerCase();
+
+    const isMine = owner === userEmail || (collabs && collabs.indexOf(userEmail) !== -1);
+    if (!isMine) continue;
+
+    out.push({
+      AscendJobKey: job.AscendJobKey,
+      App: job.App,
+      SourceId: job.SourceId,
+      Title: job.Title,
+      Subtitle: job.Subtitle,
+      Status: job.Status,
+      OpenUrl: job.OpenUrl,
+      DestinationUrl: job.DestinationUrl || '',
+      Kind: job.Kind || '',
+      AssetType: job.AssetType || '',
+      UpdatedAt: job.UpdatedAt,
+      TrashedAt: job.TrashedAt,
+      TrashedBy: job.TrashedBy
+    });
+  }
+
+  // Sort by TrashedAt desc (most recently trashed first)
+  out.sort(function(a, b) {
+    const at = Date.parse(a.TrashedAt || '') || 0;
+    const bt = Date.parse(b.TrashedAt || '') || 0;
+    return bt - at;
+  });
+
+  return { user_email: userEmail, jobs: out, count: out.length };
+}
+
+/**
  * nukeJob (ADMIN ONLY)
  * Required:
  *  - user_email  (caller identity)
@@ -711,7 +928,7 @@ function nukeJob_(p) {
     const jobsHeader = getHeaderMap_(jobsSh);
     ensureHeaders_(jobsHeader, [
       'AscendJobKey','App','SourceId','Title','Subtitle','Status','OpenUrl','OwnerEmail','Collaborators','CreatedAt','UpdatedAt','LastTouchedBy','Tags','ParentAscendJobKey','IsDeleted','DestinationUrl',
-      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl'
+      'Kind','AssetType','TemplateId','StateJson','DriveFolderId','DrivePngFileId','DrivePngOpenUrl','TrashedAt','TrashedBy'
     ]);
 
     const dashHeader = getHeaderMap_(dashSh);

@@ -1207,6 +1207,60 @@ textarea:focus {
   pointer-events: none;
 }
 
+/* Restore button (trash lane) */
+.ascend-job-card-restore {
+  border: none;
+  background: transparent;
+  color: var(--ascend-color-success);
+  opacity: 0.80;
+
+  width: 28px;
+  height: 28px;
+  padding: 0;
+
+  border-radius: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  align-self: center;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+
+  transition: background-color var(--ascend-transition-fast),
+    color var(--ascend-transition-fast),
+    opacity var(--ascend-transition-fast);
+}
+
+.ascend-job-card-restore:hover {
+  background-color: rgba(72, 187, 120, 0.15);
+  color: var(--ascend-color-success);
+  opacity: 1;
+}
+
+/* Trash row styling */
+.ascend-row-trash {
+  opacity: 0.7;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.ascend-row-trash .ascend-row-label {
+  color: var(--ascend-color-text-muted);
+}
+
+/* Trashed item card styling */
+.ascend-trash-card {
+  opacity: 0.75;
+}
+
+.ascend-trash-card .ascend-job-card-provenance.is-trashed {
+  filter: grayscale(0.4);
+}
+
 /* Empty-state text inside a lane */
 .ascend-job-list-empty {
   font-size: 0.74rem;

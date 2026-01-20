@@ -206,6 +206,98 @@
     return String(app || "").toUpperCase() + ":" + String(sourceId || "");
   }
 
+  // ---- Trash helpers (FileRoom API) ----
+
+  function trashFileRoomJob_(ascendJobKey, callback) {
+    const session = loadSession();
+    if (!session || !session.userEmail) {
+      if (callback) callback({ ok: false, error: 'Not logged in' });
+      return;
+    }
+
+    const callbackName =
+      "ascendTrashJobCallback_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000));
+
+    window[callbackName] = function (payload) {
+      try {
+        if (callback) callback(payload);
+      } finally {
+        try { delete window[callbackName]; } catch (e) {}
+      }
+    };
+
+    const url = new URL(FILEROOM_API_BASE);
+    url.searchParams.set("action", "trashJob");
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("ascend_job_key", ascendJobKey);
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
+  function restoreFileRoomJob_(ascendJobKey, callback) {
+    const session = loadSession();
+    if (!session || !session.userEmail) {
+      if (callback) callback({ ok: false, error: 'Not logged in' });
+      return;
+    }
+
+    const callbackName =
+      "ascendRestoreJobCallback_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000));
+
+    window[callbackName] = function (payload) {
+      try {
+        if (callback) callback(payload);
+      } finally {
+        try { delete window[callbackName]; } catch (e) {}
+      }
+    };
+
+    const url = new URL(FILEROOM_API_BASE);
+    url.searchParams.set("action", "restoreJob");
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("ascend_job_key", ascendJobKey);
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
+  function requestTrashedJobs_(callback) {
+    const session = loadSession();
+    if (!session || !session.userEmail) {
+      if (callback) callback({ jobs: [] });
+      return;
+    }
+
+    const callbackName =
+      "ascendTrashedJobsCallback_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000));
+
+    window[callbackName] = function (payload) {
+      try {
+        const jobs = (payload && payload.data && payload.data.jobs) || (payload && payload.jobs) || [];
+        if (callback) callback({ jobs: jobs });
+      } finally {
+        try { delete window[callbackName]; } catch (e) {}
+      }
+    };
+
+    const url = new URL(FILEROOM_API_BASE);
+    url.searchParams.set("action", "listTrashedJobsForUser");
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
   function upsertFileRoomJob_(params) {
     if (!params) return;
 
@@ -334,12 +426,14 @@
     renderCopydeskHopper([]);
     renderCodeDeskHopper([]); // safe no-op if lane not present yet
     renderFileRoomHopper([]);
+    renderTrashLane([]); // trash lane empty-state
 
     // Refresh hopper lanes for this user
     requestArtStartJobs();
     requestCopydeskJobs();
     requestCodeDeskTemplates(); // templates are static; still refresh on login
     requestFileRoomOutput();
+    requestAndRenderTrash(); // load trash items
 
     // When user returns from a CodeDesk tab, refresh working + output lanes immediately.
     // Guard so we don't add multiple focus listeners across logins.
@@ -702,13 +796,23 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         e.preventDefault();
         e.stopPropagation();
 
-        const ok = window.confirm("Sure?");
+        const ok = window.confirm("Move to trash?");
         if (!ok) return;
 
-        const manifest = buildDeletionManifestForWorkingFile_(wf);
-        try { ascendNuke_(manifest, { source: "ascend_codedesk_lane", wf: wf }); } catch (_e) {}
+        // Working files have AscendJobKey format: CODEDESK_WF:<id>
+        const workingKey = "CODEDESK_WF:" + wfId;
 
-        renderCodeDeskHopper(items);
+        // Immediate UI removal for responsiveness
+        card.remove();
+
+        // Call trash API
+        trashFileRoomJob_(workingKey, function(result) {
+          // Also clean up localStorage working file
+          const manifest = buildDeletionManifestForWorkingFile_(wf);
+          try { ascendNuke_(manifest, { source: "ascend_codedesk_lane", wf: wf }); } catch (_e) {}
+          // Refresh hoppers
+          try { requestFileRoomOutput(); } catch (e) {}
+        });
       });
 
       card.appendChild(mainBtn);
@@ -1133,50 +1237,143 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         evt.preventDefault();
         evt.stopPropagation();
 
-        const ok = window.confirm("Sure?");
+        const ok = window.confirm("Move to trash?");
         if (!ok) return;
 
-        // Build a manifest (even if Phase 1 keeps today’s behavior)
-        const manifest = {
-          request_id: "delreq_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000)),
-          object: {
-            kind: "fileroom_row",
-            id: String(item.RowId || item.Id || item.JobId || item.AssetId || item.FileId || ""),
-            name: String(item.title || item.Title || item.name || item.Name || "")
-          },
-          policy: {
-            mode: "nuclear",
-            drive: { action: "trash" }
-          },
-          targets: {
-            client_local: true,
-            hopper_db: true,
-            fileroom: true,
-            drive: true
-          }
-        };
+        // Get the AscendJobKey for this item
+        const ascendJobKey = item.AscendJobKey || item.ascend_job_key || "";
 
-        try { window.__ASCEND_LAST_DELETE_MANIFEST__ = manifest; } catch(_e) {}
+        if (!ascendJobKey) {
+          // Fallback: immediate UI removal if no key (legacy behavior)
+          card.remove();
+          return;
+        }
 
-        // Immediate UI removal (authoritative visual behavior)
+        // Immediate UI removal for responsiveness
         card.remove();
 
-        // Best-effort backend delete if an API exists (safe no-op if not)
-        try {
-          const id = manifest.object.id || "";
-          if (FILEROOM_API_BASE && id) {
-            fetch(FILEROOM_API_BASE, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "delete", id: String(id) }),
-            }).catch(() => {});
-          }
-        } catch (e) {}
+        // Call trash API
+        trashFileRoomJob_(ascendJobKey, function(result) {
+          // Refresh the hopper to ensure consistency
+          try { requestFileRoomOutput(); } catch (e) {}
+        });
       });
 
       card.appendChild(mainBtn);
       card.appendChild(deleteBtn);
       lane.appendChild(card);
+    });
+  }
+
+  // ---- Trash Lane ----
+
+  function renderTrashLane(jobs) {
+    const lane = document.getElementById("ascend-trash-list");
+    if (!lane) return;
+
+    lane.innerHTML = "";
+
+    if (!jobs || !jobs.length) {
+      const empty = document.createElement("div");
+      empty.className = "ascend-job-list-empty";
+      empty.textContent = "Trash is empty";
+      lane.appendChild(empty);
+      return;
+    }
+
+    jobs.forEach((item) => {
+      const originRaw = item.App || item.app || "";
+      const origin = String(originRaw).trim().toLowerCase();
+
+      const isArtStart = origin === "artstart";
+      const isCopydesk = origin === "copydesk";
+      const isCodeDesk = origin === "codedesk";
+
+      const title = item.Title || item.title || item.Name || item.name || "Untitled";
+      const trashedAt = item.TrashedAt || item.trashed_at || "";
+      const trashedDate = trashedAt ? formatShortDate(trashedAt) : "";
+
+      const card = document.createElement("div");
+      card.className = "ascend-job-card ascend-trash-card";
+
+      const mainBtn = document.createElement("button");
+      mainBtn.type = "button";
+      mainBtn.className = "ascend-job-card-main";
+
+      // Provenance badge
+      const prov = document.createElement("div");
+      prov.className = "ascend-job-card-provenance is-trashed";
+      if (isArtStart) prov.className += " is-artstart";
+      if (isCopydesk) prov.className += " is-copydesk";
+      if (isCodeDesk) prov.className += " is-codedesk";
+
+      const provText = document.createElement("span");
+      provText.textContent = isCopydesk ? "C" : (isCodeDesk ? "Q" : "A");
+      prov.appendChild(provText);
+
+      const textStack = document.createElement("div");
+      textStack.className = "ascend-job-card-stack";
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "ascend-job-card-title";
+      titleEl.textContent = title;
+
+      const timeEl = document.createElement("div");
+      timeEl.className = "ascend-job-card-time";
+      timeEl.textContent = trashedDate ? "TRASHED " + trashedDate.toUpperCase() : "";
+
+      textStack.appendChild(titleEl);
+      if (timeEl.textContent) textStack.appendChild(timeEl);
+
+      mainBtn.appendChild(prov);
+      mainBtn.appendChild(textStack);
+
+      // Open behavior (if url exists)
+      mainBtn.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        const url = item.OpenUrl || item.open_url || "";
+        if (url && String(url).indexOf("http") === 0) {
+          window.open(String(url), "_blank", "noopener");
+        }
+      });
+
+      // Restore button (↩)
+      const restoreBtn = document.createElement("button");
+      restoreBtn.type = "button";
+      restoreBtn.className = "ascend-job-card-restore";
+      restoreBtn.textContent = "↩";
+      restoreBtn.setAttribute("aria-label", "Restore from trash");
+      restoreBtn.title = "Restore";
+
+      restoreBtn.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+
+        const ascendJobKey = item.AscendJobKey || item.ascend_job_key || "";
+        if (!ascendJobKey) return;
+
+        // Immediate UI removal for responsiveness
+        card.remove();
+
+        restoreFileRoomJob_(ascendJobKey, function(result) {
+          // Refresh both trash and main hoppers
+          requestTrashedJobs_(function(data) {
+            renderTrashLane(data.jobs || []);
+          });
+          try { requestFileRoomOutput(); } catch (e) {}
+        });
+      });
+
+      card.appendChild(mainBtn);
+      card.appendChild(restoreBtn);
+      lane.appendChild(card);
+    });
+  }
+
+  function requestAndRenderTrash() {
+    requestTrashedJobs_(function(data) {
+      renderTrashLane(data.jobs || []);
     });
   }
 
@@ -1686,6 +1883,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
   window.AscendDebug.requestCopydeskJobs = requestCopydeskJobs;
   window.AscendDebug.requestFileRoomOutput = requestFileRoomOutput;
   window.AscendDebug.requestCodeDeskTemplates = requestCodeDeskTemplates;
+  window.AscendDebug.requestAndRenderTrash = requestAndRenderTrash;
+  window.AscendDebug.trashFileRoomJob = trashFileRoomJob_;
+  window.AscendDebug.restoreFileRoomJob = restoreFileRoomJob_;
   window.AscendDebug.CODEDESK_MANIFEST_URL = CODEDESK_MANIFEST_URL;
   window.AscendDebug.loadSession = loadSession;
 
