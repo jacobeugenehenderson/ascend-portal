@@ -633,6 +633,11 @@ function doGet(e) {
         body = {};
       }
 
+      // Copy common URL parameters to body (for calls that don't use payload JSON)
+      if (p.jobId && !body.jobId) body.jobId = String(p.jobId);
+      if (p.user_email && !body.user_email) body.user_email = String(p.user_email);
+      if (p.limit && !body.limit) body.limit = String(p.limit);
+
       // Ensure action is set (payload may omit it)
       body.action = body.action || body.fn || String(p.action);
 
