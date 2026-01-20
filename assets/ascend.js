@@ -1246,10 +1246,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
         // Check if this is a CodeDesk output with an active working file
         const itemApp = String(item.App || item.app || "").toLowerCase();
-        const itemKind = String(item.Kind || item.kind || "").toLowerCase();
         const sourceId = item.SourceId || item.sourceId || item.source_id || "";
 
-        if (itemApp === "codedesk" && itemKind === "output" && sourceId) {
+        if (itemApp === "codedesk" && sourceId) {
           // Check if working file still exists (not trashed)
           const workingFiles = window.__ASCEND_CODEDESK_WORKING_ITEMS__ || [];
           const hasActiveWorking = workingFiles.some(function(wf) {
@@ -1282,10 +1281,12 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
   // ---- Trash Modal ----
 
   function openTrashModal_() {
+    console.log("[Ascend] openTrashModal_ called");
     const modal = document.getElementById("ascend-trash-modal");
+    console.log("[Ascend] modal element=", modal);
     if (!modal) return;
 
-    modal.style.display = "";
+    modal.style.display = "block";
     modal.setAttribute("aria-hidden", "false");
 
     requestAndRenderTrash();
@@ -1932,8 +1933,13 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     const closeBtn = document.getElementById("ascend-trash-modal-close");
     const backdrop = document.getElementById("ascend-trash-modal-backdrop");
 
+    console.log("[Ascend] initTrashModal: trigger=", trigger, "closeBtn=", closeBtn);
+
     if (trigger) {
-      trigger.addEventListener("click", function () {
+      trigger.addEventListener("click", function (evt) {
+        evt.preventDefault();
+        evt.stopPropagation();
+        console.log("[Ascend] Trash trigger clicked");
         openTrashModal_();
       });
     }
