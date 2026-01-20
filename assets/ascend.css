@@ -854,7 +854,7 @@ textarea:focus {
   border-radius: 0;
   padding: 0.65rem 1rem;
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.75rem;
 
@@ -1048,23 +1048,23 @@ textarea:focus {
   background: var(--ascend-hopper-stage-3) !important;
 }
 
-/* Language lettermark for translation jobs */
-.ascend-lang-mark {
+/* Progress cell: wraps dots + optional language lettermark */
+.ascend-hopper-progress-cell {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 22px;
-  padding: 0 6px;
-  margin-right: 8px;
-  border-radius: 4px;
-  background: var(--ascend-hopper-stage-3);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  gap: 8px;
+}
+
+/* Language lettermark for translation jobs - matches FileRoom provenance style */
+.ascend-lang-mark {
+  font-size: 1rem;
+  font-weight: var(--ascend-weight-bold);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  flex-shrink: 0;
+  color: color-mix(in srgb, var(--ascend-color-text-main) 92%, white 8%);
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="2"],

@@ -1523,15 +1523,23 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
       const progress = buildHopperProgress_(stage);
 
-      // Translation subjobs get all three lights lit + language lettermark
-      let langMark = null;
+      // Translation subjobs get all three lights lit
       if (isTranslation) {
         progress.classList.add("is-translation");
+      }
+
+      // Wrap progress (and optional langMark) in a container for grid layout
+      const progressCell = document.createElement("div");
+      progressCell.className = "ascend-hopper-progress-cell";
+      progressCell.appendChild(progress);
+
+      if (isTranslation) {
         const langCode = job.Lang || job.Language || job.LanguageCode || job.Locale || "";
         if (langCode) {
-          langMark = document.createElement("div");
+          const langMark = document.createElement("span");
           langMark.className = "ascend-lang-mark";
           langMark.textContent = langCode.toUpperCase();
+          progressCell.appendChild(langMark);
         }
       }
 
@@ -1542,24 +1550,15 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       title.className = "ascend-job-card-title";
       title.textContent = job.JobName || job.JobId || "Untitled doc";
 
-      const context = document.createElement("div");
-      context.className = "ascend-job-card-context";
-
-      // Translation jobs: no context (lang shown in lettermark, title is doc name)
-      // Regular jobs: could show context if needed
-      context.textContent = "";
-
       const time = document.createElement("div");
       time.className = "ascend-job-card-time";
       const cutoffPretty = formatShortDate(job.Cutoff);
       time.textContent = cutoffPretty ? "CUTOFF: " + cutoffPretty.toUpperCase() : "";
 
       textStack.appendChild(title);
-      if (context.textContent) textStack.appendChild(context);
       if (time.textContent) textStack.appendChild(time);
 
-      mainBtn.appendChild(progress);
-      if (langMark) mainBtn.appendChild(langMark);
+      mainBtn.appendChild(progressCell);
       mainBtn.appendChild(textStack);
 
       mainBtn.addEventListener("click", () => {
