@@ -942,46 +942,54 @@ function _codedeskHasFinishedPairing(activeId){
 }
 
 // Export a PNG dataURL from the current SVG composition (best effort).
-function codedeskPngDataUrlFromCurrentSvg(){
+async function codedeskPngDataUrlFromCurrentSvg(scale){
   try {
-    if (typeof codedeskExportPngDataUrl === 'function') {
-      const out = codedeskExportPngDataUrl();
+    if (typeof window.codedeskExportPngDataUrl === 'function') {
+      console.log('[codedeskPngDataUrlFromCurrentSvg] calling window.codedeskExportPngDataUrl...');
+      const out = await window.codedeskExportPngDataUrl(scale || 3);
+      console.log('[codedeskPngDataUrlFromCurrentSvg] got result, length:', out ? out.length : 0);
       if (out) return out;
+    } else {
+      console.warn('[codedeskPngDataUrlFromCurrentSvg] window.codedeskExportPngDataUrl not available');
     }
-  } catch(e){}
-
-  try {
-    const svg = document.querySelector('#qrWrap svg');
-    if (!svg) return '';
-    const xml = new XMLSerializer().serializeToString(svg);
-
-    const svg64 = btoa(unescape(encodeURIComponent(xml)));
-    const image64 = 'data:image/svg+xml;base64,' + svg64;
-
-    const img = new Image();
-    img.src = image64;
-
-    // Synchronous fallback is not possible; return empty so caller can skip PNG.
-    // (Canonical export path should provide a proper PNG export helper.)
-    return '';
   } catch(e){
-    return '';
+    console.error('[codedeskPngDataUrlFromCurrentSvg] error:', e);
   }
+
+  // Fallback: return empty (PNG export requires the render engine helper)
+  console.warn('[codedeskPngDataUrlFromCurrentSvg] returning empty (no PNG available)');
+  return '';
 }
 
 window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
+  console.log('[codedeskSyncFileRoomNow] called, reason:', reason);
 
   // HARD GATE: never sync until setup is done (filename ceremony).
-  if (window.__CODEDESK_SETUP_DONE__ !== true) return false;
+  if (window.__CODEDESK_SETUP_DONE__ !== true) {
+    console.warn('[codedeskSyncFileRoomNow] SETUP_DONE not true, aborting');
+    return false;
+  }
 
   const workingId = (window.__CODEDESK_CURRENT_WF_ID__ || window.codedeskGetActiveWorkingFileId?.() || '').trim();
-  if (!workingId) return false;
+  if (!workingId) {
+    console.warn('[codedeskSyncFileRoomNow] no workingId, aborting');
+    return false;
+  }
+  console.log('[codedeskSyncFileRoomNow] workingId:', workingId);
 
   const rec = window.codedeskGetWorkingFileRecord ? window.codedeskGetWorkingFileRecord(workingId) : null;
-  if (!rec) return false;
+  if (!rec) {
+    console.warn('[codedeskSyncFileRoomNow] no record for workingId, aborting');
+    return false;
+  }
+  console.log('[codedeskSyncFileRoomNow] rec:', rec);
 
   const folderId = String(window.CODEDESK_FILEROOM_FOLDER_ID || '').trim();
-  if (!folderId) return false;
+  if (!folderId) {
+    console.warn('[codedeskSyncFileRoomNow] no folderId, aborting');
+    return false;
+  }
+  console.log('[codedeskSyncFileRoomNow] folderId:', folderId);
 
   // Always prefer the live filename field as the caption/base name
   const caption = String(document.getElementById('codedeskFilename')?.value || '').trim() || String(rec.name || '').trim() || 'codedesk';
@@ -1019,12 +1027,15 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 
   // 2) Upload PNG to Drive + upsert delivered row
   try {
+    console.log('[codedeskSyncFileRoomNow] exporting PNG...');
     const pngDataUrl = await codedeskPngDataUrlFromCurrentSvg(3);
+    console.log('[codedeskSyncFileRoomNow] pngDataUrl length:', pngDataUrl ? pngDataUrl.length : 0);
     if (pngDataUrl) {
 
       // canonical filename (always .png)
       const fileName = (base || 'CODEDESK') + '.png';
 
+      console.log('[codedeskSyncFileRoomNow] POSTing to FileRoom API:', window.CODEDESK_FILEROOM_API_BASE);
       const res = await fetch(window.CODEDESK_FILEROOM_API_BASE, {
         method: 'POST',
         credentials: 'omit',
@@ -1050,7 +1061,11 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
       });
 
       const j = await res.json();
-      if (!j || !j.ok) return false;
+      console.log('[codedeskSyncFileRoomNow] API response:', j);
+      if (!j || !j.ok) {
+        console.error('[codedeskSyncFileRoomNow] API returned error:', j);
+        return false;
+      }
 
       const data = j.data || {};
       const driveId = String(data.drive_file_id || '').trim();

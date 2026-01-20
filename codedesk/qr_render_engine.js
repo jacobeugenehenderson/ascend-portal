@@ -1222,6 +1222,81 @@ async function downloadPng(filename = 'qr.png', scale = 3) {
 
 window.downloadPng = downloadPng;
 
+// Export PNG as data URL (for FileRoom upsert)
+async function codedeskExportPngDataUrl(scale = 3) {
+  const src = getCurrentSvgNode();
+  if (!src) return '';
+
+  const svg = src.cloneNode(true);
+  applyPhoneBackgroundForExport(svg);
+
+  const xml = new XMLSerializer().serializeToString(svg);
+  const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml' }));
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+
+  await new Promise(res => { img.onload = res; img.onerror = res; img.src = url; });
+
+  const w = img.naturalWidth || parseInt(svg.getAttribute('width')) || 512;
+  const h = img.naturalHeight || parseInt(svg.getAttribute('height')) || 512;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(w * scale);
+  canvas.height = Math.round(h * scale);
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const topA = Number(document.getElementById('bgTopAlpha')?.value ?? 100);
+  const botA = Number(document.getElementById('bgBottomAlpha')?.value ?? 100);
+  const transparent = (topA <= 0 && botA <= 0);
+
+  if (!transparent) {
+    const topHex = document.getElementById('bgTopHex')?.value
+                || document.getElementById('bgTopColor')?.value || '#FFFFFF';
+    const botHex = document.getElementById('bgBottomHex')?.value
+                || document.getElementById('bgBottomColor')?.value || '#FFFFFF';
+
+    const hexToRgb = (h) => {
+      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h || '');
+      if (!m) return { r: 255, g: 255, b: 255 };
+      return {
+        r: parseInt(m[1], 16),
+        g: parseInt(m[2], 16),
+        b: parseInt(m[3], 16),
+      };
+    };
+
+    const rgba = (hex, pct) => {
+      const { r, g, b } = hexToRgb(hex);
+      const a = Math.max(0, Math.min(100, Number(pct))) / 100;
+      return `rgba(${r}, ${g}, ${b}, ${a})`;
+    };
+
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, rgba(topHex, topA));
+    grad.addColorStop(1, rgba(botHex, botA));
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch (_) {}
+  }
+
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  URL.revokeObjectURL(url);
+
+  try {
+    return canvas.toDataURL('image/png');
+  } catch (e) {
+    console.error('[codedeskExportPngDataUrl] toDataURL failed:', e);
+    return '';
+  }
+}
+
+window.codedeskExportPngDataUrl = codedeskExportPngDataUrl;
+
 // =====================================================
 //  Boot: Initial render + design gates
 // =====================================================
