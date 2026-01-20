@@ -1610,6 +1610,12 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
         // Dismiss from copydesk hopper DB (marks as dismissed for this user)
         dismissCopydeskJob(job.JobId);
+
+        // Also add to FileRoom trash for restore capability
+        const ascendJobKey = "COPYDESK:" + (job.JobId || "");
+        trashFileRoomJob_(ascendJobKey, function() {
+          try { requestAndRenderTrash(); } catch (e) {}
+        });
       });
 
       card.appendChild(mainBtn);
