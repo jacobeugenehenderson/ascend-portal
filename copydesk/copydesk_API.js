@@ -847,31 +847,19 @@ function handleUpdateSegment_(body) {
   }
 
   // If this is a translation sheet: first meaningful edit marks the subjob as TOUCHED.
-// (Meaningful = working text changes from its prior saved value.)
-  var _debug = { lang: lang, jobId: '', subjobStatus: null, path: 'none', hopperError: null };
-
+  // (Meaningful = working text changes from its prior saved value.)
   if (lang) {
     var jobId = (body && body.jobId != null) ? String(body.jobId).trim() : '';
-    _debug.jobId = jobId;
-
     if (jobId) {
       var st0 = getSubjobStatus_(jobId, lang);
-      _debug.subjobStatus = st0;
-
       var isFinished = (String(st0.status || '').toLowerCase() === 'finished');
       var hasTouched = !!(st0 && st0.touchedAt);
-      _debug.isFinished = isFinished;
-      _debug.hasTouched = hasTouched;
 
       if (!isFinished && !hasTouched) {
         var prev = String(existingWorking == null ? '' : existingWorking);
         var next = String(finalWorking == null ? '' : finalWorking);
-        _debug.prev = prev;
-        _debug.next = next;
-        _debug.textChanged = (prev !== next);
 
         if (prev !== next) {
-          _debug.path = 'firstTouch';
           var touchedAtIso = new Date().toISOString();
           setSubjobStatus_(jobId, lang, 'touched', (st0 && st0.finishedAt) ? st0.finishedAt : '', touchedAtIso);
 
@@ -883,17 +871,14 @@ function handleUpdateSegment_(body) {
               spreadsheetId: spreadsheetId,
               touchedAt: touchedAtIso
             });
-            _debug.hopperRecorded = true;
           } catch (eHopper) {
-            _debug.hopperError = String(eHopper);
+            // Best effort
           }
         }
       }
 
       // Ensure hopper record exists for already-touched but not-finished subjobs
-      // (handles case where touchedAt was set before hopper recording was added)
       if (!isFinished && hasTouched) {
-        _debug.path = 'ensureExisting';
         try {
           ensureTranslationSubjobInHopper_({
             jobId: jobId,
@@ -901,9 +886,8 @@ function handleUpdateSegment_(body) {
             spreadsheetId: spreadsheetId,
             touchedAt: st0.touchedAt || new Date().toISOString()
           });
-          _debug.hopperEnsured = true;
         } catch (eHopper) {
-          _debug.hopperError = String(eHopper);
+          // Best effort
         }
       }
     }
@@ -930,8 +914,7 @@ function handleUpdateSegment_(body) {
     row: targetRow,
     styleLabel: effectiveStyleLabel || null,
     lastEditor: user,
-    lastEditTime: now,
-    _debug: _debug
+    lastEditTime: now
   };
 }
 
@@ -2817,8 +2800,8 @@ function recordTranslationSubjobInHopper_(o) {
     parentCollaboratorsCsv = String(parentData[7] || '').trim();
   }
 
-  // Build subjob name with language suffix
-  var subjobName = parentJobName ? (parentJobName + ' [' + lang + ']') : (parentJobId + ' [' + lang + ']');
+  // Use parent job name (language shown via lettermark in frontend)
+  var subjobName = parentJobName || parentJobId;
 
   var touchedAtIso = o.touchedAt || new Date().toISOString();
 

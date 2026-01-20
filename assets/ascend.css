@@ -1033,11 +1033,19 @@ textarea:focus {
   opacity: 1 !important;
 }
 
-/* Translation subjobs: show all three lights lit (teal/accent) */
+/* Translation subjobs: show all three lights lit (orange/teal/blue) */
 .ascend-hopper-progress.is-translation .ascend-hopper-progress-dot {
-  background: var(--ascend-hopper-stage-3) !important;
   border-color: transparent !important;
   opacity: 1 !important;
+}
+.ascend-hopper-progress.is-translation .ascend-hopper-progress-dot[data-step="1"] {
+  background: var(--ascend-hopper-stage-1) !important;
+}
+.ascend-hopper-progress.is-translation .ascend-hopper-progress-dot[data-step="2"] {
+  background: var(--ascend-hopper-stage-2) !important;
+}
+.ascend-hopper-progress.is-translation .ascend-hopper-progress-dot[data-step="3"] {
+  background: var(--ascend-hopper-stage-3) !important;
 }
 
 /* Language lettermark for translation jobs */

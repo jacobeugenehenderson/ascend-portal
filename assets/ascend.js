@@ -1545,20 +1545,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       const context = document.createElement("div");
       context.className = "ascend-job-card-context";
 
-      const contextParts = [];
-      if (kind === "subjob") {
-        const lang = job.Language || job.Lang || job.LanguageCode || job.Locale || "";
-        if (lang) contextParts.push(lang);
-        const parent =
-          job.ParentJobName ||
-          job.ParentJobId ||
-          job.ParentJobID ||
-          job.ParentId ||
-          job.Parent ||
-          "";
-        if (parent) contextParts.push(parent);
-      }
-      context.textContent = contextParts.join(" • ");
+      // Translation jobs: no context (lang shown in lettermark, title is doc name)
+      // Regular jobs: could show context if needed
+      context.textContent = "";
 
       const time = document.createElement("div");
       time.className = "ascend-job-card-time";
