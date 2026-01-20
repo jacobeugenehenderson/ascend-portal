@@ -1548,7 +1548,12 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
       const title = document.createElement("div");
       title.className = "ascend-job-card-title";
-      title.textContent = job.JobName || job.JobId || "Untitled doc";
+      // Strip bracketed language suffix from title (e.g., "Job Name [IT]" -> "Job Name")
+      let titleText = job.JobName || job.JobId || "Untitled doc";
+      if (isTranslation) {
+        titleText = titleText.replace(/\s*\[[A-Z]{2,3}\]\s*$/i, "").trim();
+      }
+      title.textContent = titleText;
 
       const time = document.createElement("div");
       time.className = "ascend-job-card-time";
