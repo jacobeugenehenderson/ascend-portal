@@ -877,6 +877,21 @@ function handleUpdateSegment_(body) {
           }
         }
       }
+
+      // Ensure hopper record exists for already-touched but not-finished subjobs
+      // (handles case where touchedAt was set before hopper recording was added)
+      if (!isFinished && hasTouched) {
+        try {
+          ensureTranslationSubjobInHopper_({
+            jobId: jobId,
+            lang: lang,
+            spreadsheetId: spreadsheetId,
+            touchedAt: st0.touchedAt || new Date().toISOString()
+          });
+        } catch (eHopper) {
+          // Best effort
+        }
+      }
     }
   }
 
@@ -2811,6 +2826,26 @@ function recordTranslationSubjobInHopper_(o) {
   } else {
     sh.appendRow(payload);
   }
+}
+
+// Ensure a translation subjob exists in the hopper (create only if missing).
+// Used when subjob was already touched before hopper recording was added.
+function ensureTranslationSubjobInHopper_(o) {
+  if (!o || !o.jobId || !o.lang) return;
+
+  var parentJobId = String(o.jobId || '').trim();
+  var lang = String(o.lang || '').trim().toUpperCase();
+  var subjobId = parentJobId + ':::TL:::' + lang;
+
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  // Only create if not exists
+  var row = findRowByJobId_(sh, subjobId);
+  if (row) return; // Already exists, nothing to do
+
+  // Delegate to the full record function
+  recordTranslationSubjobInHopper_(o);
 }
 
 // Mark a translation subjob as finished/closed in the hopper

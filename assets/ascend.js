@@ -1523,9 +1523,16 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
       const progress = buildHopperProgress_(stage);
 
-      // Translation subjobs get all three lights lit
+      // Translation subjobs get all three lights lit + language lettermark
+      let langMark = null;
       if (isTranslation) {
         progress.classList.add("is-translation");
+        const langCode = job.Lang || job.Language || job.LanguageCode || job.Locale || "";
+        if (langCode) {
+          langMark = document.createElement("div");
+          langMark.className = "ascend-lang-mark";
+          langMark.textContent = langCode.toUpperCase();
+        }
       }
 
       const textStack = document.createElement("div");
@@ -1563,6 +1570,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       if (time.textContent) textStack.appendChild(time);
 
       mainBtn.appendChild(progress);
+      if (langMark) mainBtn.appendChild(langMark);
       mainBtn.appendChild(textStack);
 
       mainBtn.addEventListener("click", () => {

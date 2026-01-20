@@ -1040,6 +1040,25 @@ textarea:focus {
   opacity: 1 !important;
 }
 
+/* Language lettermark for translation jobs */
+.ascend-lang-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 6px;
+  margin-right: 8px;
+  border-radius: 4px;
+  background: var(--ascend-hopper-stage-3);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="2"],
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="2"] {
   background: var(--ascend-hopper-stage-2);
