@@ -858,42 +858,67 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
     return;
   }
 
-  // One-time setup: only treat as "already set up" if an actual working-file record exists.
+  // One-time setup: only treat as "already set up" if an actual working-file record exists
+  // AND matches the current filename (otherwise it's a stale record from a different session).
   const existingId = _getActiveWorkingFileId();
   const existingRec = existingId && (typeof window.codedeskGetWorkingFileRecord === 'function'
     ? window.codedeskGetWorkingFileRecord(existingId)
     : null);
+  console.log('[✨ click] existingId:', existingId, 'existingRec:', existingRec, 'fname:', fname);
   if (existingRec) {
-    try { codedeskRemoveSetupStep && codedeskRemoveSetupStep(); } catch(e){}
-    return;
+    // Check if the existing record's name matches the current filename
+    const existingName = String(existingRec.name || '').trim().toLowerCase();
+    const currentName = fname.toLowerCase();
+    console.log('[✨ click] existingName:', existingName, 'currentName:', currentName);
+    if (existingName === currentName) {
+      // Matching record exists - setup is already complete
+      console.log('[✨ click] names match, removing setup step (already complete)');
+      try { codedeskRemoveSetupStep && codedeskRemoveSetupStep(); } catch(e){}
+      return;
+    }
+    // Names don't match - this is a stale record, clear it and proceed with new setup
+    console.log('[✨ click] names mismatch, clearing stale record and proceeding');
+    try { localStorage.removeItem('codedesk_active_working_file_v1'); } catch(e){}
+    try { typeof CODEDESK_ACTIVE_WF_KEY !== 'undefined' && localStorage.removeItem(CODEDESK_ACTIVE_WF_KEY); } catch(e){}
+    try { window.CODEDESK_ACTIVE_WORKING_FILE_ID = ''; } catch(e){}
+    try { window.__CODEDESK_CURRENT_WF_ID__ = ''; } catch(e){}
   }
 
   // Hard guard: prevent double-fire (capture + fast clicks + weirdness)
   if (window.__CODEDESK_FINISH_INFLIGHT__ === true) {
+    console.log('[✨ click] already in-flight, skipping');
     try { e && e.preventDefault && e.preventDefault(); } catch(_e){}
     try { e && e.stopPropagation && e.stopPropagation(); } catch(_e){}
     return;
   }
   window.__CODEDESK_FINISH_INFLIGHT__ = true;
+  console.log('[✨ click] proceeding with setup...');
 
   try {
     const prevText = (btn.textContent || '').trim();
     btn.disabled = true;
     btn.classList.add('is-busy');
     btn.textContent = 'Working…';
+    console.log('[✨ click] button set to Working…');
     try { btn.setAttribute('title', 'Working…'); } catch(e){}
 
     let id = '';
-    try { id = window.codedeskFinishSetup(); } catch(err){}
+    try { id = window.codedeskFinishSetup(); } catch(err){ console.error('[✨ click] codedeskFinishSetup error:', err); }
+    console.log('[✨ click] codedeskFinishSetup returned id:', id);
 
     // Full one-time pairing: creates/updates the Drive PNG + FileRoom rows
     try {
       if (id && window.codedeskSyncFileRoomNow) {
+        console.log('[✨ click] calling codedeskSyncFileRoomNow...');
         await window.codedeskSyncFileRoomNow('setup');
+        console.log('[✨ click] codedeskSyncFileRoomNow complete');
+      } else {
+        console.warn('[✨ click] skipping sync: id=', id, 'codedeskSyncFileRoomNow=', !!window.codedeskSyncFileRoomNow);
       }
-    } catch(e){}
+    } catch(e){ console.error('[✨ click] codedeskSyncFileRoomNow error:', e); }
 
     // Disappear forever (button + finish step)
+    console.log('[✨ click] removing setup step');
     try { codedeskRemoveSetupStep && codedeskRemoveSetupStep(); } catch(e){}
 
   } finally {
