@@ -425,15 +425,10 @@ function applyStyleToRow_(row, styleLabel) {
   // Insert a card into __latestCards at the correct orderIndex position
   function insertCardOptimistic_(newCard) {
     if (!newCard || newCard.orderIndex == null) return;
-    var insertAt = Number(newCard.orderIndex);
 
-    // Shift existing cards at or after insertAt
-    for (var i = 0; i < __latestCards.length; i++) {
-      var c = __latestCards[i];
-      if (c && typeof c.orderIndex === 'number' && c.orderIndex >= insertAt) {
-        c.orderIndex++;
-      }
-    }
+    // NOTE: Do NOT shift existing cards here.
+    // insertGhostSlotOptimistic_ already handles shifting when inserting structure.
+    // This function just adds the new card at its designated slot.
 
     __latestCards.push(newCard);
 
