@@ -320,8 +320,8 @@
 }
 
 :root {
-  /* One authoritative rhythm unit for both lanes (min height + content-fit) */
-  --copydesk-unit-min-h: 140px;  /* enough room for body text before overflow */
+  /* One authoritative rhythm unit for both lanes — edit card gets primacy */
+  --copydesk-unit-min-h: 240px;  /* card UI fits comfortably like a physical card */
   --copydesk-unit-gap: 0.6rem;
 
   /* Vertical rhythm inside the boxes */
