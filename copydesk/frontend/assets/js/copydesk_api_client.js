@@ -183,27 +183,7 @@
     return postJson_({ action: 'deleteCard', jobId: jobId, cardId: cardId });
   };
 
-  // moveCard(jobId, cardId, direction, newSegmentId)
-  // Moving a card disassociates it from its original segment.
-  // newSegmentId should be 'new:xxx' to indicate this card will create a new segment on push.
-  window.copydeskMoveCard = async function (jobId, cardId, direction, newSegmentId) {
-    if (!jobId) throw new Error('Missing jobId');
-    if (!cardId) throw new Error('Missing cardId');
-    direction = direction === 'up' ? 'up' : 'down';
-
-    return postJson_({
-      action: 'mutateCard',
-      jobId: jobId,
-      op: 'move',
-      payload: {
-        cardId: cardId,
-        direction: direction,
-        segmentId: newSegmentId || null
-      }
-    });
-  };
-
-  // (duplicate copydeskMutateCard removed; defined above)
+  // (moveCard removed - cards cannot be moved, only created/deleted)
 
   // --- Ghost slot (structure) API ---
 

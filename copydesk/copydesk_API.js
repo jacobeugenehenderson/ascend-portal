@@ -1064,88 +1064,7 @@ function handleDeleteCard_(body) {
   return { ok: true };
 }
 
-function handleMoveCard_(body) {
-  var jobId = body && body.jobId ? String(body.jobId) : '';
-  var cardId = body && body.cardId ? String(body.cardId) : '';
-  var direction = body && body.direction === 'up' ? 'up' : 'down';
-
-  // Optional: allow move to also persist the moving card's current draft in the SAME call
-  var workingStyle = (body && body.workingStyle != null) ? String(body.workingStyle) : null;
-  var workingText  = (body && body.workingText  != null) ? String(body.workingText)  : null;
-
-  // Disassociation: moving a card changes its segmentId to 'new:xxx'
-  var segmentId = (body && body.segmentId != null) ? String(body.segmentId) : null;
-
-  if (!jobId) return { ok: false, error: 'Missing jobId' };
-  if (!cardId) return { ok: false, error: 'Missing cardId' };
-
-  var spreadsheetId = getSpreadsheetIdForJobId_(jobId);
-  if (!spreadsheetId) return { ok: false, error: 'Job not found for jobId: ' + jobId };
-
-  var ss = SpreadsheetApp.openById(spreadsheetId);
-  var cards = readCards_(ss) || [];
-
-  // Find moving card
-  var moving = null;
-  for (var i = 0; i < cards.length; i++) {
-    if (cards[i] && String(cards[i].cardId) === cardId) {
-      moving = cards[i];
-      break;
-    }
-  }
-  if (!moving) return { ok: false, error: 'Card not found: ' + cardId };
-
-  var cur = (moving && moving.orderIndex != null) ? Number(moving.orderIndex) : NaN;
-  if (isNaN(cur)) return { ok: false, error: 'Card has invalid orderIndex: ' + cardId };
-
-  var target = (direction === 'up') ? (cur - 1) : (cur + 1);
-  if (target < 0) return { ok: true, cards: cards };
-
-  // Find occupant card (if any) at the target slot
-  var occupant = null;
-  for (var j = 0; j < cards.length; j++) {
-    if (cards[j] && Number(cards[j].orderIndex) === target) {
-      occupant = cards[j];
-      break;
-    }
-  }
-
-  // Build fields update for moving card
-  var movingFields = { orderIndex: target };
-  if (workingStyle != null) movingFields.workingStyle = workingStyle;
-  if (workingText  != null) movingFields.workingText  = workingText;
-  if (segmentId    != null) movingFields.segmentId    = segmentId;
-
-  if (!occupant) {
-    // Move into empty slot: update only moving row
-    var ok1 = updateCardRowFields_(ss, moving.cardId, movingFields);
-    if (!ok1) return { ok: false, error: 'Card not found: ' + cardId };
-
-    // Update in-memory array so frontend can use returned cards immediately
-    moving.orderIndex = target;
-    if (workingStyle != null) moving.workingStyle = workingStyle;
-    if (workingText  != null) moving.workingText  = workingText;
-    if (segmentId    != null) moving.segmentId    = segmentId;
-
-    return { ok: true, cards: cards };
-  }
-
-  // Swap with occupant
-  var okA = updateCardRowFields_(ss, moving.cardId, movingFields);
-  var okB = updateCardRowFields_(ss, occupant.cardId, { orderIndex: cur });
-
-  if (!okA) return { ok: false, error: 'Card not found: ' + moving.cardId };
-  if (!okB) return { ok: false, error: 'Card not found: ' + occupant.cardId };
-
-  // Update in-memory array
-  moving.orderIndex = target;
-  if (workingStyle != null) moving.workingStyle = workingStyle;
-  if (workingText  != null) moving.workingText  = workingText;
-  if (segmentId    != null) moving.segmentId    = segmentId;
-  occupant.orderIndex = cur;
-
-  return { ok: true, cards: cards };
-}
+// (handleMoveCard_ removed - cards cannot be moved, only created/deleted)
 
 function handleMutateCard_(body) {
   var jobId = body.jobId;
@@ -1165,14 +1084,7 @@ function handleMutateCard_(body) {
     });
   }
 
-  if (op === 'move') {
-    return handleMoveCard_({
-      jobId: jobId,
-      cardId: payload.cardId,
-      direction: payload.direction,
-      segmentId: payload.segmentId  // Disassociation: new segmentId after move
-    });
-  }
+  // (move op removed - cards cannot be moved, only created/deleted)
 
   if (op === 'delete') {
     return handleDeleteCard_({

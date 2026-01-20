@@ -465,45 +465,6 @@ function applyStyleToRow_(row, styleLabel) {
     }
   }
 
-  // Move a card up or down in __latestCards
-  // Moving disassociates the card from its original segment (becomes a "new" card)
-  function moveCardOptimistic_(cardId, direction) {
-    var cardIdx = -1;
-    var card = null;
-    for (var i = 0; i < __latestCards.length; i++) {
-      if (__latestCards[i] && __latestCards[i].cardId === cardId) {
-        cardIdx = i;
-        card = __latestCards[i];
-        break;
-      }
-    }
-    if (!card) return;
-
-    var currentOrder = card.orderIndex;
-    var targetOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
-
-    // Find the card at target position and swap
-    for (var j = 0; j < __latestCards.length; j++) {
-      var other = __latestCards[j];
-      if (other && other.orderIndex === targetOrder) {
-        other.orderIndex = currentOrder;
-        card.orderIndex = targetOrder;
-        break;
-      }
-    }
-
-    // Disassociate: if card was linked to a real segment, change to new:xxx
-    // This frees the original committed segment to spawn a new child card
-    if (card.segmentId && card.segmentId.indexOf('new:') !== 0) {
-      card.segmentId = 'new:' + uuid_();
-    }
-
-    // Re-sort
-    __latestCards.sort(function (a, b) {
-      return (a.orderIndex || 0) - (b.orderIndex || 0);
-    });
-  }
-
   // Insert a ghost slot optimistically
   function insertGhostSlotOptimistic_(insertAt) {
     // Shift existing ghost slots
@@ -983,7 +944,6 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
 
       var railTop = document.createElement('div');
       railTop.className = 'card-rail-top';
-      railTop.appendChild(makeBtn('⬆', 'Move up', 'move-up'));
       railTop.appendChild(makeBtn('⊕', 'Create card above', 'add-above'));
 
       var railMid = document.createElement('div');
@@ -992,7 +952,6 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
 
       var railBot = document.createElement('div');
       railBot.className = 'card-rail-bot';
-      railBot.appendChild(makeBtn('⬇', 'Move down', 'move-down'));
       railBot.appendChild(makeBtn('⊕', 'Create card below', 'add-below'));
 
       rail.appendChild(railTop);
@@ -1899,27 +1858,7 @@ if (currentVal2 === ZWSP) currentVal2 = '';
       var isLocked = (statusLower === 'locked' || statusLower === 'closed');
 
       try {
-        if (role === 'move-up' || role === 'move-down') {
-          // Optimistic UI update - no overlay needed for fast operations
-          await flushAllCardSaves_();
-
-          var dir = (role === 'move-up') ? 'up' : 'down';
-
-          // Optimistic update first (this also disassociates the card)
-          moveCardOptimistic_(cardId, dir);
-          renderBothLanes_(isLocked);
-
-          // Get the new segmentId (moveCardOptimistic_ changes it to new:xxx)
-          var movedCard = __latestCards.find(function (c) { return c && c.cardId === cardId; });
-          var newSegmentId = movedCard ? movedCard.segmentId : null;
-
-          // Then persist to server (fire-and-forget with error recovery)
-          window.copydeskMoveCard(jobId, cardId, dir, newSegmentId).catch(function (err) {
-            console.error('moveCard error, reloading:', err);
-            boot(); // Recovery: reload from server on error
-          });
-
-        } else if (role === 'add-above' || role === 'add-below') {
+        if (role === 'add-above' || role === 'add-below') {
           await flushAllCardSaves_();
 
           // Use the slot index (authoritative) — NOT DOM child index.
