@@ -34,6 +34,9 @@
   // CodeDesk working-file registry key (shared contract with CodeDesk)
   const CODEDESK_STORE_KEY = "codedesk_working_files_v1";
 
+  // Track working files pending deletion to prevent bounce-back from server refresh
+  const PENDING_WF_DELETIONS = {};
+
   // FileRoom (output / delivery layer)
   const FILEROOM_URL =
     "https://jacobeugenehenderson.github.io/ascend-portal/fileroom/frontend/index.html";
@@ -744,6 +747,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       const wfName = (wf && wf.name) ? String(wf.name) : "QR Working File";
       if (!wfId) return;
 
+      // Skip items pending deletion (prevents bounce-back from server refresh)
+      if (PENDING_WF_DELETIONS[wfId]) return;
+
       const card = document.createElement("div");
       card.className = "ascend-job-card";
       card.dataset.codedesk = "working";
@@ -799,10 +805,13 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         // Working files have AscendJobKey format: CODEDESK_WF:<id>
         const workingKey = "CODEDESK_WF:" + wfId;
 
+        // Mark as pending deletion to prevent bounce-back from server refresh
+        PENDING_WF_DELETIONS[wfId] = true;
+
         // Immediate UI removal for responsiveness
         card.remove();
 
-        // Immediately clean up localStorage and in-memory cache to prevent bounce-back
+        // Immediately clean up localStorage and in-memory cache
         const manifest = buildDeletionManifestForWorkingFile_(wf);
         try { ascendNuke_(manifest, { source: "ascend_codedesk_lane", wf: wf }); } catch (_e) {}
         try {
