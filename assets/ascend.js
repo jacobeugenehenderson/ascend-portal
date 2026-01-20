@@ -1263,10 +1263,13 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         const sourceId = item.SourceId || item.sourceId || item.source_id || "";
 
         if (itemApp === "codedesk" && sourceId) {
-          // Check if working file still exists (not trashed)
+          // Check if working file still exists (not trashed or pending deletion)
           const workingFiles = window.__ASCEND_CODEDESK_WORKING_ITEMS__ || [];
           const hasActiveWorking = workingFiles.some(function(wf) {
-            return String(wf.id || "") === String(sourceId);
+            const wfId = String(wf.id || "");
+            // Skip if this working file is pending deletion
+            if (PENDING_WF_DELETIONS[wfId]) return false;
+            return wfId === String(sourceId);
           });
 
           if (hasActiveWorking) {
