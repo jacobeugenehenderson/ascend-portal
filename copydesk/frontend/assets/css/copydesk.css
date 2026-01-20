@@ -321,7 +321,7 @@
 
 :root {
   /* One authoritative rhythm unit for both lanes (min height + content-fit) */
-  --copydesk-unit-min-h: 96px;   /* headline row should feel “single-row-ish” */
+  --copydesk-unit-min-h: 140px;  /* enough room for body text before overflow */
   --copydesk-unit-gap: 0.6rem;
 
   /* Vertical rhythm inside the boxes */
