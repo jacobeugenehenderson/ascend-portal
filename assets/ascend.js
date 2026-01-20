@@ -1608,12 +1608,8 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         // Immediate UI removal
         card.remove();
 
-        // Move to trash via FileRoom API
-        const ascendJobKey = "COPYDESK:" + (job.JobId || "");
-        trashFileRoomJob_(ascendJobKey, function(result) {
-          try { requestCopydeskJobs(); } catch (e) {}
-          try { requestAndRenderTrash(); } catch (e) {}
-        });
+        // Dismiss from copydesk hopper DB (marks as dismissed for this user)
+        dismissCopydeskJob(job.JobId);
       });
 
       card.appendChild(mainBtn);
