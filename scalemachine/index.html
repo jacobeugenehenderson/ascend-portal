@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1" />
+
+  <title>Scale Machine — 12-Key Practice Grid</title>
+  <meta
+    name="description"
+    content="Interactive 12-key scale practice grid with transposition and scale type controls." />
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="scales.css" />
+</head>
+<body>
+  <!-- Tuning selection overlay - shown until user picks their instrument -->
+  <div id="tuningOverlay" class="tuning-overlay">
+    <div class="tuning-overlay-content">
+      <h2 class="tuning-overlay-title">Select Tuning</h2>
+      <select id="tuningOverlaySelect" class="tuning-overlay-select">
+        <option value="" disabled selected>Choose…</option>
+      </select>
+      <button id="tuningOverlayStart" class="tuning-overlay-button" disabled>
+        Continue
+      </button>
+    </div>
+  </div>
+
+  <header class="app-header">
+    <h1 class="app-title">Scale Machine</h1>
+    <p class="app-tagline">
+      12-key practice grid with transposition-aware scales.
+    </p>
+  </header>
+
+  <main class="app-main">
+    <!-- Control panel -->
+    <section
+      class="control-panel"
+      aria-label="Scale configuration controls">
+      <div class="control-group">
+        <label for="transpositionSelect" class="control-label">
+          Tuning
+        </label>
+        <select id="transpositionSelect" class="control-select">
+          <option value="" disabled selected>
+            Loading transposition options…
+          </option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="scaleTypeSelect" class="control-label">
+          Type
+        </label>
+        <select id="scaleTypeSelect" class="control-select">
+          <option value="" disabled selected>
+            Loading scale types…
+          </option>
+        </select>
+      </div>
+    </section>
+
+<!-- Active listening / magic box -->
+<section
+  class="listen-panel"
+  aria-label="Smart listening active scale">
+
+  <!-- Collapsed strip that blossoms into the magic box -->
+  <button
+    id="listenButton"
+    type="button"
+    class="listen-strip listen-button"
+    aria-expanded="false"
+    aria-controls="activeScaleBox">
+
+    <span class="listen-strip-left">
+      <span class="listen-strip-icon" aria-hidden="true">🎧</span>
+      <span class="listen-strip-label">Listen</span>
+    </span>
+
+    <span id="listenStatus" class="listen-status">
+    </span>
+  </button>
+
+<div id="activeScaleBox" class="active-scale-box" style="display:none;">
+  <div class="listen-active-header-row">
+    <div class="listen-header-left">
+      <div id="activeScaleStatus" class="listen-active-status"></div>
+      <div id="activeTunerStrip" class="listen-tuner-strip">
+        <div class="tuner-gauge">
+          <div class="tuner-gauge-flat"></div>
+          <div class="tuner-gauge-green"></div>
+          <div class="tuner-gauge-sharp"></div>
+          <div class="tuner-center-line"></div>
+          <div id="tunerNeedle" class="tuner-needle"></div>
+        </div>
+        <div id="tunerLabel" class="tuner-label"></div>
+      </div>
+    </div>
+    <button
+      type="button"
+      class="listen-reset-button"
+      onclick="window.SCALE_APP && window.SCALE_APP.resetListen && window.SCALE_APP.resetListen()"
+    >
+      Reset
+    </button>
+  </div>
+  <div id="activeScaleStage" class="active-scale-stage">
+    <!-- Active VexFlow staff will be rendered here -->
+  </div>
+</div></section>
+
+    <!-- Scale grid -->
+    <section
+      class="grid-section"
+      aria-label="12-key scale grid">
+      <div id="gridStatus" class="grid-status">
+          Select your tuning and scale type
+      </div>
+
+      <div
+        id="scaleNotation"
+        class="notation-grid"
+        aria-live="polite">
+        <!-- Staff rows will be injected by scales.app.js -->
+      </div>
+
+    <noscript>
+      <p class="no-js-warning">
+        This tool requires JavaScript to generate scales. Please enable
+        JavaScript in your browser.
+      </p>
+    </noscript>
+   </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>
+      The first step in the directions to Carnegie Hall.
+    </p>
+  </footer>
+
+    <!-- VexFlow for staff notation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/3.0.9/vexflow-debug.js"></script>
+
+  <!-- Config first (control panel), then app logic + listening -->
+  <script src="scales.config.js" defer></script>
+  <script src="scales.app.js" defer></script>
+  <script src="scales.listen.js" defer></script>
+</body>
+</html>
