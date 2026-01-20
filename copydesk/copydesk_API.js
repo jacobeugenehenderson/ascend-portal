@@ -742,12 +742,19 @@ function handleSaveDraft_(body) {
   }
 
   // Delegate to existing logic (styleLabel == workingStyle)
-  return handleUpdateSegment_({
+  var result = handleUpdateSegment_({
     spreadsheetId: spreadsheetId,
     segmentId: segmentId,
     workingText: workingText,
     styleLabel: workingStyle
   });
+
+  // Mark job as edited for hopper indicator (stage 2: two lights)
+  if (result && result.ok && jobId) {
+    try { markJobAsEdited_(jobId); } catch (e) { /* best effort */ }
+  }
+
+  return result;
 }
 function handleUpdateSegment_(body) {
 
@@ -2669,7 +2676,8 @@ function ensureHopperSheet_(ss) {
     'OwnerEmail',
     'CollaboratorsCsv',
     'DismissedByCsv',
-    'ClosedAt'
+    'ClosedAt',
+    'Edited'  // Column K: TRUE when job content has been edited/touched
   ]);
 }
 
@@ -2877,6 +2885,26 @@ function updateHopperOnClose_(jobId, closedAtIso) {
   if (closedAtIso) sh.getRange(row, 10).setValue(String(closedAtIso));
 }
 
+// Mark a job as edited in the hopper (for stage 2 indicator: two lights)
+function markJobAsEdited_(jobId) {
+  if (!jobId) return;
+
+  // Don't mark translation subjobs (they have their own 3-light indicator)
+  if (String(jobId).indexOf(':::TL:::') >= 0) return;
+
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var row = findRowByJobId_(sh, jobId);
+  if (!row) return;
+
+  // Only set Edited (K) if not already set
+  var current = sh.getRange(row, 11).getValue();
+  if (!current) {
+    sh.getRange(row, 11).setValue('TRUE');
+  }
+}
+
 function upsertDeliverableForClose_(jobId, ss, ownerEmail) {
   if (!jobId || !ss) return;
 
@@ -3072,7 +3100,7 @@ function handleListCopydeskJobsForUser_(body) {
     return { ok: true, jobs: out0, items: out0 };
   }
 
-  var rows = sh.getRange(2, 1, last - 1, 10).getValues();
+  var rows = sh.getRange(2, 1, last - 1, 11).getValues();
   var out = [];
 
   rows.forEach(function (r) {
@@ -3100,6 +3128,7 @@ function handleListCopydeskJobsForUser_(body) {
     var collaboratorsCsv = String(r[7] || '').trim();
     var dismissedCsv = String(r[8] || '').trim();
     var closedAt = String(r[9] || '').trim();
+    var edited = String(r[10] || '').trim().toUpperCase() === 'TRUE';
 
     // If userEmail provided, enforce visibility and dismissal
     // IMPORTANT: OwnerEmail may be blank in web-app contexts (Session.getActiveUser() can be empty).
@@ -3137,6 +3166,7 @@ function handleListCopydeskJobsForUser_(body) {
       Cutoff: cutoff,
       Status: status || 'Open',
       ClosedAt: closedAt,
+      Edited: edited,                    // TRUE when job content has been edited (stage 2 indicator)
       // Translation-specific fields
       Lang: langCode,                    // Language code (e.g., 'FR', 'ES') if translation job
       ParentJobId: isTranslation ? parentJobId : '',  // Parent job ID if translation

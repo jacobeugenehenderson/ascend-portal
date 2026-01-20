@@ -1098,15 +1098,14 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     const status = normalizeStatus_(job && job.Status);
 
     if (kind === "subjob") {
-      // Subjobs enter the Hopper already "in progress":
-      // Stage 2 by default, Stage 3 only when finished.
-      if (status === "finished") return 3;
-      return 2;
+      // Translation subjobs returning from fileroom show all 3 lights
+      // (handled via is-translation class in CSS, but return 3 for consistency)
+      return 3;
     }
 
     // Copydesk job
-    // Stage 1: open
-    // Stage 2: within closing window
+    // Stage 1: job created/set up (not yet edited)
+    // Stage 2: file has been edited/touched
     // Stage 3: closed OR past Cutoff (EOFD Eastern) (exit hopper)
 
     // Date-driven exit (EOFD Eastern): once Cutoff day has passed,
@@ -1114,7 +1113,17 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     if (job && job.Cutoff && isPastEofdEastern_(job.Cutoff)) return 3;
 
     if (status === "closed") return 3;
-    if (status.indexOf("closing") !== -1) return 2;
+
+    // Check if file has been edited/touched (stage 2)
+    const edited = !!(job && (
+      job.Edited || job.edited ||
+      job.Modified || job.modified ||
+      job.Touched || job.touched ||
+      job.HasContent || job.hasContent || job.has_content ||
+      job.LastEditedAt || job.ModifiedAt || job.EditedAt
+    ));
+    if (edited) return 2;
+
     return 1;
   }
 
@@ -1555,13 +1564,16 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       }
       title.textContent = titleText;
 
-      const time = document.createElement("div");
-      time.className = "ascend-job-card-time";
-      const cutoffPretty = formatShortDate(job.Cutoff);
-      time.textContent = cutoffPretty ? "CUTOFF: " + cutoffPretty.toUpperCase() : "";
-
       textStack.appendChild(title);
-      if (time.textContent) textStack.appendChild(time);
+
+      // Translation jobs: only show status, language code, and job name (no cutoff row)
+      if (!isTranslation) {
+        const time = document.createElement("div");
+        time.className = "ascend-job-card-time";
+        const cutoffPretty = formatShortDate(job.Cutoff);
+        time.textContent = cutoffPretty ? "CUTOFF: " + cutoffPretty.toUpperCase() : "";
+        if (time.textContent) textStack.appendChild(time);
+      }
 
       mainBtn.appendChild(progressCell);
       mainBtn.appendChild(textStack);
