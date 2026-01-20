@@ -267,8 +267,33 @@
   }
 
   // ---------------------------
-  // Styles injection (authoritative)
+  // Styles injection (authoritative) + caching
   // ---------------------------
+  var STYLES_CSS_CACHE_KEY = 'copydesk_styles_css_cache';
+  var STYLES_CACHE_TTL = 5 * 60 * 1000; // 5 minutes TTL
+
+  function getCachedStylesCss_() {
+    try {
+      var raw = sessionStorage.getItem(STYLES_CSS_CACHE_KEY);
+      if (!raw) return null;
+      var cached = JSON.parse(raw);
+      if (!cached || !cached.css || !cached.timestamp) return null;
+      if (Date.now() - cached.timestamp > STYLES_CACHE_TTL) return null;
+      return cached.css;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCachedStylesCss_(css) {
+    try {
+      sessionStorage.setItem(STYLES_CSS_CACHE_KEY, JSON.stringify({
+        css: css,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
+  }
+
   function injectStylesCss_(cssText) {
     if (!cssText) return;
     var id = 'copydesk-styles-css';
@@ -1070,20 +1095,31 @@
           (res && res.job && res.job.stylesCss) ? res.job.stylesCss :
           '';
 
-        // Fallback: if lang call omitted stylesCss, fetch base job once to get stylesCss
-        if (!stylesCss && __lang) {
-          try {
-            var baseRes = await getJobNoLang_(__jobId);
-            stylesCss =
-              (baseRes && baseRes.stylesCss) ? baseRes.stylesCss :
-              (baseRes && baseRes.styles_css) ? baseRes.styles_css :
-              (baseRes && baseRes.stylesCSS) ? baseRes.stylesCSS :
-              (baseRes && baseRes.css) ? baseRes.css :
-              (baseRes && baseRes.job && baseRes.job.stylesCss) ? baseRes.job.stylesCss :
-              '';
-          } catch (e) {
-            // Ignore; page still renders—just without injected typography
+        // Try cached stylesCss first before making a second fetch
+        if (!stylesCss) {
+          var cachedCss = getCachedStylesCss_();
+          if (cachedCss) {
+            stylesCss = cachedCss;
+          } else if (__lang) {
+            // Fallback: if lang call omitted stylesCss and no cache, fetch base job once
+            try {
+              var baseRes = await getJobNoLang_(__jobId);
+              stylesCss =
+                (baseRes && baseRes.stylesCss) ? baseRes.stylesCss :
+                (baseRes && baseRes.styles_css) ? baseRes.styles_css :
+                (baseRes && baseRes.stylesCSS) ? baseRes.stylesCSS :
+                (baseRes && baseRes.css) ? baseRes.css :
+                (baseRes && baseRes.job && baseRes.job.stylesCss) ? baseRes.job.stylesCss :
+                '';
+            } catch (e) {
+              // Ignore; page still renders—just without injected typography
+            }
           }
+        }
+
+        // Cache stylesCss for future use (avoids double fetch next time)
+        if (stylesCss) {
+          setCachedStylesCss_(stylesCss);
         }
 
         injectStylesCss_(stylesCss);

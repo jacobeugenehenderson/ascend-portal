@@ -228,17 +228,48 @@ function renderHeader(job) {
 
     if (!collabInput.dataset.wired) {
       collabInput.dataset.wired = '1';
-      function saveCollaborators_() {
+
+      // Debounced collaborators save (same pattern as card autosave)
+      var collabSaveTimer = null;
+      var collabLastSaved = collabStr || '';
+
+      function saveCollaboratorsNow_() {
         if (!job || !job.jobId) return;
         if (isClosed) return;
 
         var v = String(collabInput.value || '').trim();
+        if (v === collabLastSaved) return; // No change, skip save
+
+        collabLastSaved = v;
         if (window.copydeskUpdateJobMeta) {
           window.copydeskUpdateJobMeta(job.jobId, { collaborators: v }).catch(function () {});
         }
       }
 
-      collabInput.addEventListener('blur', saveCollaborators_);
+      function scheduleCollabSave_(delayMs) {
+        if (collabSaveTimer) {
+          clearTimeout(collabSaveTimer);
+          collabSaveTimer = null;
+        }
+        collabSaveTimer = setTimeout(function () {
+          collabSaveTimer = null;
+          saveCollaboratorsNow_();
+        }, delayMs || 800);
+      }
+
+      // Debounced save on input
+      collabInput.addEventListener('input', function () {
+        scheduleCollabSave_(800);
+      });
+
+      // Immediate save on blur
+      collabInput.addEventListener('blur', function () {
+        if (collabSaveTimer) {
+          clearTimeout(collabSaveTimer);
+          collabSaveTimer = null;
+        }
+        saveCollaboratorsNow_();
+      });
 
       // Save on Enter (Shift+Enter allowed to insert newline if this ever becomes a textarea)
       collabInput.addEventListener('keydown', function (e) {
@@ -255,8 +286,57 @@ function renderHeader(job) {
   }
 }
 // Styles are authoritative from the spreadsheet; no invented defaults.
+// Styles caching: styles rarely change, so cache them in sessionStorage for faster loads.
 
-    function ensureStyles_(styles) {
+  var STYLES_CACHE_KEY = 'copydesk_styles_cache';
+  var STYLES_CSS_CACHE_KEY = 'copydesk_styles_css_cache';
+  var STYLES_CACHE_TTL = 5 * 60 * 1000; // 5 minutes TTL
+
+  function getCachedStyles_() {
+    try {
+      var raw = sessionStorage.getItem(STYLES_CACHE_KEY);
+      if (!raw) return null;
+      var cached = JSON.parse(raw);
+      if (!cached || !cached.styles || !cached.timestamp) return null;
+      if (Date.now() - cached.timestamp > STYLES_CACHE_TTL) return null;
+      return cached.styles;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCachedStyles_(styles) {
+    try {
+      sessionStorage.setItem(STYLES_CACHE_KEY, JSON.stringify({
+        styles: styles,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
+  }
+
+  function getCachedStylesCss_() {
+    try {
+      var raw = sessionStorage.getItem(STYLES_CSS_CACHE_KEY);
+      if (!raw) return null;
+      var cached = JSON.parse(raw);
+      if (!cached || !cached.css || !cached.timestamp) return null;
+      if (Date.now() - cached.timestamp > STYLES_CACHE_TTL) return null;
+      return cached.css;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCachedStylesCss_(css) {
+    try {
+      sessionStorage.setItem(STYLES_CSS_CACHE_KEY, JSON.stringify({
+        css: css,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
+  }
+
+  function ensureStyles_(styles) {
     return (styles && styles.length) ? styles : [];
   }
 
@@ -336,6 +416,135 @@ function applyStyleToRow_(row, styleLabel) {
 
     if (value) sel.value = value;
     return sel;
+  }
+
+  // ---------------------------
+  // Optimistic UI helpers (avoid full boot() for structural changes)
+  // ---------------------------
+
+  // Insert a card into __latestCards at the correct orderIndex position
+  function insertCardOptimistic_(newCard) {
+    if (!newCard || newCard.orderIndex == null) return;
+    var insertAt = Number(newCard.orderIndex);
+
+    // Shift existing cards at or after insertAt
+    for (var i = 0; i < __latestCards.length; i++) {
+      var c = __latestCards[i];
+      if (c && typeof c.orderIndex === 'number' && c.orderIndex >= insertAt) {
+        c.orderIndex++;
+      }
+    }
+
+    __latestCards.push(newCard);
+
+    // Sort by orderIndex for consistent rendering
+    __latestCards.sort(function (a, b) {
+      return (a.orderIndex || 0) - (b.orderIndex || 0);
+    });
+  }
+
+  // Remove a card from __latestCards by cardId
+  function removeCardOptimistic_(cardId) {
+    var removedIndex = -1;
+    for (var i = 0; i < __latestCards.length; i++) {
+      if (__latestCards[i] && __latestCards[i].cardId === cardId) {
+        removedIndex = __latestCards[i].orderIndex;
+        __latestCards.splice(i, 1);
+        break;
+      }
+    }
+
+    // Shift remaining cards down if needed
+    if (removedIndex >= 0) {
+      for (var j = 0; j < __latestCards.length; j++) {
+        var c = __latestCards[j];
+        if (c && typeof c.orderIndex === 'number' && c.orderIndex > removedIndex) {
+          c.orderIndex--;
+        }
+      }
+    }
+  }
+
+  // Move a card up or down in __latestCards
+  function moveCardOptimistic_(cardId, direction) {
+    var cardIdx = -1;
+    var card = null;
+    for (var i = 0; i < __latestCards.length; i++) {
+      if (__latestCards[i] && __latestCards[i].cardId === cardId) {
+        cardIdx = i;
+        card = __latestCards[i];
+        break;
+      }
+    }
+    if (!card) return;
+
+    var currentOrder = card.orderIndex;
+    var targetOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
+
+    // Find the card at target position and swap
+    for (var j = 0; j < __latestCards.length; j++) {
+      var other = __latestCards[j];
+      if (other && other.orderIndex === targetOrder) {
+        other.orderIndex = currentOrder;
+        card.orderIndex = targetOrder;
+        break;
+      }
+    }
+
+    // Re-sort
+    __latestCards.sort(function (a, b) {
+      return (a.orderIndex || 0) - (b.orderIndex || 0);
+    });
+  }
+
+  // Insert a ghost slot optimistically
+  function insertGhostSlotOptimistic_(insertAt) {
+    // Shift existing ghost slots
+    for (var i = 0; i < __latestGhostSlots.length; i++) {
+      if (__latestGhostSlots[i] >= insertAt) {
+        __latestGhostSlots[i]++;
+      }
+    }
+    __latestGhostSlots.push(insertAt);
+    __latestGhostSlots.sort(function (a, b) { return a - b; });
+
+    // Also shift cards at or after insertAt
+    for (var j = 0; j < __latestCards.length; j++) {
+      var c = __latestCards[j];
+      if (c && typeof c.orderIndex === 'number' && c.orderIndex >= insertAt) {
+        c.orderIndex++;
+      }
+    }
+  }
+
+  // Remove a ghost slot optimistically
+  function removeGhostSlotOptimistic_(slotIndex) {
+    var idx = __latestGhostSlots.indexOf(slotIndex);
+    if (idx >= 0) {
+      __latestGhostSlots.splice(idx, 1);
+    }
+
+    // Shift remaining ghost slots down
+    for (var i = 0; i < __latestGhostSlots.length; i++) {
+      if (__latestGhostSlots[i] > slotIndex) {
+        __latestGhostSlots[i]--;
+      }
+    }
+
+    // Also shift cards
+    for (var j = 0; j < __latestCards.length; j++) {
+      var c = __latestCards[j];
+      if (c && typeof c.orderIndex === 'number' && c.orderIndex > slotIndex) {
+        c.orderIndex--;
+      }
+    }
+  }
+
+  // Re-render both lanes without fetching from server
+  function renderBothLanes_(locked) {
+    renderCommitted_(__latestSegments, __latestCards, __latestGhostSlots);
+    renderCards_(__latestCards, __latestSegments, window.__latestStyles || [], locked);
+    scheduleSyncLaneRowHeights_();
   }
 
   // ---------------------------
@@ -1284,45 +1493,77 @@ function uuid_() {
           // If child already exists, just focus it (no duplicates).
           if (focusCardBySegmentId_(segId)) return;
 
-          await withOverlay_('Creating card…', async function () {
-            setStatus('saving', 'Creating card…', false);
+          // Optimistic card creation - no overlay needed
+          try {
+            await flushAllCardSaves_();
 
-            try {
-              await flushAllCardSaves_();
+            // Slot index is already on the clicked committed row (includes ghost slots).
+            var segIndex = Number(segEl.dataset.slotIndex || -1);
+            if (!(segIndex >= 0)) throw new Error('Missing slotIndex on committed row.');
 
-              // Slot index is already on the clicked committed row (includes ghost slots).
-              var segIndex = Number(segEl.dataset.slotIndex || -1);
-              if (!(segIndex >= 0)) throw new Error('Missing slotIndex on committed row.');
+            // Seed from the segment record (clone committed into the new card)
+            var seedText = '';
+            var seedStyle = '';
+            for (var i = 0; i < (__latestSegments || []).length; i++) {
+              if (__latestSegments[i] && __latestSegments[i].segmentId === segId) {
+                seedText = __latestSegments[i].committedText || '';
+                seedStyle = __latestSegments[i].committedStyle || '';
+                break;
+              }
+            }
 
-              // Seed from the segment record (clone committed into the new card)
-              var seedText = '';
-              var seedStyle = '';
-              for (var i = 0; i < (__latestSegments || []).length; i++) {
-                if (__latestSegments[i] && __latestSegments[i].segmentId === segId) {
-                  seedText = __latestSegments[i].committedText || '';
-                  seedStyle = __latestSegments[i].committedStyle || '';
-                  break;
+            var newCardId = 'card_' + uuid_();
+
+            // Check if job is locked
+            var statusLower = String((window.__copydeskJob && window.__copydeskJob.status) || '').toLowerCase();
+            var isLocked = (statusLower === 'locked' || statusLower === 'closed');
+
+            // Optimistic update: add card locally
+            var newCard = {
+              cardId: newCardId,
+              segmentId: segId,
+              orderIndex: segIndex,
+              workingStyle: seedStyle || 'Body',
+              workingText: seedText || ''
+            };
+            __latestCards.push(newCard);
+            __latestCards.sort(function (a, b) {
+              return (a.orderIndex || 0) - (b.orderIndex || 0);
+            });
+
+            renderBothLanes_(isLocked);
+
+            // Focus the new card immediately
+            setTimeout(function () { focusCardBySegmentId_(segId); }, 50);
+
+            // Create on server in background
+            window.copydeskCreateCard(jobId, {
+              segmentId: segId,
+              insertAt: segIndex,
+              seedText: seedText,
+              seedStyle: seedStyle
+            }).then(function (r) {
+              // Update the local card with server-assigned cardId if different
+              if (r && r.card && r.card.cardId) {
+                for (var i = 0; i < __latestCards.length; i++) {
+                  if (__latestCards[i] && __latestCards[i].cardId === newCardId) {
+                    __latestCards[i].cardId = r.card.cardId;
+                    // Update DOM
+                    var el = document.querySelector('.card[data-card-id="' + newCardId + '"]');
+                    if (el) el.dataset.cardId = r.card.cardId;
+                    break;
+                  }
                 }
               }
+            }).catch(function (err) {
+              console.error('createCard error, reloading:', err);
+              boot(); // Recovery: reload from server on error
+            });
 
-              // Create ONE child card for this committed segment (welded to same row)
-              await window.copydeskCreateCard(jobId, {
-                segmentId: segId,
-                insertAt: segIndex,      // aligned slot
-                seedText: seedText,      // clone committedText into card
-                seedStyle: seedStyle     // optional: default workingStyle = committedStyle
-              });
-
-              // Clean + deterministic: reload from server (no local index shifting)
-              await boot();
-
-              // Best-effort focus
-              focusCardBySegmentId_(segId);
-            } catch (err) {
-              console.error('createCard/open child error:', err);
-              setStatus('error', 'Create card failed.', true);
-            }
-          });
+          } catch (err) {
+            console.error('createCard/open child error:', err);
+            setStatus('error', 'Create card failed.', true);
+          }
         });
       }
     }
@@ -1643,75 +1884,114 @@ if (currentVal2 === ZWSP) currentVal2 = '';
       var activeRole = active && active.dataset ? active.dataset.role : '';
       var scrollY = window.scrollY;
 
+      // Check if job is locked
+      var statusLower = String((window.__copydeskJob && window.__copydeskJob.status) || '').toLowerCase();
+      var isLocked = (statusLower === 'locked' || statusLower === 'closed');
+
       try {
         if (role === 'move-up' || role === 'move-down') {
-          await withOverlay_('Reordering…', async function () {
-            await flushAllCardSaves_();
-            window.__copydeskRestore = { activeCardId: activeCardId, activeRole: activeRole, scrollY: scrollY };
+          // Optimistic UI update - no overlay needed for fast operations
+          await flushAllCardSaves_();
 
-            var dir = (role === 'move-up') ? 'up' : 'down';
-            await window.copydeskMoveCard(jobId, cardId, dir);
+          var dir = (role === 'move-up') ? 'up' : 'down';
 
-            // Source-of-truth reload (prevents local identity shifting)
-            await boot();
+          // Optimistic update first
+          moveCardOptimistic_(cardId, dir);
+          renderBothLanes_(isLocked);
+
+          // Then persist to server (fire-and-forget with error recovery)
+          window.copydeskMoveCard(jobId, cardId, dir).catch(function (err) {
+            console.error('moveCard error, reloading:', err);
+            boot(); // Recovery: reload from server on error
           });
 
         } else if (role === 'add-above' || role === 'add-below') {
-          await withOverlay_('Creating card…', async function () {
-            await flushAllCardSaves_();
-            window.__copydeskRestore = { activeCardId: activeCardId, activeRole: activeRole, scrollY: scrollY };
+          await flushAllCardSaves_();
 
-                        // Use the slot index (authoritative) — NOT DOM child index.
-            var baseSlot = Number(cardEl.dataset.slotIndex);
-            if (isNaN(baseSlot) || baseSlot < 0) {
-              throw new Error('Bad slotIndex on cardEl: ' + String(cardEl.dataset.slotIndex || ''));
+          // Use the slot index (authoritative) — NOT DOM child index.
+          var baseSlot = Number(cardEl.dataset.slotIndex);
+          if (isNaN(baseSlot) || baseSlot < 0) {
+            throw new Error('Bad slotIndex on cardEl: ' + String(cardEl.dataset.slotIndex || ''));
+          }
+
+          var insertAt = (role === 'add-below') ? (baseSlot + 1) : baseSlot;
+          var newSegId = 'new:' + uuid_();
+          var newCardId = 'card_' + uuid_();
+
+          // Optimistic update first
+          insertGhostSlotOptimistic_(insertAt);
+          var newCard = {
+            cardId: newCardId,
+            segmentId: newSegId,
+            orderIndex: insertAt,
+            workingStyle: 'Body',
+            workingText: ''
+          };
+          insertCardOptimistic_(newCard);
+          renderBothLanes_(isLocked);
+
+          // Focus the new card
+          setTimeout(function () {
+            var newCardEl = document.querySelector('.card[data-slot-index="' + insertAt + '"]');
+            if (newCardEl) {
+              var ta = newCardEl.querySelector('textarea');
+              if (ta) ta.focus();
             }
+          }, 50);
 
-            var insertAt = (role === 'add-below') ? (baseSlot + 1) : baseSlot;
+          // Create structure on server (fire-and-forget with error recovery)
+          if (!window.copydeskInsertGhostSlot) throw new Error('Missing copydeskInsertGhostSlot()');
 
-            // Create structure first: ghost slot in committed lane
-            if (!window.copydeskInsertGhostSlot) throw new Error('Missing copydeskInsertGhostSlot()');
+          (async function () {
+            try {
+              var r1 = await window.copydeskInsertGhostSlot(jobId, insertAt);
+              var r2 = await window.copydeskCreateCard(jobId, { segmentId: newSegId, insertAt: insertAt });
 
-            function isOk_(r) {
-              return !!(r && (r.ok === true || r.ok === 'true' || r.success === true || r.success === 'true'));
+              // Update the local card with server-assigned cardId if different
+              if (r2 && r2.card && r2.card.cardId) {
+                for (var i = 0; i < __latestCards.length; i++) {
+                  if (__latestCards[i] && __latestCards[i].cardId === newCardId) {
+                    __latestCards[i].cardId = r2.card.cardId;
+                    // Update DOM
+                    var el = document.querySelector('.card[data-card-id="' + newCardId + '"]');
+                    if (el) el.dataset.cardId = r2.card.cardId;
+                    break;
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('createCard error, reloading:', err);
+              boot(); // Recovery: reload from server on error
             }
-
-            var r1 = await window.copydeskInsertGhostSlot(jobId, insertAt);
-            if (!isOk_(r1)) {
-              throw new Error('insertGhostSlot failed: ' + JSON.stringify(r1));
-            }
-
-            // Then create the welded edit card for that new row
-            var r2 = await window.copydeskCreateCard(jobId, { segmentId: 'new:' + uuid_(), insertAt: insertAt });
-            if (!isOk_(r2)) {
-              throw new Error('createCard failed: ' + JSON.stringify(r2));
-            }
-
-            // Source-of-truth reload
-            await boot();
-          });
+          })();
 
         } else if (role === 'delete-card') {
-          await withOverlay_('Deleting…', async function () {
-            await flushAllCardSaves_();
-            window.__copydeskRestore = { activeCardId: activeCardId, activeRole: activeRole, scrollY: scrollY };
+          await flushAllCardSaves_();
 
-            var slotIndex = Number(cardEl.dataset.slotIndex);
-            var hasGhostHere =
-              Array.isArray(__latestGhostSlots) &&
-              __latestGhostSlots.indexOf(slotIndex) !== -1;
+          var slotIndex = Number(cardEl.dataset.slotIndex);
+          var hasGhostHere =
+            Array.isArray(__latestGhostSlots) &&
+            __latestGhostSlots.indexOf(slotIndex) !== -1;
 
-            // Always delete the card itself
-            await window.copydeskDeleteCard(jobId, cardId);
+          // Optimistic update first
+          removeCardOptimistic_(cardId);
+          if (hasGhostHere) {
+            removeGhostSlotOptimistic_(slotIndex);
+          }
+          renderBothLanes_(isLocked);
 
-            // If this card lived in a ghost slot, purge the structure too
-            if (hasGhostHere && window.copydeskDeleteGhostSlot) {
-              await window.copydeskDeleteGhostSlot(jobId, slotIndex);
+          // Delete on server (fire-and-forget with error recovery)
+          (async function () {
+            try {
+              await window.copydeskDeleteCard(jobId, cardId);
+              if (hasGhostHere && window.copydeskDeleteGhostSlot) {
+                await window.copydeskDeleteGhostSlot(jobId, slotIndex);
+              }
+            } catch (err) {
+              console.error('deleteCard error, reloading:', err);
+              boot(); // Recovery: reload from server on error
             }
-
-            // Source-of-truth reload
-            await boot();
-          });
+          })();
         }
 
       } catch (err) {
@@ -1771,8 +2051,24 @@ if (currentVal2 === ZWSP) currentVal2 = '';
             // Cards lane: lock editing without blocking selection/copy.
             // - textareas/inputs become readOnly (selectable)
             // - selects/buttons become disabled (non-clickable)
+            // - card containers become non-selectable (but textarea text remains copyable)
             var cardsList = document.getElementById('cards-list');
             if (cardsList) {
+              // Make card containers non-selectable when closed
+              var cards = cardsList.querySelectorAll('.card');
+              for (var c = 0; c < cards.length; c++) {
+                var card = cards[c];
+                if (closed) {
+                  card.style.userSelect = 'none';
+                  card.style.webkitUserSelect = 'none';
+                  card.style.msUserSelect = 'none';
+                } else {
+                  card.style.userSelect = '';
+                  card.style.webkitUserSelect = '';
+                  card.style.msUserSelect = '';
+                }
+              }
+
               var els = cardsList.querySelectorAll('textarea, input, select, button');
               for (var i = 0; i < els.length; i++) {
                 var el = els[i];
@@ -1784,6 +2080,16 @@ if (currentVal2 === ZWSP) currentVal2 = '';
                 // Preserve selection/copy for text surfaces.
                 if (tag === 'textarea') {
                   try { el.readOnly = closed; } catch (e1) {}
+                  // Ensure textarea text remains selectable/copyable even when card is not
+                  if (closed) {
+                    el.style.userSelect = 'text';
+                    el.style.webkitUserSelect = 'text';
+                    el.style.msUserSelect = 'text';
+                  } else {
+                    el.style.userSelect = '';
+                    el.style.webkitUserSelect = '';
+                    el.style.msUserSelect = '';
+                  }
                   continue;
                 }
 
@@ -1796,6 +2102,16 @@ if (currentVal2 === ZWSP) currentVal2 = '';
 
                   if (isTextLike) {
                     try { el.readOnly = closed; } catch (e2) {}
+                    // Ensure input text remains selectable/copyable
+                    if (closed) {
+                      el.style.userSelect = 'text';
+                      el.style.webkitUserSelect = 'text';
+                      el.style.msUserSelect = 'text';
+                    } else {
+                      el.style.userSelect = '';
+                      el.style.webkitUserSelect = '';
+                      el.style.msUserSelect = '';
+                    }
                   } else {
                     try { el.disabled = closed; } catch (e3) {}
                   }
@@ -1951,9 +2267,27 @@ function renderTranslationPills_(job) {
       var segments = (res && res.segments) ? res.segments : [];
       var styles = (res && res.styles) ? res.styles : [];
       var stylesCss = (res && res.stylesCss) ? res.stylesCss : '';
+
+      // Use cached styles if server didn't provide them
+      if (!styles || !styles.length) {
+        var cachedStyles = getCachedStyles_();
+        if (cachedStyles) styles = cachedStyles;
+      } else {
+        // Cache the styles for future use
+        setCachedStyles_(styles);
+      }
+
+      if (!stylesCss) {
+        var cachedCss = getCachedStylesCss_();
+        if (cachedCss) stylesCss = cachedCss;
+      } else {
+        // Cache the CSS for future use
+        setCachedStylesCss_(stylesCss);
+      }
+
       window.__latestStyles = styles || [];
 
-      // Inject STYLE sheet CSS rules (if provided by backend)
+      // Inject STYLE sheet CSS rules (if provided by backend or cached)
       injectStylesCss_(stylesCss);
 
       // Ensure dropdown always has options
