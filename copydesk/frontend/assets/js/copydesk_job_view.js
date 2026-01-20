@@ -1436,6 +1436,39 @@ function uuid_() {
       }
     }
 
+    // Close button (admin/testing) - directly closes the job
+    var closeBtn = document.getElementById('close-btn');
+    if (closeBtn) {
+      closeBtn.style.display = '';
+      closeBtn.disabled = !!locked;
+
+      if (!closeBtn.dataset.boundClick) {
+        closeBtn.dataset.boundClick = '1';
+        closeBtn.addEventListener('click', async function () {
+          if (!jobId) return;
+
+          var confirmClose = confirm('Close this job? This will lock editing and spawn translation jobs.');
+          if (!confirmClose) return;
+
+          closeBtn.disabled = true;
+          setStatus('loading', 'Closing job…', false);
+
+          try {
+            if (!window.copydeskCloseJob) throw new Error('Missing copydeskCloseJob()');
+            await window.copydeskCloseJob(jobId);
+            setStatus('locked', 'Closed.', false);
+
+            // Refresh to get authoritative state
+            await boot();
+          } catch (err) {
+            console.error('close error:', err);
+            setStatus('error', 'Close failed: ' + (err && err.message ? err.message : String(err)), true);
+            closeBtn.disabled = false;
+          }
+        });
+      }
+    }
+
     if (locked) return;
 
     // Click committed segment -> open existing child card, else create it (no multiple children)
