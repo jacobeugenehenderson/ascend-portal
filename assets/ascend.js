@@ -59,11 +59,14 @@
     const map = loadPendingWfDeletions_();
     map[id] = Date.now();
     savePendingWfDeletions_(map);
+    console.log("[Ascend] Marked WF pending deletion:", id, "Map:", map);
   }
 
   function isWfPendingDeletion_(id) {
     const map = loadPendingWfDeletions_();
-    return !!map[id];
+    const result = !!map[id];
+    if (result) console.log("[Ascend] WF is pending deletion:", id);
+    return result;
   }
 
   // Legacy in-memory reference for compatibility
@@ -1894,7 +1897,11 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
               };
             })
             .filter((x) => x && x.id)
-            .filter((x) => !PENDING_WF_DELETIONS[x.id] && !isWfPendingDeletion_(x.id));
+            .filter((x) => {
+              const dominated = PENDING_WF_DELETIONS[x.id] || isWfPendingDeletion_(x.id);
+              if (dominated) console.log("[Ascend] Filtering out pending deletion from server data:", x.id);
+              return !dominated;
+            });
         } catch (e) {
           window.__ASCEND_CODEDESK_WORKING_ITEMS__ = [];
         }
@@ -1978,6 +1985,11 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
   window.AscendDebug.closeTrashModal = closeTrashModal_;
   window.AscendDebug.CODEDESK_MANIFEST_URL = CODEDESK_MANIFEST_URL;
   window.AscendDebug.loadSession = loadSession;
+  window.AscendDebug.getPendingDeletions = loadPendingWfDeletions_;
+  window.AscendDebug.clearPendingDeletions = function() {
+    localStorage.removeItem(PENDING_WF_DELETIONS_KEY);
+    console.log("[Ascend] Cleared pending deletions");
+  };
 
   function initTrashModal() {
     const trigger = document.getElementById("ascend-trash-trigger");
