@@ -1714,16 +1714,11 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     if (!session || !session.userEmail) return;
     if (!jobId) return;
 
-    const callbackName = "ascendDismissCopydeskJobCallback";
+    const callbackName = "ascendDismissCopydeskJobCallback_" + Date.now();
 
     window[callbackName] = function (payload) {
-      try {
-        // Regardless of success/failure, re-sync hopper state
-        requestCopydeskJobs();
-      } catch (e) {
-        console.warn("Ascend: error in dismissCopydeskJob callback", e);
-        requestCopydeskJobs();
-      }
+      // No refresh - UI already updated, trust the dismiss worked
+      try { delete window[callbackName]; } catch (e) {}
     };
 
     const url = new URL(COPYDESK_API_BASE);
