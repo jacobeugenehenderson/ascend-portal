@@ -332,13 +332,15 @@
 .committed-list,
 .cards-list {
   display: grid;
-  grid-auto-rows: minmax(var(--copydesk-unit-min-h), auto);
+  /* Pre-close: fixed row height so overflow scrolling works */
+  grid-auto-rows: var(--copydesk-unit-min-h);
   row-gap: var(--copydesk-unit-gap);
 }
 
 .committed-seg,
 .subjob-english {
-  height: auto; /* translation subjob rows size to content */
+  /* Pre-close: fill grid row height, enable overflow scrolling */
+  height: 100%;
   box-sizing: border-box;
   border: 1px solid var(--ascend-app-border);
   border-radius: 16px;
@@ -463,12 +465,12 @@
 
 .card-slot {
   min-height: var(--copydesk-unit-min-h);
-  height: auto;
+  height: 100%;
 }
 
 .card {
   min-height: var(--copydesk-unit-min-h);
-  height: auto;
+  height: 100%;
 
   box-sizing: border-box;
   border: 1px solid var(--ascend-app-border);
@@ -776,8 +778,48 @@ body.copydesk-is-closed #subjob-closed-banner {
 
 /* -----------------------------
    Closed layout collapse (Bucket C)
-   “Artifact view” on close — Job View parity pattern
+   "Artifact view" on close — Job View parity pattern
 ----------------------------- */
+
+/* Copydesk Job View: hide column header in closed mode (single-column artifact) */
+body.copydesk-is-closed .copydesk-col--committed .copydesk-col-title {
+  display: none;
+}
+
+/* Copydesk Job View: remove column wrapper styling in closed mode */
+body.copydesk-is-closed .copydesk-col--committed {
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+/* Copydesk Job View: rows expand to fit content in closed mode */
+body.copydesk-is-closed .committed-list {
+  grid-auto-rows: auto;
+}
+
+/* Copydesk Job View: remove card styling in closed mode — text flows naturally */
+body.copydesk-is-closed .committed-seg {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.75rem 0;
+  overflow: visible;
+  height: auto;
+  cursor: default;
+}
+
+/* Copydesk Job View: no hover in closed mode */
+body.copydesk-is-closed .committed-seg:hover {
+  border-color: transparent;
+}
+
+/* Copydesk Job View: dividers are simple graphic lines in closed mode */
+body.copydesk-is-closed .committed-seg.is-divider {
+  padding: 1rem 0;
+  min-height: 0;
+}
 
 /* Subjob rows: collapse from (4fr 1fr) → (1fr) in closed mode */
 body.copydesk-is-closed .subjob-row {

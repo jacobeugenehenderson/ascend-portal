@@ -1190,6 +1190,9 @@ var SECTION_DIVIDER_TEXT = '—————————————————�
   var __syncHeightsRaf = null;
 
   function syncLaneRowHeights_() {
+    // Skip sync in closed mode — rows expand naturally to fit content
+    if (document.body.classList.contains('copydesk-is-closed')) return;
+
     var committedList = document.getElementById('committed-list');
     var cardsList = document.getElementById('cards-list');
     if (!committedList || !cardsList) return;
