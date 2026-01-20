@@ -1033,6 +1033,13 @@ textarea:focus {
   opacity: 1 !important;
 }
 
+/* Translation subjobs: show all three lights lit (teal/accent) */
+.ascend-hopper-progress.is-translation .ascend-hopper-progress-dot {
+  background: var(--ascend-hopper-stage-3) !important;
+  border-color: transparent !important;
+  opacity: 1 !important;
+}
+
 .ascend-hopper-progress[data-stage="2"] .ascend-hopper-progress-dot[data-step="2"],
 .ascend-hopper-progress[data-stage="3"] .ascend-hopper-progress-dot[data-step="2"] {
   background: var(--ascend-hopper-stage-2);

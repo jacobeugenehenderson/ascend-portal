@@ -1491,7 +1491,15 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
 
     lane.innerHTML = "";
 
-    const visible = (jobs || []).filter((job) => copydeskStageForJob_(job) !== 3);
+    // Filter out stage 3 jobs UNLESS they are open translation subjobs
+    const visible = (jobs || []).filter((job) => {
+      const stage = copydeskStageForJob_(job);
+      if (stage !== 3) return true;
+      // Keep open translation subjobs in the hopper (they show all 3 lights but stay visible)
+      const isTranslation = !!(job && (job.IsTranslation || job.Lang || job.Language));
+      const status = normalizeStatus_(job && job.Status);
+      return isTranslation && status === "open";
+    });
 
     if (!visible.length) {
       const empty = document.createElement("div");
@@ -1504,6 +1512,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     visible.forEach((job) => {
       const stage = copydeskStageForJob_(job);
       const kind = copydeskItemKind_(job);
+      const isTranslation = !!(job && (job.IsTranslation || job.Lang || job.Language));
 
       const card = document.createElement("div");
       card.className = "ascend-job-card";
@@ -1513,6 +1522,11 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       mainBtn.className = "ascend-job-card-main";
 
       const progress = buildHopperProgress_(stage);
+
+      // Translation subjobs get all three lights lit
+      if (isTranslation) {
+        progress.classList.add("is-translation");
+      }
 
       const textStack = document.createElement("div");
       textStack.className = "ascend-job-card-stack";
@@ -1552,10 +1566,17 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       mainBtn.appendChild(textStack);
 
       mainBtn.addEventListener("click", () => {
-        const url =
-          COPYDESK_JOB_URL +
-          "?jobid=" +
-          encodeURIComponent(job.JobId || "");
+        let url;
+        if (isTranslation) {
+          // Translation subjobs open in subjob.html with the parent job ID and lang
+          const parentId = job.ParentJobId || job.ParentJobID || job.ParentId || "";
+          const langCode = job.Lang || job.Language || job.LanguageCode || job.Locale || "";
+          // Use the base URL to construct the subjob URL
+          const baseUrl = COPYDESK_JOB_URL.replace(/job\.html.*$/, "");
+          url = baseUrl + "subjob.html?jobid=" + encodeURIComponent(parentId) + "&lang=" + encodeURIComponent(langCode);
+        } else {
+          url = COPYDESK_JOB_URL + "?jobid=" + encodeURIComponent(job.JobId || "");
+        }
         const target = buildUrlWithUser(url);
         window.open(target, "_blank", "noopener");
       });
@@ -1598,8 +1619,17 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
           // Clock-driven exit: once Cutoff day has passed (EOFD Eastern),
           // OR the job is explicitly closed,
           // the job leaves Copydesk lane and appears in FileRoom.
+          // EXCEPTION: Open translation subjobs stay in the hopper (they're active work).
           const statusCd = normalizeStatus_(job && job.Status);
           const isClosedCd = (statusCd === "closed");
+          const isTranslationJob = !!(job && (job.IsTranslation || job.Lang || job.Language));
+          const isOpenTranslation = isTranslationJob && statusCd === "open";
+
+          // Keep open translation subjobs in the hopper
+          if (isOpenTranslation) {
+            inPlay.push(job);
+            continue;
+          }
 
           if (isClosedCd || (job && job.Cutoff && isPastEofdEastern_(job.Cutoff, nowMs))) {
             const sourceId = job.JobId || "";

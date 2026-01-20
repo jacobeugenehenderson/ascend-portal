@@ -861,7 +861,20 @@ function handleUpdateSegment_(body) {
         var next = String(finalWorking == null ? '' : finalWorking);
 
         if (prev !== next) {
-          setSubjobStatus_(jobId, lang, 'touched', (st0 && st0.finishedAt) ? st0.finishedAt : '', new Date().toISOString());
+          var touchedAtIso = new Date().toISOString();
+          setSubjobStatus_(jobId, lang, 'touched', (st0 && st0.finishedAt) ? st0.finishedAt : '', touchedAtIso);
+
+          // Record the translation subjob in the hopper as a live job
+          try {
+            recordTranslationSubjobInHopper_({
+              jobId: jobId,
+              lang: lang,
+              spreadsheetId: spreadsheetId,
+              touchedAt: touchedAtIso
+            });
+          } catch (eHopper) {
+            // Best effort - don't fail the save if hopper recording fails
+          }
         }
       }
     }
@@ -1889,6 +1902,13 @@ function handleFinishSubjob_(body) {
   var iso = Utilities.formatDate(now, 'Etc/UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'");
   setSubjobStatus_(jobId, lang, 'Finished', iso);
 
+  // Close the translation subjob in the hopper
+  try {
+    updateHopperOnSubjobFinish_(jobId, lang, iso);
+  } catch (eHopper) {
+    // Best effort - don't fail the finish if hopper update fails
+  }
+
   return { ok: true, finishedAt: iso };
 }
 
@@ -2733,6 +2753,83 @@ function recordCopydeskJobInHopper_(o) {
   }
 }
 
+// Record a translation subjob in the hopper when it's first touched by an editor.
+// This makes the translation job appear as a live item in the hopper with all three lights lit.
+function recordTranslationSubjobInHopper_(o) {
+  if (!o || !o.jobId || !o.lang) return;
+
+  var parentJobId = String(o.jobId || '').trim();
+  var lang = String(o.lang || '').trim().toUpperCase();
+
+  // Create a unique JobId for the translation subjob
+  var subjobId = parentJobId + ':::TL:::' + lang;
+
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var row = findRowByJobId_(sh, subjobId);
+
+  // Get parent job info for context
+  var parentSpreadsheetId = String(o.spreadsheetId || '').trim();
+  var parentJobName = '';
+  var parentCutoff = '';
+  var parentOwnerEmail = '';
+  var parentCollaboratorsCsv = '';
+
+  // Try to get info from parent hopper entry
+  var parentRow = findRowByJobId_(sh, parentJobId);
+  if (parentRow) {
+    var parentData = sh.getRange(parentRow, 1, 1, 10).getValues()[0];
+    parentJobName = String(parentData[1] || '').trim();
+    if (!parentSpreadsheetId) parentSpreadsheetId = String(parentData[2] || '').trim();
+    parentCutoff = String(parentData[4] || '').trim();
+    parentOwnerEmail = String(parentData[6] || '').trim();
+    parentCollaboratorsCsv = String(parentData[7] || '').trim();
+  }
+
+  // Build subjob name with language suffix
+  var subjobName = parentJobName ? (parentJobName + ' [' + lang + ']') : (parentJobId + ' [' + lang + ']');
+
+  var touchedAtIso = o.touchedAt || new Date().toISOString();
+
+  var payload = [
+    subjobId,                          // JobId (unique for this translation)
+    subjobName,                        // JobName
+    parentSpreadsheetId,               // SpreadsheetId (same as parent)
+    touchedAtIso,                      // CreatedAt (when first touched)
+    parentCutoff,                      // Cutoff (inherit from parent)
+    'Open',                            // Status (active translation job)
+    parentOwnerEmail,                  // OwnerEmail (inherit from parent)
+    parentCollaboratorsCsv,            // CollaboratorsCsv (inherit from parent)
+    '',                                // DismissedByCsv
+    ''                                 // ClosedAt
+  ];
+
+  if (row) {
+    // Update existing row (keep dismissed list)
+    sh.getRange(row, 1, 1, payload.length).setValues([payload]);
+  } else {
+    sh.appendRow(payload);
+  }
+}
+
+// Mark a translation subjob as finished/closed in the hopper
+function updateHopperOnSubjobFinish_(jobId, lang, finishedAtIso) {
+  if (!jobId || !lang) return;
+
+  var subjobId = String(jobId).trim() + ':::TL:::' + String(lang).trim().toUpperCase();
+
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var row = findRowByJobId_(sh, subjobId);
+  if (!row) return;
+
+  // Status (F) + ClosedAt (J)
+  sh.getRange(row, 6).setValue('Closed');
+  if (finishedAtIso) sh.getRange(row, 10).setValue(String(finishedAtIso));
+}
+
 function updateHopperOnClose_(jobId, closedAtIso) {
   if (!jobId) return;
 
@@ -2987,6 +3084,17 @@ function handleListCopydeskJobsForUser_(body) {
       if (dismissed.indexOf(userEmail) >= 0) return;
     }
 
+    // Detect if this is a translation subjob (JobId contains :::TL:::)
+    var isTranslation = jobId.indexOf(':::TL:::') >= 0;
+    var langCode = '';
+    var parentJobId = jobId;
+
+    if (isTranslation) {
+      var parts = jobId.split(':::TL:::');
+      parentJobId = parts[0] || '';
+      langCode = parts[1] || '';
+    }
+
     out.push({
       App: 'Copydesk',
       JobId: jobId,
@@ -2995,7 +3103,11 @@ function handleListCopydeskJobsForUser_(body) {
       CreatedAt: createdAt,
       Cutoff: cutoff,
       Status: status || 'Open',
-      ClosedAt: closedAt
+      ClosedAt: closedAt,
+      // Translation-specific fields
+      Lang: langCode,                    // Language code (e.g., 'FR', 'ES') if translation job
+      ParentJobId: isTranslation ? parentJobId : '',  // Parent job ID if translation
+      IsTranslation: isTranslation       // Flag for frontend to detect translation jobs
     });
   });
 
