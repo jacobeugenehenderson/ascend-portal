@@ -1604,7 +1604,16 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         evt.preventDefault();
         evt.stopPropagation();
         try { evt.stopImmediatePropagation(); } catch (e) {}
-        dismissCopydeskJob(job.JobId);
+
+        // Immediate UI removal
+        card.remove();
+
+        // Move to trash via FileRoom API
+        const ascendJobKey = "COPYDESK:" + (job.JobId || "");
+        trashFileRoomJob_(ascendJobKey, function(result) {
+          try { requestCopydeskJobs(); } catch (e) {}
+          try { requestAndRenderTrash(); } catch (e) {}
+        });
       });
 
       card.appendChild(mainBtn);
