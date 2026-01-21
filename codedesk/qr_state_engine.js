@@ -170,6 +170,9 @@ function _writeWorkingFiles(arr){
 }
 
 function codedeskNotifyAscendWorkingSave(rec){
+  // Skip in embed mode (standalone usage)
+  if (window.CODEDESK_EMBED_MODE === true) return rec;
+
   // Best-effort ping so Ascend can refresh its hopper UI (same-origin only).
   try { localStorage.setItem('ascend_codedesk_hopper_ping_v1', String(Date.now())); } catch(e){}
   try {

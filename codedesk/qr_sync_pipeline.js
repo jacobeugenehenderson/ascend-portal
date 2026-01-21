@@ -6,6 +6,9 @@ window.codedeskPushWorkingDebounced = function codedeskPushWorkingDebounced(reas
 };
 
 window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
+  // Skip server push in embed mode (standalone usage)
+  if (window.CODEDESK_EMBED_MODE === true) return false;
+
   const workingId = String(window.__CODEDESK_CURRENT_WF_ID__ || _getActiveWorkingFileId() || '').trim();
   if (!workingId) return false;
 
@@ -765,6 +768,9 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       if (!window.__CODEDESK_BEFOREUNLOAD_WIRED__) {
         window.__CODEDESK_BEFOREUNLOAD_WIRED__ = true;
         window.addEventListener('beforeunload', function(e){
+          // Skip warning in embed mode (standalone usage)
+          if (window.CODEDESK_EMBED_MODE === true) return undefined;
+
           try {
             const accepted = (window.__CODEDESK_FILENAME_ACCEPTED__ === true);
             const aid = (typeof _getActiveWorkingFileId === 'function') ? _getActiveWorkingFileId() : null;
@@ -894,6 +900,51 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
   window.__CODEDESK_FINISH_INFLIGHT__ = true;
   console.log('[✨ click] proceeding with setup...');
 
+  // =====================================================
+  // EMBED MODE: Download PNG directly instead of FileRoom sync
+  // =====================================================
+  if (window.CODEDESK_EMBED_MODE === true) {
+    console.log('[✨ click] EMBED MODE — downloading PNG');
+    try {
+      btn.disabled = true;
+      btn.classList.add('is-busy');
+      btn.textContent = 'Saving…';
+
+      // Build filename from the ceremony input
+      const baseName = String(fname || 'qr').trim()
+        .replace(/[^\w\d\-_\s]+/g, '_')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .substring(0, 40) || 'qr';
+      const pngFilename = baseName + '.png';
+
+      // Download the PNG
+      if (typeof window.downloadPng === 'function') {
+        await window.downloadPng(pngFilename);
+        console.log('[✨ click] EMBED MODE — PNG downloaded:', pngFilename);
+      } else {
+        console.error('[✨ click] EMBED MODE — downloadPng not available');
+      }
+
+      // Reset button state (allow re-download)
+      btn.disabled = false;
+      btn.classList.remove('is-busy');
+      btn.textContent = '✨';
+    } catch (embedErr) {
+      console.error('[✨ click] EMBED MODE error:', embedErr);
+      btn.disabled = false;
+      btn.classList.remove('is-busy');
+      btn.textContent = '✨';
+    } finally {
+      try { window.__CODEDESK_FINISH_INFLIGHT__ = false; } catch(_e){}
+    }
+    return; // Exit early — do not run normal FileRoom flow
+  }
+
+  // =====================================================
+  // NORMAL MODE: FileRoom sync (Ascend integration)
+  // =====================================================
   try {
     const prevText = (btn.textContent || '').trim();
     btn.disabled = true;
@@ -963,6 +1014,12 @@ async function codedeskPngDataUrlFromCurrentSvg(scale){
 
 window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
   console.log('[codedeskSyncFileRoomNow] called, reason:', reason);
+
+  // Skip FileRoom sync in embed mode (standalone usage)
+  if (window.CODEDESK_EMBED_MODE === true) {
+    console.log('[codedeskSyncFileRoomNow] EMBED MODE — skipping FileRoom sync');
+    return false;
+  }
 
   // HARD GATE: never sync until setup is done (filename ceremony).
   if (window.__CODEDESK_SETUP_DONE__ !== true) {
@@ -1162,6 +1219,40 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
       const documentElement = document.documentElement;
       if (documentElement) documentElement.classList.add('ui-ready');
     } catch(e){}
+
+    // =====================================================
+    // EMBED MODE: Adjust UI for standalone usage
+    // =====================================================
+    if (window.CODEDESK_EMBED_MODE === true) {
+      console.log('🔧 EMBED MODE — adjusting UI');
+      try {
+        // Add body class for CSS targeting
+        document.body.classList.add('codedesk-embed-mode');
+
+        // Change "Create working file" to "Download PNG"
+        const finishToggle = document.querySelector('#finishCard [data-step-toggle]');
+        if (finishToggle) {
+          finishToggle.textContent = 'Download PNG';
+        }
+
+        // Update sparkle button title
+        const sparkleBtn = document.querySelector('#finishCard button[data-action="finish"]');
+        if (sparkleBtn) {
+          sparkleBtn.setAttribute('title', 'Download PNG');
+        }
+
+        // Hide the "finishOverlay" modal (not needed in embed mode)
+        const finishOverlay = document.getElementById('finishOverlay');
+        if (finishOverlay) {
+          finishOverlay.style.display = 'none';
+        }
+
+        // Disable beforeunload warning (no working file to lose)
+        window.__CODEDESK_EMBED_NO_WARN__ = true;
+      } catch (embedUiErr) {
+        console.warn('EMBED MODE UI setup error:', embedUiErr);
+      }
+    }
 
     // Expose a no-op safety hook for other modules
     try {

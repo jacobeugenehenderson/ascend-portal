@@ -56,6 +56,12 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
   const templateId = (qs.get("template_id") || qs.get("templateId") || "").trim();
   const parentAscendJobKey = (qs.get("parent_ascend_job_key") || "").trim();
 
+  // Embed mode: standalone usage without Ascend/FileRoom
+  const isEmbedMode = (mode === "embed");
+  if (isEmbedMode) {
+    window.CODEDESK_EMBED_MODE = true;
+  }
+
   // Working-file open path (from hopper)
   const workingFileId = (qs.get("working_file_id") || qs.get("workingFileId") || qs.get("wf") || "").trim();
 
@@ -68,6 +74,7 @@ const CODEDESK_BOOTSTRAP_SESSION_KEY = "codedesk_bootstrap_session_v1";
   window.CODEDESK_ENTRY = {
     origin: origin || "",
     mode: mode || "",
+    embed: isEmbedMode,
 
     // Template path (persistent working-file) context
     template_id: templateId || "",
@@ -247,7 +254,8 @@ try {
 try {
   // If launched from Ascend (new tab/window), ask the opener to refresh hoppers now.
   // This is same-origin (github.io) so it can directly call Ascend functions.
-  if (window.opener && !window.opener.closed) {
+  // Skip in embed mode (standalone usage without Ascend).
+  if (!window.CODEDESK_EMBED_MODE && window.opener && !window.opener.closed) {
     if (typeof window.opener.requestCodeDeskTemplates === "function") {
       window.opener.requestCodeDeskTemplates();
     } else if (window.opener.AscendDebug && typeof window.opener.AscendDebug.requestCodeDeskTemplates === "function") {
