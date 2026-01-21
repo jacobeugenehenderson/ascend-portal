@@ -34,7 +34,7 @@ window.codedeskPushWorkingNow = async function codedeskPushWorkingNow(reason){
 
   // --- Canonical state blob (includes all styling knobs) ---
   let stateObj = null;
-  try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
+  try { stateObj = (rec && rec.state) ? rec.state : (window.codedeskExportState ? window.codedeskExportState() : null); } catch(e){}
   let stateJson = '';
   try { stateJson = (typeof stateObj === 'string') ? stateObj : JSON.stringify(stateObj || {}); } catch(e){ stateJson = ''; }
 
@@ -1068,7 +1068,7 @@ window.codedeskSyncFileRoomNow = async function codedeskSyncFileRoomNow(reason){
 
   // Export canonical state blob for portability (single source of truth)
   let stateObj = null;
-  try { stateObj = (rec && rec.state) ? rec.state : (window.okqralExportState ? window.okqralExportState() : null); } catch(e){}
+  try { stateObj = (rec && rec.state) ? rec.state : (window.codedeskExportState ? window.codedeskExportState() : null); } catch(e){}
   try {
     if (stateObj && typeof stateObj === 'object') {
       stateObj.destination_url = destinationUrl;
@@ -1416,7 +1416,7 @@ function buildText__LEGACY_DO_NOT_USE(mode, data) {
 // ---- ECC helper (used by render) ----
 // ---- ECC helper (used by render) ----
 // Canonical synthesis: define once globally to avoid const redeclare across split files.
-if (typeof window.ECC_KEY === 'undefined') window.ECC_KEY = 'okqral_ecc';
+if (typeof window.ECC_KEY === 'undefined') window.ECC_KEY = 'codedesk_ecc';
 if (typeof window.ECC_DEFAULT === 'undefined') window.ECC_DEFAULT = 'M';
 
 function getECC(){
@@ -1589,7 +1589,7 @@ function buildText(){
         return q ? `https://maps.google.com/?q=${encodeURIComponent(q)}` : "https://maps.google.com";
       }
       default:
-        return "LGBTQRCode";
+        return "https://jacobhenderson.studio/codedesk/";
     }
   }
 

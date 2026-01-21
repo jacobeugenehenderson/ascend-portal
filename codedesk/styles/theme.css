@@ -996,7 +996,7 @@ button[data-emoji-target]::-moz-focus-inner{ border: 0; }
   box-shadow: 0 0 0 1px var(--stepper-stroke-closed) inset;
 }
 
-/* Closed: subtle tint + crisp edge (match OKQRAL) */
+/* Closed: subtle tint + crisp edge */
 #stepper > .step-card[data-step="caption"]:not(.is-open) .step-header{
   background: color-mix(in oklab, var(--ui-surface) 92%, var(--step-color-primary) 8%);
   border-bottom: 1px solid var(--stepper-stroke-closed);
@@ -1739,7 +1739,7 @@ input[type="color"]::-webkit-color-swatch {
   border-radius: 9999px !important;
 }
 
-/* Ascend-blue sliders (kills any lingering okQRal yellow) */
+/* Ascend-blue sliders */
 input[type="range"] {
   accent-color: var(--ascend-app-accent) !important;
 }

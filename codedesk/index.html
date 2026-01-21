@@ -9,18 +9,17 @@
 <title>Codedesk — by jacobhenderson.studio</title>
 <meta name="description" content="No accounts or tracking. QR creation in your browser.">
 
-<link rel="canonical" href="https://okqral.com/">
+<link rel="canonical" href="https://jacobhenderson.studio/codedesk/">
 <meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#ffffff"  media="(prefers-color-scheme: light)">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="1200">
-<meta name="twitter:image:alt" content="A crisp QR with okQRal caption — Free QR Codes for Free People.">
+<meta name="twitter:image:alt" content="Codedesk — Structured QR generation and design">
 
-<meta property="og:title" content="okQRal — Free QR Codes for Free People">
-<meta property="og:description" content="Generate beautiful, private QR codes instantly. No logins, no tracking, no surveillance.">
-<meta property="og:image" content="https://okqral.com/assets/sms_preview.png">
+<meta property="og:title" content="Codedesk — by jacobhenderson.studio">
+<meta property="og:description" content="Structured QR generation and design. No accounts or tracking.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://okqral.com/">
+<meta property="og:url" content="https://jacobhenderson.studio/codedesk/">
 
 <!-- Fonts & Tailwind -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -515,56 +514,6 @@ new MutationObserver(() => applyPickerTheme())
 })();
 </script>
 
-<script>
-(function () {
-  const qs = new URLSearchParams(location.search);
-  const hashEgg = (location.hash.startsWith('#egg=') && location.hash.slice(5)) || '';
-  const egg = qs.get('egg') || hashEgg;
-
-  if (egg === 'love') {
-    showEasterEgg('https://okqral.com/assets/love.png');
-    // remove the flag from the URL so refresh returns to normal
-    history.replaceState({}, '', location.pathname);
-  }
-
-  function showEasterEgg(src){
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position:fixed; inset:0; background:rgba(0,0,0,.6);
-      display:flex; align-items:center; justify-content:center;
-      z-index:9999; padding:24px;
-    `;
-    const card = document.createElement('div');
-    card.style.cssText = `
-      background: var(--md-sys-color-surface, #fff);
-      color: var(--md-sys-color-on-surface, #111);
-      border-radius: 16px; max-width: 92vw; max-height: 90vh;
-      box-shadow: 0 10px 40px rgba(0,0,0,.35); overflow:hidden;
-    `;
-    const img = document.createElement('img');
-    img.src = src;
-    img.alt = 'Love.jpg';
-    img.style.cssText = 'display:block; max-width:90vw; max-height:72vh; object-fit:contain; background:#fff';
-
-    const bar = document.createElement('div');
-    bar.style.cssText = 'display:flex; gap:12px; align-items:center; justify-content:space-between; padding:12px 16px;';
-    bar.innerHTML = `
-      <span style="font:600 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto">Easter egg: Love.jpg</span>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <a href="/" style="text-decoration:none; font:600 13px system-ui">okQRal</a>
-        <button type="button" aria-label="Close" style="border:0; background:#000; color:#fff; border-radius:10px; padding:8px 12px; cursor:pointer;">Close</button>
-      </div>
-    `;
-    bar.querySelector('button').onclick = () => document.body.removeChild(overlay);
-
-    card.appendChild(img);
-    card.appendChild(bar);
-    overlay.appendChild(card);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) bar.querySelector('button').click(); });
-    document.body.appendChild(overlay);
-  }
-})();
-</script>
 
 <!-- Finish overlay (blocking) -->
 <div id="finishOverlay"

@@ -49,7 +49,7 @@ const CODEDESK_STYLE_IDS = [
 ];
 
 // Build a stable export payload (safe if some IDs don’t exist in DOM)
-window.okqralExportState = function okqralExportState(){
+window.codedeskExportState = function codedeskExportState(){
   const payload = { v: 1, at: Date.now(), fields: {}, style: {} };
 
   // Type + subtype index are useful for CodeDesk “template provenance”
@@ -72,14 +72,14 @@ window.okqralExportState = function okqralExportState(){
   });
 
   // Persist ECC + font session keys if present
-  try { payload.ecc  = sessionStorage.getItem('okqral_ecc')  || undefined; } catch(e){}
-  try { payload.font = sessionStorage.getItem('okqral_font') || undefined; } catch(e){}
+  try { payload.ecc  = sessionStorage.getItem('codedesk_ecc')  || undefined; } catch(e){}
+  try { payload.font = sessionStorage.getItem('codedesk_font') || undefined; } catch(e){}
 
   return payload;
 };
 
 // Import a previously exported state blob
-window.okqralImportState = function okqralImportState(state){
+window.codedeskImportState = function codedeskImportState(state){
   if (!state || typeof state !== 'object') return false;
 
   // ------------------------------------------------------------------
@@ -296,7 +296,7 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(a, b){
   if (a && typeof a === 'object' && a.id) {
     // Always refresh the serialized state unless explicitly provided
     if (!('state' in a)) {
-      try { a.state = window.okqralExportState(); } catch(e){}
+      try { a.state = window.codedeskExportState(); } catch(e){}
     }
 
     const out = _upsertWorkingFileRecord(a);
@@ -318,7 +318,7 @@ window.codedeskSaveWorkingFile = function codedeskSaveWorkingFile(a, b){
     ((__aid && _getWorkingFileRecordById(__aid)) ? __aid : null) ||
     ('wf_' + now + '_' + Math.random().toString(16).slice(2));
 
-  const state = window.okqralExportState();
+  const state = window.codedeskExportState();
 
   const prev = _getWorkingFileRecordById(nextId);
 
@@ -448,7 +448,7 @@ window.codedeskOpenWorkingFile = function codedeskOpenWorkingFile(id){
 
   // Import saved state LAST (after all ceremony/gating teardown).
   try {
-    ok = window.okqralImportState(__deferredState);
+    ok = window.codedeskImportState(__deferredState);
   } catch(e) {
     ok = false;
   }

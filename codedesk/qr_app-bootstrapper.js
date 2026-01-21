@@ -226,8 +226,8 @@ window.codedeskApplyTemplateById = function codedeskApplyTemplateById(tid) {
   // Apply the template’s saved state to the live UI + preview (guarded import).
   window.__CODEDESK_APPLYING_TEMPLATE__ = true;
   try {
-    if (typeof window.okqralImportState === 'function') {
-      window.okqralImportState(t.state);
+    if (typeof window.codedeskImportState === 'function') {
+      window.codedeskImportState(t.state);
     }
     if (typeof render === 'function') render();
   } finally {

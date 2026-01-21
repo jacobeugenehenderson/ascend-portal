@@ -166,7 +166,7 @@ console.log('[PROBE ui_toolkit]', { href: String(location && location.href || ''
 })();
 
   /* === ECC (add-only, session-persistent) ========================== */
-const ECC_KEY = 'okqral_ecc';
+const ECC_KEY = 'codedesk_ecc';
 const ECC_DEFAULT = 'M';
 
 function getECC(){
@@ -246,7 +246,7 @@ function wireECCLegacySelect(){
 })();
 
 /* === Preview Font (session-persistent) ============================ */
-const FONT_KEY     = 'okqral_font';
+const FONT_KEY     = 'codedesk_font';
 // Store/select by base family name so it matches <option> values.
 const FONT_DEFAULT = 'Work Sans';
 
@@ -383,7 +383,7 @@ function wireCaptionInputs(){
 
       if (!modal || !grid || !search || !close) return;
 
-      // Emoji corpus: prefer the full okQRal set if present
+      // Emoji corpus: prefer the full set if present
       const EMOJIS =
         (typeof EMOJI_BIG !== 'undefined' && Array.isArray(EMOJI_BIG) && EMOJI_BIG.length)
           ? EMOJI_BIG
