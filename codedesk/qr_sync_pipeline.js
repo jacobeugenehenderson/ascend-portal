@@ -1464,9 +1464,9 @@ function buildText(){
           val("targetUrl") ||
           "";
 
-        // If empty, export empty (no placeholder payloads)
+        // If empty, default to easter egg asset
         const rawTrim = String(raw || "").trim();
-        if (!rawTrim) return "https://jacobhenderson.studio";
+        if (!rawTrim) return "https://jacobeugenehenderson.github.io/ascend-portal/codedesk/assets/love.html";
 
         // read optional utm fields (support common variants)
         const s = (val("utmSource")   || val("utm_source")   || "").trim();
