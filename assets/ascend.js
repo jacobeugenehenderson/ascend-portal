@@ -306,6 +306,37 @@
     document.body.appendChild(script);
   }
 
+  // Restore a dismissed Copydesk job (removes user from dismissed list)
+  function restoreCopydeskJob_(jobId, callback) {
+    const session = loadSession();
+    if (!session || !session.userEmail) {
+      if (callback) callback({ ok: false, error: 'Not logged in' });
+      return;
+    }
+
+    const callbackName =
+      "ascendRestoreCopydeskJobCallback_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000));
+
+    window[callbackName] = function (payload) {
+      try {
+        if (callback) callback(payload);
+      } finally {
+        try { delete window[callbackName]; } catch (e) {}
+      }
+    };
+
+    const url = new URL(COPYDESK_API_BASE);
+    url.searchParams.set("action", "restoreCopydeskJob");
+    url.searchParams.set("jobId", jobId);
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
   function requestTrashedJobs_(callback) {
     const session = loadSession();
     if (!session || !session.userEmail) {
@@ -325,8 +356,9 @@
       }
     };
 
-    const url = new URL(FILEROOM_API_BASE);
-    url.searchParams.set("action", "listTrashedJobsForUser");
+    // Use Copydesk API for trash (user-filtered dismissed jobs)
+    const url = new URL(COPYDESK_API_BASE);
+    url.searchParams.set("action", "listDismissedCopydeskJobs");
     url.searchParams.set("user_email", session.userEmail);
     url.searchParams.set("callback", callbackName);
 
@@ -1465,18 +1497,18 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         evt.preventDefault();
         evt.stopPropagation();
 
-        const ascendJobKey = item.AscendJobKey || item.ascend_job_key || "";
-        if (!ascendJobKey) return;
+        const jobId = item.JobId || item.jobId || "";
+        if (!jobId) return;
 
         // Immediate UI removal for responsiveness
         card.remove();
 
-        restoreFileRoomJob_(ascendJobKey, function(result) {
+        restoreCopydeskJob_(jobId, function(result) {
           // Refresh both trash and main hoppers
           requestTrashedJobs_(function(data) {
             renderTrashLane(data.jobs || []);
           });
-          try { requestFileRoomOutput(); } catch (e) {}
+          try { requestCopydeskJobs(); } catch (e) {}
         });
       });
 
@@ -2036,6 +2068,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
   window.AscendDebug.requestAndRenderTrash = requestAndRenderTrash;
   window.AscendDebug.trashFileRoomJob = trashFileRoomJob_;
   window.AscendDebug.restoreFileRoomJob = restoreFileRoomJob_;
+  window.AscendDebug.restoreCopydeskJob = restoreCopydeskJob_;
   window.AscendDebug.openTrashModal = openTrashModal_;
   window.AscendDebug.closeTrashModal = closeTrashModal_;
   window.AscendDebug.CODEDESK_MANIFEST_URL = CODEDESK_MANIFEST_URL;

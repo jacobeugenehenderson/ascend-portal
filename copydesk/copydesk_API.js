@@ -23,6 +23,18 @@ const FILEROOM_API_BASE_URL =
 const COPYDESK_JOB_VIEW_URL =
   'https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/job.html';
 
+// Admin users (can Push, Finish, and see all jobs)
+const ADMIN_EMAILS = ['jacob@jacobhenderson.studio'];
+
+function isAdminUser_(email) {
+  if (!email) return false;
+  var normalized = String(email).trim().toLowerCase();
+  for (var i = 0; i < ADMIN_EMAILS.length; i++) {
+    if (ADMIN_EMAILS[i].toLowerCase() === normalized) return true;
+  }
+  return false;
+}
+
 // Normalize style labels for robust comparison
 function normalizeStyleLabel_(label) {
   if (label == null) return '';
@@ -60,6 +72,41 @@ function setJobStatus_(jobId, status, closedAtIso) {
 function isJobClosed_(jobId) {
   var st = getJobStatus_(jobId);
   return String(st.status || '').toLowerCase() === 'closed';
+}
+
+// Check if a job is past its cutoff date (nightly commits should stop)
+function isJobPastCutoff_(jobId) {
+  if (!jobId) return false;
+  var spreadsheetId = getSpreadsheetIdForJobId_(jobId);
+  if (!spreadsheetId) return false;
+
+  try {
+    var ss = SpreadsheetApp.openById(spreadsheetId);
+    var sheet = ss.getSheetByName(JOB_EN_SHEET_NAME);
+    if (!sheet) return false;
+
+    var cutoffRaw = sheet.getRange('B4').getValue();
+    if (!cutoffRaw) return false; // No cutoff = never expires
+
+    // Parse cutoff date
+    var cutoffDate;
+    if (Object.prototype.toString.call(cutoffRaw) === '[object Date]') {
+      cutoffDate = cutoffRaw;
+    } else {
+      cutoffDate = new Date(cutoffRaw);
+    }
+    if (isNaN(cutoffDate.getTime())) return false; // Invalid date = no cutoff
+
+    // Compare in Eastern timezone (end of cutoff day)
+    var tz = 'US/Eastern';
+    var todayStr = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+    var cutoffStr = Utilities.formatDate(cutoffDate, tz, 'yyyy-MM-dd');
+
+    // Job is past cutoff if today is AFTER the cutoff date
+    return todayStr > cutoffStr;
+  } catch (e) {
+    return false; // On error, don't skip the job
+  }
 }
 
 // -----------------------------
@@ -249,7 +296,8 @@ function runNightlyCommitAll_() {
   var results = [];
   for (var i = 0; i < jobIds.length; i++) {
     var jid = jobIds[i];
-    if (!jid || isJobClosed_(jid)) continue;
+    // Skip closed jobs and jobs past their cutoff date
+    if (!jid || isJobClosed_(jid) || isJobPastCutoff_(jid)) continue;
     try {
       // Same canonical path used by Push
       var state = handleCommitJob_({ jobId: jid });
@@ -259,6 +307,51 @@ function runNightlyCommitAll_() {
     }
   }
   return { ok: true, jobs: results };
+}
+
+// -----------------------------
+// Nightly Trigger Management
+// -----------------------------
+// Install a time-driven trigger to run nightly commits at midnight Eastern time.
+// This should be run once during setup (or after deployment).
+function installNightlyTrigger() {
+  // Remove any existing nightly triggers first to avoid duplicates
+  removeNightlyTrigger();
+
+  // Create a daily trigger at midnight (00:00 - 01:00) in the script's timezone
+  // Note: Apps Script triggers use the script's timezone (set in project settings to US/Eastern)
+  ScriptApp.newTrigger('runNightlyCommitAll_')
+    .timeBased()
+    .atHour(0)  // Midnight hour (00:00-00:59)
+    .everyDays(1)
+    .inTimezone('America/New_York')  // Eastern Time
+    .create();
+
+  return { ok: true, message: 'Nightly trigger installed for midnight Eastern time' };
+}
+
+// Remove any existing nightly commit triggers
+function removeNightlyTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  var removed = 0;
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'runNightlyCommitAll_') {
+      ScriptApp.deleteTrigger(triggers[i]);
+      removed++;
+    }
+  }
+  return { ok: true, removed: removed };
+}
+
+// Check if nightly trigger is installed
+function hasNightlyTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'runNightlyCommitAll_') {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Normalize cutoff values before sending them to the frontend.
@@ -707,11 +800,15 @@ function routeCopydeskAction_(body) {
   } else if (action === 'finishSubjob') {
     return handleFinishSubjob_(body);
 
-  // ---- Hopper parity (Copydesk jobs list + dismiss) ----
+  // ---- Hopper parity (Copydesk jobs list + dismiss + trash) ----
   } else if (action === 'listCopydeskJobsForUser') {
     return handleListCopydeskJobsForUser_(body);
   } else if (action === 'dismissCopydeskJob') {
     return handleDismissCopydeskJob_(body);
+  } else if (action === 'listDismissedCopydeskJobs') {
+    return handleListDismissedCopydeskJobs_(body);
+  } else if (action === 'restoreCopydeskJob') {
+    return handleRestoreCopydeskJob_(body);
 
   // ---- FileRoom-style outputs (served here until FileRoom API is wired) ----
   } else if (action === 'listDeliverablesForUser') {
@@ -1316,9 +1413,11 @@ if (lastRow >= startRow) {
 
     // New frontend expects { job, segments, styles }
     // Keep old keys too (header) for backward compat.
+    var reqUserEmail = (body && body.user_email) ? String(body.user_email).trim() : '';
     return {
       ok: true,
       apiVersion: COPYDESK_API_VERSION,
+      isAdmin: isAdminUser_(reqUserEmail),
 
       // New shape
       job: (function () {
@@ -2208,6 +2307,11 @@ function handleCreateEnglishJob_(body) {
       userEmail: ownerEmail0
     });
   } catch (e) {}
+
+  // Ensure nightly commit trigger is installed (idempotent - only installs if missing)
+  if (!hasNightlyTrigger()) {
+    try { installNightlyTrigger(); } catch (e) {}
+  }
 
   return {
     ok: true,
@@ -3140,16 +3244,17 @@ function handleListCopydeskJobsForUser_(body) {
     var edited = String(r[10] || '').trim().toUpperCase() === 'TRUE';
 
     // If userEmail provided, enforce visibility and dismissal
-    // IMPORTANT: OwnerEmail may be blank in web-app contexts (Session.getActiveUser() can be empty).
-    // In that legacy/blank-owner case, we allow visibility so jobs don't vanish.
+    // Admins can see all jobs; regular users can only see jobs they own or collaborate on
     if (userEmail) {
-      var ownerBlank = !ownerEmail;
-      var ownerOk = ownerBlank ? true : (ownerEmail.toLowerCase() === userEmail);
+      var isAdmin = isAdminUser_(userEmail);
 
-      var collabs = arrayFromCsv_(collaboratorsCsv).map(function (x) { return x.toLowerCase(); });
-      var collabOk = collabs.indexOf(userEmail) >= 0;
+      if (!isAdmin) {
+        var ownerOk = ownerEmail && (ownerEmail.toLowerCase() === userEmail);
+        var collabs = arrayFromCsv_(collaboratorsCsv).map(function (x) { return x.toLowerCase(); });
+        var collabOk = collabs.indexOf(userEmail) >= 0;
 
-      if (!ownerOk && !collabOk) return;
+        if (!ownerOk && !collabOk) return;
+      }
 
       var dismissed = arrayFromCsv_(dismissedCsv).map(function (x) { return x.toLowerCase(); });
       if (dismissed.indexOf(userEmail) >= 0) return;
@@ -3214,6 +3319,103 @@ function handleDismissCopydeskJob_(body) {
   sh.getRange(row, 9).setValue(dismissed.join(', '));
 
   return { ok: true, jobId: jobId, dismissedBy: userEmail };
+}
+
+// List dismissed (trashed) jobs for the user's trash view
+// Admins see all dismissed jobs; regular users see only jobs they dismissed AND own/collaborate on
+function handleListDismissedCopydeskJobs_(body) {
+  var userEmail = (body && body.user_email) ? String(body.user_email).trim().toLowerCase() : '';
+  var limit = (body && body.limit) ? Number(body.limit) : 500;
+
+  if (!userEmail) return { ok: false, error: 'Missing user_email' };
+
+  var isAdmin = isAdminUser_(userEmail);
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var last = lastDataRowInCol_(sh, 1, 20000);
+  if (last < 2) return { ok: true, jobs: [] };
+
+  var rows = sh.getRange(2, 1, last - 1, 11).getValues();
+  var out = [];
+
+  rows.forEach(function (r) {
+    var jobId = String(r[0] || '').trim();
+    if (!jobId) return;
+
+    var dismissedCsv = String(r[8] || '').trim(); // Column I: DismissedByCsv
+    var dismissed = arrayFromCsv_(dismissedCsv).map(function (x) { return x.toLowerCase(); });
+
+    // Skip jobs that haven't been dismissed by anyone
+    if (dismissed.length === 0) return;
+
+    var ownerEmail = String(r[6] || '').trim().toLowerCase();
+    var collaboratorsCsv = String(r[7] || '').trim();
+    var collabs = arrayFromCsv_(collaboratorsCsv).map(function (x) { return x.toLowerCase(); });
+
+    if (isAdmin) {
+      // Admins see all dismissed jobs
+    } else {
+      // Non-admins: must have dismissed this job AND be owner or collaborator
+      var userDismissed = dismissed.indexOf(userEmail) >= 0;
+      var isOwner = ownerEmail === userEmail;
+      var isCollab = collabs.indexOf(userEmail) >= 0;
+
+      if (!userDismissed) return;
+      if (!isOwner && !isCollab) return;
+    }
+
+    out.push({
+      JobId: jobId,
+      JobName: String(r[1] || '').trim(),
+      SpreadsheetId: String(r[2] || '').trim(),
+      CreatedAt: String(r[3] || '').trim(),
+      Cutoff: String(r[4] || '').trim(),
+      Status: String(r[5] || '').trim() || 'Open',
+      OwnerEmail: r[6] || '',
+      DismissedBy: dismissed,
+      ClosedAt: String(r[9] || '').trim()
+    });
+  });
+
+  // Newest first
+  out.sort(function (a, b) {
+    return String(b.CreatedAt || '').localeCompare(String(a.CreatedAt || ''));
+  });
+
+  if (limit && out.length > limit) out = out.slice(0, limit);
+
+  return { ok: true, jobs: out, isAdmin: isAdmin };
+}
+
+// Restore a dismissed job (remove user from DismissedByCsv)
+function handleRestoreCopydeskJob_(body) {
+  var userEmail = (body && body.user_email) ? String(body.user_email).trim().toLowerCase() : '';
+  var jobId = (body && body.jobId) ? String(body.jobId).trim() : '';
+  if (!userEmail) return { ok: false, error: 'Missing user_email' };
+  if (!jobId) return { ok: false, error: 'Missing jobId' };
+
+  var isAdmin = isAdminUser_(userEmail);
+  var db = openHopperDb_();
+  var sh = ensureHopperSheet_(db);
+
+  var row = findRowByJobId_(sh, jobId);
+  if (!row) return { ok: false, error: 'Job not found in hopper: ' + jobId };
+
+  var dismissedCsv = String(sh.getRange(row, 9).getValue() || '').trim();
+  var dismissed = arrayFromCsv_(dismissedCsv).map(function (x) { return x.toLowerCase(); });
+
+  if (isAdmin) {
+    // Admins can fully restore (clear all dismissals)
+    dismissed = [];
+  } else {
+    // Non-admins can only remove themselves from the dismissed list
+    dismissed = dismissed.filter(function (e) { return e !== userEmail; });
+  }
+
+  sh.getRange(row, 9).setValue(dismissed.join(', '));
+
+  return { ok: true, jobId: jobId, restoredBy: userEmail };
 }
 
 function handleListDeliverablesForUser_(body) {

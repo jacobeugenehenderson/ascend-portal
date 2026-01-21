@@ -2298,9 +2298,18 @@ cardLastSaved.clear();
       if (res && Array.isArray(res.translations) && !job.translations) job.translations = res.translations;
 
       window.__copydeskJob = job;
+      window.__copydeskIsAdmin = !!(res && res.isAdmin);
       renderHeader(job);
       setClosedMode_(String((job && job.status) || '').toLowerCase() === 'closed');
       renderTranslationPills_(job);
+
+      // Hide Push and Close buttons for non-admin users
+      if (!window.__copydeskIsAdmin) {
+        var pushBtn = document.getElementById('push-btn');
+        var closeBtn = document.getElementById('close-btn');
+        if (pushBtn) pushBtn.style.display = 'none';
+        if (closeBtn) closeBtn.style.display = 'none';
+      }
 
 // ---------------------------
 
