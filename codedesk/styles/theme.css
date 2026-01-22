@@ -103,7 +103,7 @@
 
   /* ----- Export defaults (read by JS) ----- */
   --export-png-scale: 3;
-  --export-filename: "CodeDesk";
+  --export-filename: "Codedesk";
 
   /* ----- Grid overlay knobs (Ascend-owned cosmetics) ----- */
   /* Unification layer: provide Ascend-compatible defaults derived from the canonical Ascend shell tokens */
