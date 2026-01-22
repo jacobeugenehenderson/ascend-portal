@@ -1184,19 +1184,21 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var displayWidth;
     var displayHeight;
 
-    // Container constraints (only used in 'fit' mode)
+    // Container constraints
     var maxContainerWidth = (box.clientWidth || 720) - 36; // minus padding
     var maxContainerHeight = 600; // height cap for preview
     var isActualSize = (canvasViewMode === 'actual');
 
+    // Reference PPI for print preview (72 = standard Mac screen point)
+    var PRINT_PREVIEW_PPI = 72;
+
     if (mediaKind === 'digital') {
-      // DIGITAL: Show at actual pixel size (1:1), capped by container constraints in fit mode.
-      // Digital jobs have no bleed.
+      // DIGITAL: Actual size = pixel dimensions. Scale-to-fit only scales DOWN.
       displayWidth = w;
       displayHeight = h;
 
       if (!isActualSize) {
-        // Scale down proportionally if exceeds container bounds
+        // Only scale down if exceeds container; never scale up
         var scaleX = displayWidth > maxContainerWidth ? maxContainerWidth / displayWidth : 1;
         var scaleY = displayHeight > maxContainerHeight ? maxContainerHeight / displayHeight : 1;
         var scale = Math.min(scaleX, scaleY);
@@ -1221,8 +1223,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
       }
     } else {
-      // PRINT: Show at correct aspect ratio with bleed, capped by height in fit mode.
-      // Bleed in same units as trim (e.g., inches)
+      // PRINT: Actual size = inches × PPI. Scale-to-fit only scales DOWN.
       var bleedAmount = 0;
       if (job) {
         var rawBleed = job.bleed;
@@ -1241,29 +1242,25 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
       if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
 
-      var aspectRatio = totalWidth / totalHeight;
-      var pxPerUnit;
+      // Calculate actual pixel size at reference PPI
+      var actualWidth = Math.round(totalWidth * PRINT_PREVIEW_PPI);
+      var actualHeight = Math.round(totalHeight * PRINT_PREVIEW_PPI);
+      var pxPerUnit = PRINT_PREVIEW_PPI;
 
-      if (isActualSize) {
-        // Actual size: 72 pixels per inch (standard screen DPI for print preview)
-        var ACTUAL_SIZE_PPI = 72;
-        displayWidth = Math.round(totalWidth * ACTUAL_SIZE_PPI);
-        displayHeight = Math.round(totalHeight * ACTUAL_SIZE_PPI);
-        pxPerUnit = ACTUAL_SIZE_PPI;
-      } else {
-        // Scale to fit within container, respecting aspect ratio and height cap
-        displayHeight = Math.min(maxContainerHeight, maxContainerWidth / aspectRatio);
-        displayWidth = displayHeight * aspectRatio;
+      displayWidth = actualWidth;
+      displayHeight = actualHeight;
 
-        // If width exceeds container, scale down by width instead
-        if (displayWidth > maxContainerWidth) {
-          displayWidth = maxContainerWidth;
-          displayHeight = displayWidth / aspectRatio;
+      if (!isActualSize) {
+        // Only scale down if exceeds container; never scale up
+        var scaleX = displayWidth > maxContainerWidth ? maxContainerWidth / displayWidth : 1;
+        var scaleY = displayHeight > maxContainerHeight ? maxContainerHeight / displayHeight : 1;
+        var scale = Math.min(scaleX, scaleY);
+
+        if (scale < 1) {
+          displayWidth = Math.round(actualWidth * scale);
+          displayHeight = Math.round(actualHeight * scale);
+          pxPerUnit = PRINT_PREVIEW_PPI * scale;
         }
-
-        displayWidth = Math.round(displayWidth);
-        displayHeight = Math.round(displayHeight);
-        pxPerUnit = displayWidth / totalWidth;
       }
 
       if (inner) {
@@ -1273,8 +1270,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
 
       // Typography scale for print: based on preview DPI
       if (safeEl) {
-        var BASE_PX_PER_INCH = 72; // reference "dpi" for type
-        var baseScale = pxPerUnit / BASE_PX_PER_INCH;
+        var baseScale = pxPerUnit / PRINT_PREVIEW_PPI;
 
         if (!isFinite(baseScale) || baseScale <= 0) {
           baseScale = 1;
@@ -1357,6 +1353,15 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
   }
 
   // --- Canvas view mode toggle ---
+  function updateCanvasScrollable_() {
+    var box = document.getElementById('format-canvas-box');
+    if (!box) return;
+
+    // Check if content overflows the container
+    var isScrollable = box.scrollWidth > box.clientWidth || box.scrollHeight > box.clientHeight;
+    box.classList.toggle('is-scrollable', isScrollable);
+  }
+
   function initCanvasViewToggle_() {
     var box = document.getElementById('format-canvas-box');
     var fitBtn = document.getElementById('view-btn-fit');
@@ -1377,17 +1382,21 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         syncCanvasTextFromFields();
         autoscaleCanvasBands();
       }
+
+      // Update scrollable state after render
+      setTimeout(updateCanvasScrollable_, 0);
     }
 
     fitBtn.addEventListener('click', function () { setViewMode('fit'); });
     actualBtn.addEventListener('click', function () { setViewMode('actual'); });
 
-    // Drag-to-pan for actual size mode
+    // Drag-to-pan for actual size mode (only when scrollable)
     var isDragging = false;
     var startX, startY, scrollLeft, scrollTop;
 
     box.addEventListener('mousedown', function (e) {
       if (canvasViewMode !== 'actual') return;
+      if (!box.classList.contains('is-scrollable')) return;
       // Ignore clicks on the toggle buttons
       if (e.target.closest('.artstart-view-toggle')) return;
 
@@ -1875,6 +1884,7 @@ function autoscaleCanvasBands() {
     
     // Canvas preview (digital vs print, with bleed)
     renderCanvasPreview(job, dimsForSize, mediaKind);
+    setTimeout(updateCanvasScrollable_, 0);
 
     // Working draft fields
     var prevActiveLanguage = activeLanguage;

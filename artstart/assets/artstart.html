@@ -861,14 +861,17 @@
       }
 
       /* ---- Actual-size overflow mode ---- */
+      /* Allow scrolling when content overflows, but keep centered otherwise */
       .artstart-canvas-box[data-view-mode="actual"] {
         overflow: auto;
-        cursor: grab;
-        align-items: flex-start;
-        justify-content: flex-start;
       }
 
-      .artstart-canvas-box[data-view-mode="actual"]:active {
+      /* Hand cursor only when actually scrollable */
+      .artstart-canvas-box[data-view-mode="actual"].is-scrollable {
+        cursor: grab;
+      }
+
+      .artstart-canvas-box[data-view-mode="actual"].is-scrollable:active {
         cursor: grabbing;
       }
 
