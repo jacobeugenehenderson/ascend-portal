@@ -23,6 +23,10 @@ const FILEROOM_API_BASE_URL =
 const COPYDESK_JOB_VIEW_URL =
   'https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/job.html';
 
+// Subjob view URL (for translator notifications)
+const COPYDESK_SUBJOB_VIEW_URL =
+  'https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/subjob.html';
+
 // Admin users (can Push, Finish, and see all jobs)
 const ADMIN_EMAILS = ['jacob@jacobhenderson.studio'];
 
@@ -33,6 +37,74 @@ function isAdminUser_(email) {
     if (ADMIN_EMAILS[i].toLowerCase() === normalized) return true;
   }
   return false;
+}
+
+// -----------------------------
+// Collaborator/Translator Email Notifications
+// -----------------------------
+
+/**
+ * Send a collaborator invite email for a main job.
+ * @param {string} recipientEmail - The collaborator's email address
+ * @param {string} jobId - The job ID
+ * @param {string} jobName - The job name for the email subject/body
+ * @returns {boolean} - True if sent successfully
+ */
+function sendCollaboratorInvite_(recipientEmail, jobId, jobName) {
+  if (!recipientEmail) return false;
+  recipientEmail = String(recipientEmail).trim();
+  if (!recipientEmail || recipientEmail.indexOf('@') < 1) return false;
+
+  var jobUrl = COPYDESK_JOB_VIEW_URL + '?jobid=' + encodeURIComponent(jobId);
+  var subject = 'Copydesk: You\'ve been added to "' + (jobName || 'Untitled Job') + '"';
+  var body =
+    'You\'ve been added as a collaborator on a Copydesk project.\n\n' +
+    'Project: ' + (jobName || 'Untitled Job') + '\n\n' +
+    'Open the project:\n' + jobUrl + '\n\n' +
+    '—\nCopydesk';
+
+  try {
+    GmailApp.sendEmail(recipientEmail, subject, body);
+    return true;
+  } catch (e) {
+    // Log but don't fail the calling operation
+    Logger.log('sendCollaboratorInvite_ failed for ' + recipientEmail + ': ' + e);
+    return false;
+  }
+}
+
+/**
+ * Send a translator invite email for a subjob.
+ * @param {string} recipientEmail - The translator's email address
+ * @param {string} jobId - The job ID
+ * @param {string} lang - The language code (e.g., "FR")
+ * @param {string} jobName - The job name for the email subject/body
+ * @returns {boolean} - True if sent successfully
+ */
+function sendTranslatorInvite_(recipientEmail, jobId, lang, jobName) {
+  if (!recipientEmail) return false;
+  recipientEmail = String(recipientEmail).trim();
+  if (!recipientEmail || recipientEmail.indexOf('@') < 1) return false;
+
+  var subjobUrl = COPYDESK_SUBJOB_VIEW_URL +
+    '?jobid=' + encodeURIComponent(jobId) +
+    '&lang=' + encodeURIComponent(lang || '');
+  var langDisplay = lang ? lang.toUpperCase() : 'Translation';
+  var subject = 'Copydesk: ' + langDisplay + ' translation needed for "' + (jobName || 'Untitled Job') + '"';
+  var body =
+    'You\'ve been assigned as a translator on a Copydesk project.\n\n' +
+    'Project: ' + (jobName || 'Untitled Job') + '\n' +
+    'Language: ' + langDisplay + '\n\n' +
+    'Open the translation:\n' + subjobUrl + '\n\n' +
+    '—\nCopydesk';
+
+  try {
+    GmailApp.sendEmail(recipientEmail, subject, body);
+    return true;
+  } catch (e) {
+    Logger.log('sendTranslatorInvite_ failed for ' + recipientEmail + ': ' + e);
+    return false;
+  }
 }
 
 // Normalize style labels for robust comparison
@@ -814,6 +886,12 @@ function routeCopydeskAction_(body) {
   } else if (action === 'listDeliverablesForUser') {
     return handleListDeliverablesForUser_(body);
 
+  // ---- Collaborator management ----
+  } else if (action === 'updateJobMeta') {
+    return handleUpdateJobMeta_(body);
+  } else if (action === 'resendInvite') {
+    return handleResendInvite_(body);
+
   } else {
     return { ok: false, error: 'Unknown action: ' + action };
   }
@@ -831,6 +909,138 @@ function doPost(e) {
   } catch (err) {
     return jsonResponse_({ ok: false, error: err.toString(), stack: err.stack });
   }
+}
+
+// -----------------------------
+// updateJobMeta: update collaborators (and optionally cutoff)
+// -----------------------------
+function handleUpdateJobMeta_(body) {
+  var jobId = body && body.jobId ? String(body.jobId).trim() : '';
+  var patch = body && body.patch ? body.patch : {};
+
+  if (!jobId) {
+    return { ok: false, error: 'Missing jobId' };
+  }
+
+  var spreadsheetId = getSpreadsheetIdForJobId_(jobId);
+  if (!spreadsheetId) {
+    return { ok: false, error: 'Job not found for jobId: ' + jobId };
+  }
+
+  // Block edits on closed jobs
+  if (isJobClosed_(jobId)) {
+    return { ok: false, error: 'Job is closed; metadata cannot be changed.' };
+  }
+
+  var ss = SpreadsheetApp.openById(spreadsheetId);
+  var jobSheet = ss.getSheetByName(JOB_EN_SHEET_NAME);
+  if (!jobSheet) {
+    return { ok: false, error: 'JOB_EN sheet not found' };
+  }
+
+  // Get current collaborators for comparison (to detect new additions)
+  var oldCollabRaw = String(jobSheet.getRange('B7').getValue() || '').trim();
+  var oldCollabs = oldCollabRaw
+    ? oldCollabRaw.split(',').map(function(e) { return e.trim().toLowerCase(); }).filter(Boolean)
+    : [];
+
+  // Get job name for email
+  var jobName = String(jobSheet.getRange('B2').getValue() || '').trim() || 'Untitled Job';
+
+  var updated = [];
+
+  // Update collaborators if provided
+  if (patch.collaborators !== undefined) {
+    var newCollabStr = String(patch.collaborators || '').trim();
+    jobSheet.getRange('B7').setValue(newCollabStr);
+    updated.push('collaborators');
+
+    // Parse new collaborators and send emails to newly added ones
+    var newCollabs = newCollabStr
+      ? newCollabStr.split(',').map(function(e) { return e.trim(); }).filter(Boolean)
+      : [];
+
+    var newCollabsLower = newCollabs.map(function(e) { return e.toLowerCase(); });
+
+    // Find newly added collaborators (in new list but not in old list)
+    var addedCollabs = [];
+    for (var i = 0; i < newCollabs.length; i++) {
+      if (oldCollabs.indexOf(newCollabsLower[i]) < 0) {
+        addedCollabs.push(newCollabs[i]);
+      }
+    }
+
+    // Send invite emails to newly added collaborators
+    var emailsSent = [];
+    for (var j = 0; j < addedCollabs.length; j++) {
+      var sent = sendCollaboratorInvite_(addedCollabs[j], jobId, jobName);
+      if (sent) emailsSent.push(addedCollabs[j]);
+    }
+
+    // Also share the spreadsheet with new collaborators
+    var file = DriveApp.getFileById(spreadsheetId);
+    for (var k = 0; k < addedCollabs.length; k++) {
+      try { file.addEditor(addedCollabs[k]); } catch (e) {}
+    }
+  }
+
+  // Update cutoff if provided
+  if (patch.cutoff !== undefined) {
+    var cutoffVal = patch.cutoff;
+    if (cutoffVal) {
+      var d = new Date(cutoffVal);
+      jobSheet.getRange('B4').setValue(isNaN(d.getTime()) ? cutoffVal : d);
+    } else {
+      jobSheet.getRange('B4').setValue('');
+    }
+    updated.push('cutoff');
+  }
+
+  return { ok: true, updated: updated };
+}
+
+// -----------------------------
+// resendInvite: resend collaborator or translator email
+// -----------------------------
+function handleResendInvite_(body) {
+  var jobId = body && body.jobId ? String(body.jobId).trim() : '';
+  var email = body && body.email ? String(body.email).trim() : '';
+  var lang = body && body.lang ? String(body.lang).trim().toUpperCase() : '';
+
+  if (!jobId) {
+    return { ok: false, error: 'Missing jobId' };
+  }
+  if (!email) {
+    return { ok: false, error: 'Missing email' };
+  }
+
+  var spreadsheetId = getSpreadsheetIdForJobId_(jobId);
+  if (!spreadsheetId) {
+    return { ok: false, error: 'Job not found for jobId: ' + jobId };
+  }
+
+  var ss = SpreadsheetApp.openById(spreadsheetId);
+  var jobSheet = ss.getSheetByName(JOB_EN_SHEET_NAME);
+  if (!jobSheet) {
+    return { ok: false, error: 'JOB_EN sheet not found' };
+  }
+
+  var jobName = String(jobSheet.getRange('B2').getValue() || '').trim() || 'Untitled Job';
+
+  var sent = false;
+  if (lang) {
+    // Translator invite for subjob
+    sent = sendTranslatorInvite_(email, jobId, lang, jobName);
+  } else {
+    // Collaborator invite for main job
+    sent = sendCollaboratorInvite_(email, jobId, jobName);
+  }
+
+  if (!sent) {
+    return { ok: false, error: 'Failed to send email to ' + email };
+  }
+
+  return { ok: true, email: email, lang: lang || null };
 }
 
 function handleSaveDraft_(body) {
@@ -3356,12 +3566,10 @@ function handleListDismissedCopydeskJobs_(body) {
     if (isAdmin) {
       // Admins see all dismissed jobs
     } else {
-      // Non-admins: must have dismissed this job AND be owner or collaborator
-      var userDismissed = dismissed.indexOf(userEmail) >= 0;
+      // Non-admins: see dismissed jobs they own or collaborate on
       var isOwner = ownerEmail === userEmail;
       var isCollab = collabs.indexOf(userEmail) >= 0;
 
-      if (!userDismissed) return;
       if (!isOwner && !isCollab) return;
     }
 
