@@ -3135,24 +3135,37 @@ function recordCopydeskJobInHopper_(o) {
     try { ownerEmail = String(Session.getActiveUser().getEmail() || '').trim(); } catch (e) {}
   }
 
-  var payload = [
-    jobId,
-    String(o.jobName || '').trim(),
-    String(o.spreadsheetId || '').trim(),
-    String(o.createdAt || '').trim(),
-    String(o.cutoff || '').trim(),
-    'Open',
-    ownerEmail,
-    collaboratorsCsv,
-    '',
-    ''
-  ];
-
   if (row) {
-    // Update mutable fields only (keep dismissed list)
+    // Update mutable fields only, preserve DismissedByCsv/ClosedAt/Edited
+    var existing = sh.getRange(row, 9, 1, 3).getValues()[0]; // cols I, J, K
+    var payload = [
+      jobId,
+      String(o.jobName || '').trim(),
+      String(o.spreadsheetId || '').trim(),
+      String(o.createdAt || '').trim(),
+      String(o.cutoff || '').trim(),
+      'Open',
+      ownerEmail,
+      collaboratorsCsv,
+      existing[0] || '',  // DismissedByCsv
+      existing[1] || '',  // ClosedAt
+      existing[2] || ''   // Edited
+    ];
     sh.getRange(row, 1, 1, payload.length).setValues([payload]);
   } else {
-    sh.appendRow(payload);
+    sh.appendRow([
+      jobId,
+      String(o.jobName || '').trim(),
+      String(o.spreadsheetId || '').trim(),
+      String(o.createdAt || '').trim(),
+      String(o.cutoff || '').trim(),
+      'Open',
+      ownerEmail,
+      collaboratorsCsv,
+      '',  // DismissedByCsv
+      '',  // ClosedAt
+      ''   // Edited
+    ]);
   }
 }
 
@@ -3195,24 +3208,37 @@ function recordTranslationSubjobInHopper_(o) {
 
   var touchedAtIso = o.touchedAt || new Date().toISOString();
 
-  var payload = [
-    subjobId,                          // JobId (unique for this translation)
-    subjobName,                        // JobName
-    parentSpreadsheetId,               // SpreadsheetId (same as parent)
-    touchedAtIso,                      // CreatedAt (when first touched)
-    parentCutoff,                      // Cutoff (inherit from parent)
-    'Open',                            // Status (active translation job)
-    parentOwnerEmail,                  // OwnerEmail (inherit from parent)
-    parentCollaboratorsCsv,            // CollaboratorsCsv (inherit from parent)
-    '',                                // DismissedByCsv
-    ''                                 // ClosedAt
-  ];
-
   if (row) {
-    // Update existing row (keep dismissed list)
+    // Update existing row, preserve DismissedByCsv/ClosedAt/Edited
+    var existing = sh.getRange(row, 9, 1, 3).getValues()[0];
+    var payload = [
+      subjobId,
+      subjobName,
+      parentSpreadsheetId,
+      touchedAtIso,
+      parentCutoff,
+      'Open',
+      parentOwnerEmail,
+      parentCollaboratorsCsv,
+      existing[0] || '',  // DismissedByCsv
+      existing[1] || '',  // ClosedAt
+      existing[2] || ''   // Edited
+    ];
     sh.getRange(row, 1, 1, payload.length).setValues([payload]);
   } else {
-    sh.appendRow(payload);
+    sh.appendRow([
+      subjobId,
+      subjobName,
+      parentSpreadsheetId,
+      touchedAtIso,
+      parentCutoff,
+      'Open',
+      parentOwnerEmail,
+      parentCollaboratorsCsv,
+      '',  // DismissedByCsv
+      '',  // ClosedAt
+      ''   // Edited
+    ]);
   }
 }
 
