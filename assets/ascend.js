@@ -1436,7 +1436,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       const isCopydesk = origin === "copydesk";
       const isCodeDesk = origin === "codedesk";
 
-      const title = item.Title || item.title || item.Name || item.name || "Untitled";
+      const title = item.Title || item.title || item.JobName || item.Name || item.name || "Untitled";
       const trashedAt = item.TrashedAt || item.trashed_at || "";
       const trashedDate = trashedAt ? formatShortDate(trashedAt) : "";
 
