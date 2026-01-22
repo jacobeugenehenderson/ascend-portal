@@ -246,7 +246,7 @@
 
   // ---- Trash helpers (FileRoom API) ----
 
-  function trashFileRoomJob_(ascendJobKey, callback) {
+  function trashFileRoomJob_(ascendJobKey, callback, title) {
     const session = loadSession();
     if (!session || !session.userEmail) {
       if (callback) callback({ ok: false, error: 'Not logged in' });
@@ -268,6 +268,7 @@
     url.searchParams.set("action", "trashJob");
     url.searchParams.set("user_email", session.userEmail);
     url.searchParams.set("ascend_job_key", ascendJobKey);
+    if (title) url.searchParams.set("title", title);
     url.searchParams.set("callback", callbackName);
 
     const script = document.createElement("script");
@@ -1897,7 +1898,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         evt.preventDefault();
         evt.stopPropagation();
         try { evt.stopImmediatePropagation(); } catch (e) {}
-        deleteArtStartJob(job.AscendJobId);
+        deleteArtStartJob(job.AscendJobId, job.NordsonJobId || job.AscendJobId || "");
       });
 
       card.appendChild(mainBtn);
@@ -2076,7 +2077,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     document.body.appendChild(script);
   }
 
-  function deleteArtStartJob(jobId) {
+  function deleteArtStartJob(jobId, jobTitle) {
     const session = loadSession();
     if (!session || !session.userEmail) {
       alert("Please log in again before removing jobs.");
@@ -2097,7 +2098,7 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       const ascendJobKey = "ARTSTART:" + (jobId || "");
       trashFileRoomJob_(ascendJobKey, function() {
         try { requestAndRenderTrash(); } catch (e) {}
-      });
+      }, jobTitle || "");
     };
 
     const url = new URL(ARTSTART_API_BASE);

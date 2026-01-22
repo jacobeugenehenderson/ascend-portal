@@ -725,8 +725,8 @@ function trashJob_(p) {
     const sh = getSheet_(ss, JOBS_SHEET_NAME);
 
     let header = getHeaderMap_(sh);
-    // Only require base columns, add trash columns if missing
-    ensureHeaders_(header, ['AscendJobKey','UpdatedAt']);
+    // Ensure all needed columns exist
+    ensureHeaders_(header, ['AscendJobKey','App','SourceId','Title','OwnerEmail','UpdatedAt','CreatedAt']);
     header = ensureOrAddColumns_(sh, header, ['TrashedAt', 'TrashedBy']);
 
     const keyCol = header['AscendJobKey'];
@@ -743,11 +743,23 @@ function trashJob_(p) {
       }
     }
 
-    if (foundRow === -1) {
-      return { ok: false, error: 'Job not found', ascend_job_key: key };
-    }
-
     const nowIso = new Date().toISOString();
+
+    // If job doesn't exist, create a minimal entry so it can be trashed
+    if (foundRow === -1) {
+      // Parse app and source_id from key (format: "APP:sourceId")
+      const colonIdx = key.indexOf(':');
+      const app = colonIdx > 0 ? key.substring(0, colonIdx) : '';
+      const sourceId = colonIdx > 0 ? key.substring(colonIdx + 1) : key;
+
+      foundRow = sh.getLastRow() + 1;
+      if (header['AscendJobKey']) sh.getRange(foundRow, header['AscendJobKey']).setValue(key);
+      if (header['App']) sh.getRange(foundRow, header['App']).setValue(app);
+      if (header['SourceId']) sh.getRange(foundRow, header['SourceId']).setValue(sourceId);
+      if (header['Title']) sh.getRange(foundRow, header['Title']).setValue(opt_(p, 'title', ''));
+      if (header['OwnerEmail']) sh.getRange(foundRow, header['OwnerEmail']).setValue(userEmail);
+      if (header['CreatedAt']) sh.getRange(foundRow, header['CreatedAt']).setValue(nowIso);
+    }
 
     // Set TrashedAt and TrashedBy
     sh.getRange(foundRow, header['TrashedAt']).setValue(nowIso);
