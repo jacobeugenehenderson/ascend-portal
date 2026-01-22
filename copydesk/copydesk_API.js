@@ -47,27 +47,47 @@ function isAdminUser_(email) {
  * Send a collaborator invite email for a main job.
  * @param {string} recipientEmail - The collaborator's email address
  * @param {string} jobId - The job ID
- * @param {string} jobName - The job name for the email subject/body
+ * @param {string} jobName - The job name for the email subject
+ * @param {string} cutoff - The job close date (optional)
  * @returns {boolean} - True if sent successfully
  */
-function sendCollaboratorInvite_(recipientEmail, jobId, jobName) {
+function sendCollaboratorInvite_(recipientEmail, jobId, jobName, cutoff) {
   if (!recipientEmail) return false;
   recipientEmail = String(recipientEmail).trim();
   if (!recipientEmail || recipientEmail.indexOf('@') < 1) return false;
 
   var jobUrl = COPYDESK_JOB_VIEW_URL + '?jobid=' + encodeURIComponent(jobId);
-  var subject = 'Copydesk: You\'ve been added to "' + (jobName || 'Untitled Job') + '"';
-  var body =
-    'You\'ve been added as a collaborator on a Copydesk project.\n\n' +
-    'Project: ' + (jobName || 'Untitled Job') + '\n\n' +
-    'Open the project:\n' + jobUrl + '\n\n' +
-    '—\nCopydesk';
+  var subject = 'Copydesk: ' + (jobName || 'Untitled Job');
+
+  // Format cutoff date if provided
+  var closeDateStr = '';
+  if (cutoff) {
+    try {
+      var d = new Date(cutoff);
+      if (!isNaN(d.getTime())) {
+        closeDateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      }
+    } catch (e) {}
+  }
+
+  var htmlBody =
+    '<p><a href="' + jobUrl + '">You\'re invited to collaborate on this doc</a>; ' +
+    'edits will auto-commit at midnight Eastern US time' +
+    (closeDateStr ? ' until the job closes on ' + closeDateStr : '') +
+    '.</p>' +
+    '<p>Keep this email as it will be your one-click access to the live text throughout the duration of the job.</p>';
+
+  var plainBody =
+    'You\'re invited to collaborate on this doc: ' + jobUrl + '\n\n' +
+    'Edits will auto-commit at midnight Eastern US time' +
+    (closeDateStr ? ' until the job closes on ' + closeDateStr : '') +
+    '.\n\n' +
+    'Keep this email as it will be your one-click access to the live text throughout the duration of the job.';
 
   try {
-    GmailApp.sendEmail(recipientEmail, subject, body);
+    GmailApp.sendEmail(recipientEmail, subject, plainBody, { htmlBody: htmlBody });
     return true;
   } catch (e) {
-    // Log but don't fail the calling operation
     Logger.log('sendCollaboratorInvite_ failed for ' + recipientEmail + ': ' + e);
     return false;
   }
@@ -78,7 +98,7 @@ function sendCollaboratorInvite_(recipientEmail, jobId, jobName) {
  * @param {string} recipientEmail - The translator's email address
  * @param {string} jobId - The job ID
  * @param {string} lang - The language code (e.g., "FR")
- * @param {string} jobName - The job name for the email subject/body
+ * @param {string} jobName - The job name for the email subject
  * @returns {boolean} - True if sent successfully
  */
 function sendTranslatorInvite_(recipientEmail, jobId, lang, jobName) {
@@ -90,20 +110,53 @@ function sendTranslatorInvite_(recipientEmail, jobId, lang, jobName) {
     '?jobid=' + encodeURIComponent(jobId) +
     '&lang=' + encodeURIComponent(lang || '');
   var langDisplay = lang ? lang.toUpperCase() : 'Translation';
-  var subject = 'Copydesk: ' + langDisplay + ' translation needed for "' + (jobName || 'Untitled Job') + '"';
-  var body =
-    'You\'ve been assigned as a translator on a Copydesk project.\n\n' +
-    'Project: ' + (jobName || 'Untitled Job') + '\n' +
-    'Language: ' + langDisplay + '\n\n' +
-    'Open the translation:\n' + subjobUrl + '\n\n' +
-    '—\nCopydesk';
+  var subject = 'Copydesk: ' + (jobName || 'Untitled Job') + ' — ' + langDisplay + ' translation';
+
+  var htmlBody =
+    '<p><a href="' + subjobUrl + '">You\'re invited to translate this doc</a> into ' + langDisplay + '.</p>' +
+    '<p>Keep this email as it will be your one-click access to the translation throughout the duration of the job.</p>';
+
+  var plainBody =
+    'You\'re invited to translate this doc into ' + langDisplay + ': ' + subjobUrl + '\n\n' +
+    'Keep this email as it will be your one-click access to the translation throughout the duration of the job.';
 
   try {
-    GmailApp.sendEmail(recipientEmail, subject, body);
+    GmailApp.sendEmail(recipientEmail, subject, plainBody, { htmlBody: htmlBody });
     return true;
   } catch (e) {
     Logger.log('sendTranslatorInvite_ failed for ' + recipientEmail + ': ' + e);
     return false;
+  }
+}
+
+/**
+ * Add editor to file without sending Google's native sharing notification.
+ * @param {string} fileId - The Drive file ID
+ * @param {string} email - The email to add as editor
+ */
+function addEditorSilently_(fileId, email) {
+  try {
+    var file = DriveApp.getFileById(fileId);
+    // Check if already an editor
+    var editors = file.getEditors();
+    for (var i = 0; i < editors.length; i++) {
+      if (editors[i].getEmail().toLowerCase() === email.toLowerCase()) {
+        return; // Already an editor
+      }
+    }
+    // Use Drive API to add without notification
+    Drive.Permissions.insert(
+      { role: 'writer', type: 'user', value: email },
+      fileId,
+      { sendNotificationEmails: false }
+    );
+  } catch (e) {
+    // Fallback to regular addEditor if Drive API fails
+    try {
+      DriveApp.getFileById(fileId).addEditor(email);
+    } catch (e2) {
+      Logger.log('addEditorSilently_ failed for ' + email + ': ' + e2);
+    }
   }
 }
 
@@ -975,10 +1028,9 @@ function handleUpdateJobMeta_(body) {
       try { sendTranslatorInvite_(addedTrans[j], jobId, lang, jobName); } catch (e) {}
     }
 
-    // Share spreadsheet with new translators
-    var file = DriveApp.getFileById(spreadsheetId);
+    // Share spreadsheet with new translators (silently)
     for (var k = 0; k < addedTrans.length; k++) {
-      try { file.addEditor(addedTrans[k]); } catch (e) {}
+      try { addEditorSilently_(spreadsheetId, addedTrans[k]); } catch (e) {}
     }
   }
 
@@ -998,6 +1050,10 @@ function handleUpdateJobMeta_(body) {
     targetSheet.getRange('B7').setValue(newCollabStr);
     updated.push('collaborators');
 
+    // Get cutoff for email
+    var cutoff = '';
+    try { cutoff = String(targetSheet.getRange('B4').getValue() || ''); } catch (e) {}
+
     // Parse new collaborators and send emails to newly added ones
     var newCollabs = newCollabStr
       ? newCollabStr.split(',').map(function(e) { return e.trim(); }).filter(Boolean)
@@ -1015,13 +1071,12 @@ function handleUpdateJobMeta_(body) {
 
     // Send invite emails to newly added collaborators
     for (var n = 0; n < addedCollabs.length; n++) {
-      try { sendCollaboratorInvite_(addedCollabs[n], jobId, jobName); } catch (e) {}
+      try { sendCollaboratorInvite_(addedCollabs[n], jobId, jobName, cutoff); } catch (e) {}
     }
 
-    // Share spreadsheet with new collaborators
-    var file2 = DriveApp.getFileById(spreadsheetId);
+    // Share spreadsheet with new collaborators (silently)
     for (var p = 0; p < addedCollabs.length; p++) {
-      try { file2.addEditor(addedCollabs[p]); } catch (e) {}
+      try { addEditorSilently_(spreadsheetId, addedCollabs[p]); } catch (e) {}
     }
   }
 
@@ -1071,6 +1126,7 @@ function handleResendInvite_(body) {
   }
 
   var jobName = String(jobSheet.getRange('B2').getValue() || '').trim() || 'Untitled Job';
+  var cutoff = String(jobSheet.getRange('B4').getValue() || '');
 
   var sent = false;
   if (lang) {
@@ -1078,7 +1134,7 @@ function handleResendInvite_(body) {
     sent = sendTranslatorInvite_(email, jobId, lang, jobName);
   } else {
     // Collaborator invite for main job
-    sent = sendCollaboratorInvite_(email, jobId, jobName);
+    sent = sendCollaboratorInvite_(email, jobId, jobName, cutoff);
   }
 
   if (!sent) {
@@ -2530,8 +2586,9 @@ function handleCreateEnglishJob_(body) {
     jobSheet.getRange(startRow, 1, values.length, values[0].length).setValues(values);
   }
 
-    collaborators.forEach(email => {
-    try { copyFile.addEditor(email); } catch (e) {}
+    // Share spreadsheet with collaborators (silently - no Google notification)
+    collaborators.forEach(function(email) {
+    try { addEditorSilently_(copyFile.getId(), email); } catch (e) {}
   });
 
   // Send invite emails to all collaborators (except the creator)
@@ -2540,7 +2597,7 @@ function handleCreateEnglishJob_(body) {
     var creatorEmail = String(reqUserEmail || '').trim().toLowerCase();
     // Don't email the creator (they just created the job)
     if (normalizedEmail && normalizedEmail !== creatorEmail) {
-      try { sendCollaboratorInvite_(email, jobId, jobName); } catch (e) {}
+      try { sendCollaboratorInvite_(email, jobId, jobName, cutoff); } catch (e) {}
     }
   });
 
