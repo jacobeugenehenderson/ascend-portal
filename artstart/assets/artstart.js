@@ -1189,8 +1189,11 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var maxContainerHeight = 600; // height cap for preview
     var isActualSize = (canvasViewMode === 'actual');
 
-    // Reference PPI for print preview (72 = standard Mac screen point)
-    var PRINT_PREVIEW_PPI = 72;
+    // Reference PPI for print preview, adjusted for display density.
+    // 72 PPI is the classic Mac "point" but Retina displays pack 2x (or more) physical
+    // pixels per CSS pixel. Multiplying by devicePixelRatio gives closer-to-actual size.
+    var dpr = window.devicePixelRatio || 1;
+    var PRINT_PREVIEW_PPI = 72 * dpr;
 
     if (mediaKind === 'digital') {
       // DIGITAL: Actual size = pixel dimensions. Scale-to-fit only scales DOWN.
