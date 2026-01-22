@@ -784,6 +784,58 @@ function softDeleteArtStartJob_(jobId, userEmail) {
   sheet.getRange(targetRowIndex, statusCol + 1).setValue('Deleted');
 }
 
+/**
+ * restoreArtStartJob_(jobId, userEmail)
+ * Clears the "Deleted" status to restore a soft-deleted job.
+ */
+function restoreArtStartJob_(jobId, userEmail) {
+  if (!jobId) {
+    throw new Error('Missing jobId for restore');
+  }
+
+  var sheet = getSheet_(SHEET_NAME_PROJECTS);
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) {
+    throw new Error('No projects rows found');
+  }
+
+  var map = getHeaderMap_(sheet);
+  var colAsc = map['AscendJobId'];
+  if (colAsc == null) {
+    throw new Error('AscendJobId column not found in Projects sheet');
+  }
+
+  var statusCol = map['Status'];
+  if (statusCol == null) {
+    throw new Error('Status column not found in Projects sheet');
+  }
+
+  var createdByCol = map['CreatedByContactId'];
+  var targetRowIndex = -1;
+
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    if (String(row[colAsc]) === String(jobId)) {
+      if (createdByCol != null && userEmail) {
+        var rowEmail = String(row[createdByCol] || '').toLowerCase();
+        var reqEmail = String(userEmail || '').toLowerCase();
+        if (rowEmail && rowEmail !== reqEmail) {
+          throw new Error('Job does not belong to this user');
+        }
+      }
+      targetRowIndex = r + 1; // 1-based row in sheet
+      break;
+    }
+  }
+
+  if (targetRowIndex === -1) {
+    throw new Error('Project not found for restore: ' + jobId);
+  }
+
+  // Clear Status to restore the job
+  sheet.getRange(targetRowIndex, statusCol + 1).setValue('');
+}
+
 function setProjectFieldIfPresent_(sheet, headers, rowIndex, headerName, value) {
   // Try exact match first
   var idx = headers.indexOf(headerName);
@@ -1685,6 +1737,18 @@ function doGet(e) {
       return jsonResponse_({ success: true, jobId: jobIdDel }, callback);
     } catch (errDel) {
       return jsonResponse_({ success: false, error: String(errDel) }, callback);
+    }
+  }
+
+  if (action === 'restoreArtStartJob') {
+    var jobIdRestore = e.parameter.jobId || e.parameter.jobid || '';
+    var userEmailRestore = e.parameter.user_email || e.parameter.userEmail || '';
+
+    try {
+      restoreArtStartJob_(jobIdRestore, userEmailRestore);
+      return jsonResponse_({ success: true, jobId: jobIdRestore }, callback);
+    } catch (errRestore) {
+      return jsonResponse_({ success: false, error: String(errRestore) }, callback);
     }
   }
 

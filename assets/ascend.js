@@ -337,6 +337,37 @@
     document.body.appendChild(script);
   }
 
+  // Restore a soft-deleted ArtStart job (clears Deleted status)
+  function restoreArtStartJob_(jobId, callback) {
+    const session = loadSession();
+    if (!session || !session.userEmail) {
+      if (callback) callback({ ok: false, error: 'Not logged in' });
+      return;
+    }
+
+    const callbackName =
+      "ascendRestoreArtStartJobCallback_" + String(Date.now()) + "_" + String(Math.floor(Math.random() * 100000));
+
+    window[callbackName] = function (payload) {
+      try {
+        if (callback) callback(payload);
+      } finally {
+        try { delete window[callbackName]; } catch (e) {}
+      }
+    };
+
+    const url = new URL(ARTSTART_API_BASE);
+    url.searchParams.set("action", "restoreArtStartJob");
+    url.searchParams.set("jobId", jobId);
+    url.searchParams.set("user_email", session.userEmail);
+    url.searchParams.set("callback", callbackName);
+
+    const script = document.createElement("script");
+    script.src = url.toString();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
   function requestTrashedJobs_(callback) {
     const session = loadSession();
     if (!session || !session.userEmail) {
@@ -1520,6 +1551,12 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
           const copydeskJobId = ascendJobKey.replace("COPYDESK:", "");
           restoreCopydeskJob_(copydeskJobId, function() {});
         }
+
+        // Also restore in ArtStart if it's an ArtStart job (clears Deleted status)
+        if (ascendJobKey.startsWith("ARTSTART:")) {
+          const artStartJobId = ascendJobKey.replace("ARTSTART:", "");
+          restoreArtStartJob_(artStartJobId, function() {});
+        }
       });
 
       card.appendChild(mainBtn);
@@ -2055,6 +2092,12 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
       }
       // In all cases, refresh the list so the UI stays in sync
       requestArtStartJobs();
+
+      // Also add to FileRoom trash for restore capability
+      const ascendJobKey = "ARTSTART:" + (jobId || "");
+      trashFileRoomJob_(ascendJobKey, function() {
+        try { requestAndRenderTrash(); } catch (e) {}
+      });
     };
 
     const url = new URL(ARTSTART_API_BASE);
