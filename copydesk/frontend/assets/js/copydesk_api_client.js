@@ -221,5 +221,16 @@
     return postJson_({ action: 'commitJob', jobId: jobId });
   };
 
+  // resendInvite(jobId, email, lang?)
+  // Resend collaborator invite (main job) or translator invite (subjob).
+  // If lang is provided, sends translator invite; otherwise sends collaborator invite.
+  window.copydeskResendInvite = async function (jobId, email, lang) {
+    if (!jobId) throw new Error('Missing jobId');
+    if (!email) throw new Error('Missing email');
+    var body = { action: 'resendInvite', jobId: jobId, email: email };
+    if (lang) body.lang = lang;
+    return postJson_(body);
+  };
+
   // lockJob is not implemented server-side in this deployment.
 })();

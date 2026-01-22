@@ -139,9 +139,6 @@ function renderHeader(job) {
   var dueDiv = document.getElementById('job-cutoff-date');
   var countdownEl = document.getElementById('job-cutoff-countdown');
 
-  var collabInput = document.getElementById('job-collaborators-input');
-  var collabDiv = document.getElementById('job-collaborators');
-
   if (nameEl) {
     nameEl.textContent = (job && job.jobName) ? job.jobName : '';
   }
@@ -217,73 +214,235 @@ function renderHeader(job) {
 
   // Collaborators normalize (allow array or comma-string)
   var c = job && job.collaborators;
-  var collabStr = '';
-  if (Array.isArray(c)) collabStr = c.join(', ');
-  else if (typeof c === 'string') collabStr = c.trim();
-
-  // Collaborators render + save
-  if (collabInput) {
-    collabInput.value = collabStr || '';
-    collabInput.disabled = isClosed;
-
-    if (!collabInput.dataset.wired) {
-      collabInput.dataset.wired = '1';
-
-      // Debounced collaborators save (same pattern as card autosave)
-      var collabSaveTimer = null;
-      var collabLastSaved = collabStr || '';
-
-      function saveCollaboratorsNow_() {
-        if (!job || !job.jobId) return;
-        if (isClosed) return;
-
-        var v = String(collabInput.value || '').trim();
-        if (v === collabLastSaved) return; // No change, skip save
-
-        collabLastSaved = v;
-        if (window.copydeskUpdateJobMeta) {
-          window.copydeskUpdateJobMeta(job.jobId, { collaborators: v }).catch(function () {});
-        }
-      }
-
-      function scheduleCollabSave_(delayMs) {
-        if (collabSaveTimer) {
-          clearTimeout(collabSaveTimer);
-          collabSaveTimer = null;
-        }
-        collabSaveTimer = setTimeout(function () {
-          collabSaveTimer = null;
-          saveCollaboratorsNow_();
-        }, delayMs || 800);
-      }
-
-      // Debounced save on input
-      collabInput.addEventListener('input', function () {
-        scheduleCollabSave_(800);
-      });
-
-      // Immediate save on blur
-      collabInput.addEventListener('blur', function () {
-        if (collabSaveTimer) {
-          clearTimeout(collabSaveTimer);
-          collabSaveTimer = null;
-        }
-        saveCollaboratorsNow_();
-      });
-
-      // Save on Enter (Shift+Enter allowed to insert newline if this ever becomes a textarea)
-      collabInput.addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter') return;
-        if (e.shiftKey) return;
-        e.preventDefault();
-        saveCollaborators_();
-        try { collabInput.blur(); } catch (err) {}
-      });
-    }
-  } else if (collabDiv) {
-    collabDiv.textContent = collabStr ? collabStr : 'No collaborators';
-    collabDiv.classList.toggle('is-muted', !collabStr);
+  var collabList = [];
+  if (Array.isArray(c)) {
+    collabList = c.map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+  } else if (typeof c === 'string' && c.trim()) {
+    collabList = c.split(',').map(function(e) { return String(e || '').trim(); }).filter(Boolean);
   }
+
+  // Render collaborator chips
+  renderCollaboratorChips_(job, collabList, isClosed);
+}
+
+// -----------------------------
+// Collaborator Chips UI
+// -----------------------------
+
+function getEmailHandle_(email) {
+  if (!email) return '';
+  var atIdx = email.indexOf('@');
+  return atIdx > 0 ? email.substring(0, atIdx) : email;
+}
+
+function renderCollaboratorChips_(job, collabList, isClosed) {
+  var host = document.getElementById('collaborator-chips');
+  if (!host) return;
+
+  host.classList.toggle('is-closed', isClosed);
+
+  var html = '';
+
+  // Render each collaborator as a chip
+  for (var i = 0; i < collabList.length; i++) {
+    var email = collabList[i];
+    var handle = getEmailHandle_(email);
+    html +=
+      '<button type="button" class="collaborator-chip" data-email="' + escapeAttr_(email) + '">' +
+        escapeHtml_(handle) +
+      '</button>';
+  }
+
+  // Add "+ Add" chip (only if not closed)
+  if (!isClosed) {
+    html += '<button type="button" class="collaborator-chip chip-add">+ Add</button>';
+  }
+
+  host.innerHTML = html;
+
+  // Wire click handlers (delegated)
+  if (!host.dataset.wired) {
+    host.dataset.wired = '1';
+    host.addEventListener('click', function(e) {
+      var el = e.target;
+      while (el && el !== host && !el.classList.contains('collaborator-chip')) {
+        el = el.parentNode;
+      }
+      if (!el || el === host) return;
+
+      // Check if closed
+      if (host.classList.contains('is-closed')) return;
+
+      if (el.classList.contains('chip-add')) {
+        // Show add dialog
+        showAddCollaboratorDialog_(job);
+      } else {
+        // Show resend confirmation
+        var email = el.getAttribute('data-email') || '';
+        if (email) {
+          showResendConfirmDialog_(job, email);
+        }
+      }
+    });
+  }
+}
+
+function escapeHtml_(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeAttr_(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
+}
+
+function showResendConfirmDialog_(job, email) {
+  var handle = getEmailHandle_(email);
+
+  var overlay = document.createElement('div');
+  overlay.className = 'collab-confirm-dialog';
+  overlay.innerHTML =
+    '<div class="collab-confirm-panel">' +
+      '<h3>Resend invite?</h3>' +
+      '<p>Send another invite email to <strong>' + escapeHtml_(handle) + '</strong>?</p>' +
+      '<div class="collab-confirm-actions">' +
+        '<button type="button" class="collab-confirm-cancel">Cancel</button>' +
+        '<button type="button" class="collab-confirm-send">Send</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  var cancelBtn = overlay.querySelector('.collab-confirm-cancel');
+  var sendBtn = overlay.querySelector('.collab-confirm-send');
+
+  function close() {
+    overlay.remove();
+  }
+
+  cancelBtn.addEventListener('click', close);
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) close();
+  });
+
+  sendBtn.addEventListener('click', function() {
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+
+    if (window.copydeskResendInvite && job && job.jobId) {
+      window.copydeskResendInvite(job.jobId, email)
+        .then(function() {
+          sendBtn.textContent = 'Sent!';
+          setTimeout(close, 800);
+        })
+        .catch(function(err) {
+          sendBtn.textContent = 'Failed';
+          console.error('Resend failed:', err);
+          setTimeout(close, 1500);
+        });
+    } else {
+      close();
+    }
+  });
+}
+
+function showAddCollaboratorDialog_(job) {
+  var overlay = document.createElement('div');
+  overlay.className = 'collab-add-dialog';
+  overlay.innerHTML =
+    '<div class="collab-add-panel">' +
+      '<h3>Add collaborator</h3>' +
+      '<input type="email" placeholder="email@example.com" autocomplete="email" />' +
+      '<div class="collab-confirm-actions">' +
+        '<button type="button" class="collab-confirm-cancel">Cancel</button>' +
+        '<button type="button" class="collab-confirm-send">Add</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+
+  var input = overlay.querySelector('input');
+  var cancelBtn = overlay.querySelector('.collab-confirm-cancel');
+  var addBtn = overlay.querySelector('.collab-confirm-send');
+
+  function close() {
+    overlay.remove();
+  }
+
+  cancelBtn.addEventListener('click', close);
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) close();
+  });
+
+  input.focus();
+
+  function doAdd() {
+    var email = String(input.value || '').trim();
+    if (!email || email.indexOf('@') < 1) {
+      input.focus();
+      return;
+    }
+
+    addBtn.disabled = true;
+    addBtn.textContent = 'Adding...';
+
+    // Get current collaborators and add the new one
+    var currentCollabs = [];
+    var c = job && job.collaborators;
+    if (Array.isArray(c)) {
+      currentCollabs = c.map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+    } else if (typeof c === 'string' && c.trim()) {
+      currentCollabs = c.split(',').map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+    }
+
+    // Check if already exists
+    var emailLower = email.toLowerCase();
+    var exists = currentCollabs.some(function(e) { return e.toLowerCase() === emailLower; });
+    if (exists) {
+      addBtn.textContent = 'Already added';
+      setTimeout(close, 1000);
+      return;
+    }
+
+    currentCollabs.push(email);
+    var newCollabStr = currentCollabs.join(', ');
+
+    if (window.copydeskUpdateJobMeta && job && job.jobId) {
+      window.copydeskUpdateJobMeta(job.jobId, { collaborators: newCollabStr })
+        .then(function() {
+          // Update local job object
+          job.collaborators = currentCollabs;
+          addBtn.textContent = 'Added!';
+          setTimeout(function() {
+            close();
+            // Re-render chips
+            renderCollaboratorChips_(job, currentCollabs, false);
+          }, 600);
+        })
+        .catch(function(err) {
+          addBtn.textContent = 'Failed';
+          console.error('Add collaborator failed:', err);
+          setTimeout(close, 1500);
+        });
+    } else {
+      close();
+    }
+  }
+
+  addBtn.addEventListener('click', doAdd);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      doAdd();
+    }
+  });
 }
 // Styles are authoritative from the spreadsheet; no invented defaults.
 // Styles caching: styles rarely change, so cache them in sessionStorage for faster loads.

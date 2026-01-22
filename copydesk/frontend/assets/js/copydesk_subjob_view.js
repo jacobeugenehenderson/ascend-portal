@@ -184,7 +184,6 @@
     var nameEl = document.getElementById('job-name');
     var dueEl = document.getElementById('job-cutoff-date');
     var countdownEl = document.getElementById('job-cutoff-countdown');
-    var collabEl = document.getElementById('job-collaborators');
 
     if (nameEl) {
       nameEl.textContent = (job && job.jobName) ? job.jobName : '';
@@ -192,21 +191,236 @@
 
     // Subjob header rules:
     // - No cutoff, no countdown.
-    // - Only show the translator identity (email).
     if (dueEl) dueEl.textContent = '';
     if (countdownEl) countdownEl.textContent = '';
 
-    if (collabEl) {
-      var c = job && job.collaborators;
-      var txt = '';
+    // Check if subjob is finished/closed
+    var isClosed = !!(job && String(job.status || '').toLowerCase() === 'closed');
 
-      // Prefer single-string identity if present; otherwise first entry.
-      if (typeof c === 'string') txt = c.trim();
-      else if (Array.isArray(c) && c.length) txt = String(c[0] || '').trim();
+    // Render translator chips
+    renderTranslatorChips_(job, isClosed);
+  }
 
-      collabEl.textContent = txt ? txt : '';
-      collabEl.classList.toggle('is-muted', !txt);
+  // -----------------------------
+  // Translator Chips UI (subjob)
+  // -----------------------------
+
+  function getEmailHandle_(email) {
+    if (!email) return '';
+    var atIdx = email.indexOf('@');
+    return atIdx > 0 ? email.substring(0, atIdx) : email;
+  }
+
+  function escapeAttr_(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderTranslatorChips_(job, isClosed) {
+    var host = document.getElementById('translator-chips');
+    if (!host) return;
+
+    host.classList.toggle('is-closed', isClosed);
+
+    // Get translators list (subjobs use "translators" field, fallback to "collaborators")
+    var t = (job && job.translators) || (job && job.collaborators);
+    var translatorList = [];
+    if (Array.isArray(t)) {
+      translatorList = t.map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+    } else if (typeof t === 'string' && t.trim()) {
+      translatorList = t.split(',').map(function(e) { return String(e || '').trim(); }).filter(Boolean);
     }
+
+    var html = '';
+
+    // Render each translator as a chip
+    for (var i = 0; i < translatorList.length; i++) {
+      var email = translatorList[i];
+      var handle = getEmailHandle_(email);
+      html +=
+        '<button type="button" class="collaborator-chip" data-email="' + escapeAttr_(email) + '">' +
+          escapeHtml_(handle) +
+        '</button>';
+    }
+
+    // Add "+ Add" chip (only if not closed)
+    if (!isClosed) {
+      html += '<button type="button" class="collaborator-chip chip-add">+ Add</button>';
+    }
+
+    host.innerHTML = html;
+
+    // Wire click handlers (delegated)
+    if (!host.dataset.wired) {
+      host.dataset.wired = '1';
+      host.addEventListener('click', function(e) {
+        var el = e.target;
+        while (el && el !== host && !el.classList.contains('collaborator-chip')) {
+          el = el.parentNode;
+        }
+        if (!el || el === host) return;
+
+        // Check if closed
+        if (host.classList.contains('is-closed')) return;
+
+        if (el.classList.contains('chip-add')) {
+          // Show add dialog
+          showAddTranslatorDialog_(job);
+        } else {
+          // Show resend confirmation
+          var email = el.getAttribute('data-email') || '';
+          if (email) {
+            showTranslatorResendDialog_(job, email);
+          }
+        }
+      });
+    }
+  }
+
+  function showTranslatorResendDialog_(job, email) {
+    var handle = getEmailHandle_(email);
+
+    var overlay = document.createElement('div');
+    overlay.className = 'collab-confirm-dialog';
+    overlay.innerHTML =
+      '<div class="collab-confirm-panel">' +
+        '<h3>Resend invite?</h3>' +
+        '<p>Send another invite email to <strong>' + escapeHtml_(handle) + '</strong>?</p>' +
+        '<div class="collab-confirm-actions">' +
+          '<button type="button" class="collab-confirm-cancel">Cancel</button>' +
+          '<button type="button" class="collab-confirm-send">Send</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var cancelBtn = overlay.querySelector('.collab-confirm-cancel');
+    var sendBtn = overlay.querySelector('.collab-confirm-send');
+
+    function close() {
+      overlay.remove();
+    }
+
+    cancelBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) close();
+    });
+
+    sendBtn.addEventListener('click', function() {
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+
+      if (window.copydeskResendInvite && job && job.jobId) {
+        // Pass lang for translator invite
+        window.copydeskResendInvite(job.jobId, email, __lang)
+          .then(function() {
+            sendBtn.textContent = 'Sent!';
+            setTimeout(close, 800);
+          })
+          .catch(function(err) {
+            sendBtn.textContent = 'Failed';
+            console.error('Resend failed:', err);
+            setTimeout(close, 1500);
+          });
+      } else {
+        close();
+      }
+    });
+  }
+
+  function showAddTranslatorDialog_(job) {
+    var overlay = document.createElement('div');
+    overlay.className = 'collab-add-dialog';
+    overlay.innerHTML =
+      '<div class="collab-add-panel">' +
+        '<h3>Add translator</h3>' +
+        '<input type="email" placeholder="email@example.com" autocomplete="email" />' +
+        '<div class="collab-confirm-actions">' +
+          '<button type="button" class="collab-confirm-cancel">Cancel</button>' +
+          '<button type="button" class="collab-confirm-send">Add</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var input = overlay.querySelector('input');
+    var cancelBtn = overlay.querySelector('.collab-confirm-cancel');
+    var addBtn = overlay.querySelector('.collab-confirm-send');
+
+    function close() {
+      overlay.remove();
+    }
+
+    cancelBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) close();
+    });
+
+    input.focus();
+
+    function doAdd() {
+      var email = String(input.value || '').trim();
+      if (!email || email.indexOf('@') < 1) {
+        input.focus();
+        return;
+      }
+
+      addBtn.disabled = true;
+      addBtn.textContent = 'Adding...';
+
+      // Get current translators and add the new one
+      var t = (job && job.translators) || (job && job.collaborators);
+      var currentTranslators = [];
+      if (Array.isArray(t)) {
+        currentTranslators = t.map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+      } else if (typeof t === 'string' && t.trim()) {
+        currentTranslators = t.split(',').map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+      }
+
+      // Check if already exists
+      var emailLower = email.toLowerCase();
+      var exists = currentTranslators.some(function(e) { return e.toLowerCase() === emailLower; });
+      if (exists) {
+        addBtn.textContent = 'Already added';
+        setTimeout(close, 1000);
+        return;
+      }
+
+      currentTranslators.push(email);
+      var newTranslatorsStr = currentTranslators.join(', ');
+
+      // Update via API (use updateSubjobMeta or similar - for now reuse updateJobMeta with lang)
+      if (window.copydeskUpdateJobMeta && job && job.jobId) {
+        window.copydeskUpdateJobMeta(job.jobId, { translators: newTranslatorsStr, lang: __lang })
+          .then(function() {
+            // Update local job object
+            job.translators = currentTranslators;
+            addBtn.textContent = 'Added!';
+            setTimeout(function() {
+              close();
+              // Re-render chips
+              renderTranslatorChips_(job, false);
+            }, 600);
+          })
+          .catch(function(err) {
+            addBtn.textContent = 'Failed';
+            console.error('Add translator failed:', err);
+            setTimeout(close, 1500);
+          });
+      } else {
+        close();
+      }
+    }
+
+    addBtn.addEventListener('click', doAdd);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doAdd();
+      }
+    });
   }
 
   // ---------------------------

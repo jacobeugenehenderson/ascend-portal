@@ -912,11 +912,12 @@ function doPost(e) {
 }
 
 // -----------------------------
-// updateJobMeta: update collaborators (and optionally cutoff)
+// updateJobMeta: update collaborators/translators (and optionally cutoff)
 // -----------------------------
 function handleUpdateJobMeta_(body) {
   var jobId = body && body.jobId ? String(body.jobId).trim() : '';
   var patch = body && body.patch ? body.patch : {};
+  var lang = (patch && patch.lang) ? String(patch.lang).trim().toUpperCase() : '';
 
   if (!jobId) {
     return { ok: false, error: 'Missing jobId' };
@@ -927,32 +928,74 @@ function handleUpdateJobMeta_(body) {
     return { ok: false, error: 'Job not found for jobId: ' + jobId };
   }
 
-  // Block edits on closed jobs
-  if (isJobClosed_(jobId)) {
-    return { ok: false, error: 'Job is closed; metadata cannot be changed.' };
-  }
-
   var ss = SpreadsheetApp.openById(spreadsheetId);
-  var jobSheet = ss.getSheetByName(JOB_EN_SHEET_NAME);
-  if (!jobSheet) {
-    return { ok: false, error: 'JOB_EN sheet not found' };
+
+  // Determine which sheet to update (main job or subjob)
+  var sheetName = lang ? ('JOB_' + lang) : JOB_EN_SHEET_NAME;
+  var targetSheet = ss.getSheetByName(sheetName);
+  if (!targetSheet) {
+    return { ok: false, error: sheetName + ' sheet not found' };
   }
 
-  // Get current collaborators for comparison (to detect new additions)
-  var oldCollabRaw = String(jobSheet.getRange('B7').getValue() || '').trim();
-  var oldCollabs = oldCollabRaw
-    ? oldCollabRaw.split(',').map(function(e) { return e.trim().toLowerCase(); }).filter(Boolean)
-    : [];
-
-  // Get job name for email
-  var jobName = String(jobSheet.getRange('B2').getValue() || '').trim() || 'Untitled Job';
+  // Get job name from main JOB_EN sheet for emails
+  var jobSheet = ss.getSheetByName(JOB_EN_SHEET_NAME);
+  var jobName = jobSheet ? String(jobSheet.getRange('B2').getValue() || '').trim() : 'Untitled Job';
+  if (!jobName) jobName = 'Untitled Job';
 
   var updated = [];
 
-  // Update collaborators if provided
-  if (patch.collaborators !== undefined) {
+  // Update translators (for subjobs) if provided
+  if (patch.translators !== undefined && lang) {
+    var oldTransRaw = String(targetSheet.getRange('B7').getValue() || '').trim();
+    var oldTrans = oldTransRaw
+      ? oldTransRaw.split(',').map(function(e) { return e.trim().toLowerCase(); }).filter(Boolean)
+      : [];
+
+    var newTransStr = String(patch.translators || '').trim();
+    targetSheet.getRange('B7').setValue(newTransStr);
+    updated.push('translators');
+
+    // Parse new translators and send emails to newly added ones
+    var newTrans = newTransStr
+      ? newTransStr.split(',').map(function(e) { return e.trim(); }).filter(Boolean)
+      : [];
+
+    var newTransLower = newTrans.map(function(e) { return e.toLowerCase(); });
+
+    // Find newly added translators
+    var addedTrans = [];
+    for (var i = 0; i < newTrans.length; i++) {
+      if (oldTrans.indexOf(newTransLower[i]) < 0) {
+        addedTrans.push(newTrans[i]);
+      }
+    }
+
+    // Send invite emails to newly added translators
+    for (var j = 0; j < addedTrans.length; j++) {
+      try { sendTranslatorInvite_(addedTrans[j], jobId, lang, jobName); } catch (e) {}
+    }
+
+    // Share spreadsheet with new translators
+    var file = DriveApp.getFileById(spreadsheetId);
+    for (var k = 0; k < addedTrans.length; k++) {
+      try { file.addEditor(addedTrans[k]); } catch (e) {}
+    }
+  }
+
+  // Update collaborators (for main job) if provided
+  if (patch.collaborators !== undefined && !lang) {
+    // Block collaborator edits on closed main jobs
+    if (isJobClosed_(jobId)) {
+      return { ok: false, error: 'Job is closed; collaborators cannot be changed.' };
+    }
+
+    var oldCollabRaw = String(targetSheet.getRange('B7').getValue() || '').trim();
+    var oldCollabs = oldCollabRaw
+      ? oldCollabRaw.split(',').map(function(e) { return e.trim().toLowerCase(); }).filter(Boolean)
+      : [];
+
     var newCollabStr = String(patch.collaborators || '').trim();
-    jobSheet.getRange('B7').setValue(newCollabStr);
+    targetSheet.getRange('B7').setValue(newCollabStr);
     updated.push('collaborators');
 
     // Parse new collaborators and send emails to newly added ones
@@ -962,36 +1005,38 @@ function handleUpdateJobMeta_(body) {
 
     var newCollabsLower = newCollabs.map(function(e) { return e.toLowerCase(); });
 
-    // Find newly added collaborators (in new list but not in old list)
+    // Find newly added collaborators
     var addedCollabs = [];
-    for (var i = 0; i < newCollabs.length; i++) {
-      if (oldCollabs.indexOf(newCollabsLower[i]) < 0) {
-        addedCollabs.push(newCollabs[i]);
+    for (var m = 0; m < newCollabs.length; m++) {
+      if (oldCollabs.indexOf(newCollabsLower[m]) < 0) {
+        addedCollabs.push(newCollabs[m]);
       }
     }
 
     // Send invite emails to newly added collaborators
-    var emailsSent = [];
-    for (var j = 0; j < addedCollabs.length; j++) {
-      var sent = sendCollaboratorInvite_(addedCollabs[j], jobId, jobName);
-      if (sent) emailsSent.push(addedCollabs[j]);
+    for (var n = 0; n < addedCollabs.length; n++) {
+      try { sendCollaboratorInvite_(addedCollabs[n], jobId, jobName); } catch (e) {}
     }
 
-    // Also share the spreadsheet with new collaborators
-    var file = DriveApp.getFileById(spreadsheetId);
-    for (var k = 0; k < addedCollabs.length; k++) {
-      try { file.addEditor(addedCollabs[k]); } catch (e) {}
+    // Share spreadsheet with new collaborators
+    var file2 = DriveApp.getFileById(spreadsheetId);
+    for (var p = 0; p < addedCollabs.length; p++) {
+      try { file2.addEditor(addedCollabs[p]); } catch (e) {}
     }
   }
 
-  // Update cutoff if provided
-  if (patch.cutoff !== undefined) {
+  // Update cutoff if provided (main job only)
+  if (patch.cutoff !== undefined && !lang) {
+    if (isJobClosed_(jobId)) {
+      return { ok: false, error: 'Job is closed; cutoff cannot be changed.' };
+    }
+
     var cutoffVal = patch.cutoff;
     if (cutoffVal) {
       var d = new Date(cutoffVal);
-      jobSheet.getRange('B4').setValue(isNaN(d.getTime()) ? cutoffVal : d);
+      targetSheet.getRange('B4').setValue(isNaN(d.getTime()) ? cutoffVal : d);
     } else {
-      jobSheet.getRange('B4').setValue('');
+      targetSheet.getRange('B4').setValue('');
     }
     updated.push('cutoff');
   }
@@ -1541,6 +1586,12 @@ function handleGetJob_(body) {
       if (panelNightly) nightly = panelNightly;
     }
 
+    // For subjobs (lang sheets), B7 is "translators"; for main job it's "collaborators"
+    var b7Value = (function () {
+      var v = sheet.getRange("B7").getValue();
+      return String(v == null ? '' : v).trim();
+    })();
+
     const header = {
       jobId: sheet.getRange("B1").getValue(),
       jobName: sheet.getRange("B2").getValue(),
@@ -1548,10 +1599,8 @@ function handleGetJob_(body) {
       cutoff: formatCutoffForClient_(sheet.getRange("B4").getValue()),
       timezone: timezone,
       nightly: nightly,
-      collaborators: (function () {
-        var v = sheet.getRange("B7").getValue();
-        return String(v == null ? '' : v).trim();
-      })()
+      collaborators: lang ? '' : b7Value,  // Main job collaborators
+      translators: lang ? b7Value : ''     // Subjob translators
     };
 
 // ----- SEGMENTS -----
@@ -2483,6 +2532,16 @@ function handleCreateEnglishJob_(body) {
 
     collaborators.forEach(email => {
     try { copyFile.addEditor(email); } catch (e) {}
+  });
+
+  // Send invite emails to all collaborators (except the creator)
+  collaborators.forEach(function(email) {
+    var normalizedEmail = String(email || '').trim().toLowerCase();
+    var creatorEmail = String(reqUserEmail || '').trim().toLowerCase();
+    // Don't email the creator (they just created the job)
+    if (normalizedEmail && normalizedEmail !== creatorEmail) {
+      try { sendCollaboratorInvite_(email, jobId, jobName); } catch (e) {}
+    }
   });
 
   setJobIndex_(jobId, ss.getId());

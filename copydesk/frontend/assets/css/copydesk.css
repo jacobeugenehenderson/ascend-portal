@@ -217,6 +217,191 @@
   background: rgba(255,255,255,0.96);
 }
 
+/* -----------------------------
+   Collaborator chips (main job + subjob translators)
+----------------------------- */
+.collaborator-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  max-width: min(520px, 50vw);
+}
+
+.collaborator-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(11, 16, 37, 0.16);
+  background: rgba(255,255,255,0.92);
+
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 600;
+
+  color: rgba(11, 16, 37, 0.88);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.collaborator-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.10);
+  background: rgba(255,255,255,1);
+}
+
+.collaborator-chip:active {
+  transform: translateY(0);
+}
+
+/* Add button chip */
+.collaborator-chip.chip-add {
+  background: rgba(79, 209, 197, 0.12);
+  border-color: rgba(79, 209, 197, 0.40);
+  color: rgba(11, 16, 37, 0.78);
+  font-weight: 700;
+}
+
+.collaborator-chip.chip-add:hover {
+  background: rgba(79, 209, 197, 0.22);
+  border-color: rgba(79, 209, 197, 0.60);
+}
+
+/* Disabled state (closed job) */
+.collaborator-chips.is-closed .collaborator-chip {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.collaborator-chips.is-closed .collaborator-chip:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.collaborator-chips.is-closed .collaborator-chip.chip-add {
+  display: none;
+}
+
+/* Confirmation dialog */
+.collab-confirm-dialog {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.40);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+}
+
+.collab-confirm-panel {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  max-width: min(400px, calc(100vw - 40px));
+  text-align: center;
+}
+
+.collab-confirm-panel h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(11, 16, 37, 0.92);
+}
+
+.collab-confirm-panel p {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: rgba(11, 16, 37, 0.68);
+}
+
+.collab-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.collab-confirm-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 100ms ease, transform 100ms ease;
+}
+
+.collab-confirm-actions button:active {
+  transform: scale(0.97);
+}
+
+.collab-confirm-cancel {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(11, 16, 37, 0.78);
+}
+
+.collab-confirm-cancel:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.collab-confirm-send {
+  background: rgba(79, 209, 197, 0.88);
+  color: #fff;
+}
+
+.collab-confirm-send:hover {
+  background: rgba(79, 209, 197, 1);
+}
+
+/* Add collaborator input dialog */
+.collab-add-dialog {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.40);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+}
+
+.collab-add-panel {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  max-width: min(400px, calc(100vw - 40px));
+  width: 100%;
+}
+
+.collab-add-panel h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(11, 16, 37, 0.92);
+}
+
+.collab-add-panel input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(11, 16, 37, 0.18);
+  font-size: 14px;
+  margin-bottom: 16px;
+  outline: none;
+}
+
+.collab-add-panel input:focus {
+  border-color: rgba(79, 209, 197, 0.70);
+}
+
 /* Keep Push pinned visually to far right */
 .ascend-app-actions {
   display: flex;
