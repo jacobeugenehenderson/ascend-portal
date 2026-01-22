@@ -356,9 +356,9 @@
       }
     };
 
-    // Use Copydesk API for trash (user-filtered dismissed jobs)
-    const url = new URL(COPYDESK_API_BASE);
-    url.searchParams.set("action", "listDismissedCopydeskJobs");
+    // Use FileRoom API for unified trash across all apps
+    const url = new URL(FILEROOM_API_BASE);
+    url.searchParams.set("action", "listTrashedJobsForUser");
     url.searchParams.set("user_email", session.userEmail);
     url.searchParams.set("callback", callbackName);
 
@@ -1497,19 +1497,29 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
         evt.preventDefault();
         evt.stopPropagation();
 
-        const jobId = item.JobId || item.jobId || "";
-        if (!jobId) return;
+        const ascendJobKey = item.AscendJobKey || item.ascend_job_key || "";
+        if (!ascendJobKey) return;
 
         // Immediate UI removal for responsiveness
         card.remove();
 
-        restoreCopydeskJob_(jobId, function(result) {
-          // Refresh both trash and main hoppers
+        // Restore in FileRoom (central trash)
+        restoreFileRoomJob_(ascendJobKey, function(result) {
+          // Refresh trash
           requestTrashedJobs_(function(data) {
             renderTrashLane(data.jobs || []);
           });
+          // Refresh all app hoppers
           try { requestCopydeskJobs(); } catch (e) {}
+          try { requestArtStartJobs(); } catch (e) {}
+          try { renderCodeDeskHopper(); } catch (e) {}
         });
+
+        // Also restore in Copydesk if it's a Copydesk job (clears DismissedByCsv)
+        if (isCopydesk && ascendJobKey.startsWith("COPYDESK:")) {
+          const copydeskJobId = ascendJobKey.replace("COPYDESK:", "");
+          restoreCopydeskJob_(copydeskJobId, function() {});
+        }
       });
 
       card.appendChild(mainBtn);

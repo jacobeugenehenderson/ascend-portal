@@ -832,6 +832,9 @@ function restoreJob_(p) {
  */
 function listTrashedJobsForUser_(p) {
   const userEmail = String(req_(p, 'user_email')).toLowerCase().trim();
+  const isAdmin = FILEROOM_ADMIN_EMAILS.some(function(e) {
+    return e.toLowerCase() === userEmail;
+  });
 
   const ss = SpreadsheetApp.openById(FILEROOM_SPREADSHEET_ID);
   const jobsSh = getSheet_(ss, JOBS_SHEET_NAME);
@@ -840,11 +843,11 @@ function listTrashedJobsForUser_(p) {
   ensureHeaders_(jobsHeader, ['AscendJobKey','OwnerEmail']);
   // If TrashedAt column doesn't exist, return empty (nothing trashed yet)
   if (!jobsHeader['TrashedAt']) {
-    return { user_email: userEmail, jobs: [], count: 0 };
+    return { user_email: userEmail, jobs: [], count: 0, isAdmin: isAdmin };
   }
 
   const lastRow = jobsSh.getLastRow();
-  if (lastRow < 2) return { user_email: userEmail, jobs: [], count: 0 };
+  if (lastRow < 2) return { user_email: userEmail, jobs: [], count: 0, isAdmin: isAdmin };
 
   const lastCol = jobsSh.getLastColumn();
   const values = jobsSh.getRange(2, 1, lastRow - 1, lastCol).getValues();
@@ -858,13 +861,16 @@ function listTrashedJobsForUser_(p) {
     const trashedAt = String(job.TrashedAt || '').trim();
     if (!trashedAt) continue;
 
-    // Check ownership - also include items trashed by this user, or items with no owner
-    const owner = String(job.OwnerEmail || '').toLowerCase().trim();
-    const collabs = String(job.Collaborators || '').toLowerCase();
-    const trashedBy = String(job.TrashedBy || '').toLowerCase().trim();
+    // Admins see all trashed items
+    if (!isAdmin) {
+      // Check ownership - also include items trashed by this user, or items with no owner
+      const owner = String(job.OwnerEmail || '').toLowerCase().trim();
+      const collabs = String(job.Collaborators || '').toLowerCase();
+      const trashedBy = String(job.TrashedBy || '').toLowerCase().trim();
 
-    const isMine = !owner || owner === userEmail || trashedBy === userEmail || (collabs && collabs.indexOf(userEmail) !== -1);
-    if (!isMine) continue;
+      const isMine = !owner || owner === userEmail || trashedBy === userEmail || (collabs && collabs.indexOf(userEmail) !== -1);
+      if (!isMine) continue;
+    }
 
     out.push({
       AscendJobKey: job.AscendJobKey,
@@ -890,7 +896,7 @@ function listTrashedJobsForUser_(p) {
     return bt - at;
   });
 
-  return { user_email: userEmail, jobs: out, count: out.length };
+  return { user_email: userEmail, jobs: out, count: out.length, isAdmin: isAdmin };
 }
 
 /**
