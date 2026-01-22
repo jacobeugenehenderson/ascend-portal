@@ -145,18 +145,16 @@ function addEditorSilently_(fileId, email) {
       }
     }
     // Use Drive API to add without notification
+    // NOTE: Requires the Drive Advanced Service to be enabled in the Apps Script project
     Drive.Permissions.insert(
       { role: 'writer', type: 'user', value: email },
       fileId,
       { sendNotificationEmails: false }
     );
   } catch (e) {
-    // Fallback to regular addEditor if Drive API fails
-    try {
-      DriveApp.getFileById(fileId).addEditor(email);
-    } catch (e2) {
-      Logger.log('addEditorSilently_ failed for ' + email + ': ' + e2);
-    }
+    // Do NOT fall back to addEditor() - that sends Google's native notification.
+    // If the Drive API fails, log it but don't share with notification.
+    Logger.log('addEditorSilently_ failed for ' + email + ': ' + e);
   }
 }
 
