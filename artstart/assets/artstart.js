@@ -26,6 +26,9 @@ function getJobIdFromQuery() {
 var FILEROOM_API_BASE = window.FILEROOM_API_BASE || '';
 var CODEDESK_URL = window.CODEDESK_URL || '';
 
+// ---------- Canvas view mode ----------
+var canvasViewMode = 'fit'; // 'fit' or 'actual'
+
 // ---------- Language / Translation (workspace dropdown) ----------
 var baseLanguage = 'EN';
 var activeLanguage = 'EN';
@@ -1181,11 +1184,112 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var displayWidth;
     var displayHeight;
 
-    // PRINT MODE BELOW (digital shares the same stage model; only bleed behavior differs)
+    // Container constraints (only used in 'fit' mode)
+    var maxContainerWidth = (box.clientWidth || 720) - 36; // minus padding
+    var maxContainerHeight = 600; // height cap for preview
+    var isActualSize = (canvasViewMode === 'actual');
 
-    // 1) Bleed in same units as trim (e.g., inches)
+    if (mediaKind === 'digital') {
+      // DIGITAL: Show at actual pixel size (1:1), capped by container constraints in fit mode.
+      // Digital jobs have no bleed.
+      displayWidth = w;
+      displayHeight = h;
+
+      if (!isActualSize) {
+        // Scale down proportionally if exceeds container bounds
+        var scaleX = displayWidth > maxContainerWidth ? maxContainerWidth / displayWidth : 1;
+        var scaleY = displayHeight > maxContainerHeight ? maxContainerHeight / displayHeight : 1;
+        var scale = Math.min(scaleX, scaleY);
+
+        if (scale < 1) {
+          displayWidth = Math.round(displayWidth * scale);
+          displayHeight = Math.round(displayHeight * scale);
+        }
+      }
+
+      if (inner) {
+        inner.style.width = displayWidth + 'px';
+        inner.style.height = displayHeight + 'px';
+      }
+
+      // Typography scale for digital: based on ratio of display to original
+      if (safeEl) {
+        var baseScale = displayWidth / w;
+        if (!isFinite(baseScale) || baseScale <= 0) baseScale = 1;
+        baseScale = Math.max(0.10, baseScale);
+        safeEl.dataset.baseScale = String(baseScale);
+        safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
+      }
+    } else {
+      // PRINT: Show at correct aspect ratio with bleed, capped by height in fit mode.
+      // Bleed in same units as trim (e.g., inches)
+      var bleedAmount = 0;
+      if (job) {
+        var rawBleed = job.bleed;
+        if (rawBleed !== undefined && rawBleed !== null && rawBleed !== '') {
+          var parsed = parseFloat(rawBleed);
+          if (isFinite(parsed) && parsed > 0) {
+            bleedAmount = parsed;
+          }
+        }
+      }
+
+      // Total artboard = trim + bleed on all four sides
+      var totalWidth = w + bleedAmount * 2;
+      var totalHeight = h + bleedAmount * 2;
+
+      if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
+      if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
+
+      var aspectRatio = totalWidth / totalHeight;
+      var pxPerUnit;
+
+      if (isActualSize) {
+        // Actual size: 72 pixels per inch (standard screen DPI for print preview)
+        var ACTUAL_SIZE_PPI = 72;
+        displayWidth = Math.round(totalWidth * ACTUAL_SIZE_PPI);
+        displayHeight = Math.round(totalHeight * ACTUAL_SIZE_PPI);
+        pxPerUnit = ACTUAL_SIZE_PPI;
+      } else {
+        // Scale to fit within container, respecting aspect ratio and height cap
+        displayHeight = Math.min(maxContainerHeight, maxContainerWidth / aspectRatio);
+        displayWidth = displayHeight * aspectRatio;
+
+        // If width exceeds container, scale down by width instead
+        if (displayWidth > maxContainerWidth) {
+          displayWidth = maxContainerWidth;
+          displayHeight = displayWidth / aspectRatio;
+        }
+
+        displayWidth = Math.round(displayWidth);
+        displayHeight = Math.round(displayHeight);
+        pxPerUnit = displayWidth / totalWidth;
+      }
+
+      if (inner) {
+        inner.style.width = displayWidth + 'px';
+        inner.style.height = displayHeight + 'px';
+      }
+
+      // Typography scale for print: based on preview DPI
+      if (safeEl) {
+        var BASE_PX_PER_INCH = 72; // reference "dpi" for type
+        var baseScale = pxPerUnit / BASE_PX_PER_INCH;
+
+        if (!isFinite(baseScale) || baseScale <= 0) {
+          baseScale = 1;
+        }
+
+        baseScale = Math.max(0.10, baseScale);
+
+        safeEl.dataset.baseScale = String(baseScale);
+        safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
+      }
+    }
+
+    // Bleed amount for positioning (digital has none)
     var bleedAmount = 0;
-    if (job) {
+    if (mediaKind !== 'digital' && job) {
       var rawBleed = job.bleed;
       if (rawBleed !== undefined && rawBleed !== null && rawBleed !== '') {
         var parsed = parseFloat(rawBleed);
@@ -1194,53 +1298,8 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         }
       }
     }
-
-    // Digital must not include bleed in sizing math (and must place trim on the edge).
-    if (mediaKind === 'digital') {
-      bleedAmount = 0;
-    }
-
-    // Total artboard = trim + bleed on all four sides
     var totalWidth = w + bleedAmount * 2;
     var totalHeight = h + bleedAmount * 2;
-
-    if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
-    if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
-
-    // 2) Scale the full artboard so it fills the card width.
-    // Treat units as "inches" and convert to pixels, but cap
-    // pixels-per-inch so huge formats don't explode.
-    var maxWidth = box.clientWidth || 720;
-    var MARGIN_FACTOR = 0.9;      // leave a little breathing room
-    var MAX_PX_PER_UNIT = 120;    // ceiling on px per unit (inch)
-
-    var pxPerUnit = Math.min(
-      (maxWidth * MARGIN_FACTOR) / totalWidth,
-      MAX_PX_PER_UNIT
-    );
-
-    displayWidth = Math.round(totalWidth * pxPerUnit);
-    displayHeight = Math.round(totalHeight * pxPerUnit);
-
-    if (inner) {
-      inner.style.width = displayWidth + 'px';
-      inner.style.height = displayHeight + 'px';
-    }
-
-    // Establish a baseline typography scale based on preview DPI.
-    if (safeEl) {
-      var BASE_PX_PER_INCH = 72; // reference "dpi" for type
-      var baseScale = pxPerUnit / BASE_PX_PER_INCH;
-
-      if (!isFinite(baseScale) || baseScale <= 0) {
-        baseScale = 1;
-      }
-
-      baseScale = Math.max(0.10, baseScale);
-
-      safeEl.dataset.baseScale = String(baseScale);
-      safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
-    }
 
     // 3) Position trim (magenta stroke) and bleed (dashed teal) correctly.
     if (safeEl) {
@@ -1280,18 +1339,14 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
           bleedEl.style.right = insetRight;
         }
       } else {
-        // PRINT with no bleed configured: proportional inset
-        safeEl.style.top = '6%';
-        safeEl.style.bottom = '6%';
-        safeEl.style.left = '6%';
-        safeEl.style.right = '6%';
+        // PRINT with no bleed configured: trim is at the edge (same as digital)
+        safeEl.style.top = '0';
+        safeEl.style.bottom = '0';
+        safeEl.style.left = '0';
+        safeEl.style.right = '0';
 
         if (bleedEl) {
-          bleedEl.style.display = hideBleed ? 'none' : '';
-          bleedEl.style.top = '6%';
-          bleedEl.style.bottom = '6%';
-          bleedEl.style.left = '6%';
-          bleedEl.style.right = '6%';
+          bleedEl.style.display = 'none';
         }
       }
     }
@@ -1299,7 +1354,70 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     if (noInfoEl) {
       noInfoEl.style.display = 'none';
     }
-  }  
+  }
+
+  // --- Canvas view mode toggle ---
+  function initCanvasViewToggle_() {
+    var box = document.getElementById('format-canvas-box');
+    var fitBtn = document.getElementById('view-btn-fit');
+    var actualBtn = document.getElementById('view-btn-actual');
+
+    if (!box || !fitBtn || !actualBtn) return;
+
+    function setViewMode(mode) {
+      canvasViewMode = mode;
+      box.setAttribute('data-view-mode', mode);
+
+      fitBtn.classList.toggle('is-active', mode === 'fit');
+      actualBtn.classList.toggle('is-active', mode === 'actual');
+
+      // Re-render the canvas with new mode
+      if (typeof window.__ARTSTART_CURRENT_JOB__ !== 'undefined' && window.__ARTSTART_CURRENT_JOB__) {
+        renderCanvasPreview(window.__ARTSTART_CURRENT_JOB__);
+        syncCanvasTextFromFields();
+        autoscaleCanvasBands();
+      }
+    }
+
+    fitBtn.addEventListener('click', function () { setViewMode('fit'); });
+    actualBtn.addEventListener('click', function () { setViewMode('actual'); });
+
+    // Drag-to-pan for actual size mode
+    var isDragging = false;
+    var startX, startY, scrollLeft, scrollTop;
+
+    box.addEventListener('mousedown', function (e) {
+      if (canvasViewMode !== 'actual') return;
+      // Ignore clicks on the toggle buttons
+      if (e.target.closest('.artstart-view-toggle')) return;
+
+      isDragging = true;
+      box.style.cursor = 'grabbing';
+      startX = e.pageX - box.offsetLeft;
+      startY = e.pageY - box.offsetTop;
+      scrollLeft = box.scrollLeft;
+      scrollTop = box.scrollTop;
+      e.preventDefault();
+    });
+
+    document.addEventListener('mouseup', function () {
+      if (isDragging) {
+        isDragging = false;
+        box.style.cursor = '';
+      }
+    });
+
+    document.addEventListener('mousemove', function (e) {
+      if (!isDragging) return;
+      var x = e.pageX - box.offsetLeft;
+      var y = e.pageY - box.offsetTop;
+      var walkX = x - startX;
+      var walkY = y - startY;
+      box.scrollLeft = scrollLeft - walkX;
+      box.scrollTop = scrollTop - walkY;
+    });
+  }
+
   // --- Canvas line layout helpers ---
   // Split text by hard returns and render each line as a span so we can measure widths precisely.
   function setCanvasLines(el, text, maxLines) {
@@ -1562,6 +1680,9 @@ function autoscaleCanvasBands() {
     autoscaleCanvasBands();
   }
   function populateJob(job) {
+    // Store for view toggle re-render
+    window.__ARTSTART_CURRENT_JOB__ = job;
+
     var gridEl = document.getElementById('artstart-grid');
     if (gridEl) {
       gridEl.style.display = '';
@@ -2623,6 +2744,7 @@ try {
   function init() {
     setUserLabel();
     initQrUi_();
+    initCanvasViewToggle_();
 
     // Cache language UI
     langSelect = document.getElementById('working-language');
