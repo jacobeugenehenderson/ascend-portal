@@ -1938,30 +1938,38 @@
       }
 
       // ========== LOAD CONTENT WHEN JOB DATA ARRIVES ==========
-      // Watch for job data to populate editor
+
+      // Helper to populate editor from job data
+      function populateEditorFromJob(job) {
+        if (!job) return;
+
+        // Try localStorage first (client-side backup)
+        let localHtml = '';
+        try {
+          localHtml = localStorage.getItem('artstart_editor_' + job.jobId) || '';
+        } catch (e) {}
+
+        const html = localHtml || window.__ARTSTART_FIELDS_TO_HTML__({
+          workingEditorHtml: job.workingEditorHtml || '',
+          workingHeadline: job.workingHeadline || '',
+          workingSubhead: job.workingSubhead || '',
+          workingCta: job.workingCta || '',
+          workingBullets: job.workingBullets || '',
+        });
+        window.__ARTSTART_SET_EDITOR_HTML__(html);
+      }
+
+      // If job data is already loaded, populate editor now
+      if (window.__ARTSTART_CURRENT_JOB__) {
+        populateEditorFromJob(window.__ARTSTART_CURRENT_JOB__);
+      }
+
+      // Also wrap populateJob for future calls
       const originalPopulateJob = window.populateJob;
       if (typeof originalPopulateJob === 'function') {
         window.populateJob = function(job) {
-          // Call original
           originalPopulateJob(job);
-
-          // Populate editor - check localStorage first, then backend, then legacy fields
-          if (job) {
-            // Try localStorage first (client-side backup)
-            let localHtml = '';
-            try {
-              localHtml = localStorage.getItem('artstart_editor_' + job.jobId) || '';
-            } catch (e) {}
-
-            const html = localHtml || window.__ARTSTART_FIELDS_TO_HTML__({
-              workingEditorHtml: job.workingEditorHtml || '',
-              workingHeadline: job.workingHeadline || '',
-              workingSubhead: job.workingSubhead || '',
-              workingCta: job.workingCta || '',
-              workingBullets: job.workingBullets || '',
-            });
-            window.__ARTSTART_SET_EDITOR_HTML__(html);
-          }
+          populateEditorFromJob(job);
         };
       }
 
