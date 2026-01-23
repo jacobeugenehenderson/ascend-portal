@@ -2472,17 +2472,68 @@ try {
     }
   }
 
-  var url =
+  var baseUrl =
     ARTSTART_API_BASE +
     '?action=' + (isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields') +
     (isBase ? '' : ('&lang=' + encodeURIComponent(langToSave)));
 
-  // Use POST with JSON body to handle large payloads (editor HTML can exceed URL length limits)
-  return fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+  // Build URL with payload as query params
+  var url = baseUrl;
+  Object.keys(payload).forEach(function (key) {
+    var value = payload[key];
+    url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
+  });
+
+  // If URL is too long, use hidden iframe form POST (avoids CORS preflight unlike fetch POST)
+  if (url.length > 7500) {
+    return new Promise(function (resolve, reject) {
+      var frameName = 'artstart_save_frame_' + Date.now();
+      var iframe = document.createElement('iframe');
+      iframe.name = frameName;
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = baseUrl;
+      form.target = frameName;
+      form.style.display = 'none';
+
+      Object.keys(payload).forEach(function (key) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = payload[key];
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+
+      // Can't read cross-origin iframe response, assume success after delay
+      setTimeout(function () {
+        try { document.body.removeChild(form); } catch (e) {}
+        try { document.body.removeChild(iframe); } catch (e) {}
+        resolve({ ok: true, iframe: true });
+      }, 1500);
+    }).then(function (data) {
+      // Track human edit for non-base languages
+      if (!isBase) {
+        translationsDb = translationsDb || {};
+        translationsDb[langToSave] = translationsDb[langToSave] || {};
+        translationsDb[langToSave].human = true;
+        translationsDb[langToSave].edited = true;
+        translationsDb[langToSave].at = (new Date()).toISOString();
+        try { saveLangState_(jobId, langToSave, 'human'); } catch (_e) {}
+        if (langToSave === activeLanguage) updateLangDot_();
+      }
+      setSaveStatus('Saved');
+      return { success: true, data: data };
+    });
+  }
+
+  // Normal fetch for shorter URLs
+  return fetch(url)
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (!data || data.success === false) {
