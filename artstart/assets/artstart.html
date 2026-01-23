@@ -585,46 +585,114 @@
 
       .artstart-toolbar-select {
         height: 28px;
-        padding: 0 8px;
+        padding: 0 24px 0 8px;
         border: 1px solid #e2e8f0;
         border-radius: 4px;
         background: #ffffff;
         font-size: 12px;
         color: #374151;
         cursor: pointer;
+        min-width: 70px;
       }
 
       .artstart-toolbar-select:hover {
         border-color: #cbd5e1;
       }
 
-      /* Indent controls */
+      /* Font family selector needs more width */
+      #toolbar-font {
+        min-width: 120px;
+      }
+
+      /* Size signal bars (cell signal style) */
+      .artstart-size-signal {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 28px;
+        padding: 4px 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        background: #ffffff;
+        cursor: pointer;
+      }
+
+      .artstart-size-signal:hover {
+        border-color: #cbd5e1;
+      }
+
+      .artstart-size-bar {
+        width: 4px;
+        background: #cbd5e1;
+        border-radius: 1px;
+        transition: background 0.15s;
+      }
+
+      .artstart-size-bar.is-active {
+        background: #1e293b;
+      }
+
+      /* Fixed bar heights (cell signal style) */
+      .artstart-size-signal .artstart-size-bar:nth-child(1) { height: 4px; }
+      .artstart-size-signal .artstart-size-bar:nth-child(2) { height: 7px; }
+      .artstart-size-signal .artstart-size-bar:nth-child(3) { height: 10px; }
+      .artstart-size-signal .artstart-size-bar:nth-child(4) { height: 13px; }
+      .artstart-size-signal .artstart-size-bar:nth-child(5) { height: 16px; }
+
+      /* Weight/Style dropdown with styled 'a' characters */
+      .artstart-weight-select {
+        height: 28px;
+        padding: 0 24px 0 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        background: #ffffff;
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 16px;
+        color: #374151;
+        cursor: pointer;
+        min-width: 50px;
+      }
+
+      .artstart-weight-select option {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 14px;
+      }
+
+      /* Indent controls - override global styles */
       .artstart-indent-group {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
       }
 
       .artstart-indent-label {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 600;
         color: #6b7280;
       }
 
-      .artstart-indent-input {
-        width: 42px;
-        height: 24px;
-        padding: 0 4px;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
-        font-size: 11px;
-        text-align: center;
-        background: #ffffff;
+      .artstart-typeset-toolbar .artstart-indent-input {
+        width: 36px !important;
+        height: 24px !important;
+        padding: 0 2px !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 4px !important;
+        font-size: 11px !important;
+        text-align: center !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+        -moz-appearance: textfield;
       }
 
-      .artstart-indent-input:focus {
+      .artstart-typeset-toolbar .artstart-indent-input::-webkit-outer-spin-button,
+      .artstart-typeset-toolbar .artstart-indent-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .artstart-typeset-toolbar .artstart-indent-input:focus {
         outline: none;
-        border-color: #3b82f6;
+        border-color: #3b82f6 !important;
       }
 
       /* Color swatches */
@@ -764,20 +832,9 @@
 
       /* Meta inputs inside workspace (bottom-right) - minimal/borderless */
       /* Must override .ascend-app-panel input[type="text"] styles */
-      .artstart-workspace-meta {
-        position: absolute;
-        bottom: 6px;
-        right: 6px;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 2px;
-        pointer-events: auto;
-      }
-
       .artstart-canvas-safe .artstart-workspace-meta input[type="text"],
       .artstart-canvas-safe .artstart-workspace-meta input[type="email"] {
-        padding: 2px 4px;
+        padding: 2px 4px 2px 8px;
         border: none !important;
         border-radius: 0;
         font-size: 10px;
@@ -785,10 +842,12 @@
         background: transparent;
         text-align: right;
         width: auto;
-        min-width: 100px;
+        min-width: 120px;
         max-width: 180px;
         color: #374151;
         box-shadow: none !important;
+        overflow: visible;
+        text-overflow: clip;
       }
 
       .artstart-canvas-safe .artstart-workspace-meta input:hover {
@@ -807,6 +866,20 @@
         color: #9ca3af;
         font-style: italic;
         font-size: 9px;
+      }
+
+      /* Ensure meta container doesn't clip */
+      .artstart-workspace-meta {
+        position: absolute;
+        bottom: 6px;
+        right: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        pointer-events: auto;
+        overflow: visible;
+        max-width: calc(100% - 24px);
       }
 
       /* Editable notes in job overview - codedesk accordion visual style */
@@ -1109,26 +1182,29 @@
                 </select>
               </div>
 
-              <!-- Size -->
+              <!-- Size (signal bars) -->
               <div class="artstart-toolbar-group">
-                <select class="artstart-toolbar-select" id="toolbar-size" title="Text size">
-                  <option value="text-xs">XS</option>
-                  <option value="text-sm">S</option>
-                  <option value="text-base" selected>M</option>
-                  <option value="text-lg">L</option>
-                  <option value="text-xl">XL</option>
-                  <option value="text-2xl">2XL</option>
-                  <option value="text-3xl">3XL</option>
-                  <option value="text-4xl">4XL</option>
-                </select>
+                <div class="artstart-size-signal" id="toolbar-size" title="Text size" data-level="3">
+                  <div class="artstart-size-bar is-active"></div>
+                  <div class="artstart-size-bar is-active"></div>
+                  <div class="artstart-size-bar is-active"></div>
+                  <div class="artstart-size-bar"></div>
+                  <div class="artstart-size-bar"></div>
+                </div>
               </div>
 
-              <!-- Weight -->
+              <!-- Weight + Style -->
               <div class="artstart-toolbar-group">
-                <button class="artstart-toolbar-btn" id="toolbar-light" title="Light" data-weight="300">Lt</button>
-                <button class="artstart-toolbar-btn is-active" id="toolbar-regular" title="Regular" data-weight="400">Rg</button>
-                <button class="artstart-toolbar-btn" id="toolbar-semibold" title="Semibold" data-weight="600">Sb</button>
-                <button class="artstart-toolbar-btn" id="toolbar-bold" title="Bold" data-weight="700">Bd</button>
+                <select class="artstart-weight-select" id="toolbar-weight" title="Weight & Style">
+                  <option value="300" style="font-weight:300">a</option>
+                  <option value="300i" style="font-weight:300;font-style:italic">a</option>
+                  <option value="400" selected style="font-weight:400">a</option>
+                  <option value="400i" style="font-weight:400;font-style:italic">a</option>
+                  <option value="600" style="font-weight:600">a</option>
+                  <option value="600i" style="font-weight:600;font-style:italic">a</option>
+                  <option value="700" style="font-weight:700">a</option>
+                  <option value="700i" style="font-weight:700;font-style:italic">a</option>
+                </select>
               </div>
 
               <!-- Colors -->
@@ -1156,12 +1232,12 @@
                 <button class="artstart-toolbar-btn" id="toolbar-bullets" title="Bullet list">•</button>
               </div>
 
-              <!-- Indent controls -->
+              <!-- Indent controls (px) -->
               <div class="artstart-toolbar-group artstart-indent-group">
                 <label class="artstart-indent-label">H</label>
-                <input type="number" id="toolbar-indent-h" class="artstart-indent-input" value="8" min="0" max="50" title="Horizontal indent (%)">
+                <input type="number" id="toolbar-indent-h" class="artstart-indent-input" value="16" min="0" max="100" title="Horizontal padding (px)">
                 <label class="artstart-indent-label">V</label>
-                <input type="number" id="toolbar-indent-v" class="artstart-indent-input" value="8" min="0" max="50" title="Vertical indent (%)">
+                <input type="number" id="toolbar-indent-v" class="artstart-indent-input" value="16" min="0" max="100" title="Vertical padding (px)">
               </div>
 
               <!-- Language selector (moved from working draft) -->
@@ -1387,16 +1463,13 @@
         gold: '#b8860b',
       };
 
-      // Font size map
-      const FONT_SIZES = {
-        'text-xs': '10px',
-        'text-sm': '12px',
-        'text-base': '14px',
-        'text-lg': '18px',
-        'text-xl': '24px',
-        'text-2xl': '32px',
-        'text-3xl': '40px',
-        'text-4xl': '48px',
+      // Font size levels (signal bars: 1-5)
+      const SIZE_LEVELS = {
+        1: '10px',   // XS
+        2: '14px',   // Base
+        3: '18px',   // LG
+        4: '24px',   // XL
+        5: '32px',   // 2XL
       };
 
       // Wait for DOM and artstart.js to be ready
@@ -1461,25 +1534,45 @@
         });
       }
 
-      // Font size
-      const sizeSelect = document.getElementById('toolbar-size');
-      if (sizeSelect) {
-        sizeSelect.addEventListener('change', () => {
-          const size = FONT_SIZES[sizeSelect.value] || '14px';
+      // Font size (signal bars)
+      const sizeSignal = document.getElementById('toolbar-size');
+      if (sizeSignal) {
+        sizeSignal.addEventListener('click', () => {
+          // Cycle through levels 1-5
+          let level = parseInt(sizeSignal.dataset.level || '3', 10);
+          level = level >= 5 ? 1 : level + 1;
+          sizeSignal.dataset.level = level;
+
+          // Update visual bars
+          const bars = sizeSignal.querySelectorAll('.artstart-size-bar');
+          bars.forEach((bar, i) => {
+            bar.classList.toggle('is-active', i < level);
+          });
+
+          // Apply size
+          const size = SIZE_LEVELS[level] || '18px';
           editor.chain().focus().setFontSize(size).run();
         });
       }
 
-      // Font weight buttons
-      document.querySelectorAll('[data-weight]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const weight = btn.dataset.weight;
+      // Font weight + style dropdown
+      const weightSelect = document.getElementById('toolbar-weight');
+      if (weightSelect) {
+        weightSelect.addEventListener('change', () => {
+          const val = weightSelect.value;
+          const isItalic = val.endsWith('i');
+          const weight = isItalic ? val.slice(0, -1) : val;
+
+          // Apply weight
           editor.chain().focus().setFontWeight(weight).run();
-          // Update active state
-          document.querySelectorAll('[data-weight]').forEach(b => b.classList.remove('is-active'));
-          btn.classList.add('is-active');
+
+          // Toggle italic via textStyle - for now use CSS class approach
+          const editorContent = document.querySelector('.artstart-editor .ProseMirror');
+          if (editorContent) {
+            editorContent.style.fontStyle = isItalic ? 'italic' : 'normal';
+          }
         });
-      });
+      }
 
       // Color swatches
       document.querySelectorAll('.artstart-color-swatch').forEach(swatch => {
@@ -1539,17 +1632,17 @@
         }
       });
 
-      // Indent controls
+      // Indent controls - only affect text padding inside the safe zone
       const indentH = document.getElementById('toolbar-indent-h');
       const indentV = document.getElementById('toolbar-indent-v');
-      const canvasSafe = document.querySelector('.artstart-canvas-safe');
+      const editorArea = document.getElementById('artstart-editor');
 
       function updateIndents() {
-        if (!canvasSafe) return;
+        if (!editorArea) return;
         const h = parseInt(indentH?.value || '8', 10);
         const v = parseInt(indentV?.value || '8', 10);
-        canvasSafe.style.inset = `${v}% ${h}%`;
-        canvasSafe.style.padding = `${Math.max(2, v - 2)}% ${Math.max(2, h - 2)}%`;
+        // Only change padding on the editor, not the safe zone's position
+        editorArea.style.padding = `${v}px ${h}px`;
       }
 
       indentH?.addEventListener('change', updateIndents);
