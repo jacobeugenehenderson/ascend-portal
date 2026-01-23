@@ -1867,10 +1867,11 @@
           const lines = f.workingBullets.split('\n').filter(l => l.trim());
           lines.forEach(l => {
             // If line contains " - ", bold the part before it
-            if (l.includes(' - ')) {
-              const idx = l.indexOf(' - ');
-              const before = l.substring(0, idx);
-              const after = l.substring(idx + 3);
+            // Match " - ", " -- ", " – " (en dash), " — " (em dash)
+            const dashMatch = l.match(/^(.+?)\s+[-–—]{1,2}\s+(.+)$/);
+            if (dashMatch) {
+              const before = dashMatch[1];
+              const after = dashMatch[2];
               parts.push(`<p><strong>${escapeHtml(before)}</strong> – ${escapeHtml(after)}</p>`);
             } else {
               parts.push(`<p>${escapeHtml(l)}</p>`);
