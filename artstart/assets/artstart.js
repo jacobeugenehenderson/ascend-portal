@@ -2241,6 +2241,9 @@ if (code === baseLanguage) {
         console.log('[populateJob] baseFields.workingEditorHtml:', baseFields.workingEditorHtml ? baseFields.workingEditorHtml.substring(0, 200) : '(empty)');
 
         if (typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
+          // Mark that populateJob is handling content, so populateEditorFromJob won't overwrite
+          window.__ARTSTART_POPULATE_JOB_RAN__ = true;
+
           // Prefer stored HTML if available (preserves formatting), otherwise build from fields
           var html = baseFields.workingEditorHtml;
           if (!html && typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function') {

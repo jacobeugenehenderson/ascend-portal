@@ -2200,7 +2200,15 @@
       function populateEditorFromJob(job) {
         if (!job) return;
 
-        // Try localStorage first (client-side backup)
+        // Skip if populateJob already set the content (during language switches)
+        // populateJob handles language-aware content loading; this function should only
+        // run on initial page load before populateJob has run
+        if (window.__ARTSTART_POPULATE_JOB_RAN__) {
+          console.log('[populateEditorFromJob] Skipping - populateJob already ran');
+          return;
+        }
+
+        // Try localStorage first (client-side backup) - only for base language
         let localHtml = '';
         try {
           const key = 'artstart_editor_' + job.jobId;
