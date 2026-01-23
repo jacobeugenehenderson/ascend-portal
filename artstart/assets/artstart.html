@@ -793,109 +793,40 @@
         font-size: 13px;
       }
 
-      /* ---- Canvas view mode toggle ---- */
-      .artstart-view-toggle {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        z-index: 10;
-        display: flex;
-        gap: 6px;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(4px);
-        padding: 4px;
-        border-radius: 6px;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-      }
-
-      .artstart-view-btn {
-        width: 24px;
-        height: 24px;
-        padding: 0;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.15s;
-      }
-
-      .artstart-view-btn:hover {
-        background: rgba(68, 162, 188, 0.12);
-      }
-
-      .artstart-view-btn.is-active {
-        background: rgba(68, 162, 188, 0.18);
-      }
-
-      /* Scale-to-fit icon: outer border with smaller inset square */
-      .artstart-view-icon-fit {
-        width: 14px;
-        height: 14px;
-        border: 2px solid #44a2bc;
-        border-radius: 2px;
-        position: relative;
-        background: rgba(68, 162, 188, 0.15);
-      }
-
-      .artstart-view-icon-fit::after {
-        content: '';
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        right: 3px;
-        bottom: 3px;
-        background: #44a2bc;
-        border-radius: 1px;
-      }
-
-      /* Actual-size icon: border filled completely */
-      .artstart-view-icon-actual {
-        width: 14px;
-        height: 14px;
-        border: 2px solid #44a2bc;
-        border-radius: 2px;
-        background: rgba(68, 162, 188, 0.15);
-      }
-
-      /* ---- Actual-size overflow mode ---- */
-      /* Allow scrolling when content overflows, but keep centered otherwise */
-      .artstart-canvas-box[data-view-mode="actual"] {
+      /* ---- Digital canvas overflow (1:1 may exceed container) ---- */
+      .artstart-canvas-box[data-media-kind="digital"] {
         overflow: auto;
       }
 
-      /* Hand cursor only when actually scrollable */
-      .artstart-canvas-box[data-view-mode="actual"].is-scrollable {
+      .artstart-canvas-box[data-media-kind="digital"].is-scrollable {
         cursor: grab;
       }
 
-      .artstart-canvas-box[data-view-mode="actual"].is-scrollable:active {
+      .artstart-canvas-box[data-media-kind="digital"].is-scrollable:active {
         cursor: grabbing;
       }
 
-      /* Thin custom scrollbars */
-      .artstart-canvas-box[data-view-mode="actual"]::-webkit-scrollbar {
+      /* Thin custom scrollbars for digital overflow */
+      .artstart-canvas-box[data-media-kind="digital"]::-webkit-scrollbar {
         width: 6px;
         height: 6px;
       }
 
-      .artstart-canvas-box[data-view-mode="actual"]::-webkit-scrollbar-track {
+      .artstart-canvas-box[data-media-kind="digital"]::-webkit-scrollbar-track {
         background: transparent;
       }
 
-      .artstart-canvas-box[data-view-mode="actual"]::-webkit-scrollbar-thumb {
+      .artstart-canvas-box[data-media-kind="digital"]::-webkit-scrollbar-thumb {
         background: rgba(68, 162, 188, 0.4);
         border-radius: 3px;
       }
 
-      .artstart-canvas-box[data-view-mode="actual"]::-webkit-scrollbar-thumb:hover {
+      .artstart-canvas-box[data-media-kind="digital"]::-webkit-scrollbar-thumb:hover {
         background: rgba(68, 162, 188, 0.6);
       }
 
       /* Firefox scrollbar */
-      .artstart-canvas-box[data-view-mode="actual"] {
+      .artstart-canvas-box[data-media-kind="digital"] {
         scrollbar-width: thin;
         scrollbar-color: rgba(68, 162, 188, 0.4) transparent;
       }
@@ -940,15 +871,7 @@
               </div>
             </div>
 
-            <div id="format-canvas-box" class="artstart-canvas-box" data-view-mode="fit">
-              <div class="artstart-view-toggle">
-                <button type="button" class="artstart-view-btn is-active" id="view-btn-fit" title="Scale to fit">
-                  <span class="artstart-view-icon-fit"></span>
-                </button>
-                <button type="button" class="artstart-view-btn" id="view-btn-actual" title="Actual size">
-                  <span class="artstart-view-icon-actual"></span>
-                </button>
-              </div>
+            <div id="format-canvas-box" class="artstart-canvas-box">
               <div class="artstart-canvas-inner">
                 <div class="artstart-canvas-bleed"></div>
                 <div class="artstart-canvas-safe">

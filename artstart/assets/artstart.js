@@ -26,9 +26,6 @@ function getJobIdFromQuery() {
 var FILEROOM_API_BASE = window.FILEROOM_API_BASE || '';
 var CODEDESK_URL = window.CODEDESK_URL || '';
 
-// ---------- Canvas view mode ----------
-var canvasViewMode = 'fit'; // 'fit' or 'actual'
-
 // ---------- Language / Translation (workspace dropdown) ----------
 var baseLanguage = 'EN';
 var activeLanguage = 'EN';
@@ -1187,46 +1184,24 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     // Container constraints
     var maxContainerWidth = (box.clientWidth || 720) - 36; // minus padding
     var maxContainerHeight = 600; // height cap for preview
-    var isActualSize = (canvasViewMode === 'actual');
-
-    // Reference PPI for print preview, adjusted for display density.
-    // 72 PPI is the classic Mac "point" but Retina displays pack 2x (or more) physical
-    // pixels per CSS pixel. Multiplying by devicePixelRatio gives closer-to-actual size.
-    var dpr = window.devicePixelRatio || 1;
-    var PRINT_PREVIEW_PPI = 72 * dpr;
 
     if (mediaKind === 'digital') {
-      // DIGITAL: Actual size = pixel dimensions. Scale-to-fit only scales DOWN.
+      // DIGITAL: Always 1:1 pixel dimensions. Overflow if larger than container.
       displayWidth = w;
       displayHeight = h;
-
-      if (!isActualSize) {
-        // Only scale down if exceeds container; never scale up
-        var scaleX = displayWidth > maxContainerWidth ? maxContainerWidth / displayWidth : 1;
-        var scaleY = displayHeight > maxContainerHeight ? maxContainerHeight / displayHeight : 1;
-        var scale = Math.min(scaleX, scaleY);
-
-        if (scale < 1) {
-          displayWidth = Math.round(displayWidth * scale);
-          displayHeight = Math.round(displayHeight * scale);
-        }
-      }
 
       if (inner) {
         inner.style.width = displayWidth + 'px';
         inner.style.height = displayHeight + 'px';
       }
 
-      // Typography scale for digital: based on ratio of display to original
+      // Typography scale for digital: always 1:1
       if (safeEl) {
-        var baseScale = displayWidth / w;
-        if (!isFinite(baseScale) || baseScale <= 0) baseScale = 1;
-        baseScale = Math.max(0.10, baseScale);
-        safeEl.dataset.baseScale = String(baseScale);
-        safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
+        safeEl.dataset.baseScale = '1';
+        safeEl.style.setProperty('--artstart-scale', '1.000');
       }
     } else {
-      // PRINT: Actual size = inches × PPI. Scale-to-fit only scales DOWN.
+      // PRINT: Scale to fit container, maintaining aspect ratio, capped by height.
       var bleedAmount = 0;
       if (job) {
         var rawBleed = job.bleed;
@@ -1245,35 +1220,33 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
       if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
       if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
 
-      // Calculate actual pixel size at reference PPI
-      var actualWidth = Math.round(totalWidth * PRINT_PREVIEW_PPI);
-      var actualHeight = Math.round(totalHeight * PRINT_PREVIEW_PPI);
-      var pxPerUnit = PRINT_PREVIEW_PPI;
+      // Scale to fit within container, respecting aspect ratio
+      var aspectRatio = totalWidth / totalHeight;
 
-      displayWidth = actualWidth;
-      displayHeight = actualHeight;
+      // Start by fitting to height cap
+      displayHeight = Math.min(maxContainerHeight, maxContainerWidth / aspectRatio);
+      displayWidth = displayHeight * aspectRatio;
 
-      if (!isActualSize) {
-        // Only scale down if exceeds container; never scale up
-        var scaleX = displayWidth > maxContainerWidth ? maxContainerWidth / displayWidth : 1;
-        var scaleY = displayHeight > maxContainerHeight ? maxContainerHeight / displayHeight : 1;
-        var scale = Math.min(scaleX, scaleY);
-
-        if (scale < 1) {
-          displayWidth = Math.round(actualWidth * scale);
-          displayHeight = Math.round(actualHeight * scale);
-          pxPerUnit = PRINT_PREVIEW_PPI * scale;
-        }
+      // If width exceeds container, scale down by width instead
+      if (displayWidth > maxContainerWidth) {
+        displayWidth = maxContainerWidth;
+        displayHeight = displayWidth / aspectRatio;
       }
+
+      displayWidth = Math.round(displayWidth);
+      displayHeight = Math.round(displayHeight);
 
       if (inner) {
         inner.style.width = displayWidth + 'px';
         inner.style.height = displayHeight + 'px';
       }
 
-      // Typography scale for print: based on preview DPI
+      // Typography scale for print: based on display size vs original inches
+      // Use a reference PPI for consistent text sizing
       if (safeEl) {
-        var baseScale = pxPerUnit / PRINT_PREVIEW_PPI;
+        var pxPerUnit = displayWidth / totalWidth;
+        var BASE_PX_PER_INCH = 72;
+        var baseScale = pxPerUnit / BASE_PX_PER_INCH;
 
         if (!isFinite(baseScale) || baseScale <= 0) {
           baseScale = 1;
@@ -1355,7 +1328,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     }
   }
 
-  // --- Canvas view mode toggle ---
+  // --- Canvas scrollable detection (for digital 1:1 overflow) ---
   function updateCanvasScrollable_() {
     var box = document.getElementById('format-canvas-box');
     if (!box) return;
@@ -1365,43 +1338,16 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     box.classList.toggle('is-scrollable', isScrollable);
   }
 
-  function initCanvasViewToggle_() {
+  function initCanvasDragPan_() {
     var box = document.getElementById('format-canvas-box');
-    var fitBtn = document.getElementById('view-btn-fit');
-    var actualBtn = document.getElementById('view-btn-actual');
+    if (!box) return;
 
-    if (!box || !fitBtn || !actualBtn) return;
-
-    function setViewMode(mode) {
-      canvasViewMode = mode;
-      box.setAttribute('data-view-mode', mode);
-
-      fitBtn.classList.toggle('is-active', mode === 'fit');
-      actualBtn.classList.toggle('is-active', mode === 'actual');
-
-      // Re-render the canvas with new mode
-      if (typeof window.__ARTSTART_CURRENT_JOB__ !== 'undefined' && window.__ARTSTART_CURRENT_JOB__) {
-        renderCanvasPreview(window.__ARTSTART_CURRENT_JOB__);
-        syncCanvasTextFromFields();
-        autoscaleCanvasBands();
-      }
-
-      // Update scrollable state after render
-      setTimeout(updateCanvasScrollable_, 0);
-    }
-
-    fitBtn.addEventListener('click', function () { setViewMode('fit'); });
-    actualBtn.addEventListener('click', function () { setViewMode('actual'); });
-
-    // Drag-to-pan for actual size mode (only when scrollable)
+    // Drag-to-pan for digital jobs that overflow
     var isDragging = false;
     var startX, startY, scrollLeft, scrollTop;
 
     box.addEventListener('mousedown', function (e) {
-      if (canvasViewMode !== 'actual') return;
       if (!box.classList.contains('is-scrollable')) return;
-      // Ignore clicks on the toggle buttons
-      if (e.target.closest('.artstart-view-toggle')) return;
 
       isDragging = true;
       box.style.cursor = 'grabbing';
@@ -2757,7 +2703,7 @@ try {
   function init() {
     setUserLabel();
     initQrUi_();
-    initCanvasViewToggle_();
+    initCanvasDragPan_();
 
     // Cache language UI
     langSelect = document.getElementById('working-language');
