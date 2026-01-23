@@ -775,41 +775,34 @@
         min-width: auto;
       }
 
-      /* Editable notes in job overview - accordion-style header */
+      /* Editable notes in job overview - codedesk accordion visual style */
       .artstart-overview-notes {
         margin-top: 8px;
         flex: 1;
         display: flex;
         flex-direction: column;
         min-height: 0;
-        border-radius: 8px;
+        border-radius: 12px;
         overflow: hidden;
-        border: 1px solid color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 40%, transparent);
+        border: 1px solid color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 35%, transparent);
+        box-shadow: 0 0 8px color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 15%, transparent);
       }
 
       .artstart-overview-notes-header {
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 8px 12px;
-        background: color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 12%, white);
-        border-bottom: 1px solid color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 25%, transparent);
-        font-size: 12px;
-        font-weight: 600;
+        padding: 10px 16px;
+        background: color-mix(in oklab, #ffffff 85%, var(--ascend-app-accent, #4fd1c5) 15%);
+        border-bottom: 1px solid color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 30%, transparent);
+        font-size: 13px;
+        font-weight: 500;
         color: #374151;
-      }
-
-      .artstart-overview-notes-header::before {
-        content: '▼';
-        font-size: 8px;
-        color: var(--ascend-app-accent, #4fd1c5);
-        opacity: 0.7;
       }
 
       .artstart-overview-notes-input {
         flex: 1;
         width: 100%;
-        padding: 10px 12px;
+        padding: 12px 16px;
         border: none;
         font-size: 13px;
         font-family: inherit;
@@ -821,11 +814,10 @@
 
       .artstart-overview-notes-input:focus {
         outline: none;
-        background: color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 4%, white);
       }
 
       .artstart-overview-notes-input::placeholder {
-        color: transparent; /* Hide placeholder - seeds from job data */
+        color: transparent;
       }
 
       .artstart-canvas-noinfo {
