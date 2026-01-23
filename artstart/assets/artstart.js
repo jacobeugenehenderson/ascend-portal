@@ -1294,46 +1294,28 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     if (safeEl) {
       if (mediaKind === 'digital') {
         // DIGITAL: trim is the document border (no bleed zone).
-        safeEl.style.top = '0';
-        safeEl.style.bottom = '0';
-        safeEl.style.left = '0';
-        safeEl.style.right = '0';
+        safeEl.style.inset = '0';
 
         if (bleedEl) {
           bleedEl.style.display = 'none';
-          bleedEl.style.top = '';
-          bleedEl.style.bottom = '';
-          bleedEl.style.left = '';
-          bleedEl.style.right = '';
+          bleedEl.style.inset = '';
         }
       } else if (bleedAmount > 0) {
         // PRINT with bleed: position based on actual bleed value.
         var bleedX = (bleedAmount / totalWidth) * displayWidth;
         var bleedY = (bleedAmount / totalHeight) * displayHeight;
 
-        var insetTop = bleedY + 'px';
-        var insetBottom = bleedY + 'px';
-        var insetLeft = bleedX + 'px';
-        var insetRight = bleedX + 'px';
-
-        safeEl.style.top = insetTop;
-        safeEl.style.bottom = insetBottom;
-        safeEl.style.left = insetLeft;
-        safeEl.style.right = insetRight;
+        // Use inset shorthand to override CSS default
+        var insetVal = bleedY + 'px ' + bleedX + 'px';
+        safeEl.style.inset = insetVal;
 
         if (bleedEl) {
           bleedEl.style.display = hideBleed ? 'none' : '';
-          bleedEl.style.top = insetTop;
-          bleedEl.style.bottom = insetBottom;
-          bleedEl.style.left = insetLeft;
-          bleedEl.style.right = insetRight;
+          bleedEl.style.inset = insetVal;
         }
       } else {
         // PRINT with no bleed configured: trim is at the edge.
-        safeEl.style.top = '0';
-        safeEl.style.bottom = '0';
-        safeEl.style.left = '0';
-        safeEl.style.right = '0';
+        safeEl.style.inset = '0';
 
         if (bleedEl) {
           bleedEl.style.display = 'none';
