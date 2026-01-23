@@ -2072,7 +2072,15 @@
 
       // Set editor content from HTML
       window.__ARTSTART_SET_EDITOR_HTML__ = function(html) {
+        console.log('[SET_EDITOR_HTML] Input HTML length:', (html || '').length);
+        console.log('[SET_EDITOR_HTML] Input HTML preview:', (html || '').substring(0, 300));
         editor.commands.setContent(html || '<p></p>');
+        // Log what the editor actually parsed
+        setTimeout(() => {
+          const resultHtml = editor.getHTML();
+          console.log('[SET_EDITOR_HTML] Result HTML length:', resultHtml.length);
+          console.log('[SET_EDITOR_HTML] Result HTML preview:', resultHtml.substring(0, 300));
+        }, 100);
       };
 
       // Set editor content from JSON
