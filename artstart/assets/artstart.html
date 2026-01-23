@@ -664,13 +664,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 36px;
-        width: 44px;
+        height: 48px;
+        width: 56px;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
         background: #ffffff;
         font-family: inherit;
-        font-size: 28px;
+        font-size: 38px;
         line-height: 1;
         color: #1e293b;
         cursor: pointer;
@@ -695,7 +695,7 @@
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
-        padding: 4px;
+        overflow: hidden;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         z-index: 1000;
       }
@@ -703,20 +703,20 @@
       .artstart-weight-dropdown.is-open {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 2px;
+        gap: 0;
       }
 
       .artstart-weight-option {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        width: 44px;
+        height: 44px;
         border: none;
-        border-radius: 4px;
+        border-radius: 0;
         background: transparent;
         font-family: inherit;
-        font-size: 24px;
+        font-size: 32px;
         line-height: 1;
         color: #1e293b;
         cursor: pointer;
@@ -828,8 +828,8 @@
       }
 
       .artstart-toolbar-lang .artstart-language-square {
-        width: 10px;
-        height: 10px;
+        width: 6px;
+        height: 6px;
         border-radius: 9999px;
         background: #2563eb;
         border: none;
@@ -842,7 +842,7 @@
 
       .artstart-toolbar-lang .artstart-language-square.is-empty {
         background: transparent;
-        border: 2px solid #f97316;
+        border: 1px solid #f97316;
       }
 
       /* Re-translate button (dynamically added) */
