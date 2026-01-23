@@ -2704,17 +2704,50 @@ try {
         });
       });
 
-    // Indent fields also trigger autosave (always save as base language)
+    // Indent fields use a separate minimal save (avoids huge URL from workingEditorHtml)
+    var indentDebounceTimer = null;
+    function saveIndentsOnly() {
+      var indentH = (document.getElementById('toolbar-indent-h') || {}).value || '0';
+      var indentV = (document.getElementById('toolbar-indent-v') || {}).value || '0';
+
+      var url = ARTSTART_API_BASE +
+        '?action=updateArtStartDraftFields' +
+        '&jobId=' + encodeURIComponent(jobId) +
+        '&workingIndentH=' + encodeURIComponent(indentH) +
+        '&workingIndentV=' + encodeURIComponent(indentV);
+
+      console.log('[saveIndentsOnly] URL length:', url.length);
+
+      fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data && (data.ok || data.success)) {
+            setSaveStatus('Saved');
+          } else {
+            console.warn('Indent save error:', data);
+            setSaveStatus('Save error');
+          }
+        })
+        .catch(function (err) {
+          console.warn('Indent save failed:', err);
+          setSaveStatus('Save error');
+        });
+    }
+
     ['toolbar-indent-h', 'toolbar-indent-v'].forEach(function (id) {
       var el = document.getElementById(id);
       if (!el) return;
 
       el.addEventListener('input', function () {
-        scheduleAutosave(baseLanguage);
+        setSaveStatus('Editing…');
+        if (indentDebounceTimer) clearTimeout(indentDebounceTimer);
+        indentDebounceTimer = setTimeout(saveIndentsOnly, 1500);
       });
 
       el.addEventListener('change', function () {
-        scheduleAutosave(baseLanguage);
+        setSaveStatus('Editing…');
+        if (indentDebounceTimer) clearTimeout(indentDebounceTimer);
+        indentDebounceTimer = setTimeout(saveIndentsOnly, 1500);
       });
     });
 
