@@ -3055,8 +3055,11 @@ if (langSelect) {
       activeLanguage = next;
       saveActiveLanguage_(jobIdNow, activeLanguage);
 
+      console.log('[LangSwitch] Switched to:', activeLanguage, 'baseLanguage:', baseLanguage);
+
       // Base language: reload canonical job fields from sheet
       if (activeLanguage === baseLanguage) {
+        console.log('[LangSwitch] Switching to base language, calling fetchJob');
         __ARTSTART_TRANSLATION_ACTION__ = false;
         fetchJob(jobIdNow);
         return;
