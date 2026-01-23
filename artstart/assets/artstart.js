@@ -1945,7 +1945,8 @@ function autoscaleCanvasBands() {
           workingHeadline: String(f.workingHeadline || ''),
           workingSubhead: String(f.workingSubhead || ''),
           workingCta: String(f.workingCta || ''),
-          workingBullets: String(f.workingBullets || '')
+          workingBullets: String(f.workingBullets || ''),
+          workingEditorHtml: String(f.workingEditorHtml || '')
         };
       });
     } catch (_e) {}
@@ -1962,7 +1963,7 @@ function autoscaleCanvasBands() {
       localLangs.forEach(function (L) {
         var langU = String(L || '').trim().toUpperCase();
         if (!langU || langU === baseLanguage) return;
-        translationsDb[langU] = translationsDb[langU] || { human: false, fields: { workingHeadline:'', workingSubhead:'', workingCta:'', workingBullets:'' } };
+        translationsDb[langU] = translationsDb[langU] || { human: false, fields: { workingHeadline:'', workingSubhead:'', workingCta:'', workingBullets:'', workingEditorHtml:'' } };
       });
 
   Object.keys(translationsDb).forEach(function (lang) {
@@ -2034,7 +2035,8 @@ function autoscaleCanvasBands() {
           workingHeadline: String(d.fields.workingHeadline || ''),
           workingSubhead:  String(d.fields.workingSubhead || ''),
           workingCta:      String(d.fields.workingCta || ''),
-          workingBullets:  String(d.fields.workingBullets || '')
+          workingBullets:  String(d.fields.workingBullets || ''),
+          workingEditorHtml: String(d.fields.workingEditorHtml || '')
         };
       });
     } catch (_e4) {}
@@ -2189,7 +2191,8 @@ if (code === baseLanguage) {
                   workingHeadline: String(f.workingHeadline || ''),
                   workingSubhead:  String(f.workingSubhead || ''),
                   workingCta:      String(f.workingCta || ''),
-                  workingBullets:  String(f.workingBullets || '')
+                  workingBullets:  String(f.workingBullets || ''),
+                  workingEditorHtml: String(f.workingEditorHtml || '')
                 };
 
                 applyTranslatedFields_(fields);
@@ -2223,12 +2226,19 @@ if (code === baseLanguage) {
           workingHeadline: job.workingHeadline || '',
           workingSubhead:  job.workingSubhead  || '',
           workingCta:      job.workingCta      || '',
-          workingBullets:  job.workingBullets  || ''
+          workingBullets:  job.workingBullets  || '',
+          workingEditorHtml: job.workingEditorHtml || ''
         };
 
-        if (typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function' && typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
-          var html = window.__ARTSTART_FIELDS_TO_HTML__(baseFields);
-          window.__ARTSTART_SET_EDITOR_HTML__(html);
+        if (typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
+          // Prefer stored HTML if available (preserves formatting), otherwise build from fields
+          var html = baseFields.workingEditorHtml;
+          if (!html && typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function') {
+            html = window.__ARTSTART_FIELDS_TO_HTML__(baseFields);
+          }
+          if (html) {
+            window.__ARTSTART_SET_EDITOR_HTML__(html);
+          }
         } else {
           // Legacy field fallback
           var hEl = document.getElementById('working-headline'); if (hEl) hEl.value = baseFields.workingHeadline;
