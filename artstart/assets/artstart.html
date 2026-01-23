@@ -2162,12 +2162,21 @@
       const AUTOSAVE_DELAY = 1500;
 
       function scheduleEditorAutosave() {
+        // Skip autosave during translation actions (language switch in progress)
+        if (window.__ARTSTART_TRANSLATION_ACTION__ === true) {
+          return;
+        }
+
         // Update save status
         const statusEl = document.getElementById('artstart-save-status');
         if (statusEl) statusEl.textContent = 'Editing…';
 
         clearTimeout(autosaveTimer);
         autosaveTimer = setTimeout(() => {
+          // Double-check flag in case it was set during debounce period
+          if (window.__ARTSTART_TRANSLATION_ACTION__ === true) {
+            return;
+          }
           triggerLegacySave();
         }, AUTOSAVE_DELAY);
       }
@@ -2177,10 +2186,13 @@
         const jobId = window.getJobIdFromQuery ? window.getJobIdFromQuery() : null;
         if (!jobId) return;
 
-        // Save to localStorage as backup (backend may not have new field yet)
+        // Get current language from global state
+        const currentLang = window.activeLanguage || 'EN';
+
+        // Save to localStorage as backup - include language in key to avoid cross-contamination
         try {
           const html = editor.getHTML();
-          const key = 'artstart_editor_' + jobId;
+          const key = 'artstart_editor_' + jobId + '_' + currentLang;
           localStorage.setItem(key, html);
         } catch (e) {}
 
@@ -2208,10 +2220,11 @@
           return;
         }
 
-        // Try localStorage first (client-side backup) - only for base language
+        // Try localStorage first (client-side backup) - language-aware key
         let localHtml = '';
         try {
-          const key = 'artstart_editor_' + job.jobId;
+          const currentLang = window.activeLanguage || 'EN';
+          const key = 'artstart_editor_' + job.jobId + '_' + currentLang;
           localHtml = localStorage.getItem(key) || '';
         } catch (e) {}
 
