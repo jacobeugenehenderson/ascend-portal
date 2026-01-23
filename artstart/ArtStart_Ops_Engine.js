@@ -965,6 +965,14 @@ function getArtStartJob_(jobId) {
     p.WorkingEditorHtml ||
     p['Working Editor Html'] ||
     '';
+  var workingIndentH =
+    p.WorkingIndentH ||
+    p['Working Indent H'] ||
+    '0';
+  var workingIndentV =
+    p.WorkingIndentV ||
+    p['Working Indent V'] ||
+    '0';
 
   return {
     // Internal key for APIs / autosave – keep this as AscendJobId
@@ -1016,6 +1024,10 @@ function getArtStartJob_(jobId) {
     workingWebsite: workingWebsite,
     workingEmail: workingEmail,
     workingNotes: workingNotes,
+
+    // Indent/margin settings
+    workingIndentH: workingIndentH,
+    workingIndentV: workingIndentV,
 
     // QR association (FileRoom asset)
     qrDriveFileId: p.qrDriveFileId || '',
@@ -1074,6 +1086,10 @@ function handleUpdateArtStartDraftFields_(e) {
     if (has('workingEmail'))      payload.workingEmail      = String(p.workingEmail    || '');
     if (has('workingNotes'))      payload.workingNotes      = String(p.workingNotes    || '');
 
+    // Indent/margin settings
+    if (has('workingIndentH'))    payload.workingIndentH    = String(p.workingIndentH  || '0');
+    if (has('workingIndentV'))    payload.workingIndentV    = String(p.workingIndentV  || '0');
+
     if (has('qrDriveFileId'))   payload.qrDriveFileId   = String(p.qrDriveFileId   || '');
     if (has('qrOpenUrl'))       payload.qrOpenUrl       = String(p.qrOpenUrl       || '');
     if (has('qrPayloadText'))   payload.qrPayloadText   = String(p.qrPayloadText   || '');
@@ -1105,6 +1121,10 @@ function handleUpdateArtStartDraftFields_(e) {
   if (hasPayload('workingWebsite'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingWebsite', payload.workingWebsite);
   if (hasPayload('workingEmail'))    setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingEmail', payload.workingEmail);
   if (hasPayload('workingNotes'))    setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingNotes', payload.workingNotes);
+
+  // Indent/margin settings
+  if (hasPayload('workingIndentH'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingIndentH', payload.workingIndentH);
+  if (hasPayload('workingIndentV'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingIndentV', payload.workingIndentV);
 
   // QR association (FileRoom asset)
   if (hasPayload('qrDriveFileId'))   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'qrDriveFileId', payload.qrDriveFileId);

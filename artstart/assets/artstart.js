@@ -2293,6 +2293,18 @@ if (code === baseLanguage) {
         // Notes: prefer workingNotes, fallback to intake notes
         var notesEl = document.getElementById('working-notes');
         if (notesEl) notesEl.value = job.workingNotes || job.notes || job.intakeNotes || '';
+
+        // Indent/margin settings - apply saved values and trigger UI update
+        var indentHEl = document.getElementById('toolbar-indent-h');
+        var indentVEl = document.getElementById('toolbar-indent-v');
+        if (indentHEl && job.workingIndentH) {
+          indentHEl.value = job.workingIndentH;
+          indentHEl.dispatchEvent(new Event('input'));
+        }
+        if (indentVEl && job.workingIndentV) {
+          indentVEl.value = job.workingIndentV;
+          indentVEl.dispatchEvent(new Event('input'));
+        }
       } else {
         // Non-EN is active, but we had no cached translation fields to apply.
         // Do NOT leave the UI blank — hydrate by:
@@ -2419,6 +2431,10 @@ if (code === baseLanguage) {
       workingWebsite: (document.getElementById('working-website') || {}).value || '',
       workingEmail: (document.getElementById('working-email') || {}).value || '',
       workingNotes: (document.getElementById('working-notes') || {}).value || '',
+
+      // Indent/margin settings
+      workingIndentH: (document.getElementById('toolbar-indent-h') || {}).value || '0',
+      workingIndentV: (document.getElementById('toolbar-indent-v') || {}).value || '0',
 
       // QR association (FileRoom)
       qrDriveFileId: (document.getElementById('qrDriveFileId') || {}).value || '',
