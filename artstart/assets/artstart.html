@@ -2286,8 +2286,10 @@
       const AUTOSAVE_DELAY = 1500;
 
       function scheduleEditorAutosave() {
+        console.log('[scheduleEditorAutosave] Called, translation flag:', window.__ARTSTART_TRANSLATION_ACTION__);
         // Skip autosave during translation actions (language switch in progress)
         if (window.__ARTSTART_TRANSLATION_ACTION__ === true) {
+          console.log('[scheduleEditorAutosave] Skipping - translation in progress');
           return;
         }
 
@@ -2297,8 +2299,10 @@
 
         clearTimeout(autosaveTimer);
         autosaveTimer = setTimeout(() => {
+          console.log('[scheduleEditorAutosave] Debounce complete, calling triggerLegacySave');
           // Double-check flag in case it was set during debounce period
           if (window.__ARTSTART_TRANSLATION_ACTION__ === true) {
+            console.log('[scheduleEditorAutosave] Skipping after debounce - translation in progress');
             return;
           }
           triggerLegacySave();
@@ -2306,8 +2310,10 @@
       }
 
       function triggerLegacySave() {
+        console.log('[triggerLegacySave] Called');
         // Get the job ID
         const jobId = window.getJobIdFromQuery ? window.getJobIdFromQuery() : null;
+        console.log('[triggerLegacySave] jobId:', jobId, 'saveDraft exists:', typeof window.saveDraft);
         if (!jobId) return;
 
         // Get current language from global state
