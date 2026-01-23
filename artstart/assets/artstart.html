@@ -726,71 +726,72 @@
       .artstart-editor .font-semibold { font-weight: 600; }
       .artstart-editor .font-bold { font-weight: 700; }
 
-      /* Meta inputs below canvas */
-      .artstart-canvas-meta {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin-top: 12px;
-      }
-
-      .artstart-canvas-meta-field {
+      /* Meta inputs inside workspace (bottom-right) */
+      .artstart-workspace-meta {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
         display: flex;
         flex-direction: column;
+        align-items: flex-end;
         gap: 4px;
+        pointer-events: auto;
       }
 
-      .artstart-canvas-meta-field label {
+      .artstart-workspace-meta input {
+        padding: 4px 8px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
         font-size: 11px;
-        font-weight: 600;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        font-family: 'Source Sans 3', sans-serif;
+        background: rgba(255, 255, 255, 0.9);
+        text-align: right;
+        width: auto;
+        min-width: 120px;
+        max-width: 200px;
       }
 
-      .artstart-canvas-meta-field input {
-        padding: 6px 10px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 13px;
+      .artstart-workspace-meta input:focus {
+        outline: none;
+        border-color: #3b82f6;
         background: #ffffff;
       }
 
-      .artstart-canvas-meta-field input:focus {
-        outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+      .artstart-workspace-meta input::placeholder {
+        color: #9ca3af;
+        font-style: italic;
       }
 
-      .artstart-canvas-notes {
-        margin-top: 12px;
+      /* Editable notes in job overview */
+      .artstart-overview-notes {
+        margin-top: 4px;
       }
 
-      .artstart-canvas-notes label {
+      .artstart-overview-notes .label {
         display: block;
-        font-size: 11px;
-        font-weight: 600;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
         margin-bottom: 4px;
       }
 
-      .artstart-canvas-notes textarea {
+      .artstart-overview-notes-input {
         width: 100%;
         padding: 8px 10px;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
         font-size: 13px;
+        font-family: inherit;
         min-height: 60px;
         resize: vertical;
         background: #ffffff;
       }
 
-      .artstart-canvas-notes textarea:focus {
+      .artstart-overview-notes-input:focus {
         outline: none;
         border-color: #3b82f6;
         box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+      }
+
+      .artstart-overview-notes-input::placeholder {
+        color: #9ca3af;
       }
 
       .artstart-canvas-noinfo {
@@ -1105,29 +1106,17 @@
                 <div class="artstart-canvas-safe">
                   <!-- Tiptap editor mounts here -->
                   <div id="artstart-editor" class="artstart-editor"></div>
+
+                  <!-- Meta fields anchored bottom-right inside workspace -->
+                  <div class="artstart-workspace-meta">
+                    <input id="working-website" type="text" placeholder="website">
+                    <input id="working-email" type="email" placeholder="email">
+                  </div>
                 </div>
               </div>
               <div id="canvas-noinfo" class="artstart-canvas-noinfo">
                 No canvas information available yet.
               </div>
-            </div>
-
-            <!-- Meta fields (EN-only, below canvas) -->
-            <div class="artstart-canvas-meta">
-              <div class="artstart-canvas-meta-field">
-                <label for="working-website">Website</label>
-                <input id="working-website" type="text" placeholder="e.g., nordson.com/ics">
-              </div>
-              <div class="artstart-canvas-meta-field">
-                <label for="working-email">Email</label>
-                <input id="working-email" type="email" placeholder="e.g., info@nordson.com">
-              </div>
-            </div>
-
-            <!-- Notes (EN-only) -->
-            <div class="artstart-canvas-notes">
-              <label for="working-notes">Notes</label>
-              <textarea id="working-notes" placeholder="Internal notes, specific phrases, or requirements…"></textarea>
             </div>
 
             <div class="artstart-save-row" style="margin-top: 8px;">
@@ -1146,7 +1135,10 @@
               <p><span class="label">Run / go-live:</span> <span id="job-overview-run">—</span></p>
               <p><span class="label">Materials deadline:</span> <span id="job-overview-deadline">—</span></p>
               <p><span class="label">Editorial notes:</span> <span id="job-overview-topic">—</span></p>
-              <p><span class="label">Notes:</span> <span id="job-overview-notes">—</span></p>
+              <div class="artstart-overview-notes">
+                <span class="label">Notes:</span>
+                <textarea id="working-notes" class="artstart-overview-notes-input" placeholder="Notes from job setup…"></textarea>
+              </div>
             </section>
 
             <!-- Right / row 2: QR -->

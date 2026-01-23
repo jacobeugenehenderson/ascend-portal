@@ -1801,12 +1801,11 @@ function autoscaleCanvasBands() {
         '—';
     }
 
-    var notesEl = document.getElementById('job-overview-notes');
+    // Notes field: seed from intake notes if workingNotes is empty, otherwise use workingNotes
+    var notesEl = document.getElementById('working-notes');
     if (notesEl) {
-      notesEl.textContent =
-        job.notes ||
-        job.intakeNotes ||
-        '—';
+      var notesValue = job.workingNotes || job.notes || job.intakeNotes || '';
+      notesEl.value = notesValue;
     }
 
     // Format card
@@ -2192,8 +2191,9 @@ if (code === baseLanguage) {
         var emailEl = document.getElementById('working-email');
         if (emailEl) emailEl.value = job.workingEmail || '';
 
+        // Notes: prefer workingNotes, fallback to intake notes
         var notesEl = document.getElementById('working-notes');
-        if (notesEl) notesEl.value = job.workingNotes || '';
+        if (notesEl) notesEl.value = job.workingNotes || job.notes || job.intakeNotes || '';
       } else {
         // Non-EN is active, but we had no cached translation fields to apply.
         // Do NOT leave the UI blank — hydrate by:
