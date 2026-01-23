@@ -1290,6 +1290,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
           bleedEl.style.right = '';
         }
       } else if (bleedAmount > 0) {
+        // PRINT with bleed: position based on actual bleed value.
         var bleedX = (bleedAmount / totalWidth) * displayWidth;
         var bleedY = (bleedAmount / totalHeight) * displayHeight;
 
@@ -1311,7 +1312,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
           bleedEl.style.right = insetRight;
         }
       } else {
-        // PRINT with no bleed configured: trim is at the edge (same as digital)
+        // PRINT with no bleed configured: trim is at the edge.
         safeEl.style.top = '0';
         safeEl.style.bottom = '0';
         safeEl.style.left = '0';

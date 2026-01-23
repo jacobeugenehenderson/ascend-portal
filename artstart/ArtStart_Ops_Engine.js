@@ -1579,6 +1579,12 @@ function sendArtStartEmail(jobId) {
       ms.Width && ms.Height ? ms.Width + ' × ' + ms.Height : '';
   const bleedPretty = ms.Bleed || '';
 
+  // Determine media kind for canvas preview styling
+  var mediaKind = 'print';
+  if (mediaType && String(mediaType).toLowerCase().indexOf('digital') !== -1) {
+    mediaKind = 'digital';
+  }
+
   const artStartUrl = ARTSTART_FRONTEND_BASE_URL + '?jobId=' + encodeURIComponent(ascendJobId);
 
   // Template lives as a file named "artstart_email.html" in the Apps Script project
@@ -1596,6 +1602,7 @@ function sendArtStartEmail(jobId) {
     placement: ms.SoldAs || '',
     trimSizePretty: trimSizePretty,
     bleedPretty: bleedPretty,
+    mediaKind: mediaKind,
     orientation: ms.Orientation || '',
     colorExportSummary: colorExportSummary,
     materialsDeadlinePretty: prettyDate(p.MaterialsDueDate),
