@@ -2162,28 +2162,38 @@ if (code === baseLanguage) {
     if (!usedTranslation) {
       // Only hydrate base-language fields when base language is active
       if (activeLanguage === baseLanguage) {
-        document.getElementById('working-headline').value = job.workingHeadline || '';
-        document.getElementById('working-subhead').value  = job.workingSubhead || '';
-        document.getElementById('working-cta').value      = job.workingCta || '';
-        document.getElementById('working-bullets').value  = job.workingBullets || '';
+        // Populate editor if available, otherwise legacy fields
+        var baseFields = {
+          workingHeadline: job.workingHeadline || '',
+          workingSubhead:  job.workingSubhead  || '',
+          workingCta:      job.workingCta      || '',
+          workingBullets:  job.workingBullets  || ''
+        };
+
+        if (typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function' && typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
+          var html = window.__ARTSTART_FIELDS_TO_HTML__(baseFields);
+          window.__ARTSTART_SET_EDITOR_HTML__(html);
+        } else {
+          // Legacy field fallback
+          var hEl = document.getElementById('working-headline'); if (hEl) hEl.value = baseFields.workingHeadline;
+          var sEl = document.getElementById('working-subhead');  if (sEl) sEl.value = baseFields.workingSubhead;
+          var cEl = document.getElementById('working-cta');      if (cEl) cEl.value = baseFields.workingCta;
+          var bEl = document.getElementById('working-bullets');  if (bEl) bEl.value = baseFields.workingBullets;
+        }
 
         // Cache base-language translatable text for non-EN→non-EN switching logic
         try {
-          saveBaseText_(jobIdNow, {
-            workingHeadline: job.workingHeadline || '',
-            workingSubhead:  job.workingSubhead  || '',
-            workingCta:      job.workingCta      || '',
-            workingBullets:  job.workingBullets  || ''
-          });
+          saveBaseText_(jobIdNow, baseFields);
         } catch (_eBaseCache) {}
 
-        const websiteEl = document.getElementById('working-website');
+        var websiteEl = document.getElementById('working-website');
         if (websiteEl) websiteEl.value = job.workingWebsite || '';
 
-        const emailEl = document.getElementById('working-email');
+        var emailEl = document.getElementById('working-email');
         if (emailEl) emailEl.value = job.workingEmail || '';
 
-        document.getElementById('working-notes').value = job.workingNotes || '';
+        var notesEl = document.getElementById('working-notes');
+        if (notesEl) notesEl.value = job.workingNotes || '';
       } else {
         // Non-EN is active, but we had no cached translation fields to apply.
         // Do NOT leave the UI blank — hydrate by:
