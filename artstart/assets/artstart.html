@@ -1773,19 +1773,42 @@
       }
 
       if (fontSelect) {
+        // Track value when dropdown opens to detect intentional re-selection
+        let valueOnOpen = fontSelect.value;
+        let dropdownWasOpened = false;
+
         // Store selection before dropdown opens
         fontSelect.addEventListener('mousedown', () => {
           window.__lastEditorSelection__ = editor.state.selection;
+          valueOnOpen = fontSelect.value;
+          dropdownWasOpened = true;
         });
 
-        fontSelect.addEventListener('change', () => {
-          const font = fontSelect.value;
-          // Select all content and apply font to ensure it works
-          editor.chain().focus().selectAll().setFontFamily(font).run();
-          // Use setProperty with important to override ascend-apps.css font shorthand
+        // Apply font to editor
+        function applyFontToEditor(font) {
+          // Apply font to current selection only (no selectAll)
+          // If nothing is selected, this sets the font for future typed text
+          editor.chain().focus().setFontFamily(font).run();
+          // Update dropdown display font
           fontSelect.style.setProperty('font-family', font, 'important');
           updateWeightSelectorFont(font);
+        }
+
+        // Apply on change (handles switching to different font)
+        fontSelect.addEventListener('change', () => {
+          applyFontToEditor(fontSelect.value);
+          dropdownWasOpened = false;
         });
+
+        // Apply on blur if user re-selected the same font (no change event fires)
+        fontSelect.addEventListener('blur', () => {
+          if (dropdownWasOpened && fontSelect.value === valueOnOpen) {
+            // User opened dropdown and selected the same font - apply it anyway
+            applyFontToEditor(fontSelect.value);
+          }
+          dropdownWasOpened = false;
+        });
+
         // Initialize font select and weight selector with current font
         fontSelect.style.setProperty('font-family', fontSelect.value, 'important');
         updateWeightSelectorFont(fontSelect.value);
