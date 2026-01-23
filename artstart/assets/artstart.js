@@ -568,16 +568,21 @@ function retranslateLanguage_(lang) {
   __ARTSTART_TRANSLATE_REQ__ = __ARTSTART_TRANSLATE_REQ__ || {};
   __ARTSTART_TRANSLATE_REQ__[__reqKey] = __reqId;
 
-  fetch(
-    ARTSTART_API_BASE +
+  var translateUrl = ARTSTART_API_BASE +
     '?action=translateArtStartFields' +
     '&jobId=' + encodeURIComponent(jobIdNow) +
     '&targetLanguage=' + encodeURIComponent(lang) +
-    '&force=1'
-  )
+    '&force=1';
+
+  console.log('[Translation] Requesting:', translateUrl);
+
+  fetch(translateUrl)
     .then(function (r) { return r.json(); })
     .then(function (data) {
+      console.log('[Translation] Response:', JSON.stringify(data, null, 2));
+
       if (!data || !data.success || !data.fields) {
+        console.error('[Translation] Invalid response - missing success or fields');
         setSaveStatus('Save error');
         return;
       }
@@ -623,6 +628,8 @@ function retranslateLanguage_(lang) {
 }
 
 function applyTranslatedFields_(f) {
+  console.log('[applyTranslatedFields_] Called with:', JSON.stringify(f, null, 2));
+
   if (!f) return;
   var v;
 
@@ -634,19 +641,26 @@ function applyTranslatedFields_(f) {
     var jobIdNow = currentJobId || getJobIdFromQuery();
     var langNow = String(activeLanguage || '').trim().toUpperCase();
 
+    console.log('[applyTranslatedFields_] jobId:', jobIdNow, 'lang:', langNow);
+
     if (jobIdNow && langNow && typeof window.__ARTSTART_APPLY_TRANSLATION__ === 'function') {
       try {
         // Check if we have a template for this job+lang
         var hasTemplate = typeof window.__ARTSTART_GET_TEMPLATE__ === 'function' &&
                           window.__ARTSTART_GET_TEMPLATE__(jobIdNow, langNow);
 
+        console.log('[applyTranslatedFields_] hasTemplate:', !!hasTemplate);
+
         if (hasTemplate) {
           // Split translated bullets back into segments
           var translatedBullets = String(f.workingBullets || '');
           var segments = translatedBullets.split('\n').filter(function(s) { return s.length > 0; });
 
+          console.log('[applyTranslatedFields_] segments:', segments);
+
           // Reconstruct HTML from template + translated segments
           html = window.__ARTSTART_APPLY_TRANSLATION__(segments, jobIdNow, langNow);
+          console.log('[applyTranslatedFields_] reconstructed HTML:', html);
         }
       } catch (_eRT) {
         console.warn('Template reconstruction failed:', _eRT);
@@ -656,10 +670,15 @@ function applyTranslatedFields_(f) {
 
     // Fallback to legacy conversion if no template or reconstruction failed
     if (!html) {
+      console.log('[applyTranslatedFields_] Using fallback conversion');
       html = window.__ARTSTART_FIELDS_TO_HTML__(f);
+      console.log('[applyTranslatedFields_] fallback HTML:', html);
     }
 
+    console.log('[applyTranslatedFields_] Setting editor HTML, length:', (html || '').length);
     window.__ARTSTART_SET_EDITOR_HTML__(html);
+  } else {
+    console.warn('[applyTranslatedFields_] Tiptap functions not available');
   }
 
   // Legacy field fallback (if elements exist)
@@ -2923,8 +2942,13 @@ if (langSelect) {
         // This extracts text segments and stores the HTML structure
         if (editorHtml && typeof window.__ARTSTART_PREPARE_TRANSLATION__ === 'function') {
           try {
-            window.__ARTSTART_PREPARE_TRANSLATION__(editorHtml, jobIdNow, next);
-          } catch (_ePT) {}
+            console.log('[LeavingBase] Preparing template for', jobIdNow, '->', next);
+            console.log('[LeavingBase] Editor HTML:', editorHtml);
+            var templateResult = window.__ARTSTART_PREPARE_TRANSLATION__(editorHtml, jobIdNow, next);
+            console.log('[LeavingBase] Template prepared:', templateResult);
+          } catch (_ePT) {
+            console.error('[LeavingBase] Template preparation failed:', _ePT);
+          }
         }
 
         // Store the editor HTML for translation
