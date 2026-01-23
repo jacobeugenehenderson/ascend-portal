@@ -1944,14 +1944,12 @@
       const AUTOSAVE_DELAY = 1500;
 
       function scheduleEditorAutosave() {
-        console.log('[ArtStart] scheduleEditorAutosave called');
         // Update save status
         const statusEl = document.getElementById('artstart-save-status');
         if (statusEl) statusEl.textContent = 'Editing…';
 
         clearTimeout(autosaveTimer);
         autosaveTimer = setTimeout(() => {
-          console.log('[ArtStart] Autosave timer fired');
           triggerLegacySave();
         }, AUTOSAVE_DELAY);
       }
@@ -1959,7 +1957,6 @@
       function triggerLegacySave() {
         // Get the job ID
         const jobId = window.getJobIdFromQuery ? window.getJobIdFromQuery() : null;
-        console.log('[ArtStart] triggerLegacySave called, jobId:', jobId);
         if (!jobId) return;
 
         // Save to localStorage as backup (backend may not have new field yet)
@@ -1967,10 +1964,7 @@
           const html = editor.getHTML();
           const key = 'artstart_editor_' + jobId;
           localStorage.setItem(key, html);
-          console.log('[ArtStart] Saved to localStorage:', key, 'length:', html.length);
-        } catch (e) {
-          console.error('[ArtStart] localStorage save failed:', e);
-        }
+        } catch (e) {}
 
         // Call the legacy saveDraft if available
         if (typeof window.saveDraft === 'function') {
@@ -1987,17 +1981,13 @@
       // Helper to populate editor from job data
       function populateEditorFromJob(job) {
         if (!job) return;
-        console.log('[ArtStart] populateEditorFromJob called, jobId:', job.jobId);
 
         // Try localStorage first (client-side backup)
         let localHtml = '';
         try {
           const key = 'artstart_editor_' + job.jobId;
           localHtml = localStorage.getItem(key) || '';
-          console.log('[ArtStart] localStorage check:', key, 'found:', !!localHtml, 'length:', localHtml.length);
-        } catch (e) {
-          console.error('[ArtStart] localStorage read failed:', e);
-        }
+        } catch (e) {}
 
         const html = localHtml || window.__ARTSTART_FIELDS_TO_HTML__({
           workingEditorHtml: job.workingEditorHtml || '',
@@ -2006,19 +1996,16 @@
           workingCta: job.workingCta || '',
           workingBullets: job.workingBullets || '',
         });
-        console.log('[ArtStart] Setting editor HTML, length:', html.length);
         window.__ARTSTART_SET_EDITOR_HTML__(html);
       }
 
       // Register callback for when job data loads
       window.__ARTSTART_ON_JOB_LOADED__ = function(job) {
-        console.log('[ArtStart] __ARTSTART_ON_JOB_LOADED__ callback fired');
         populateEditorFromJob(job);
       };
 
       // If job data is already loaded, populate editor now
       if (window.__ARTSTART_CURRENT_JOB__) {
-        console.log('[ArtStart] Job already loaded, populating immediately');
         populateEditorFromJob(window.__ARTSTART_CURRENT_JOB__);
       }
 
