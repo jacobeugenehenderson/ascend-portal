@@ -2349,8 +2349,9 @@ try {
   var b0 = String((payload && payload.workingBullets) || '').trim();
   var html0 = String((payload && payload.workingEditorHtml) || '').trim();
 
-  // If content is blank (no legacy fields AND no editor HTML beyond empty paragraph), bail out.
-  var hasEditorContent = html0 && html0 !== '<p></p>' && html0 !== '<p></p>\n';
+  // If content is blank (no legacy fields AND editor HTML is empty/trivial), bail out.
+  // Allow any HTML longer than a bare paragraph tag through.
+  var hasEditorContent = html0 && html0.length > 12;
   if (!h0 && !s0 && !c0 && !b0 && !hasEditorContent) {
     return;
   }
@@ -2363,7 +2364,8 @@ try {
       workingHeadline: payload.workingHeadline,
       workingSubhead: payload.workingSubhead,
       workingCta: payload.workingCta,
-      workingBullets: payload.workingBullets
+      workingBullets: payload.workingBullets,
+      workingEditorHtml: payload.workingEditorHtml
     };
 
     // If nothing changed vs baseline, do NOT mark human or persist drafts.
@@ -2542,7 +2544,8 @@ try {
             workingHeadline: payload.workingHeadline,
             workingSubhead: payload.workingSubhead,
             workingCta: payload.workingCta,
-            workingBullets: payload.workingBullets
+            workingBullets: payload.workingBullets,
+            workingEditorHtml: payload.workingEditorHtml
           };
         }
 
