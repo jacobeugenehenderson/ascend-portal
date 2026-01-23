@@ -584,11 +584,11 @@
       }
 
       .artstart-toolbar-select {
-        height: 32px;
-        line-height: 30px;
-        padding: 0 8px;
+        height: 36px;
+        line-height: 34px;
+        padding: 0 10px;
         border: 1px solid #e2e8f0;
-        border-radius: 4px;
+        border-radius: 6px;
         background: #ffffff;
         font-size: 13px;
         color: #374151;
@@ -597,16 +597,27 @@
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
+        overflow: visible;
       }
 
       .artstart-toolbar-select:hover {
         border-color: #cbd5e1;
       }
 
-      /* Font family selector needs more width */
+      /* Font family selector - each option styled in its font */
       #toolbar-font {
-        min-width: 130px;
+        min-width: 140px;
       }
+
+      #toolbar-font option[value="Source Sans 3"] { font-family: 'Source Sans 3', sans-serif; }
+      #toolbar-font option[value="Inter"] { font-family: 'Inter', sans-serif; }
+      #toolbar-font option[value="Roboto"] { font-family: 'Roboto', sans-serif; }
+      #toolbar-font option[value="Open Sans"] { font-family: 'Open Sans', sans-serif; }
+      #toolbar-font option[value="Montserrat"] { font-family: 'Montserrat', sans-serif; }
+      #toolbar-font option[value="Lato"] { font-family: 'Lato', sans-serif; }
+      #toolbar-font option[value="Raleway"] { font-family: 'Raleway', sans-serif; }
+      #toolbar-font option[value="Oswald"] { font-family: 'Oswald', sans-serif; }
+      #toolbar-font option[value="Playfair Display"] { font-family: 'Playfair Display', serif; }
 
       /* Size signal bars (cell signal style) */
       .artstart-size-signal {
@@ -645,33 +656,45 @@
 
       /* Weight/Style dropdown with styled 'a' characters */
       .artstart-weight-select {
-        height: 32px;
-        line-height: 30px;
-        padding: 0 10px;
+        height: 36px;
+        line-height: 34px;
+        padding: 0 12px;
         border: 1px solid #e2e8f0;
-        border-radius: 4px;
+        border-radius: 6px;
         background: #ffffff;
-        font-family: Georgia, 'Times New Roman', serif;
-        font-size: 22px;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-size: 24px;
         color: #1e293b;
         cursor: pointer;
-        min-width: 44px;
+        min-width: 52px;
         text-align: center;
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
+        overflow: visible;
       }
 
       .artstart-weight-select option {
-        font-family: Georgia, 'Times New Roman', serif;
-        font-size: 18px;
+        font-family: Georgia, 'Times New Roman', serif !important;
+        font-size: 20px;
+        padding: 4px 8px;
       }
+
+      /* Weight variants - unfortunately browsers limit option styling */
+      .artstart-weight-select option[value="300"] { font-weight: 300; }
+      .artstart-weight-select option[value="300i"] { font-weight: 300; font-style: italic; }
+      .artstart-weight-select option[value="400"] { font-weight: 400; }
+      .artstart-weight-select option[value="400i"] { font-weight: 400; font-style: italic; }
+      .artstart-weight-select option[value="600"] { font-weight: 600; }
+      .artstart-weight-select option[value="600i"] { font-weight: 600; font-style: italic; }
+      .artstart-weight-select option[value="700"] { font-weight: 700; }
+      .artstart-weight-select option[value="700i"] { font-weight: 700; font-style: italic; }
 
       /* Indent controls with stepper buttons */
       .artstart-indent-group {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
       }
 
       .artstart-indent-stepper {
@@ -680,28 +703,20 @@
         gap: 0;
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 4px;
+        border-radius: 6px;
         overflow: hidden;
-      }
-
-      .artstart-indent-label {
-        font-size: 11px;
-        font-weight: 600;
-        color: #6b7280;
-        margin-right: 2px;
       }
 
       .artstart-indent-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 24px;
+        width: 28px;
         height: 28px;
         border: none;
         background: transparent;
         color: #374151;
-        font-size: 16px;
-        font-weight: 500;
+        font-size: 14px;
         cursor: pointer;
         transition: background 0.15s;
       }
@@ -1273,19 +1288,17 @@
                 <button class="artstart-toolbar-btn" id="toolbar-bullets" title="Bullet list">•</button>
               </div>
 
-              <!-- Indent controls (px) with steppers -->
+              <!-- Indent controls with arrow steppers -->
               <div class="artstart-toolbar-group artstart-indent-group">
-                <label class="artstart-indent-label">H</label>
-                <div class="artstart-indent-stepper">
-                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-h" data-dir="-1">−</button>
-                  <input type="number" id="toolbar-indent-h" class="artstart-indent-value" value="16" min="0" max="100" title="Horizontal padding (px)">
-                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-h" data-dir="1">+</button>
+                <div class="artstart-indent-stepper" title="Horizontal margins">
+                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-h" data-dir="1">←</button>
+                  <input type="number" id="toolbar-indent-h" class="artstart-indent-value" value="16" min="0" max="100">
+                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-h" data-dir="-1">→</button>
                 </div>
-                <label class="artstart-indent-label">V</label>
-                <div class="artstart-indent-stepper">
-                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-v" data-dir="-1">−</button>
-                  <input type="number" id="toolbar-indent-v" class="artstart-indent-value" value="16" min="0" max="100" title="Vertical padding (px)">
-                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-v" data-dir="1">+</button>
+                <div class="artstart-indent-stepper" title="Vertical margins">
+                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-v" data-dir="1">↑</button>
+                  <input type="number" id="toolbar-indent-v" class="artstart-indent-value" value="16" min="0" max="100">
+                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-v" data-dir="-1">↓</button>
                 </div>
               </div>
 
@@ -1544,6 +1557,39 @@
         },
       });
 
+      // Custom FontStyle extension (for italic)
+      const FontStyleExt = Extension.create({
+        name: 'fontStyleExt',
+        addOptions() {
+          return { types: ['textStyle'] };
+        },
+        addGlobalAttributes() {
+          return [{
+            types: this.options.types,
+            attributes: {
+              fontStyle: {
+                default: null,
+                parseHTML: el => el.style.fontStyle,
+                renderHTML: attrs => {
+                  if (!attrs.fontStyle) return {};
+                  return { style: `font-style: ${attrs.fontStyle}` };
+                },
+              },
+            },
+          }];
+        },
+        addCommands() {
+          return {
+            setFontStyle: fontStyle => ({ chain }) => {
+              return chain().setMark('textStyle', { fontStyle }).run();
+            },
+            unsetFontStyle: () => ({ chain }) => {
+              return chain().setMark('textStyle', { fontStyle: null }).removeEmptyTextStyle().run();
+            },
+          };
+        },
+      });
+
       // Brand color map
       const BRAND_COLORS = {
         black: '#000000',
@@ -1595,6 +1641,7 @@
           FontSize,
           FontWeight,
           TextTransform,
+          FontStyleExt,
           TextAlign.configure({
             types: ['paragraph'],
           }),
@@ -1616,11 +1663,22 @@
 
       // ========== TOOLBAR BINDINGS ==========
 
+      // Prevent toolbar buttons from stealing focus
+      document.querySelectorAll('.artstart-typeset-toolbar button, .artstart-typeset-toolbar .artstart-color-swatch').forEach(btn => {
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault(); // Prevents focus loss from editor
+        });
+      });
+
       // Font family
       const fontSelect = document.getElementById('toolbar-font');
       if (fontSelect) {
         fontSelect.addEventListener('change', () => {
           editor.chain().focus().setFontFamily(fontSelect.value).run();
+        });
+        // Update the select to show in the selected font
+        fontSelect.addEventListener('change', () => {
+          fontSelect.style.fontFamily = fontSelect.value;
         });
       }
 
@@ -1648,19 +1706,23 @@
       // Font weight + style dropdown
       const weightSelect = document.getElementById('toolbar-weight');
       if (weightSelect) {
+        // Prevent focus loss when clicking the select
+        weightSelect.addEventListener('mousedown', (e) => {
+          // Store selection before dropdown opens
+          window.__lastEditorSelection__ = editor.state.selection;
+        });
+
         weightSelect.addEventListener('change', () => {
           const val = weightSelect.value;
           const isItalic = val.endsWith('i');
           const weight = isItalic ? val.slice(0, -1) : val;
 
-          // Apply weight
-          editor.chain().focus().setFontWeight(weight).run();
-
-          // Toggle italic via textStyle - for now use CSS class approach
-          const editorContent = document.querySelector('.artstart-editor .ProseMirror');
-          if (editorContent) {
-            editorContent.style.fontStyle = isItalic ? 'italic' : 'normal';
-          }
+          // Restore selection and apply both weight and italic
+          editor.chain()
+            .focus()
+            .setFontWeight(weight)
+            .setFontStyle(isItalic ? 'italic' : 'normal')
+            .run();
         });
       }
 
