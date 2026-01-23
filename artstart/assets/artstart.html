@@ -1768,7 +1768,7 @@
 
       function updateWeightSelectorFont(fontFamily) {
         if (weightSelector) {
-          weightSelector.style.fontFamily = fontFamily;
+          weightSelector.style.fontFamily = `'${fontFamily}', sans-serif`;
         }
       }
 
@@ -1786,16 +1786,15 @@
 
         // Apply font to editor
         function applyFontToEditor(font) {
-          // Apply font to current selection only (no selectAll)
-          // If nothing is selected, this sets the font for future typed text
-          // For Source Sans 3 (the CSS default), unset the mark so text inherits the default
+          // Apply font to current selection (no selectAll)
           if (font === 'Source Sans 3') {
+            // For default font, unset marks so text inherits CSS default
             editor.chain().focus().unsetFontFamily().run();
           } else {
             editor.chain().focus().setFontFamily(font).run();
           }
-          // Update dropdown display font
-          fontSelect.style.setProperty('font-family', font, 'important');
+          // Update dropdown display font (quote font names with spaces for CSS)
+          fontSelect.style.setProperty('font-family', `'${font}', sans-serif`, 'important');
           updateWeightSelectorFont(font);
         }
 
@@ -1815,7 +1814,7 @@
         });
 
         // Initialize font select and weight selector with current font
-        fontSelect.style.setProperty('font-family', fontSelect.value, 'important');
+        fontSelect.style.setProperty('font-family', `'${fontSelect.value}', sans-serif`, 'important');
         updateWeightSelectorFont(fontSelect.value);
       }
 
