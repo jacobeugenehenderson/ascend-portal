@@ -2454,7 +2454,8 @@ function saveDraft(jobId, langOverride) {
   var payload = buildDraftPayload(jobId);
 
   console.log('[saveDraft] Payload workingBullets:', payload.workingBullets);
-  console.log('[saveDraft] Payload workingEditorHtml:', payload.workingEditorHtml);
+  console.log('[saveDraft] Payload workingEditorHtml length:', (payload.workingEditorHtml || '').length);
+  console.log('[saveDraft] Payload workingEditorHtml preview:', (payload.workingEditorHtml || '').substring(0, 300));
 
   var isBase = (langToSave === baseLanguage);
 
