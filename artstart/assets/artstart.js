@@ -2734,6 +2734,11 @@ try {
           refreshDaveStatus(effectiveJobId);
         }
         setSaveStatus('Autosave ready.');
+
+        // Notify Tiptap module that job data is ready
+        if (typeof window.__ARTSTART_ON_JOB_LOADED__ === 'function') {
+          window.__ARTSTART_ON_JOB_LOADED__(json.job);
+        }
       })
       .catch(function (err) {
         console.error('Error loading job', err);

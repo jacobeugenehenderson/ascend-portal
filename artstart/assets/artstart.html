@@ -1972,18 +1972,16 @@
         window.__ARTSTART_SET_EDITOR_HTML__(html);
       }
 
+      // Register callback for when job data loads
+      window.__ARTSTART_ON_JOB_LOADED__ = function(job) {
+        console.log('[ArtStart] __ARTSTART_ON_JOB_LOADED__ callback fired');
+        populateEditorFromJob(job);
+      };
+
       // If job data is already loaded, populate editor now
       if (window.__ARTSTART_CURRENT_JOB__) {
+        console.log('[ArtStart] Job already loaded, populating immediately');
         populateEditorFromJob(window.__ARTSTART_CURRENT_JOB__);
-      }
-
-      // Also wrap populateJob for future calls
-      const originalPopulateJob = window.populateJob;
-      if (typeof originalPopulateJob === 'function') {
-        window.populateJob = function(job) {
-          originalPopulateJob(job);
-          populateEditorFromJob(job);
-        };
       }
 
       // Hide the "no canvas info" message once editor is ready
