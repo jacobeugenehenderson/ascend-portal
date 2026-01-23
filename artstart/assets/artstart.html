@@ -1961,23 +1961,34 @@
 
       // Apply bold to text before dash pattern in all list items
       function applyDashBoldToListItems() {
-        const { tr, doc, schema } = editor.state;
+        const state = editor.view.state;
+        const { tr, doc, schema } = state;
         const boldMark = schema.marks.bold;
 
         // Collect all ranges that need bold marks
         const ranges = [];
 
         doc.descendants((node, pos) => {
-          if (node.type.name === 'listItem') {
-            const paragraph = node.firstChild;
-            if (paragraph && paragraph.type.name === 'paragraph') {
-              const text = paragraph.textContent;
+          // Look for paragraphs directly
+          if (node.type.name === 'paragraph') {
+            // Check if this paragraph is inside a listItem
+            const $pos = doc.resolve(pos);
+            let inListItem = false;
+            for (let d = $pos.depth; d > 0; d--) {
+              if ($pos.node(d).type.name === 'listItem') {
+                inListItem = true;
+                break;
+              }
+            }
+
+            if (inListItem) {
+              const text = node.textContent;
               const dashMatch = text.match(/^(.+?)\s+([-–—]{1,2})\s+(.+)$/);
 
               if (dashMatch) {
                 const beforeText = dashMatch[1];
-                // Position: pos is before listItem, +1 into listItem, +1 into paragraph
-                const startPos = pos + 2;
+                // pos is before paragraph, +1 to get inside paragraph at text start
+                const startPos = pos + 1;
                 const endPos = startPos + beforeText.length;
                 ranges.push({ from: startPos, to: endPos });
               }
