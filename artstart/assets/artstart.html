@@ -1716,18 +1716,21 @@
       // Expose editor globally for artstart.js integration
       window.__ARTSTART_EDITOR__ = editor;
 
-      // ========== AUTO-BOLD ON ENTER ==========
-      // When user presses Enter in a paragraph with " - " pattern, bold text before dash
-      // Skip this for bullet/ordered lists to preserve normal list behavior
+      // ========== AUTO-BOLD ON ENTER (LIST ITEMS ONLY) ==========
+      // When user presses Enter in a list item with " - " pattern, bold text before dash
+      // Only applies in bullet/ordered lists, not regular paragraphs
       editorEl.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
+
+        // Only apply in bullet/ordered lists
+        if (!editor.isActive('bulletList') && !editor.isActive('orderedList')) return;
 
         // Get current paragraph text and position
         const { state } = editor;
         const { $from } = state.selection;
         const currentNode = $from.parent;
 
-        // Only apply auto-bold in paragraphs, not in lists (let Tiptap handle list Enter)
+        // Must be in a paragraph (inside list item)
         if (currentNode.type.name !== 'paragraph') return;
 
         const text = currentNode.textContent;
@@ -1739,19 +1742,18 @@
         e.preventDefault();
 
         const beforeText = dashMatch[1];
-        const afterText = dashMatch[3];
 
         // Get paragraph start position
         const paragraphStart = $from.start();
         const beforeEnd = paragraphStart + beforeText.length;
 
-        // Select the "before" text and make it bold
+        // Select the "before" text, make it bold, then split list item
         editor.chain()
           .focus()
           .setTextSelection({ from: paragraphStart, to: beforeEnd })
           .setBold()
           .setTextSelection($from.end()) // move to end
-          .insertContent('<br>') // or split to new line
+          .splitListItem('listItem') // create new list item
           .run();
       });
 
@@ -1935,12 +1937,59 @@
         updateAlignButtons('right');
       });
 
-      // Bullet list
+      // Bullet list with dash-bold formatting
       const bulletsBtn = document.getElementById('toolbar-bullets');
       bulletsBtn?.addEventListener('click', () => {
+        const wasActive = editor.isActive('bulletList');
+
+        // Toggle the bullet list
         editor.chain().focus().toggleBulletList().run();
+
+        // If we just CREATED a bullet list (not removed), apply dash-bold formatting
+        if (!wasActive && editor.isActive('bulletList')) {
+          applyDashBoldToListItems();
+        }
+
         bulletsBtn.classList.toggle('is-active', editor.isActive('bulletList'));
       });
+
+      // Apply bold to text before dash pattern in all list items
+      function applyDashBoldToListItems() {
+        const { state } = editor;
+        const { doc } = state;
+        const edits = [];
+
+        // Find all list items and collect positions for dash patterns
+        doc.descendants((node, pos) => {
+          if (node.type.name === 'listItem') {
+            // Get the paragraph inside the list item
+            const paragraph = node.firstChild;
+            if (paragraph && paragraph.type.name === 'paragraph') {
+              const text = paragraph.textContent;
+              const dashMatch = text.match(/^(.+?)\s+([-–—]{1,2})\s+(.+)$/);
+
+              if (dashMatch) {
+                // Calculate positions: +1 for listItem, +1 for paragraph
+                const beforeText = dashMatch[1];
+                const startPos = pos + 2;
+                const endPos = startPos + beforeText.length;
+                edits.push({ from: startPos, to: endPos });
+              }
+            }
+          }
+        });
+
+        // Apply bold to each collected range (process in reverse to preserve positions)
+        edits.reverse().forEach(({ from, to }) => {
+          editor.chain()
+            .setTextSelection({ from, to })
+            .setBold()
+            .run();
+        });
+
+        // Move cursor to end of document after formatting
+        editor.commands.focus('end');
+      }
 
       // Uppercase button - applies to selected text only
       const uppercaseBtn = document.getElementById('toolbar-uppercase');
