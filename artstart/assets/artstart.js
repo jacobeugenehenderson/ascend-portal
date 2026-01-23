@@ -2566,10 +2566,19 @@ try {
   }
 
   // Normal fetch for shorter URLs
+  console.log('[saveDraft] Fetching URL length:', url.length);
   return fetch(url)
-    .then(function (r) { return r.json(); })
+    .then(function (r) {
+      console.log('[saveDraft] Response status:', r.status, r.statusText);
+      if (!r.ok) {
+        throw new Error('HTTP ' + r.status + ': ' + r.statusText);
+      }
+      return r.json();
+    })
     .then(function (data) {
-      if (!data || data.success === false) {
+      console.log('[saveDraft] Response data:', data);
+      // Backend returns { ok: true } on success
+      if (!data || data.ok === false || data.success === false) {
         console.warn('ArtStart saveDraft: backend error', data);
         setSaveStatus('Save error');
         return { success: false, data: data };
