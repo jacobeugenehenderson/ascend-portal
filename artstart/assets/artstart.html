@@ -1923,13 +1923,27 @@
       window.__ARTSTART_HTML_TO_FIELDS__ = function() {
         const html = editor.getHTML();
 
-        // Store actual HTML to preserve formatting
+        // Extract plain text from HTML for translation API compatibility
+        // The translation API reads workingBullets, so we put all text content there
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // Get text content, preserving line breaks between paragraphs/list items
+        const blocks = tempDiv.querySelectorAll('p, li');
+        const lines = [];
+        blocks.forEach(block => {
+          const text = block.textContent.trim();
+          if (text) lines.push(text);
+        });
+        const plainText = lines.join('\n');
+
+        // Store actual HTML to preserve formatting, plus plain text for translation
         return {
           workingHeadline: '',
           workingSubhead: '',
           workingCta: '',
-          workingBullets: '',
-          workingEditorHtml: html,  // New field for rich content
+          workingBullets: plainText,  // Plain text for translation API
+          workingEditorHtml: html,    // Rich HTML for display
         };
       };
 
