@@ -1917,10 +1917,9 @@ function autoscaleCanvasBands() {
 
     // Set default indents based on safe zone size (replaces old CSS percentage padding)
     // Print: 6%, Digital: 2%
-    // ONLY apply defaults if there are no saved values - otherwise we overwrite user settings
-    var hasSavedIndentH = job && job.workingIndentH && job.workingIndentH !== '0';
-    var hasSavedIndentV = job && job.workingIndentV && job.workingIndentV !== '0';
-    if (!hasSavedIndentH && !hasSavedIndentV) {
+    // Skip if job has saved indent values - they'll be restored later in populateJob
+    var hasSavedIndents = job && (job.workingIndentH || job.workingIndentV);
+    if (!hasSavedIndents) {
       setTimeout(function() {
         var safeEl = document.querySelector('.artstart-canvas-safe');
         var indentH = document.getElementById('toolbar-indent-h');
@@ -1931,7 +1930,7 @@ function autoscaleCanvasBands() {
           var defaultV = Math.round(safeEl.clientHeight * pct);
           indentH.value = defaultH;
           indentV.value = defaultV;
-          // Trigger update (but not autosave - this is initial setup)
+          // Update visual only - don't trigger autosave for defaults
           if (typeof window.__ARTSTART_UPDATE_INDENTS__ === 'function') {
             window.__ARTSTART_UPDATE_INDENTS__();
           }
@@ -2473,16 +2472,11 @@ try {
   var c0 = String((payload && payload.workingCta) || '').trim();
   var b0 = String((payload && payload.workingBullets) || '').trim();
   var html0 = String((payload && payload.workingEditorHtml) || '').trim();
-  var notes0 = String((payload && payload.workingNotes) || '').trim();
-  var website0 = String((payload && payload.workingWebsite) || '').trim();
-  var email0 = String((payload && payload.workingEmail) || '').trim();
 
-  // If content is blank (no text fields AND editor HTML is empty/trivial), bail out.
+  // If content is blank (no legacy fields AND editor HTML is empty/trivial), bail out.
   // Allow any HTML longer than a bare paragraph tag through.
-  // Also allow save if notes, website, or email have content.
   var hasEditorContent = html0 && html0.length > 12;
-  var hasMetaContent = notes0 || website0 || email0;
-  if (!h0 && !s0 && !c0 && !b0 && !hasEditorContent && !hasMetaContent) {
+  if (!h0 && !s0 && !c0 && !b0 && !hasEditorContent) {
     return;
   }
 } catch (_eBlank0) {}
