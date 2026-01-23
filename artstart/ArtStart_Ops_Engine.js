@@ -1134,7 +1134,8 @@ function handleUpdateArtStartTranslatedFields_(e) {
       workingHeadline: p.workingHeadline || '',
       workingSubhead: p.workingSubhead || '',
       workingCta: p.workingCta || '',
-      workingBullets: p.workingBullets || ''
+      workingBullets: p.workingBullets || '',
+      workingEditorHtml: p.workingEditorHtml || ''
     };
     langU = p.lang || p.language || '';
   }
@@ -1166,7 +1167,8 @@ function handleUpdateArtStartTranslatedFields_(e) {
       workingHeadline: String(payload.workingHeadline || ''),
       workingSubhead: String(payload.workingSubhead || ''),
       workingCta: String(payload.workingCta || ''),
-      workingBullets: String(payload.workingBullets || '')
+      workingBullets: String(payload.workingBullets || ''),
+      workingEditorHtml: String(payload.workingEditorHtml || '')
     }
   };
 
@@ -1865,26 +1867,55 @@ function doGet(e) {
         }
       }
 
-      // HTML-aware translation: Google Translate often preserves HTML tags
+      // HTML-aware translation: translates text nodes while preserving all HTML tags
       function translateHtml_(html) {
         if (!html) return '';
-        // Try translating the entire HTML - Google Translate usually preserves tags
-        try {
-          var translated = LanguageApp.translate(html, baseLang, targetLang);
-          // Verify we got HTML back (not mangled)
-          if (translated && translated.indexOf('<') !== -1) {
-            return translated;
-          }
-        } catch (e) {}
 
-        // Fallback: translate block by block, preserving structure but losing inline formatting
-        return html.replace(/<(p|li)([^>]*)>([\s\S]*?)<\/\1>/gi, function(match, tag, attrs, content) {
-          if (!content.trim()) return match;
-          var textOnly = content.replace(/<[^>]+>/g, '').trim();
-          if (!textOnly) return match;
-          var translatedText = tr_(textOnly);
-          return '<' + tag + attrs + '>' + translatedText + '</' + tag + '>';
-        });
+        // Split HTML into text and tag segments, translate only text
+        var tagPattern = /<[^>]+>/g;
+        var parts = [];
+        var lastIndex = 0;
+        var match;
+
+        while ((match = tagPattern.exec(html)) !== null) {
+          // Text before this tag
+          if (match.index > lastIndex) {
+            parts.push({ type: 'text', content: html.substring(lastIndex, match.index) });
+          }
+          // The tag itself (preserved exactly)
+          parts.push({ type: 'tag', content: match[0] });
+          lastIndex = tagPattern.lastIndex;
+        }
+
+        // Remaining text after last tag
+        if (lastIndex < html.length) {
+          parts.push({ type: 'text', content: html.substring(lastIndex) });
+        }
+
+        // Translate text parts, preserve tags exactly
+        var result = [];
+        for (var i = 0; i < parts.length; i++) {
+          if (parts[i].type === 'tag') {
+            result.push(parts[i].content);
+          } else {
+            var text = parts[i].content;
+            if (text.trim()) {
+              // Preserve leading/trailing whitespace
+              var leadMatch = text.match(/^(\s*)/);
+              var trailMatch = text.match(/(\s*)$/);
+              var leadSpace = leadMatch ? leadMatch[1] : '';
+              var trailSpace = trailMatch ? trailMatch[1] : '';
+              var trimmed = text.trim();
+              var translated = tr_(trimmed);
+              result.push(leadSpace + translated + trailSpace);
+            } else {
+              // Just whitespace, keep as-is
+              result.push(text);
+            }
+          }
+        }
+
+        return result.join('');
       }
 
       var translated = {
@@ -1947,6 +1978,7 @@ function doGet(e) {
           workingSubhead: String(e.parameter.workingSubhead || ''),
           workingCta: String(e.parameter.workingCta || ''),
           workingBullets: String(e.parameter.workingBullets || ''),
+          workingEditorHtml: String(e.parameter.workingEditorHtml || ''),
         }
       };
 
