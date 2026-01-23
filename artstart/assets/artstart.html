@@ -1455,6 +1455,46 @@
         },
       });
 
+      // Custom TextTransform extension (for uppercase)
+      const TextTransform = Extension.create({
+        name: 'textTransform',
+        addOptions() {
+          return { types: ['textStyle'] };
+        },
+        addGlobalAttributes() {
+          return [{
+            types: this.options.types,
+            attributes: {
+              textTransform: {
+                default: null,
+                parseHTML: el => el.style.textTransform,
+                renderHTML: attrs => {
+                  if (!attrs.textTransform) return {};
+                  return { style: `text-transform: ${attrs.textTransform}` };
+                },
+              },
+            },
+          }];
+        },
+        addCommands() {
+          return {
+            setTextTransform: textTransform => ({ chain }) => {
+              return chain().setMark('textStyle', { textTransform }).run();
+            },
+            unsetTextTransform: () => ({ chain }) => {
+              return chain().setMark('textStyle', { textTransform: null }).removeEmptyTextStyle().run();
+            },
+            toggleUppercase: () => ({ chain, editor }) => {
+              const attrs = editor.getAttributes('textStyle');
+              if (attrs.textTransform === 'uppercase') {
+                return chain().setMark('textStyle', { textTransform: null }).removeEmptyTextStyle().run();
+              }
+              return chain().setMark('textStyle', { textTransform: 'uppercase' }).run();
+            },
+          };
+        },
+      });
+
       // Brand color map
       const BRAND_COLORS = {
         black: '#000000',
@@ -1505,6 +1545,7 @@
           FontFamily,
           FontSize,
           FontWeight,
+          TextTransform,
           TextAlign.configure({
             types: ['paragraph'],
           }),
@@ -1620,16 +1661,13 @@
         bulletsBtn.classList.toggle('is-active', editor.isActive('bulletList'));
       });
 
-      // Uppercase button
+      // Uppercase button - applies to selected text only
       const uppercaseBtn = document.getElementById('toolbar-uppercase');
-      let isUppercase = false;
       uppercaseBtn?.addEventListener('click', () => {
-        isUppercase = !isUppercase;
-        uppercaseBtn.classList.toggle('is-active', isUppercase);
-        const editorContent = document.querySelector('.artstart-editor .ProseMirror');
-        if (editorContent) {
-          editorContent.style.textTransform = isUppercase ? 'uppercase' : 'none';
-        }
+        editor.chain().focus().toggleUppercase().run();
+        // Update button state based on current selection
+        const attrs = editor.getAttributes('textStyle');
+        uppercaseBtn.classList.toggle('is-active', attrs.textTransform === 'uppercase');
       });
 
       // Indent controls - only affect text padding inside the safe zone
