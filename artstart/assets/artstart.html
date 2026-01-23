@@ -1866,7 +1866,15 @@
         if (f.workingBullets) {
           const lines = f.workingBullets.split('\n').filter(l => l.trim());
           lines.forEach(l => {
-            parts.push(`<p>${escapeHtml(l)}</p>`);
+            // If line contains " - ", bold the part before it
+            if (l.includes(' - ')) {
+              const idx = l.indexOf(' - ');
+              const before = l.substring(0, idx);
+              const after = l.substring(idx + 3);
+              parts.push(`<p><strong>${escapeHtml(before)}</strong> – ${escapeHtml(after)}</p>`);
+            } else {
+              parts.push(`<p>${escapeHtml(l)}</p>`);
+            }
           });
         }
 
