@@ -2315,7 +2315,8 @@ if (code === baseLanguage) {
       workingSubhead: editorFields.workingSubhead,
       workingCta: editorFields.workingCta,
       workingBullets: editorFields.workingBullets,
-      workingEditorJson: editorJson, // New field for rich content
+      workingEditorHtml: editorFields.workingEditorHtml || '', // Preserve rich HTML content
+      workingEditorJson: editorJson, // JSON backup for rich content
       workingWebsite: (document.getElementById('working-website') || {}).value || '',
       workingEmail: (document.getElementById('working-email') || {}).value || '',
       workingNotes: (document.getElementById('working-notes') || {}).value || '',
@@ -2346,10 +2347,11 @@ try {
   var s0 = String((payload && payload.workingSubhead) || '').trim();
   var c0 = String((payload && payload.workingCta) || '').trim();
   var b0 = String((payload && payload.workingBullets) || '').trim();
+  var html0 = String((payload && payload.workingEditorHtml) || '').trim();
 
-  // If the translatable quartet is blank, treat this as an unsafe unload-save and bail out.
-  // (Users do not intentionally clear *all* fields via tab-close; this is almost always a race/blank UI state.)
-  if (!h0 && !s0 && !c0 && !b0) {
+  // If content is blank (no legacy fields AND no editor HTML beyond empty paragraph), bail out.
+  var hasEditorContent = html0 && html0 !== '<p></p>' && html0 !== '<p></p>\n';
+  if (!h0 && !s0 && !c0 && !b0 && !hasEditorContent) {
     return;
   }
 } catch (_eBlank0) {}

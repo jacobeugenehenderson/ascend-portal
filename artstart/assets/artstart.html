@@ -1845,9 +1845,15 @@
 
       // Convert legacy fields to editor HTML
       window.__ARTSTART_FIELDS_TO_HTML__ = function(fields) {
-        const parts = [];
         const f = fields || {};
 
+        // If we have stored HTML, use it directly (preserves formatting)
+        if (f.workingEditorHtml) {
+          return f.workingEditorHtml;
+        }
+
+        // Legacy fallback: convert old fields to HTML
+        const parts = [];
         if (f.workingHeadline) {
           parts.push(`<p style="font-size: 24px; font-weight: 700">${escapeHtml(f.workingHeadline)}</p>`);
         }
@@ -1858,7 +1864,6 @@
           parts.push(`<p style="font-size: 16px; font-weight: 600">${escapeHtml(f.workingCta)}</p>`);
         }
         if (f.workingBullets) {
-          // Render as paragraphs, not bullet list
           const lines = f.workingBullets.split('\n').filter(l => l.trim());
           lines.forEach(l => {
             parts.push(`<p>${escapeHtml(l)}</p>`);
@@ -1871,15 +1876,14 @@
       // Convert editor HTML back to legacy fields (best effort)
       window.__ARTSTART_HTML_TO_FIELDS__ = function() {
         const html = editor.getHTML();
-        const text = editor.getText();
 
-        // For now, put all content in workingBullets as the "body" field
-        // This maintains compatibility while we transition
+        // Store actual HTML to preserve formatting
         return {
           workingHeadline: '',
           workingSubhead: '',
           workingCta: '',
-          workingBullets: text,
+          workingBullets: '',
+          workingEditorHtml: html,  // New field for rich content
         };
       };
 
@@ -1927,9 +1931,10 @@
           // Call original
           originalPopulateJob(job);
 
-          // Populate editor with legacy fields
+          // Populate editor - use stored HTML if available, else legacy fields
           if (job) {
             const html = window.__ARTSTART_FIELDS_TO_HTML__({
+              workingEditorHtml: job.workingEditorHtml || '',
               workingHeadline: job.workingHeadline || '',
               workingSubhead: job.workingSubhead || '',
               workingCta: job.workingCta || '',
