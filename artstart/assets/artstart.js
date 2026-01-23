@@ -253,6 +253,12 @@ var __LANG_PICKER_BTN_LABEL__ = null;
 var __LANG_PICKER_MENU__ = null;
 
 function _readWorkingFields_() {
+  // Get content from Tiptap editor if available
+  if (typeof window.__ARTSTART_HTML_TO_FIELDS__ === 'function') {
+    return window.__ARTSTART_HTML_TO_FIELDS__();
+  }
+
+  // Legacy fallback
   var f = {};
   var v;
 
@@ -620,6 +626,13 @@ function applyTranslatedFields_(f) {
   if (!f) return;
   var v;
 
+  // Update Tiptap editor if available
+  if (typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function' && typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
+    var html = window.__ARTSTART_FIELDS_TO_HTML__(f);
+    window.__ARTSTART_SET_EDITOR_HTML__(html);
+  }
+
+  // Legacy field fallback (if elements exist)
   v = document.getElementById('working-headline'); if (v) v.value = f.workingHeadline || '';
   v = document.getElementById('working-subhead');  if (v) v.value = f.workingSubhead || '';
   v = document.getElementById('working-cta');      if (v) v.value = f.workingCta || '';
@@ -632,8 +645,13 @@ function applyTranslatedFields_(f) {
 
   v = document.getElementById('working-notes');    if (v && typeof f.workingNotes !== 'undefined') v.value = f.workingNotes || '';
 
-  syncCanvasTextFromFields();
-  autoscaleCanvasBands();
+  // Legacy canvas sync (now handled by Tiptap directly)
+  if (typeof syncCanvasTextFromFields === 'function') {
+    try { syncCanvasTextFromFields(); } catch (e) {}
+  }
+  if (typeof autoscaleCanvasBands === 'function') {
+    try { autoscaleCanvasBands(); } catch (e) {}
+  }
 }
 
   function setError(message) {
@@ -1545,6 +1563,9 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
   }
 
 function autoscaleCanvasBands() {
+  // Skip if using new Tiptap editor
+  if (window.__ARTSTART_EDITOR__) return;
+
   var safe = document.querySelector('.artstart-canvas-safe');
   if (!safe) return;
 
@@ -1593,6 +1614,9 @@ function autoscaleCanvasBands() {
 }
 
   function syncCanvasTextFromFields() {
+    // Skip if using new Tiptap editor
+    if (window.__ARTSTART_EDITOR__) return;
+
     var box = document.getElementById('format-canvas-box');
     if (!box || box.getAttribute('data-has-dimensions') !== 'true') return;
 
@@ -2250,15 +2274,41 @@ if (code === baseLanguage) {
   }
 
   function buildDraftPayload(jobId) {
+    // Get content from Tiptap editor if available, otherwise fall back to legacy fields
+    var editorFields = { workingHeadline: '', workingSubhead: '', workingCta: '', workingBullets: '' };
+
+    if (typeof window.__ARTSTART_HTML_TO_FIELDS__ === 'function') {
+      editorFields = window.__ARTSTART_HTML_TO_FIELDS__();
+    } else {
+      // Legacy fallback (fields may not exist in new UI)
+      var h = document.getElementById('working-headline');
+      var s = document.getElementById('working-subhead');
+      var c = document.getElementById('working-cta');
+      var b = document.getElementById('working-bullets');
+      if (h) editorFields.workingHeadline = h.value || '';
+      if (s) editorFields.workingSubhead = s.value || '';
+      if (c) editorFields.workingCta = c.value || '';
+      if (b) editorFields.workingBullets = b.value || '';
+    }
+
+    // Also store the full editor JSON for future use
+    var editorJson = '';
+    if (typeof window.__ARTSTART_GET_EDITOR_JSON__ === 'function') {
+      try {
+        editorJson = JSON.stringify(window.__ARTSTART_GET_EDITOR_JSON__());
+      } catch (e) {}
+    }
+
     return {
       jobId: jobId,
-      workingHeadline: document.getElementById('working-headline').value,
-      workingSubhead: document.getElementById('working-subhead').value,
-      workingCta: document.getElementById('working-cta').value,
-      workingBullets: document.getElementById('working-bullets').value,
+      workingHeadline: editorFields.workingHeadline,
+      workingSubhead: editorFields.workingSubhead,
+      workingCta: editorFields.workingCta,
+      workingBullets: editorFields.workingBullets,
+      workingEditorJson: editorJson, // New field for rich content
       workingWebsite: (document.getElementById('working-website') || {}).value || '',
       workingEmail: (document.getElementById('working-email') || {}).value || '',
-      workingNotes: document.getElementById('working-notes').value,
+      workingNotes: (document.getElementById('working-notes') || {}).value || '',
 
       // QR association (FileRoom)
       qrDriveFileId: (document.getElementById('qrDriveFileId') || {}).value || '',
@@ -2266,6 +2316,9 @@ if (code === baseLanguage) {
       qrDestinationUrl: (document.getElementById('qrPayloadText') || {}).value || ''
     };
   }
+
+  // Expose saveDraft globally for the Tiptap module
+  window.saveDraft = saveDraft;
 
 function saveDraft(jobId, langOverride) {
   setSaveStatus('Saving…');
