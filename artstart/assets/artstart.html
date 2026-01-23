@@ -1921,6 +1921,12 @@
         const jobId = window.getJobIdFromQuery ? window.getJobIdFromQuery() : null;
         if (!jobId) return;
 
+        // Save to localStorage as backup (backend may not have new field yet)
+        try {
+          const html = editor.getHTML();
+          localStorage.setItem('artstart_editor_' + jobId, html);
+        } catch (e) {}
+
         // Call the legacy saveDraft if available
         if (typeof window.saveDraft === 'function') {
           window.saveDraft(jobId);
@@ -1939,9 +1945,15 @@
           // Call original
           originalPopulateJob(job);
 
-          // Populate editor - use stored HTML if available, else legacy fields
+          // Populate editor - check localStorage first, then backend, then legacy fields
           if (job) {
-            const html = window.__ARTSTART_FIELDS_TO_HTML__({
+            // Try localStorage first (client-side backup)
+            let localHtml = '';
+            try {
+              localHtml = localStorage.getItem('artstart_editor_' + job.jobId) || '';
+            } catch (e) {}
+
+            const html = localHtml || window.__ARTSTART_FIELDS_TO_HTML__({
               workingEditorHtml: job.workingEditorHtml || '',
               workingHeadline: job.workingHeadline || '',
               workingSubhead: job.workingSubhead || '',
