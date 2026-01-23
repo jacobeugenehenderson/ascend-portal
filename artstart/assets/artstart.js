@@ -2382,6 +2382,27 @@ if (code === baseLanguage) {
           if (html) {
             console.log('[populateJob] Setting editor HTML');
             window.__ARTSTART_SET_EDITOR_HTML__(html);
+
+            // Set baseline for English using normalized HTML from editor
+            // This prevents false "changed" detection when returning from translations
+            try {
+              var normalizedHtml = (typeof window.__ARTSTART_GET_EDITOR_HTML__ === 'function')
+                ? window.__ARTSTART_GET_EDITOR_HTML__()
+                : html;
+              var normalizedBaseFields = {
+                workingHeadline: baseFields.workingHeadline || '',
+                workingSubhead: baseFields.workingSubhead || '',
+                workingCta: baseFields.workingCta || '',
+                workingBullets: baseFields.workingBullets || '',
+                workingEditorHtml: normalizedHtml,
+                workingIndentH: baseFields.workingIndentH || '',
+                workingIndentV: baseFields.workingIndentV || ''
+              };
+              setLangBaseline_(baseLanguage, normalizedBaseFields);
+              console.log('[populateJob] Set baseline for English with normalized HTML');
+            } catch (_eBaselineEN) {
+              console.log('[populateJob] Failed to set English baseline:', _eBaselineEN);
+            }
           }
         } else {
           // Legacy field fallback

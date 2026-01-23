@@ -2016,6 +2016,15 @@ function doGet(e) {
       var tdbU = parseTranslationsJson_(existingJsonU);
 
       var nowIsoU = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+      // Preserve existing indents if not provided in query params
+      var existingFieldsU = (tdbU[langU] && tdbU[langU].fields) || {};
+      var indentHU = (e.parameter.workingIndentH !== undefined && e.parameter.workingIndentH !== null)
+        ? String(e.parameter.workingIndentH)
+        : String(existingFieldsU.workingIndentH || '');
+      var indentVU = (e.parameter.workingIndentV !== undefined && e.parameter.workingIndentV !== null)
+        ? String(e.parameter.workingIndentV)
+        : String(existingFieldsU.workingIndentV || '');
+
       tdbU[langU] = {
         human: true,
         at: nowIsoU,
@@ -2025,6 +2034,8 @@ function doGet(e) {
           workingCta: String(e.parameter.workingCta || ''),
           workingBullets: String(e.parameter.workingBullets || ''),
           workingEditorHtml: String(e.parameter.workingEditorHtml || ''),
+          workingIndentH: indentHU,
+          workingIndentV: indentVU
         }
       };
 
