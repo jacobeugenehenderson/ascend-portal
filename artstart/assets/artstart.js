@@ -2518,7 +2518,8 @@ try {
   });
 
   // If URL is too long, use hidden iframe form POST (avoids CORS preflight unlike fetch POST)
-  if (url.length > 7500) {
+  // Lowered threshold from 7500 to 4000 - Google's redirect adds auth tokens that inflate URL further
+  if (url.length > 4000) {
     return new Promise(function (resolve, reject) {
       var frameName = 'artstart_save_frame_' + Date.now();
       var iframe = document.createElement('iframe');
