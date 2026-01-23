@@ -945,9 +945,9 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 50%, transparent);
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        border: 1px solid color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 50%, transparent) !important;
         box-shadow: 0 0 8px color-mix(in oklab, var(--ascend-app-accent, #4fd1c5) 15%, transparent);
       }
 
@@ -959,22 +959,24 @@
         font-size: 13px;
         font-weight: 500;
         color: #374151;
-        /* No border-bottom, no border-radius - sharp junction with body */
+        border: none !important;
+        border-radius: 0 !important;
       }
 
-      .artstart-overview-notes-input {
+      .artstart-card--overview .artstart-overview-notes-input,
+      textarea.artstart-overview-notes-input {
         flex: 1;
         width: 100%;
         padding: 12px 16px;
-        border: none;
-        border-radius: 0;
+        border: none !important;
+        border-radius: 0 !important;
         font-size: 13px;
         font-family: inherit;
         line-height: 1.5;
         resize: none;
         background: #ffffff;
         min-height: 80px;
-        /* Container's overflow:hidden clips to rounded bottom corners */
+        box-shadow: none !important;
       }
 
       .artstart-overview-notes-input:focus {
@@ -1856,10 +1858,11 @@
           parts.push(`<p style="font-size: 16px; font-weight: 600">${escapeHtml(f.workingCta)}</p>`);
         }
         if (f.workingBullets) {
+          // Render as paragraphs, not bullet list
           const lines = f.workingBullets.split('\n').filter(l => l.trim());
-          if (lines.length > 0) {
-            parts.push('<ul>' + lines.map(l => `<li>${escapeHtml(l)}</li>`).join('') + '</ul>');
-          }
+          lines.forEach(l => {
+            parts.push(`<p>${escapeHtml(l)}</p>`);
+          });
         }
 
         return parts.length > 0 ? parts.join('') : '<p></p>';
