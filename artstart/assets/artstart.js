@@ -2936,8 +2936,10 @@ if (langSelect) {
   });
 
   langSelect.addEventListener('change', function () {
+    console.log('[LangChange] Handler started, current editor HTML:', window.__ARTSTART_GET_EDITOR_HTML__ ? window.__ARTSTART_GET_EDITOR_HTML__().substring(0, 100) : '(no fn)');
     var jobIdNow = getJobIdFromQuery();
     var next = String(langSelect.value || '').trim().toUpperCase();
+    console.log('[LangChange] Switching from', activeLanguage, 'to', next);
     if (!jobIdNow || !next) { __ARTSTART_TRANSLATION_ACTION__ = false; return; }
 
     // If user selected the current language, do nothing.
