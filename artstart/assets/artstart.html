@@ -1694,6 +1694,11 @@
           FontStyleExt,
           TextAlign.configure({
             types: ['paragraph'],
+          }).extend({
+            // Disable default keyboard shortcuts (Cmd+Shift+L/E/R/J)
+            addKeyboardShortcuts() {
+              return {};
+            },
           }),
         ],
         content: '<p>Start typing your copy here...</p>',
@@ -1781,7 +1786,8 @@
           fontSelect.style.setProperty('font-family', font, 'important');
           updateWeightSelectorFont(font);
         });
-        // Initialize weight selector with current font
+        // Initialize font select and weight selector with current font
+        fontSelect.style.setProperty('font-family', fontSelect.value, 'important');
         updateWeightSelectorFont(fontSelect.value);
       }
 
