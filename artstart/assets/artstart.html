@@ -657,35 +657,35 @@
       /* Weight/Style selector with styled 'a' glyph */
       .artstart-weight-selector {
         position: relative;
-        display: inline-block;
+        display: inline-flex;
       }
 
       .ascend-app-panel .artstart-weight-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 48px;
-        width: 56px;
+        width: 32px;
+        height: 28px;
+        padding: 0;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
         background: #ffffff;
         font-family: inherit !important;
-        font-size: 38px !important;
+        font-size: 22px !important;
         font-weight: inherit !important;
         font-style: inherit !important;
-        line-height: 1;
+        line-height: 1 !important;
         color: #1e293b;
         cursor: pointer;
         transition: background 0.15s;
-        padding: 0;
       }
 
-      .artstart-weight-btn:hover {
+      .ascend-app-panel .artstart-weight-btn:hover {
         background: #f1f5f9;
       }
 
-      .artstart-weight-btn:active,
-      .artstart-weight-btn.is-open {
+      .ascend-app-panel .artstart-weight-btn:active,
+      .ascend-app-panel .artstart-weight-btn.is-open {
         background: #e2e8f0;
       }
 
@@ -706,27 +706,26 @@
       .artstart-weight-dropdown.is-open {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 0;
       }
 
       .ascend-app-panel .artstart-weight-option {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
+        padding: 0;
         border: none;
         border-radius: 0;
         background: transparent;
         font-family: inherit !important;
-        font-size: 32px !important;
+        font-size: 28px !important;
         font-weight: inherit !important;
         font-style: inherit !important;
-        line-height: 1;
+        line-height: 1 !important;
         color: #1e293b;
         cursor: pointer;
         transition: background 0.15s;
-        padding: 0;
       }
 
       .ascend-app-panel .artstart-weight-option:hover {
