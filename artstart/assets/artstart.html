@@ -1777,7 +1777,8 @@
           const font = fontSelect.value;
           // Select all content and apply font to ensure it works
           editor.chain().focus().selectAll().setFontFamily(font).run();
-          fontSelect.style.fontFamily = font;
+          // Use setProperty with important to override ascend-apps.css font shorthand
+          fontSelect.style.setProperty('font-family', font, 'important');
           updateWeightSelectorFont(font);
         });
         // Initialize weight selector with current font
