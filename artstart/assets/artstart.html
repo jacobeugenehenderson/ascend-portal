@@ -627,7 +627,7 @@
         height: 28px;
         padding: 4px 8px;
         border: 1px solid #e2e8f0;
-        border-radius: 4px;
+        border-radius: 10px;
         background: #ffffff;
         cursor: pointer;
       }
@@ -1775,7 +1775,8 @@
 
         fontSelect.addEventListener('change', () => {
           const font = fontSelect.value;
-          editor.chain().focus().setFontFamily(font).run();
+          // Select all content and apply font to ensure it works
+          editor.chain().focus().selectAll().setFontFamily(font).run();
           fontSelect.style.fontFamily = font;
           updateWeightSelectorFont(font);
         });
