@@ -2030,6 +2030,8 @@
         editorArea.style.paddingRight = '0';
         editorArea.style.paddingBottom = '0';
       }
+      // Expose globally for artstart.js
+      window.updateIndents = updateIndents;
 
       // Stepper button handlers
       document.querySelectorAll('.artstart-indent-btn').forEach(btn => {

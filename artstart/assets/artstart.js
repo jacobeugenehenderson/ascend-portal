@@ -1917,20 +1917,27 @@ function autoscaleCanvasBands() {
 
     // Set default indents based on safe zone size (replaces old CSS percentage padding)
     // Print: 6%, Digital: 2%
-    setTimeout(function() {
-      var safeEl = document.querySelector('.artstart-canvas-safe');
-      var indentH = document.getElementById('toolbar-indent-h');
-      var indentV = document.getElementById('toolbar-indent-v');
-      if (safeEl && indentH && indentV) {
-        var pct = mediaKind === 'digital' ? 0.02 : 0.06;
-        var defaultH = Math.round(safeEl.clientWidth * pct);
-        var defaultV = Math.round(safeEl.clientHeight * pct);
-        indentH.value = defaultH;
-        indentV.value = defaultV;
-        // Trigger update
-        indentH.dispatchEvent(new Event('input'));
-      }
-    }, 0);
+    // ONLY set defaults if no saved values exist - otherwise we overwrite user's saved indents
+    var savedIndentH = job && job.workingIndentH;
+    var savedIndentV = job && job.workingIndentV;
+    if (!savedIndentH && !savedIndentV) {
+      setTimeout(function() {
+        var safeEl = document.querySelector('.artstart-canvas-safe');
+        var indentH = document.getElementById('toolbar-indent-h');
+        var indentV = document.getElementById('toolbar-indent-v');
+        if (safeEl && indentH && indentV) {
+          var pct = mediaKind === 'digital' ? 0.02 : 0.06;
+          var defaultH = Math.round(safeEl.clientWidth * pct);
+          var defaultV = Math.round(safeEl.clientHeight * pct);
+          indentH.value = defaultH;
+          indentV.value = defaultV;
+          // Update visual only - don't trigger autosave for initial defaults
+          if (typeof window.updateIndents === 'function') {
+            window.updateIndents();
+          }
+        }
+      }, 0);
+    }
 
     // Working draft fields
     var prevActiveLanguage = activeLanguage;
