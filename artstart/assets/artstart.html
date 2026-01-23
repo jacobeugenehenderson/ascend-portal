@@ -732,6 +732,62 @@
         background: #e2e8f0;
       }
 
+      /* Bullet + Weight Pill Toggle */
+      .artstart-pill-toggle {
+        display: inline-flex;
+        align-items: stretch;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: visible;
+        background: #ffffff;
+      }
+
+      .artstart-pill-left {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 28px;
+        padding: 0;
+        border: none;
+        border-right: 1px solid #e2e8f0;
+        border-radius: 9px 0 0 9px;
+        background: transparent;
+        font-size: 18px;
+        color: #1e293b;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+
+      .artstart-pill-left:hover {
+        background: #f1f5f9;
+      }
+
+      .artstart-pill-left.is-active {
+        background: #0066cc;
+        color: #ffffff;
+      }
+
+      .artstart-pill-right {
+        position: relative;
+      }
+
+      .artstart-pill-right .artstart-weight-btn {
+        border: none;
+        border-radius: 0 9px 9px 0 !important;
+        height: 28px;
+      }
+
+      /* Disabled state for weight when bullets are active */
+      .artstart-pill-toggle.bullets-active .artstart-pill-right {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+
+      .artstart-pill-toggle.bullets-active .artstart-weight-btn {
+        cursor: not-allowed;
+      }
+
       /* Indent controls with stepper buttons */
       .artstart-indent-group {
         display: flex;
@@ -1296,19 +1352,22 @@
                 </div>
               </div>
 
-              <!-- Weight + Style -->
+              <!-- Bullets + Weight Pill Toggle -->
               <div class="artstart-toolbar-group">
-                <div class="artstart-weight-selector" id="toolbar-weight">
-                  <button type="button" class="artstart-weight-btn" title="Weight & Style" data-value="400" style="font-weight:400;font-style:normal">a</button>
-                  <div class="artstart-weight-dropdown">
-                    <button type="button" class="artstart-weight-option" data-value="300" style="font-weight:300">a</button>
-                    <button type="button" class="artstart-weight-option is-active" data-value="400" style="font-weight:400">a</button>
-                    <button type="button" class="artstart-weight-option" data-value="600" style="font-weight:600">a</button>
-                    <button type="button" class="artstart-weight-option" data-value="700" style="font-weight:700">a</button>
-                    <button type="button" class="artstart-weight-option" data-value="300i" style="font-weight:300;font-style:italic">a</button>
-                    <button type="button" class="artstart-weight-option" data-value="400i" style="font-weight:400;font-style:italic">a</button>
-                    <button type="button" class="artstart-weight-option" data-value="600i" style="font-weight:600;font-style:italic">a</button>
-                    <button type="button" class="artstart-weight-option" data-value="700i" style="font-weight:700;font-style:italic">a</button>
+                <div class="artstart-pill-toggle" id="bullet-weight-pill">
+                  <button type="button" class="artstart-pill-left" id="toolbar-bullets" title="Bullet list (auto-formats Label - Text)">•</button>
+                  <div class="artstart-weight-selector artstart-pill-right" id="toolbar-weight">
+                    <button type="button" class="artstart-weight-btn" title="Weight & Style" data-value="400" style="font-weight:400;font-style:normal">a</button>
+                    <div class="artstart-weight-dropdown">
+                      <button type="button" class="artstart-weight-option" data-value="300" style="font-weight:300">a</button>
+                      <button type="button" class="artstart-weight-option is-active" data-value="400" style="font-weight:400">a</button>
+                      <button type="button" class="artstart-weight-option" data-value="600" style="font-weight:600">a</button>
+                      <button type="button" class="artstart-weight-option" data-value="700" style="font-weight:700">a</button>
+                      <button type="button" class="artstart-weight-option" data-value="300i" style="font-weight:300;font-style:italic">a</button>
+                      <button type="button" class="artstart-weight-option" data-value="400i" style="font-weight:400;font-style:italic">a</button>
+                      <button type="button" class="artstart-weight-option" data-value="600i" style="font-weight:600;font-style:italic">a</button>
+                      <button type="button" class="artstart-weight-option" data-value="700i" style="font-weight:700;font-style:italic">a</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1331,11 +1390,6 @@
                 <button class="artstart-toolbar-btn is-active" id="toolbar-align-left" title="Align left"><span class="material-icons">format_align_left</span></button>
                 <button class="artstart-toolbar-btn" id="toolbar-align-center" title="Align center"><span class="material-icons">format_align_center</span></button>
                 <button class="artstart-toolbar-btn" id="toolbar-align-right" title="Align right"><span class="material-icons">format_align_right</span></button>
-              </div>
-
-              <!-- Bullets -->
-              <div class="artstart-toolbar-group">
-                <button class="artstart-toolbar-btn" id="toolbar-bullets" title="Bullet list">•</button>
               </div>
 
               <!-- Indent controls with arrow steppers - arrows show text movement direction -->
@@ -1958,6 +2012,15 @@
 
       // ========== BULLET LIST WITH DASH-BOLD FORMATTING ==========
       const bulletsBtn = document.getElementById('toolbar-bullets');
+      const bulletWeightPill = document.getElementById('bullet-weight-pill');
+
+      // Update pill toggle state based on bullet list status
+      function updateBulletPillState() {
+        const isActive = editor.isActive('bulletList');
+        bulletsBtn?.classList.toggle('is-active', isActive);
+        bulletWeightPill?.classList.toggle('bullets-active', isActive);
+      }
+
       bulletsBtn?.addEventListener('click', () => {
         const wasActive = editor.isActive('bulletList');
 
@@ -1976,11 +2039,12 @@
           });
         }
 
-        // Update button state
-        requestAnimationFrame(() => {
-          bulletsBtn.classList.toggle('is-active', editor.isActive('bulletList'));
-        });
+        // Update pill toggle state
+        requestAnimationFrame(updateBulletPillState);
       });
+
+      // Also update pill state when selection changes (cursor moves in/out of list)
+      editor.on('selectionUpdate', updateBulletPillState);
 
       // Find the bullet/ordered list containing the current selection
       function findCurrentList() {
