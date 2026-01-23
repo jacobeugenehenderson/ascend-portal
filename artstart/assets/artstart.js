@@ -137,7 +137,8 @@ function saveLangDraft_(jobId, lang, fields) {
         workingHeadline: String(f.workingHeadline || ''),
         workingSubhead: String(f.workingSubhead || ''),
         workingCta: String(f.workingCta || ''),
-        workingBullets: String(f.workingBullets || '')
+        workingBullets: String(f.workingBullets || ''),
+        workingEditorHtml: String(f.workingEditorHtml || '')
       }
     };
     window.localStorage.setItem(_langDraftKey_(jobId, lang), JSON.stringify(rec));
@@ -276,7 +277,8 @@ function _fieldsSig_(f) {
     String(x.workingHeadline || ''),
     String(x.workingSubhead || ''),
     String(x.workingCta || ''),
-    String(x.workingBullets || '')
+    String(x.workingBullets || ''),
+    String(x.workingEditorHtml || '')
   ]);
 }
 
@@ -2477,12 +2479,14 @@ try {
         translationsDb[langToSave].fields.workingSubhead  = payload.workingSubhead  || '';
         translationsDb[langToSave].fields.workingCta      = payload.workingCta      || '';
         translationsDb[langToSave].fields.workingBullets  = payload.workingBullets  || '';
+        translationsDb[langToSave].fields.workingEditorHtml = payload.workingEditorHtml || '';
 
         // UI fallback rule: never show blanks if EN exists.
         if (!translationsDb[langToSave].fields.workingHeadline) translationsDb[langToSave].fields.workingHeadline = base.workingHeadline || '';
         if (!translationsDb[langToSave].fields.workingSubhead)  translationsDb[langToSave].fields.workingSubhead  = base.workingSubhead  || '';
         if (!translationsDb[langToSave].fields.workingCta)      translationsDb[langToSave].fields.workingCta      = base.workingCta      || '';
         if (!translationsDb[langToSave].fields.workingBullets)  translationsDb[langToSave].fields.workingBullets  = base.workingBullets  || '';
+        if (!translationsDb[langToSave].fields.workingEditorHtml) translationsDb[langToSave].fields.workingEditorHtml = base.workingEditorHtml || '';
 
         // Persist human state so async refreshes can't revert it.
         try { saveLangState_(jobId, langToSave, 'human'); } catch (_e) {}
@@ -2991,7 +2995,8 @@ if (langSelect) {
             String(existing.workingHeadline || '') === String(snap.workingHeadline || '') &&
             String(existing.workingSubhead  || '') === String(snap.workingSubhead  || '') &&
             String(existing.workingCta      || '') === String(snap.workingCta      || '') &&
-            String(existing.workingBullets  || '') === String(snap.workingBullets  || '')
+            String(existing.workingBullets  || '') === String(snap.workingBullets  || '') &&
+            String(existing.workingEditorHtml || '') === String(snap.workingEditorHtml || '')
           );
         }
 
@@ -3005,7 +3010,8 @@ if (langSelect) {
             workingHeadline: String(snap.workingHeadline || ''),
             workingSubhead:  String(snap.workingSubhead || ''),
             workingCta:      String(snap.workingCta || ''),
-            workingBullets:  String(snap.workingBullets || '')
+            workingBullets:  String(snap.workingBullets || ''),
+            workingEditorHtml: String(snap.workingEditorHtml || '')
           };
 
           try { saveLangState_(jobIdNow, prevLang, 'human'); } catch (_e0) {}
