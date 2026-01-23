@@ -952,13 +952,13 @@
       }
 
       .artstart-canvas-safe .artstart-workspace-meta input:hover {
-        background: rgba(255, 255, 255, 0.5);
+        background: transparent;
         border: none !important;
       }
 
       .artstart-canvas-safe .artstart-workspace-meta input:focus {
         outline: none;
-        background: rgba(255, 255, 255, 0.8);
+        background: transparent;
         box-shadow: none !important;
         border: none !important;
       }
@@ -1338,17 +1338,17 @@
                 <button class="artstart-toolbar-btn" id="toolbar-bullets" title="Bullet list">•</button>
               </div>
 
-              <!-- Indent controls with arrow steppers -->
+              <!-- Indent controls with arrow steppers - arrows show text movement direction -->
               <div class="artstart-toolbar-group artstart-indent-group">
-                <div class="artstart-indent-stepper" title="Horizontal margins">
-                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-h" data-dir="1">←</button>
-                  <input type="number" id="toolbar-indent-h" class="artstart-indent-value" value="16" min="0" max="100">
-                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-h" data-dir="-1">→</button>
+                <div class="artstart-indent-stepper" title="Horizontal position">
+                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-h" data-dir="-1">←</button>
+                  <input type="number" id="toolbar-indent-h" class="artstart-indent-value" value="0" min="0" max="100">
+                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-h" data-dir="1">→</button>
                 </div>
-                <div class="artstart-indent-stepper" title="Vertical margins">
-                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-v" data-dir="1">↑</button>
-                  <input type="number" id="toolbar-indent-v" class="artstart-indent-value" value="16" min="0" max="100">
-                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-v" data-dir="-1">↓</button>
+                <div class="artstart-indent-stepper" title="Vertical position">
+                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-v" data-dir="-1">↑</button>
+                  <input type="number" id="toolbar-indent-v" class="artstart-indent-value" value="0" min="0" max="100">
+                  <button type="button" class="artstart-indent-btn" data-target="toolbar-indent-v" data-dir="1">↓</button>
                 </div>
               </div>
 
@@ -1717,7 +1717,8 @@
       window.__ARTSTART_EDITOR__ = editor;
 
       // ========== AUTO-BOLD ON ENTER ==========
-      // When user presses Enter and line contains " - " pattern, bold text before dash
+      // When user presses Enter in a paragraph with " - " pattern, bold text before dash
+      // Skip this for bullet/ordered lists to preserve normal list behavior
       editorEl.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
 
@@ -1726,7 +1727,8 @@
         const { $from } = state.selection;
         const currentNode = $from.parent;
 
-        if (currentNode.type.name !== 'paragraph' && currentNode.type.name !== 'listItem') return;
+        // Only apply auto-bold in paragraphs, not in lists (let Tiptap handle list Enter)
+        if (currentNode.type.name !== 'paragraph') return;
 
         const text = currentNode.textContent;
         const dashMatch = text.match(/^(.+?)\s+([-–—]{1,2})\s+(.+)$/);
@@ -1956,10 +1958,13 @@
 
       function updateIndents() {
         if (!editorArea) return;
-        const h = parseInt(indentH?.value || '16', 10);
-        const v = parseInt(indentV?.value || '16', 10);
-        // Only change padding on the editor, not the safe zone's position
-        editorArea.style.padding = `${v}px ${h}px`;
+        const h = parseInt(indentH?.value || '0', 10);
+        const v = parseInt(indentV?.value || '0', 10);
+        // Position text from upper-left corner using padding-left and padding-top
+        editorArea.style.paddingLeft = `${h}px`;
+        editorArea.style.paddingTop = `${v}px`;
+        editorArea.style.paddingRight = '0';
+        editorArea.style.paddingBottom = '0';
       }
 
       // Stepper button handlers
