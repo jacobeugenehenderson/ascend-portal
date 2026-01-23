@@ -141,6 +141,13 @@ function saveLangDraft_(jobId, lang, fields) {
         workingEditorHtml: String(f.workingEditorHtml || '')
       }
     };
+    // For base language, also save metadata fields (website, email, notes, indents)
+    // These are language-independent but need to persist to survive stale backend responses
+    if (f.workingWebsite !== undefined) rec.fields.workingWebsite = String(f.workingWebsite || '');
+    if (f.workingEmail !== undefined) rec.fields.workingEmail = String(f.workingEmail || '');
+    if (f.workingNotes !== undefined) rec.fields.workingNotes = String(f.workingNotes || '');
+    if (f.workingIndentH !== undefined) rec.fields.workingIndentH = String(f.workingIndentH || '');
+    if (f.workingIndentV !== undefined) rec.fields.workingIndentV = String(f.workingIndentV || '');
     window.localStorage.setItem(_langDraftKey_(jobId, lang), JSON.stringify(rec));
   } catch (e) {
     // ignore
@@ -2254,14 +2261,32 @@ if (code === baseLanguage) {
       // Only hydrate base-language fields when base language is active
       if (activeLanguage === baseLanguage) {
         console.log('[populateJob] Loading English base content');
+
+        // Check localStorage for recent base-language draft (prevents stale backend data from overwriting)
+        var localBaseDraft = null;
+        try {
+          var jobKeyBase = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+          localBaseDraft = loadLangDraft_(jobKeyBase, baseLanguage);
+          if (localBaseDraft && localBaseDraft.fields) {
+            console.log('[populateJob] Found localStorage draft for base language');
+          }
+        } catch (_eLocalBase) {}
+
         // Populate editor if available, otherwise legacy fields
-        var baseFields = {
-          workingHeadline: job.workingHeadline || '',
-          workingSubhead:  job.workingSubhead  || '',
-          workingCta:      job.workingCta      || '',
-          workingBullets:  job.workingBullets  || '',
-          workingEditorHtml: job.workingEditorHtml || ''
-        };
+        // Prefer localStorage draft over backend data (localStorage is always more recent after a save)
+        var baseFields;
+        if (localBaseDraft && localBaseDraft.fields && localBaseDraft.fields.workingEditorHtml) {
+          console.log('[populateJob] Using localStorage draft for base content');
+          baseFields = localBaseDraft.fields;
+        } else {
+          baseFields = {
+            workingHeadline: job.workingHeadline || '',
+            workingSubhead:  job.workingSubhead  || '',
+            workingCta:      job.workingCta      || '',
+            workingBullets:  job.workingBullets  || '',
+            workingEditorHtml: job.workingEditorHtml || ''
+          };
+        }
         console.log('[populateJob] baseFields.workingEditorHtml:', baseFields.workingEditorHtml ? baseFields.workingEditorHtml.substring(0, 200) : '(empty)');
 
         if (typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
@@ -2291,27 +2316,20 @@ if (code === baseLanguage) {
           saveBaseText_(jobIdNow, baseFields);
         } catch (_eBaseCache) {}
 
+        // Use localStorage values for metadata fields if available, otherwise backend
+        var localWebsite = (localBaseDraft && localBaseDraft.fields && localBaseDraft.fields.workingWebsite) || '';
+        var localEmail = (localBaseDraft && localBaseDraft.fields && localBaseDraft.fields.workingEmail) || '';
+        var localNotes = (localBaseDraft && localBaseDraft.fields && localBaseDraft.fields.workingNotes) || '';
+
         var websiteEl = document.getElementById('working-website');
-        if (websiteEl) websiteEl.value = job.workingWebsite || '';
+        if (websiteEl) websiteEl.value = localWebsite || job.workingWebsite || '';
 
         var emailEl = document.getElementById('working-email');
-        if (emailEl) emailEl.value = job.workingEmail || '';
+        if (emailEl) emailEl.value = localEmail || job.workingEmail || '';
 
-        // Notes: prefer workingNotes, fallback to intake notes
+        // Notes: prefer localStorage, then workingNotes, fallback to intake notes
         var notesEl = document.getElementById('working-notes');
-        if (notesEl) notesEl.value = job.workingNotes || job.notes || job.intakeNotes || '';
-
-        // Indent/margin settings - apply saved values and trigger UI update
-        var indentHEl = document.getElementById('toolbar-indent-h');
-        var indentVEl = document.getElementById('toolbar-indent-v');
-        if (indentHEl && job.workingIndentH) {
-          indentHEl.value = job.workingIndentH;
-          indentHEl.dispatchEvent(new Event('input'));
-        }
-        if (indentVEl && job.workingIndentV) {
-          indentVEl.value = job.workingIndentV;
-          indentVEl.dispatchEvent(new Event('input'));
-        }
+        if (notesEl) notesEl.value = localNotes || job.workingNotes || job.notes || job.intakeNotes || '';
       } else {
         // Non-EN is active, but we had no cached translation fields to apply.
         // Do NOT leave the UI blank — hydrate by:
@@ -2335,6 +2353,29 @@ if (code === baseLanguage) {
           }
         } catch (_eHyd) {}
       }
+    }
+
+    // Indent/margin settings - always restore regardless of language
+    // These are language-independent display settings
+    // Prefer localStorage values over backend (localStorage is always more recent after a save)
+    var indentHEl = document.getElementById('toolbar-indent-h');
+    var indentVEl = document.getElementById('toolbar-indent-v');
+    var localIndentDraft = null;
+    try {
+      var jobKeyIndent = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
+      localIndentDraft = loadLangDraft_(jobKeyIndent, baseLanguage);
+    } catch (_eIndent) {}
+
+    var savedIndentH = (localIndentDraft && localIndentDraft.fields && localIndentDraft.fields.workingIndentH) || job.workingIndentH;
+    var savedIndentV = (localIndentDraft && localIndentDraft.fields && localIndentDraft.fields.workingIndentV) || job.workingIndentV;
+
+    if (indentHEl && savedIndentH) {
+      indentHEl.value = savedIndentH;
+      indentHEl.dispatchEvent(new Event('input'));
+    }
+    if (indentVEl && savedIndentV) {
+      indentVEl.value = savedIndentV;
+      indentVEl.dispatchEvent(new Event('input'));
     }
 
     // Mirror text into canvas for scale only
@@ -2439,9 +2480,10 @@ if (code === baseLanguage) {
       workingEmail: (document.getElementById('working-email') || {}).value || '',
       workingNotes: (document.getElementById('working-notes') || {}).value || '',
 
-      // Indent/margin settings
-      workingIndentH: (document.getElementById('toolbar-indent-h') || {}).value || '0',
-      workingIndentV: (document.getElementById('toolbar-indent-v') || {}).value || '0',
+      // Indent/margin settings - send actual value (empty string if not set)
+      // Don't default to '0' - that prevents distinguishing "user saved 0" from "nothing saved"
+      workingIndentH: (document.getElementById('toolbar-indent-h') || {}).value || '',
+      workingIndentV: (document.getElementById('toolbar-indent-v') || {}).value || '',
 
       // QR association (FileRoom)
       qrDriveFileId: (document.getElementById('qrDriveFileId') || {}).value || '',
@@ -2568,6 +2610,24 @@ try {
         translationsDb[langToSave].at = (new Date()).toISOString();
         try { saveLangState_(jobId, langToSave, 'human'); } catch (_e) {}
         if (langToSave === activeLanguage) updateLangDot_();
+      } else {
+        // For base language, backup to localStorage (prevents stale backend data on refresh)
+        try {
+          var baseFields = {
+            workingHeadline: payload.workingHeadline || '',
+            workingSubhead: payload.workingSubhead || '',
+            workingCta: payload.workingCta || '',
+            workingBullets: payload.workingBullets || '',
+            workingEditorHtml: payload.workingEditorHtml || '',
+            workingWebsite: payload.workingWebsite || '',
+            workingEmail: payload.workingEmail || '',
+            workingNotes: payload.workingNotes || '',
+            workingIndentH: payload.workingIndentH || '',
+            workingIndentV: payload.workingIndentV || '',
+            savedAt: (new Date()).toISOString()
+          };
+          saveLangDraft_(jobId, baseLanguage, baseFields);
+        } catch (_eBase) {}
       }
       setSaveStatus('Saved');
       return { success: true, data: data };
@@ -2626,6 +2686,25 @@ try {
 
         // Only update the UI indicator if we saved the currently viewed language
         if (langToSave === activeLanguage) updateLangDot_();
+      } else {
+        // For base language (English), also backup to localStorage
+        // This prevents stale backend data from overwriting recent saves on page refresh
+        try {
+          var baseFields = {
+            workingHeadline: payload.workingHeadline || '',
+            workingSubhead: payload.workingSubhead || '',
+            workingCta: payload.workingCta || '',
+            workingBullets: payload.workingBullets || '',
+            workingEditorHtml: payload.workingEditorHtml || '',
+            workingWebsite: payload.workingWebsite || '',
+            workingEmail: payload.workingEmail || '',
+            workingNotes: payload.workingNotes || '',
+            workingIndentH: payload.workingIndentH || '',
+            workingIndentV: payload.workingIndentV || '',
+            savedAt: (new Date()).toISOString()
+          };
+          saveLangDraft_(jobId, baseLanguage, baseFields);
+        } catch (_eBase) {}
       }
 
       setSaveStatus('Saved');
@@ -2715,8 +2794,8 @@ try {
     // Indent fields use a separate minimal save (avoids huge URL from workingEditorHtml)
     var indentDebounceTimer = null;
     function saveIndentsOnly() {
-      var indentH = (document.getElementById('toolbar-indent-h') || {}).value || '0';
-      var indentV = (document.getElementById('toolbar-indent-v') || {}).value || '0';
+      var indentH = (document.getElementById('toolbar-indent-h') || {}).value || '';
+      var indentV = (document.getElementById('toolbar-indent-v') || {}).value || '';
 
       var url = ARTSTART_API_BASE +
         '?action=updateArtStartDraftFields' +

@@ -965,14 +965,17 @@ function getArtStartJob_(jobId) {
     p.WorkingEditorHtml ||
     p['Working Editor Html'] ||
     '';
+  // Return empty string (not '0') when no saved value exists.
+  // This allows the frontend to distinguish "user saved 0" from "nothing saved yet"
+  // and calculate proper defaults based on canvas size for new jobs.
   var workingIndentH =
     p.WorkingIndentH ||
     p['Working Indent H'] ||
-    '0';
+    '';
   var workingIndentV =
     p.WorkingIndentV ||
     p['Working Indent V'] ||
-    '0';
+    '';
 
   return {
     // Internal key for APIs / autosave – keep this as AscendJobId
