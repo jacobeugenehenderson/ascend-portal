@@ -285,7 +285,9 @@ function _fieldsSig_(f) {
     String(x.workingSubhead || ''),
     String(x.workingCta || ''),
     String(x.workingBullets || ''),
-    String(x.workingEditorHtml || '')
+    String(x.workingEditorHtml || ''),
+    String(x.workingIndentH || ''),
+    String(x.workingIndentV || '')
   ]);
 }
 
@@ -610,7 +612,10 @@ function retranslateLanguage_(lang) {
           workingSubhead: String((data.fields || {}).workingSubhead || ''),
           workingCta: String((data.fields || {}).workingCta || ''),
           workingBullets: String((data.fields || {}).workingBullets || ''),
-          workingEditorHtml: String((data.fields || {}).workingEditorHtml || '')
+          workingEditorHtml: String((data.fields || {}).workingEditorHtml || ''),
+          // Per-language indents (inherited from English on machine translate)
+          workingIndentH: String((data.fields || {}).workingIndentH || ''),
+          workingIndentV: String((data.fields || {}).workingIndentV || '')
         }
       };
 
@@ -708,6 +713,22 @@ function applyTranslatedFields_(f) {
   v = document.getElementById('working-email');    if (v && typeof f.workingEmail !== 'undefined') v.value = f.workingEmail || '';
 
   v = document.getElementById('working-notes');    if (v && typeof f.workingNotes !== 'undefined') v.value = f.workingNotes || '';
+
+  // Per-language indents (German is longer, may need different positioning)
+  if (typeof f.workingIndentH !== 'undefined' && f.workingIndentH !== '') {
+    var indentHEl = document.getElementById('toolbar-indent-h');
+    if (indentHEl) {
+      indentHEl.value = f.workingIndentH;
+      indentHEl.dispatchEvent(new Event('input'));
+    }
+  }
+  if (typeof f.workingIndentV !== 'undefined' && f.workingIndentV !== '') {
+    var indentVEl = document.getElementById('toolbar-indent-v');
+    if (indentVEl) {
+      indentVEl.value = f.workingIndentV;
+      indentVEl.dispatchEvent(new Event('input'));
+    }
+  }
 
   // Legacy canvas sync (now handled by Tiptap directly)
   if (typeof syncCanvasTextFromFields === 'function') {
@@ -2526,6 +2547,7 @@ try {
 } catch (_eBlank0) {}
 
   // Non-EN saves are translation-only: never persist EN-only meta fields or QR fields per-language.
+  // But DO include indents - they are per-language (German is longer!)
   if (!isBase) {
     payload = {
       jobId: payload.jobId,
@@ -2533,7 +2555,9 @@ try {
       workingSubhead: payload.workingSubhead,
       workingCta: payload.workingCta,
       workingBullets: payload.workingBullets,
-      workingEditorHtml: payload.workingEditorHtml
+      workingEditorHtml: payload.workingEditorHtml,
+      workingIndentH: payload.workingIndentH,
+      workingIndentV: payload.workingIndentV
     };
 
     // If nothing changed vs baseline, do NOT mark human or persist drafts.
@@ -2608,7 +2632,17 @@ try {
         translationsDb[langToSave].human = true;
         translationsDb[langToSave].edited = true;
         translationsDb[langToSave].at = (new Date()).toISOString();
+        translationsDb[langToSave].fields = translationsDb[langToSave].fields || {};
+        translationsDb[langToSave].fields.workingHeadline = payload.workingHeadline || '';
+        translationsDb[langToSave].fields.workingSubhead = payload.workingSubhead || '';
+        translationsDb[langToSave].fields.workingCta = payload.workingCta || '';
+        translationsDb[langToSave].fields.workingBullets = payload.workingBullets || '';
+        translationsDb[langToSave].fields.workingEditorHtml = payload.workingEditorHtml || '';
+        translationsDb[langToSave].fields.workingIndentH = payload.workingIndentH || '';
+        translationsDb[langToSave].fields.workingIndentV = payload.workingIndentV || '';
         try { saveLangState_(jobId, langToSave, 'human'); } catch (_e) {}
+        try { saveLangDraft_(jobId, langToSave, translationsDb[langToSave].fields); } catch (_e2) {}
+        try { setLangBaseline_(langToSave, translationsDb[langToSave].fields); } catch (_e3) {}
         if (langToSave === activeLanguage) updateLangDot_();
       } else {
         // For base language, backup to localStorage (prevents stale backend data on refresh)
@@ -2667,6 +2701,9 @@ try {
         translationsDb[langToSave].fields.workingCta      = payload.workingCta      || '';
         translationsDb[langToSave].fields.workingBullets  = payload.workingBullets  || '';
         translationsDb[langToSave].fields.workingEditorHtml = payload.workingEditorHtml || '';
+        // Per-language indents
+        translationsDb[langToSave].fields.workingIndentH = payload.workingIndentH || '';
+        translationsDb[langToSave].fields.workingIndentV = payload.workingIndentV || '';
 
         // UI fallback rule: never show blanks if EN exists.
         if (!translationsDb[langToSave].fields.workingHeadline) translationsDb[langToSave].fields.workingHeadline = base.workingHeadline || '';

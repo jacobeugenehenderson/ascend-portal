@@ -1159,7 +1159,9 @@ function handleUpdateArtStartTranslatedFields_(e) {
       workingSubhead: p.workingSubhead || '',
       workingCta: p.workingCta || '',
       workingBullets: p.workingBullets || '',
-      workingEditorHtml: p.workingEditorHtml || ''
+      workingEditorHtml: p.workingEditorHtml || '',
+      workingIndentH: p.workingIndentH,
+      workingIndentV: p.workingIndentV
     };
     langU = p.lang || p.language || '';
   }
@@ -1184,6 +1186,16 @@ function handleUpdateArtStartTranslatedFields_(e) {
   var tdbU = parseTranslationsJson_(existingJson);
 
   var nowIsoU = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss");
+
+  // Preserve existing indents if not provided in payload (allows text-only saves to not lose indent settings)
+  var existingFields = (tdbU[langU] && tdbU[langU].fields) || {};
+  var indentH = (payload.workingIndentH !== undefined && payload.workingIndentH !== null)
+    ? String(payload.workingIndentH)
+    : String(existingFields.workingIndentH || '');
+  var indentV = (payload.workingIndentV !== undefined && payload.workingIndentV !== null)
+    ? String(payload.workingIndentV)
+    : String(existingFields.workingIndentV || '');
+
   tdbU[langU] = {
     human: true,
     at: nowIsoU,
@@ -1192,7 +1204,9 @@ function handleUpdateArtStartTranslatedFields_(e) {
       workingSubhead: String(payload.workingSubhead || ''),
       workingCta: String(payload.workingCta || ''),
       workingBullets: String(payload.workingBullets || ''),
-      workingEditorHtml: String(payload.workingEditorHtml || '')
+      workingEditorHtml: String(payload.workingEditorHtml || ''),
+      workingIndentH: indentH,
+      workingIndentV: indentV
     }
   };
 
@@ -1842,7 +1856,10 @@ function doGet(e) {
         workingSubhead: String(getVal_('WorkingSubhead') || ''),
         workingCta: String(getVal_('WorkingCTA') || ''),
         workingBullets: String(getVal_('WorkingBullets') || ''),
-        workingEditorHtml: String(getVal_('WorkingEditorHtml') || '')
+        workingEditorHtml: String(getVal_('WorkingEditorHtml') || ''),
+        // Include indents so translations can inherit English positioning initially
+        workingIndentH: String(getVal_('WorkingIndentH') || ''),
+        workingIndentV: String(getVal_('WorkingIndentV') || '')
       };
 
       function pickTranslatableFields_(obj) {
@@ -1852,7 +1869,9 @@ function doGet(e) {
           workingSubhead: String(obj.workingSubhead || ''),
           workingCta: String(obj.workingCta || ''),
           workingBullets: String(obj.workingBullets || ''),
-          workingEditorHtml: String(obj.workingEditorHtml || '')
+          workingEditorHtml: String(obj.workingEditorHtml || ''),
+          workingIndentH: String(obj.workingIndentH || ''),
+          workingIndentV: String(obj.workingIndentV || '')
         };
       }
 
@@ -1948,6 +1967,9 @@ function doGet(e) {
         workingCta: tr_(fields.workingCta),
         workingBullets: tr_(fields.workingBullets),
         workingEditorHtml: translateHtml_(fields.workingEditorHtml),
+        // Indents are inherited from English (not translated) - can be adjusted per-language
+        workingIndentH: fields.workingIndentH,
+        workingIndentV: fields.workingIndentV,
       };
 
       // Persist as machine translation (human=false)
