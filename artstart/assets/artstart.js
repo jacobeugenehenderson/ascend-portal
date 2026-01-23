@@ -2229,6 +2229,7 @@ if (code === baseLanguage) {
     if (!usedTranslation) {
       // Only hydrate base-language fields when base language is active
       if (activeLanguage === baseLanguage) {
+        console.log('[populateJob] Loading English base content');
         // Populate editor if available, otherwise legacy fields
         var baseFields = {
           workingHeadline: job.workingHeadline || '',
@@ -2237,14 +2238,17 @@ if (code === baseLanguage) {
           workingBullets:  job.workingBullets  || '',
           workingEditorHtml: job.workingEditorHtml || ''
         };
+        console.log('[populateJob] baseFields.workingEditorHtml:', baseFields.workingEditorHtml ? baseFields.workingEditorHtml.substring(0, 200) : '(empty)');
 
         if (typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
           // Prefer stored HTML if available (preserves formatting), otherwise build from fields
           var html = baseFields.workingEditorHtml;
           if (!html && typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function') {
             html = window.__ARTSTART_FIELDS_TO_HTML__(baseFields);
+            console.log('[populateJob] Built HTML from fields:', html ? html.substring(0, 200) : '(empty)');
           }
           if (html) {
+            console.log('[populateJob] Setting editor HTML');
             window.__ARTSTART_SET_EDITOR_HTML__(html);
           }
         } else {
