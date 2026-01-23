@@ -1906,12 +1906,14 @@
       const AUTOSAVE_DELAY = 1500;
 
       function scheduleEditorAutosave() {
+        console.log('[ArtStart] scheduleEditorAutosave called');
         // Update save status
         const statusEl = document.getElementById('artstart-save-status');
         if (statusEl) statusEl.textContent = 'Editing…';
 
         clearTimeout(autosaveTimer);
         autosaveTimer = setTimeout(() => {
+          console.log('[ArtStart] Autosave timer fired');
           triggerLegacySave();
         }, AUTOSAVE_DELAY);
       }
@@ -1919,13 +1921,18 @@
       function triggerLegacySave() {
         // Get the job ID
         const jobId = window.getJobIdFromQuery ? window.getJobIdFromQuery() : null;
+        console.log('[ArtStart] triggerLegacySave called, jobId:', jobId);
         if (!jobId) return;
 
         // Save to localStorage as backup (backend may not have new field yet)
         try {
           const html = editor.getHTML();
-          localStorage.setItem('artstart_editor_' + jobId, html);
-        } catch (e) {}
+          const key = 'artstart_editor_' + jobId;
+          localStorage.setItem(key, html);
+          console.log('[ArtStart] Saved to localStorage:', key, 'length:', html.length);
+        } catch (e) {
+          console.error('[ArtStart] localStorage save failed:', e);
+        }
 
         // Call the legacy saveDraft if available
         if (typeof window.saveDraft === 'function') {
@@ -1942,12 +1949,17 @@
       // Helper to populate editor from job data
       function populateEditorFromJob(job) {
         if (!job) return;
+        console.log('[ArtStart] populateEditorFromJob called, jobId:', job.jobId);
 
         // Try localStorage first (client-side backup)
         let localHtml = '';
         try {
-          localHtml = localStorage.getItem('artstart_editor_' + job.jobId) || '';
-        } catch (e) {}
+          const key = 'artstart_editor_' + job.jobId;
+          localHtml = localStorage.getItem(key) || '';
+          console.log('[ArtStart] localStorage check:', key, 'found:', !!localHtml, 'length:', localHtml.length);
+        } catch (e) {
+          console.error('[ArtStart] localStorage read failed:', e);
+        }
 
         const html = localHtml || window.__ARTSTART_FIELDS_TO_HTML__({
           workingEditorHtml: job.workingEditorHtml || '',
@@ -1956,6 +1968,7 @@
           workingCta: job.workingCta || '',
           workingBullets: job.workingBullets || '',
         });
+        console.log('[ArtStart] Setting editor HTML, length:', html.length);
         window.__ARTSTART_SET_EDITOR_HTML__(html);
       }
 
