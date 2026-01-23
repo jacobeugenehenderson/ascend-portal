@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ArtStart – New Job Intake</title>
+  <link rel="stylesheet" href="../assets/ascend.css">
+  <link rel="stylesheet" href="../assets/ascend-apps.css">
+</head>
+<body class="ascend-app-body">
+  <div class="ascend-app-shell">
+    <div class="ascend-app-panel">
+
+      <header class="ascend-app-header">
+        <div class="ascend-app-title-block">
+          <div class="ascend-app-title">ArtStart</div>
+          <div class="ascend-app-subtitle">New job intake</div>
+        </div>
+        <div class="ascend-app-meta" id="ascend-app-meta">
+          <!-- optional meta in future (e.g., today’s date or user) -->
+        </div>
+      </header>
+
+      <form id="intake-form" class="ascend-app-form ascend-app-form--two-column">
+
+      <label>
+        <span class="label-text">Job ID <span class="required">*</span></span>
+        <input type="text" id="nordsonJobId" required>
+      </label>
+
+      <label>
+        <span class="label-text">Publication <span class="required">*</span></span>
+        <select id="publicationId">
+            <option value="">– Select publication –</option>
+        </select>
+      </label>
+
+    <label>
+    Media Space / Spec
+    <select id="mediaSpecSelect" disabled>
+        <option value="">– Select media spec –</option>
+        <!-- options will be populated based on Publication -->
+    </select>
+    
+    <div id="mediaSpecPreview" class="ascend-app-helper"></div>
+
+    <!-- This is what actually gets sent to the backend -->
+    <input type="hidden" id="mediaSpecId">
+    </label>
+
+      <label>
+        Issue / Month
+        <input type="text" id="issueName">
+      </label>
+
+      <label>
+        <span class="label-text">Materials Due Date <span class="required">*</span></span>
+        <input type="date" id="materialsDueDate">
+      </label>
+
+      <label>
+        Run Date
+        <input type="date" id="runDate">
+      </label>
+
+      <label class="notes-block">
+        Topic / Editorial Notes
+        <textarea id="topic"></textarea>
+      </label>
+
+      <label class="notes-block">
+        Notes
+        <textarea id="notes"></textarea>
+      </label>
+
+      <button type="submit" id="submit-btn" class="ascend-app-primary-btn">
+        Create job &amp; send ArtStart
+      </button>
+    </form>
+
+    <div class="status" id="status"></div>
+    <div class="status" id="link-area"></div>
+    </div> <!-- .ascend-app-panel -->
+  </div>   <!-- .ascend-app-shell -->
+
+  <script>
+
+const API_BASE = 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec';
+// Local builder service (Node on your machine)
+const LOCAL_BUILDER_URL = 'http://localhost:43110/build-local-job';
+
+const ARTSTART_PREVIEW_BASE_URL =
+  'https://jacobeugenehenderson.github.io/ascend-portal/artstart/assets/artstart.html';
+
+const linkAreaEl = document.getElementById('link-area');
+const submitBtn = document.getElementById('submit-btn');
+const submitBtnLabel = submitBtn ? submitBtn.textContent : '';
+const statusEl = document.getElementById('status');
+const form = document.getElementById('intake-form');
+
+// DOM references for dynamic fields
+const publicationSelect = document.getElementById('publicationId');
+const metaEl = document.getElementById('ascend-app-meta');
+
+// Pull requester info from query params (if present)
+const qs = new URLSearchParams(window.location.search);
+const requesterEmail = qs.get('user_email') || '';
+const requesterNameFirst = qs.get('user_name_first') || '';
+const requesterNameFull = qs.get('user_name') || '';
+
+const requesterLabel =
+  requesterNameFirst || requesterNameFull || requesterEmail || '';
+
+if (metaEl) {
+  // For now, show a simple back link instead of "Requested by"
+  metaEl.innerHTML =
+    '<a href="../index.html" class="ascend-app-meta-link">← Back to Ascend</a>';
+}
+
+const deliverableSelect = document.getElementById('deliverableType');
+const mediaSpecIdInput  = document.getElementById('mediaSpecId');
+const mediaSpecPreview  = document.getElementById('mediaSpecPreview');
+const runDateInput      = document.getElementById('runDate');
+const topicEl           = document.getElementById('topic');
+const notesEl           = document.getElementById('notes');
+
+    let ascendPublications = [];
+    let ascendMediaSpecs = [];
+    
+    // Will be populated from backend
+    let intakeConfig = {
+      publications: [],
+      mediaSpecs: []
+    };
+
+    function loadIntakeConfig() {
+      // Clean up any previous JSONP script
+      const existing = document.getElementById('intake-config-script');
+      if (existing) {
+        existing.remove();
+      }
+
+      // JSONP callback – must be global
+      window.ascendIntakeConfigLoaded = function (data) {
+        try {
+          intakeConfig = data || {};
+
+          const pubs = Array.isArray(intakeConfig.publications)
+            ? intakeConfig.publications
+            : [];
+
+          // Populate Publication dropdown from Sheets
+          publicationSelect.innerHTML =
+            '<option value="">– Select publication –</option>' +
+            pubs.map(p => {
+              const label = p.Name || p.BaseName || p.PublicationId;
+              const value = p.PublicationId;
+              return `<option value="${value}">${label}</option>`;
+            }).join('');
+
+          statusEl.textContent = '';
+          statusEl.className = 'status';
+        } catch (err) {
+          console.error('Error in JSONP callback', err);
+          statusEl.textContent = 'Error processing dropdown data: ' + err.message;
+          statusEl.className = 'status error';
+        }
+      };
+
+      // Inject <script> tag to call the Apps Script endpoint
+      const s = document.createElement('script');
+      s.id = 'intake-config-script';
+      const cacheBust = '&_=' + Date.now();
+      s.src =
+        API_BASE +
+        '?action=listConfigForIntake&callback=ascendIntakeConfigLoaded' +
+        cacheBust;
+      s.onerror = function () {
+        statusEl.textContent = 'Error loading dropdown data (network / JSONP).';
+        statusEl.className = 'status error';
+      };
+
+      document.body.appendChild(s);
+    }
+
+    // Look up editorial schedule text for this job
+    function maybeFetchEditorialTopic() {
+      if (!publicationSelect || !runDateInput || !topicEl) return;
+
+      const pubId   = publicationSelect.value;
+      const runDate = runDateInput.value;
+
+      if (!pubId || !runDate) return;
+
+      // Remove any prior JSONP script for this lookup
+      const existing = document.getElementById('editorial-topic-script');
+      if (existing) {
+        existing.remove();
+      }
+
+      const callbackName = 'ascendEditorialTopicLoaded_' + Date.now();
+
+      window[callbackName] = function (data) {
+        try {
+          if (!topicEl && !notesEl) return;
+
+          const topicText =
+            data && typeof data.topicText === 'string' ? data.topicText : '';
+          const showContext =
+            data && typeof data.showContext === 'string' ? data.showContext : '';
+
+          // Always overwrite Topic / Editorial Notes with the latest helper text.
+          if (topicEl) {
+            topicEl.value = topicText;
+          }
+
+          // Also surface Show Context in the Notes field, appended to whatever spec notes exist.
+          if (notesEl && showContext) {
+            const baseNotes = (notesEl.value || '').trim();
+            if (baseNotes) {
+              notesEl.value = baseNotes + '\n\nShow context: ' + showContext;
+            } else {
+              notesEl.value = 'Show context: ' + showContext;
+            }
+          }
+        } catch (err) {
+          console.error('Error in editorial topic callback', err);
+        } finally {
+          try {
+            delete window[callbackName];
+          } catch (e) {
+            window[callbackName] = undefined;
+          }
+        }
+      };
+
+      const s = document.createElement('script');
+      s.id = 'editorial-topic-script';
+      const cacheBust = '&_=' + Date.now();
+      s.src =
+        API_BASE +
+        '?action=getEditorialTopicForJob' +
+        '&publicationId=' + encodeURIComponent(pubId) +
+        '&runDate=' + encodeURIComponent(runDate) +
+        '&callback=' + callbackName +
+        cacheBust;
+      s.onerror = function () {
+        console.error('Error loading editorial topic via JSONP');
+      };
+
+      document.body.appendChild(s);
+    }
+
+    const mediaSpecSelect   = document.getElementById('mediaSpecSelect');
+
+    function refreshMediaSpecOptions() {
+      const pubId = publicationSelect.value;
+      const specs = Array.isArray(intakeConfig.mediaSpecs)
+        ? intakeConfig.mediaSpecs
+        : [];
+
+      mediaSpecSelect.disabled = !pubId;
+
+      const filtered = specs.filter(ms =>
+        String(ms.PublicationId || '').trim() === String(pubId || '').trim()
+      );
+
+      mediaSpecSelect.innerHTML =
+        '<option value="">– Select media spec –</option>' +
+        filtered.map(ms => {
+          const label = ms.SoldAs || ms.MediaSpecId;
+          return `<option value="${ms.MediaSpecId}">${label}</option>`;
+        }).join('');
+
+      mediaSpecIdInput.value = '';
+
+    // Reset preview whenever the publication changes
+    mediaSpecPreview.textContent = '';
+    mediaSpecPreview.style.color = '#555';
+
+    if (!pubId) {
+      // No publication selected: keep dropdown disabled/empty, no helper copy
+      return;
+    }
+
+    if (filtered.length === 1) {
+      // Auto-select the only matching spec and show its dimensions
+      mediaSpecSelect.value = filtered[0].MediaSpecId;
+      applyMediaSpecSelection(filtered[0]);
+    }
+  }
+
+  function applyMediaSpecSelection(ms) {
+    if (!ms) {
+      mediaSpecIdInput.value = '';
+      mediaSpecPreview.textContent = '';
+      mediaSpecPreview.style.color = '#555';
+
+      // Clear any spec-driven default notes if we drop the selection
+      if (notesEl) {
+        notesEl.value = '';
+      }
+
+      return;
+    }
+
+    mediaSpecIdInput.value = ms.MediaSpecId || '';
+
+    const name  = ms.Name || ms.MediaSpecId || 'Media spec';
+    const width = ms.Width || '—';
+    const height = ms.Height || '—';
+    const dpi   = ms.DPI ? (' @ ' + ms.DPI + ' dpi') : '';
+
+    // This is the part you’re keeping: the clean dimensions preview
+    mediaSpecPreview.textContent = `${name} – ${width} × ${height}${dpi}`;
+    mediaSpecPreview.style.color = '#222';
+
+    // Populate the freeform Notes area from the MediaSpecs tab.
+    // If the selected spec has no Notes, clear the field so stale content doesn't linger.
+    if (notesEl) {
+      const specNotes = (ms.Notes || '').trim();
+      if (specNotes) {
+        notesEl.value = specNotes;
+      } else {
+        notesEl.value = '';
+      }
+    }
+  }
+
+    publicationSelect.addEventListener('change', () => {
+      refreshMediaSpecOptions();
+      mediaSpecSelect.disabled = !publicationSelect.value;   // NEW: enables/disables dynamically
+
+      // Also (re)load the editorial schedule helper text when we have dates
+      if (runDateInput) {
+        maybeFetchEditorialTopic();
+      }
+    });
+
+    mediaSpecSelect.addEventListener('change', () => {
+      const specs = Array.isArray(intakeConfig.mediaSpecs)
+        ? intakeConfig.mediaSpecs
+        : [];
+      const chosenId = mediaSpecSelect.value;
+      const ms = specs.find(s =>
+        String(s.MediaSpecId || '').trim() === String(chosenId || '').trim()
+      );
+      applyMediaSpecSelection(ms || null);
+    });
+
+    // When the Run Date changes, re-query the EditorialSchedule tab
+    if (runDateInput) {
+      runDateInput.addEventListener('change', () => {
+        maybeFetchEditorialTopic();
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      // Normal case: wait for DOM to finish parsing
+      document.addEventListener('DOMContentLoaded', loadIntakeConfig);
+    } else {
+      // If DOMContentLoaded has already fired (e.g., script injected late),
+      // just run immediately so the dropdowns get populated.
+      loadIntakeConfig();
+    }
+
+    // JSONP helper for createJobFromForm (avoids CORS preflight)
+    function createJobViaJsonp(payload) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'ascendCreateJobFromFormCallback_' + Date.now();
+
+        // Define the JSONP callback on window
+        window[callbackName] = function (data) {
+          try {
+            delete window[callbackName];
+          } catch (e) {
+            window[callbackName] = undefined;
+          }
+          resolve(data);
+        };
+
+        const script = document.createElement('script');
+        script.src =
+          API_BASE +
+          '?action=createJobFromFormJsonp' +
+          // Important: callback must be a *raw* identifier, not URL-encoded
+          '&callback=' + callbackName +
+          '&payload=' + encodeURIComponent(JSON.stringify(payload));
+
+        console.log('JSONP URL:', script.src);
+
+        script.onerror = function () {
+          try {
+            delete window[callbackName];
+          } catch (e) {
+            window[callbackName] = undefined;
+          }
+          reject(new Error('Network / JSONP error'));
+        };
+
+        document.body.appendChild(script);
+      });
+    }
+
+    async function notifyLocalBuilder(ascendJobId) {
+      try {
+        await fetch(LOCAL_BUILDER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ascendJobId })
+        });
+        console.log('Local builder notified for', ascendJobId);
+      } catch (err) {
+        console.warn('Local builder not reachable', err);
+      }
+    }
+
+    form.addEventListener('submit', async function (evt) {
+      evt.preventDefault();
+      statusEl.textContent = '';
+      statusEl.className = 'status';
+      linkAreaEl.textContent = '';
+
+      const payload = {
+        nordsonJobId: (document.getElementById('nordsonJobId') || { value: '' }).value.trim(),
+        publicationId: (document.getElementById('publicationId') || { value: '' }).value.trim(),
+        issueName: (document.getElementById('issueName') || { value: '' }).value.trim(),
+        materialsDueDate: (document.getElementById('materialsDueDate') || { value: '' }).value || '',
+        runDate: (document.getElementById('runDate') || { value: '' }).value || '',
+        mediaSpecId: (document.getElementById('mediaSpecId') || { value: '' }).value.trim(),
+        topic: (document.getElementById('topic') || { value: '' }).value.trim(),
+        notes: (document.getElementById('notes') || { value: '' }).value.trim(),
+        requestedByEmail: requesterEmail,
+        requestedByNameFirst: requesterNameFirst,
+        requestedByName: requesterNameFull
+      };
+
+      if (!payload.nordsonJobId) {
+        statusEl.textContent = 'Job ID is required.';
+        statusEl.className = 'status error';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      if (submitBtn) submitBtn.textContent = 'Working';
+
+      statusEl.textContent = 'Creating job and sending Art Start...';
+      statusEl.className = 'status';
+
+      try {
+        const res = await fetch(API_BASE + '?action=createJobFromForm', {
+          method: 'POST',
+          // No custom headers → browser uses text/plain and avoids a CORS preflight
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+
+        const data = await res.json();
+
+        if (!data || !data.success) {
+          throw new Error((data && data.error) || 'Unknown error from backend');
+        }
+
+        statusEl.textContent = 'Job created and Art Start email triggered.';
+        statusEl.className = 'status success';
+
+        if (data.ascendJobId) {
+          // Kick off local file creation on your machine (still fine to keep)
+          notifyLocalBuilder(data.ascendJobId);
+
+          // Always point preview at the live ArtStart workspace on GitHub Pages
+          const linkUrl =
+            ARTSTART_PREVIEW_BASE_URL + '?jobId=' +
+            encodeURIComponent(data.ascendJobId);
+
+          // Visible label: use user-entered Job ID; fall back to Ascend ID.
+          const visibleJobId =
+            (payload && payload.nordsonJobId) ? payload.nordsonJobId : data.ascendJobId;
+
+          linkAreaEl.innerHTML =
+            'Open preview: <a href="' + linkUrl +
+            '" target="_blank" rel="noopener noreferrer">' +
+            visibleJobId + '</a>';
+
+          // ROUTE (same tab). This is the actual “job” of the intake page.
+          window.location.href = linkUrl;
+          return;
+        } else {
+          throw new Error('Backend did not return ascendJobId');
+        }
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.className = 'status error';
+
+        submitBtn.disabled = false;
+        if (submitBtn) submitBtn.textContent = submitBtnLabel;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -253,12 +253,6 @@ var __LANG_PICKER_BTN_LABEL__ = null;
 var __LANG_PICKER_MENU__ = null;
 
 function _readWorkingFields_() {
-  // Get content from Tiptap editor if available
-  if (typeof window.__ARTSTART_HTML_TO_FIELDS__ === 'function') {
-    return window.__ARTSTART_HTML_TO_FIELDS__();
-  }
-
-  // Legacy fallback
   var f = {};
   var v;
 
@@ -568,21 +562,16 @@ function retranslateLanguage_(lang) {
   __ARTSTART_TRANSLATE_REQ__ = __ARTSTART_TRANSLATE_REQ__ || {};
   __ARTSTART_TRANSLATE_REQ__[__reqKey] = __reqId;
 
-  var translateUrl = ARTSTART_API_BASE +
+  fetch(
+    ARTSTART_API_BASE +
     '?action=translateArtStartFields' +
     '&jobId=' + encodeURIComponent(jobIdNow) +
     '&targetLanguage=' + encodeURIComponent(lang) +
-    '&force=1';
-
-  console.log('[Translation] Requesting:', translateUrl);
-
-  fetch(translateUrl)
+    '&force=1'
+  )
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      console.log('[Translation] Response:', JSON.stringify(data, null, 2));
-
       if (!data || !data.success || !data.fields) {
-        console.error('[Translation] Invalid response - missing success or fields');
         setSaveStatus('Save error');
         return;
       }
@@ -600,8 +589,7 @@ function retranslateLanguage_(lang) {
           workingHeadline: String((data.fields || {}).workingHeadline || ''),
           workingSubhead: String((data.fields || {}).workingSubhead || ''),
           workingCta: String((data.fields || {}).workingCta || ''),
-          workingBullets: String((data.fields || {}).workingBullets || ''),
-          workingEditorHtml: String((data.fields || {}).workingEditorHtml || '')
+          workingBullets: String((data.fields || {}).workingBullets || '')
         }
       };
 
@@ -629,65 +617,9 @@ function retranslateLanguage_(lang) {
 }
 
 function applyTranslatedFields_(f) {
-  console.log('[applyTranslatedFields_] Called with:', JSON.stringify(f, null, 2));
-
   if (!f) return;
   var v;
 
-  // Update Tiptap editor if available
-  if (typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function' && typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
-    var html = null;
-
-    // PRIORITY 1: Use workingEditorHtml from backend if available (server-side translated HTML)
-    if (f.workingEditorHtml && f.workingEditorHtml.length > 10) {
-      console.log('[applyTranslatedFields_] Using backend workingEditorHtml');
-      html = f.workingEditorHtml;
-    }
-
-    // PRIORITY 2: Try to reconstruct HTML from client-side template
-    if (!html) {
-      var jobIdNow = currentJobId || getJobIdFromQuery();
-      var langNow = String(activeLanguage || '').trim().toUpperCase();
-
-      console.log('[applyTranslatedFields_] jobId:', jobIdNow, 'lang:', langNow);
-
-      if (jobIdNow && langNow && typeof window.__ARTSTART_APPLY_TRANSLATION__ === 'function') {
-        try {
-          var hasTemplate = typeof window.__ARTSTART_GET_TEMPLATE__ === 'function' &&
-                            window.__ARTSTART_GET_TEMPLATE__(jobIdNow, langNow);
-
-          console.log('[applyTranslatedFields_] hasTemplate:', !!hasTemplate);
-
-          if (hasTemplate) {
-            var translatedBullets = String(f.workingBullets || '');
-            var segments = translatedBullets.split('\n').filter(function(s) { return s.length > 0; });
-
-            console.log('[applyTranslatedFields_] segments:', segments);
-
-            html = window.__ARTSTART_APPLY_TRANSLATION__(segments, jobIdNow, langNow);
-            console.log('[applyTranslatedFields_] reconstructed HTML:', html);
-          }
-        } catch (_eRT) {
-          console.warn('Template reconstruction failed:', _eRT);
-          html = null;
-        }
-      }
-    }
-
-    // PRIORITY 3: Fallback to legacy conversion
-    if (!html) {
-      console.log('[applyTranslatedFields_] Using fallback conversion');
-      html = window.__ARTSTART_FIELDS_TO_HTML__(f);
-      console.log('[applyTranslatedFields_] fallback HTML:', html);
-    }
-
-    console.log('[applyTranslatedFields_] Setting editor HTML, length:', (html || '').length);
-    window.__ARTSTART_SET_EDITOR_HTML__(html);
-  } else {
-    console.warn('[applyTranslatedFields_] Tiptap functions not available');
-  }
-
-  // Legacy field fallback (if elements exist)
   v = document.getElementById('working-headline'); if (v) v.value = f.workingHeadline || '';
   v = document.getElementById('working-subhead');  if (v) v.value = f.workingSubhead || '';
   v = document.getElementById('working-cta');      if (v) v.value = f.workingCta || '';
@@ -700,13 +632,8 @@ function applyTranslatedFields_(f) {
 
   v = document.getElementById('working-notes');    if (v && typeof f.workingNotes !== 'undefined') v.value = f.workingNotes || '';
 
-  // Legacy canvas sync (now handled by Tiptap directly)
-  if (typeof syncCanvasTextFromFields === 'function') {
-    try { syncCanvasTextFromFields(); } catch (e) {}
-  }
-  if (typeof autoscaleCanvasBands === 'function') {
-    try { autoscaleCanvasBands(); } catch (e) {}
-  }
+  syncCanvasTextFromFields();
+  autoscaleCanvasBands();
 }
 
   function setError(message) {
@@ -1207,9 +1134,6 @@ function applyTranslatedFields_(f) {
   }
 
 function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
-    console.log('renderCanvasPreview called:', { job: job, dimsOverride: dimsOverride, mediaKindOverride: mediaKindOverride });
-    console.log('job.bleed =', job && job.bleed);
-
     var box = document.getElementById('format-canvas-box');
     var noInfoEl = document.getElementById('canvas-noinfo');
     if (!box) return;
@@ -1257,87 +1181,11 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     var displayWidth;
     var displayHeight;
 
-    // Container constraints
-    var maxContainerWidth = (box.clientWidth || 720) - 36; // minus padding
-    var maxContainerHeight = 600; // height cap for preview
+    // PRINT MODE BELOW (digital shares the same stage model; only bleed behavior differs)
 
-    if (mediaKind === 'digital') {
-      // DIGITAL: Always 1:1 pixel dimensions. Overflow if larger than container.
-      displayWidth = w;
-      displayHeight = h;
-
-      if (inner) {
-        inner.style.width = displayWidth + 'px';
-        inner.style.height = displayHeight + 'px';
-      }
-
-      // Typography scale for digital: always 1:1
-      if (safeEl) {
-        safeEl.dataset.baseScale = '1';
-        safeEl.style.setProperty('--artstart-scale', '1.000');
-      }
-    } else {
-      // PRINT: Scale to fit container, maintaining aspect ratio, capped by height.
-      var bleedAmount = 0;
-      if (job) {
-        var rawBleed = job.bleed;
-        if (rawBleed !== undefined && rawBleed !== null && rawBleed !== '') {
-          var parsed = parseFloat(rawBleed);
-          if (isFinite(parsed) && parsed > 0) {
-            bleedAmount = parsed;
-          }
-        }
-      }
-
-      // Total artboard = trim + bleed on all four sides
-      var totalWidth = w + bleedAmount * 2;
-      var totalHeight = h + bleedAmount * 2;
-
-      if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
-      if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
-
-      // Scale to fit within container, respecting aspect ratio
-      var aspectRatio = totalWidth / totalHeight;
-
-      // Start by fitting to height cap
-      displayHeight = Math.min(maxContainerHeight, maxContainerWidth / aspectRatio);
-      displayWidth = displayHeight * aspectRatio;
-
-      // If width exceeds container, scale down by width instead
-      if (displayWidth > maxContainerWidth) {
-        displayWidth = maxContainerWidth;
-        displayHeight = displayWidth / aspectRatio;
-      }
-
-      displayWidth = Math.round(displayWidth);
-      displayHeight = Math.round(displayHeight);
-
-      if (inner) {
-        inner.style.width = displayWidth + 'px';
-        inner.style.height = displayHeight + 'px';
-      }
-
-      // Typography scale for print: based on display size vs original inches
-      // Use a reference PPI for consistent text sizing
-      if (safeEl) {
-        var pxPerUnit = displayWidth / totalWidth;
-        var BASE_PX_PER_INCH = 72;
-        var baseScale = pxPerUnit / BASE_PX_PER_INCH;
-
-        if (!isFinite(baseScale) || baseScale <= 0) {
-          baseScale = 1;
-        }
-
-        baseScale = Math.max(0.10, baseScale);
-
-        safeEl.dataset.baseScale = String(baseScale);
-        safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
-      }
-    }
-
-    // Bleed amount for positioning (digital has none)
+    // 1) Bleed in same units as trim (e.g., inches)
     var bleedAmount = 0;
-    if (mediaKind !== 'digital' && job) {
+    if (job) {
       var rawBleed = job.bleed;
       if (rawBleed !== undefined && rawBleed !== null && rawBleed !== '') {
         var parsed = parseFloat(rawBleed);
@@ -1346,52 +1194,104 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
         }
       }
     }
+
+    // Digital must not include bleed in sizing math (and must place trim on the edge).
+    if (mediaKind === 'digital') {
+      bleedAmount = 0;
+    }
+
+    // Total artboard = trim + bleed on all four sides
     var totalWidth = w + bleedAmount * 2;
     var totalHeight = h + bleedAmount * 2;
 
-    // DEBUG: log bleed calculation
-    console.log('Canvas bleed debug:', {
-      rawBleed: job && job.bleed,
-      bleedAmount: bleedAmount,
-      trimW: w,
-      trimH: h,
-      totalWidth: totalWidth,
-      totalHeight: totalHeight,
-      displayWidth: displayWidth,
-      displayHeight: displayHeight,
-      bleedRatioX: bleedAmount / totalWidth,
-      bleedRatioY: bleedAmount / totalHeight
-    });
+    if (!isFinite(totalWidth) || totalWidth <= 0) totalWidth = w;
+    if (!isFinite(totalHeight) || totalHeight <= 0) totalHeight = h;
+
+    // 2) Scale the full artboard so it fills the card width.
+    // Treat units as "inches" and convert to pixels, but cap
+    // pixels-per-inch so huge formats don't explode.
+    var maxWidth = box.clientWidth || 720;
+    var MARGIN_FACTOR = 0.9;      // leave a little breathing room
+    var MAX_PX_PER_UNIT = 120;    // ceiling on px per unit (inch)
+
+    var pxPerUnit = Math.min(
+      (maxWidth * MARGIN_FACTOR) / totalWidth,
+      MAX_PX_PER_UNIT
+    );
+
+    displayWidth = Math.round(totalWidth * pxPerUnit);
+    displayHeight = Math.round(totalHeight * pxPerUnit);
+
+    if (inner) {
+      inner.style.width = displayWidth + 'px';
+      inner.style.height = displayHeight + 'px';
+    }
+
+    // Establish a baseline typography scale based on preview DPI.
+    if (safeEl) {
+      var BASE_PX_PER_INCH = 72; // reference "dpi" for type
+      var baseScale = pxPerUnit / BASE_PX_PER_INCH;
+
+      if (!isFinite(baseScale) || baseScale <= 0) {
+        baseScale = 1;
+      }
+
+      baseScale = Math.max(0.10, baseScale);
+
+      safeEl.dataset.baseScale = String(baseScale);
+      safeEl.style.setProperty('--artstart-scale', baseScale.toFixed(3));
+    }
 
     // 3) Position trim (magenta stroke) and bleed (dashed teal) correctly.
     if (safeEl) {
       if (mediaKind === 'digital') {
         // DIGITAL: trim is the document border (no bleed zone).
-        safeEl.style.inset = '0';
+        safeEl.style.top = '0';
+        safeEl.style.bottom = '0';
+        safeEl.style.left = '0';
+        safeEl.style.right = '0';
 
         if (bleedEl) {
           bleedEl.style.display = 'none';
-          bleedEl.style.inset = '';
+          bleedEl.style.top = '';
+          bleedEl.style.bottom = '';
+          bleedEl.style.left = '';
+          bleedEl.style.right = '';
         }
       } else if (bleedAmount > 0) {
-        // PRINT with bleed: position based on actual bleed value.
         var bleedX = (bleedAmount / totalWidth) * displayWidth;
         var bleedY = (bleedAmount / totalHeight) * displayHeight;
 
-        // Use inset shorthand to override CSS default
-        var insetVal = bleedY + 'px ' + bleedX + 'px';
-        safeEl.style.inset = insetVal;
+        var insetTop = bleedY + 'px';
+        var insetBottom = bleedY + 'px';
+        var insetLeft = bleedX + 'px';
+        var insetRight = bleedX + 'px';
+
+        safeEl.style.top = insetTop;
+        safeEl.style.bottom = insetBottom;
+        safeEl.style.left = insetLeft;
+        safeEl.style.right = insetRight;
 
         if (bleedEl) {
           bleedEl.style.display = hideBleed ? 'none' : '';
-          bleedEl.style.inset = insetVal;
+          bleedEl.style.top = insetTop;
+          bleedEl.style.bottom = insetBottom;
+          bleedEl.style.left = insetLeft;
+          bleedEl.style.right = insetRight;
         }
       } else {
-        // PRINT with no bleed configured: trim is at the edge.
-        safeEl.style.inset = '0';
+        // PRINT with no bleed configured: proportional inset
+        safeEl.style.top = '6%';
+        safeEl.style.bottom = '6%';
+        safeEl.style.left = '6%';
+        safeEl.style.right = '6%';
 
         if (bleedEl) {
-          bleedEl.style.display = 'none';
+          bleedEl.style.display = hideBleed ? 'none' : '';
+          bleedEl.style.top = '6%';
+          bleedEl.style.bottom = '6%';
+          bleedEl.style.left = '6%';
+          bleedEl.style.right = '6%';
         }
       }
     }
@@ -1399,56 +1299,7 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     if (noInfoEl) {
       noInfoEl.style.display = 'none';
     }
-  }
-
-  // --- Canvas scrollable detection (for digital 1:1 overflow) ---
-  function updateCanvasScrollable_() {
-    var box = document.getElementById('format-canvas-box');
-    if (!box) return;
-
-    // Check if content overflows the container
-    var isScrollable = box.scrollWidth > box.clientWidth || box.scrollHeight > box.clientHeight;
-    box.classList.toggle('is-scrollable', isScrollable);
-  }
-
-  function initCanvasDragPan_() {
-    var box = document.getElementById('format-canvas-box');
-    if (!box) return;
-
-    // Drag-to-pan for digital jobs that overflow
-    var isDragging = false;
-    var startX, startY, scrollLeft, scrollTop;
-
-    box.addEventListener('mousedown', function (e) {
-      if (!box.classList.contains('is-scrollable')) return;
-
-      isDragging = true;
-      box.style.cursor = 'grabbing';
-      startX = e.pageX - box.offsetLeft;
-      startY = e.pageY - box.offsetTop;
-      scrollLeft = box.scrollLeft;
-      scrollTop = box.scrollTop;
-      e.preventDefault();
-    });
-
-    document.addEventListener('mouseup', function () {
-      if (isDragging) {
-        isDragging = false;
-        box.style.cursor = '';
-      }
-    });
-
-    document.addEventListener('mousemove', function (e) {
-      if (!isDragging) return;
-      var x = e.pageX - box.offsetLeft;
-      var y = e.pageY - box.offsetTop;
-      var walkX = x - startX;
-      var walkY = y - startY;
-      box.scrollLeft = scrollLeft - walkX;
-      box.scrollTop = scrollTop - walkY;
-    });
-  }
-
+  }  
   // --- Canvas line layout helpers ---
   // Split text by hard returns and render each line as a span so we can measure widths precisely.
   function setCanvasLines(el, text, maxLines) {
@@ -1618,9 +1469,6 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
   }
 
 function autoscaleCanvasBands() {
-  // Skip if using new Tiptap editor
-  if (window.__ARTSTART_EDITOR__) return;
-
   var safe = document.querySelector('.artstart-canvas-safe');
   if (!safe) return;
 
@@ -1669,9 +1517,6 @@ function autoscaleCanvasBands() {
 }
 
   function syncCanvasTextFromFields() {
-    // Skip if using new Tiptap editor
-    if (window.__ARTSTART_EDITOR__) return;
-
     var box = document.getElementById('format-canvas-box');
     if (!box || box.getAttribute('data-has-dimensions') !== 'true') return;
 
@@ -1717,9 +1562,6 @@ function autoscaleCanvasBands() {
     autoscaleCanvasBands();
   }
   function populateJob(job) {
-    // Store for view toggle re-render
-    window.__ARTSTART_CURRENT_JOB__ = job;
-
     var gridEl = document.getElementById('artstart-grid');
     if (gridEl) {
       gridEl.style.display = '';
@@ -1856,11 +1698,12 @@ function autoscaleCanvasBands() {
         '—';
     }
 
-    // Notes field: seed from intake notes if workingNotes is empty, otherwise use workingNotes
-    var notesEl = document.getElementById('working-notes');
+    var notesEl = document.getElementById('job-overview-notes');
     if (notesEl) {
-      var notesValue = job.workingNotes || job.notes || job.intakeNotes || '';
-      notesEl.value = notesValue;
+      notesEl.textContent =
+        job.notes ||
+        job.intakeNotes ||
+        '—';
     }
 
     // Format card
@@ -1911,7 +1754,6 @@ function autoscaleCanvasBands() {
     
     // Canvas preview (digital vs print, with bleed)
     renderCanvasPreview(job, dimsForSize, mediaKind);
-    setTimeout(updateCanvasScrollable_, 0);
 
     // Working draft fields
     var prevActiveLanguage = activeLanguage;
@@ -2216,39 +2058,28 @@ if (code === baseLanguage) {
     if (!usedTranslation) {
       // Only hydrate base-language fields when base language is active
       if (activeLanguage === baseLanguage) {
-        // Populate editor if available, otherwise legacy fields
-        var baseFields = {
-          workingHeadline: job.workingHeadline || '',
-          workingSubhead:  job.workingSubhead  || '',
-          workingCta:      job.workingCta      || '',
-          workingBullets:  job.workingBullets  || ''
-        };
-
-        if (typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function' && typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
-          var html = window.__ARTSTART_FIELDS_TO_HTML__(baseFields);
-          window.__ARTSTART_SET_EDITOR_HTML__(html);
-        } else {
-          // Legacy field fallback
-          var hEl = document.getElementById('working-headline'); if (hEl) hEl.value = baseFields.workingHeadline;
-          var sEl = document.getElementById('working-subhead');  if (sEl) sEl.value = baseFields.workingSubhead;
-          var cEl = document.getElementById('working-cta');      if (cEl) cEl.value = baseFields.workingCta;
-          var bEl = document.getElementById('working-bullets');  if (bEl) bEl.value = baseFields.workingBullets;
-        }
+        document.getElementById('working-headline').value = job.workingHeadline || '';
+        document.getElementById('working-subhead').value  = job.workingSubhead || '';
+        document.getElementById('working-cta').value      = job.workingCta || '';
+        document.getElementById('working-bullets').value  = job.workingBullets || '';
 
         // Cache base-language translatable text for non-EN→non-EN switching logic
         try {
-          saveBaseText_(jobIdNow, baseFields);
+          saveBaseText_(jobIdNow, {
+            workingHeadline: job.workingHeadline || '',
+            workingSubhead:  job.workingSubhead  || '',
+            workingCta:      job.workingCta      || '',
+            workingBullets:  job.workingBullets  || ''
+          });
         } catch (_eBaseCache) {}
 
-        var websiteEl = document.getElementById('working-website');
+        const websiteEl = document.getElementById('working-website');
         if (websiteEl) websiteEl.value = job.workingWebsite || '';
 
-        var emailEl = document.getElementById('working-email');
+        const emailEl = document.getElementById('working-email');
         if (emailEl) emailEl.value = job.workingEmail || '';
 
-        // Notes: prefer workingNotes, fallback to intake notes
-        var notesEl = document.getElementById('working-notes');
-        if (notesEl) notesEl.value = job.workingNotes || job.notes || job.intakeNotes || '';
+        document.getElementById('working-notes').value = job.workingNotes || '';
       } else {
         // Non-EN is active, but we had no cached translation fields to apply.
         // Do NOT leave the UI blank — hydrate by:
@@ -2339,42 +2170,15 @@ if (code === baseLanguage) {
   }
 
   function buildDraftPayload(jobId) {
-    // Get content from Tiptap editor if available, otherwise fall back to legacy fields
-    var editorFields = { workingHeadline: '', workingSubhead: '', workingCta: '', workingBullets: '' };
-
-    if (typeof window.__ARTSTART_HTML_TO_FIELDS__ === 'function') {
-      editorFields = window.__ARTSTART_HTML_TO_FIELDS__();
-    } else {
-      // Legacy fallback (fields may not exist in new UI)
-      var h = document.getElementById('working-headline');
-      var s = document.getElementById('working-subhead');
-      var c = document.getElementById('working-cta');
-      var b = document.getElementById('working-bullets');
-      if (h) editorFields.workingHeadline = h.value || '';
-      if (s) editorFields.workingSubhead = s.value || '';
-      if (c) editorFields.workingCta = c.value || '';
-      if (b) editorFields.workingBullets = b.value || '';
-    }
-
-    // Also store the full editor JSON for future use
-    var editorJson = '';
-    if (typeof window.__ARTSTART_GET_EDITOR_JSON__ === 'function') {
-      try {
-        editorJson = JSON.stringify(window.__ARTSTART_GET_EDITOR_JSON__());
-      } catch (e) {}
-    }
-
     return {
       jobId: jobId,
-      workingHeadline: editorFields.workingHeadline,
-      workingSubhead: editorFields.workingSubhead,
-      workingCta: editorFields.workingCta,
-      workingBullets: editorFields.workingBullets,
-      workingEditorHtml: editorFields.workingEditorHtml || '', // Preserve rich HTML content
-      workingEditorJson: editorJson, // JSON backup for rich content
+      workingHeadline: document.getElementById('working-headline').value,
+      workingSubhead: document.getElementById('working-subhead').value,
+      workingCta: document.getElementById('working-cta').value,
+      workingBullets: document.getElementById('working-bullets').value,
       workingWebsite: (document.getElementById('working-website') || {}).value || '',
       workingEmail: (document.getElementById('working-email') || {}).value || '',
-      workingNotes: (document.getElementById('working-notes') || {}).value || '',
+      workingNotes: document.getElementById('working-notes').value,
 
       // QR association (FileRoom)
       qrDriveFileId: (document.getElementById('qrDriveFileId') || {}).value || '',
@@ -2383,18 +2187,12 @@ if (code === baseLanguage) {
     };
   }
 
-  // Expose saveDraft globally for the Tiptap module
-  window.saveDraft = saveDraft;
-
 function saveDraft(jobId, langOverride) {
   setSaveStatus('Saving…');
 
   var langToSave = langOverride || activeLanguage;
 
   var payload = buildDraftPayload(jobId);
-
-  console.log('[saveDraft] Payload workingBullets:', payload.workingBullets);
-  console.log('[saveDraft] Payload workingEditorHtml:', payload.workingEditorHtml);
 
   var isBase = (langToSave === baseLanguage);
 
@@ -2405,12 +2203,10 @@ try {
   var s0 = String((payload && payload.workingSubhead) || '').trim();
   var c0 = String((payload && payload.workingCta) || '').trim();
   var b0 = String((payload && payload.workingBullets) || '').trim();
-  var html0 = String((payload && payload.workingEditorHtml) || '').trim();
 
-  // If content is blank (no legacy fields AND editor HTML is empty/trivial), bail out.
-  // Allow any HTML longer than a bare paragraph tag through.
-  var hasEditorContent = html0 && html0.length > 12;
-  if (!h0 && !s0 && !c0 && !b0 && !hasEditorContent) {
+  // If the translatable quartet is blank, treat this as an unsafe unload-save and bail out.
+  // (Users do not intentionally clear *all* fields via tab-close; this is almost always a race/blank UI state.)
+  if (!h0 && !s0 && !c0 && !b0) {
     return;
   }
 } catch (_eBlank0) {}
@@ -2422,8 +2218,7 @@ try {
       workingHeadline: payload.workingHeadline,
       workingSubhead: payload.workingSubhead,
       workingCta: payload.workingCta,
-      workingBullets: payload.workingBullets,
-      workingEditorHtml: payload.workingEditorHtml
+      workingBullets: payload.workingBullets
     };
 
     // If nothing changed vs baseline, do NOT mark human or persist drafts.
@@ -2602,8 +2397,7 @@ try {
             workingHeadline: payload.workingHeadline,
             workingSubhead: payload.workingSubhead,
             workingCta: payload.workingCta,
-            workingBullets: payload.workingBullets,
-            workingEditorHtml: payload.workingEditorHtml
+            workingBullets: payload.workingBullets
           };
         }
 
@@ -2792,11 +2586,6 @@ try {
           refreshDaveStatus(effectiveJobId);
         }
         setSaveStatus('Autosave ready.');
-
-        // Notify Tiptap module that job data is ready
-        if (typeof window.__ARTSTART_ON_JOB_LOADED__ === 'function') {
-          window.__ARTSTART_ON_JOB_LOADED__(json.job);
-        }
       })
       .catch(function (err) {
         console.error('Error loading job', err);
@@ -2834,7 +2623,6 @@ try {
   function init() {
     setUserLabel();
     initQrUi_();
-    initCanvasDragPan_();
 
     // Cache language UI
     langSelect = document.getElementById('working-language');
@@ -2930,38 +2718,23 @@ if (langSelect) {
     // Default: use cached EN snapshot (written during EN hydration)
     try { baseHasText = baseHasTextForJob_(jobIdNow); } catch (_eBHC) { baseHasText = false; }
 
-    // If we are currently in EN and leaving it, compute live from the editor and refresh the cache
+    // If we are currently in EN and leaving it, compute live from the DOM and refresh the cache
     if (leavingBase) {
       try {
-        var liveBaseFields = _readWorkingFields_();
-
-        // Check editor HTML for content
-        var editorHtml = '';
-        try { editorHtml = window.__ARTSTART_GET_EDITOR_HTML__ ? window.__ARTSTART_GET_EDITOR_HTML__() : ''; } catch (_eH) {}
+        var liveBaseFields = {
+          workingHeadline: String(((document.getElementById('working-headline') || {}).value) || ''),
+          workingSubhead:  String(((document.getElementById('working-subhead')  || {}).value) || ''),
+          workingCta:      String(((document.getElementById('working-cta')      || {}).value) || ''),
+          workingBullets:  String(((document.getElementById('working-bullets')  || {}).value) || '')
+        };
 
         baseHasText = !!(
           String(liveBaseFields.workingHeadline || '').trim() ||
           String(liveBaseFields.workingSubhead  || '').trim() ||
           String(liveBaseFields.workingCta      || '').trim() ||
-          String(liveBaseFields.workingBullets  || '').trim() ||
-          (editorHtml && editorHtml.length > 12)
+          String(liveBaseFields.workingBullets  || '').trim()
         );
 
-        // Prepare HTML template for translation (preserves formatting)
-        // This extracts text segments and stores the HTML structure
-        if (editorHtml && typeof window.__ARTSTART_PREPARE_TRANSLATION__ === 'function') {
-          try {
-            console.log('[LeavingBase] Preparing template for', jobIdNow, '->', next);
-            console.log('[LeavingBase] Editor HTML:', editorHtml);
-            var templateResult = window.__ARTSTART_PREPARE_TRANSLATION__(editorHtml, jobIdNow, next);
-            console.log('[LeavingBase] Template prepared:', templateResult);
-          } catch (_ePT) {
-            console.error('[LeavingBase] Template preparation failed:', _ePT);
-          }
-        }
-
-        // Store the editor HTML for translation
-        liveBaseFields.workingEditorHtml = editorHtml;
         try { saveBaseText_(jobIdNow, liveBaseFields); } catch (_eBHS) {}
       } catch (_eBH) { baseHasText = baseHasTextForJob_(jobIdNow); }
     }
@@ -2970,9 +2743,12 @@ if (langSelect) {
     try {
       var prevLang = prevLangSafe;
       if (prevLang && prevLang !== baseLanguage) {
-        var snap = _readWorkingFields_();
-        // Also capture editor HTML
-        try { snap.workingEditorHtml = window.__ARTSTART_GET_EDITOR_HTML__ ? window.__ARTSTART_GET_EDITOR_HTML__() : ''; } catch (_eSnap) {}
+        var snap = {
+          workingHeadline: (document.getElementById('working-headline') || {}).value || '',
+          workingSubhead:  (document.getElementById('working-subhead')  || {}).value || '',
+          workingCta:      (document.getElementById('working-cta')      || {}).value || '',
+          workingBullets:  (document.getElementById('working-bullets')  || {}).value || ''
+        };
 
         // If this language is still "machine" and the user hasn't changed anything,
         // do NOT flip it to human or write a draft (prevents false "human edited" persistence).

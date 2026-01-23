@@ -784,58 +784,6 @@ function softDeleteArtStartJob_(jobId, userEmail) {
   sheet.getRange(targetRowIndex, statusCol + 1).setValue('Deleted');
 }
 
-/**
- * restoreArtStartJob_(jobId, userEmail)
- * Clears the "Deleted" status to restore a soft-deleted job.
- */
-function restoreArtStartJob_(jobId, userEmail) {
-  if (!jobId) {
-    throw new Error('Missing jobId for restore');
-  }
-
-  var sheet = getSheet_(SHEET_NAME_PROJECTS);
-  var data = sheet.getDataRange().getValues();
-  if (data.length < 2) {
-    throw new Error('No projects rows found');
-  }
-
-  var map = getHeaderMap_(sheet);
-  var colAsc = map['AscendJobId'];
-  if (colAsc == null) {
-    throw new Error('AscendJobId column not found in Projects sheet');
-  }
-
-  var statusCol = map['Status'];
-  if (statusCol == null) {
-    throw new Error('Status column not found in Projects sheet');
-  }
-
-  var createdByCol = map['CreatedByContactId'];
-  var targetRowIndex = -1;
-
-  for (var r = 1; r < data.length; r++) {
-    var row = data[r];
-    if (String(row[colAsc]) === String(jobId)) {
-      if (createdByCol != null && userEmail) {
-        var rowEmail = String(row[createdByCol] || '').toLowerCase();
-        var reqEmail = String(userEmail || '').toLowerCase();
-        if (rowEmail && rowEmail !== reqEmail) {
-          throw new Error('Job does not belong to this user');
-        }
-      }
-      targetRowIndex = r + 1; // 1-based row in sheet
-      break;
-    }
-  }
-
-  if (targetRowIndex === -1) {
-    throw new Error('Project not found for restore: ' + jobId);
-  }
-
-  // Clear Status to restore the job
-  sheet.getRange(targetRowIndex, statusCol + 1).setValue('');
-}
-
 function setProjectFieldIfPresent_(sheet, headers, rowIndex, headerName, value) {
   // Try exact match first
   var idx = headers.indexOf(headerName);
@@ -961,10 +909,6 @@ function getArtStartJob_(jobId) {
     p['Working Notes'] ||
     p['Working notes'] ||
     '';
-  var workingEditorHtml =
-    p.WorkingEditorHtml ||
-    p['Working Editor Html'] ||
-    '';
 
   return {
     // Internal key for APIs / autosave – keep this as AscendJobId
@@ -1012,7 +956,6 @@ function getArtStartJob_(jobId) {
     workingSubhead: workingSubhead,
     workingCta: workingCta,
     workingBullets: workingBullets,
-    workingEditorHtml: workingEditorHtml,
     workingWebsite: workingWebsite,
     workingEmail: workingEmail,
     workingNotes: workingNotes,
@@ -1065,14 +1008,13 @@ function handleUpdateArtStartDraftFields_(e) {
       jobId: (p.jobId || p.jobid || '')
     };
 
-    if (has('workingHeadline'))   payload.workingHeadline   = String(p.workingHeadline || '');
-    if (has('workingSubhead'))    payload.workingSubhead    = String(p.workingSubhead  || '');
-    if (has('workingCta'))        payload.workingCta        = String(p.workingCta      || '');
-    if (has('workingBullets'))    payload.workingBullets    = String(p.workingBullets  || '');
-    if (has('workingEditorHtml')) payload.workingEditorHtml = String(p.workingEditorHtml || '');
-    if (has('workingWebsite'))    payload.workingWebsite    = String(p.workingWebsite  || '');
-    if (has('workingEmail'))      payload.workingEmail      = String(p.workingEmail    || '');
-    if (has('workingNotes'))      payload.workingNotes      = String(p.workingNotes    || '');
+    if (has('workingHeadline')) payload.workingHeadline = String(p.workingHeadline || '');
+    if (has('workingSubhead'))  payload.workingSubhead  = String(p.workingSubhead  || '');
+    if (has('workingCta'))      payload.workingCta      = String(p.workingCta      || '');
+    if (has('workingBullets'))  payload.workingBullets  = String(p.workingBullets  || '');
+    if (has('workingWebsite'))  payload.workingWebsite  = String(p.workingWebsite  || '');
+    if (has('workingEmail'))    payload.workingEmail    = String(p.workingEmail    || '');
+    if (has('workingNotes'))    payload.workingNotes    = String(p.workingNotes    || '');
 
     if (has('qrDriveFileId'))   payload.qrDriveFileId   = String(p.qrDriveFileId   || '');
     if (has('qrOpenUrl'))       payload.qrOpenUrl       = String(p.qrOpenUrl       || '');
@@ -1095,11 +1037,10 @@ function handleUpdateArtStartDraftFields_(e) {
 
   const hasPayload = function (k) { return Object.prototype.hasOwnProperty.call(payload, k); };
 
-  if (hasPayload('workingHeadline'))   setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingHeadline', payload.workingHeadline);
-  if (hasPayload('workingSubhead'))    setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingSubhead', payload.workingSubhead);
-  if (hasPayload('workingCta'))        setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingCTA', payload.workingCta);
-  if (hasPayload('workingBullets'))    setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingBullets', payload.workingBullets);
-  if (hasPayload('workingEditorHtml')) setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingEditorHtml', payload.workingEditorHtml);
+  if (hasPayload('workingHeadline')) setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingHeadline', payload.workingHeadline);
+  if (hasPayload('workingSubhead'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingSubhead', payload.workingSubhead);
+  if (hasPayload('workingCta'))      setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingCTA', payload.workingCta);
+  if (hasPayload('workingBullets'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingBullets', payload.workingBullets);
 
   // Optional extras – safe even if these columns don't exist
   if (hasPayload('workingWebsite'))  setProjectFieldIfPresent_(sheet, headers, rowIndex, 'WorkingWebsite', payload.workingWebsite);
@@ -1747,18 +1688,6 @@ function doGet(e) {
     }
   }
 
-  if (action === 'restoreArtStartJob') {
-    var jobIdRestore = e.parameter.jobId || e.parameter.jobid || '';
-    var userEmailRestore = e.parameter.user_email || e.parameter.userEmail || '';
-
-    try {
-      restoreArtStartJob_(jobIdRestore, userEmailRestore);
-      return jsonResponse_({ success: true, jobId: jobIdRestore }, callback);
-    } catch (errRestore) {
-      return jsonResponse_({ success: false, error: String(errRestore) }, callback);
-    }
-  }
-
   if (action === 'getRequiredElementsForJob') {
     var jobId2 = e.parameter.jobId;
     try {
@@ -1815,8 +1744,7 @@ function doGet(e) {
         workingHeadline: String(getVal_('WorkingHeadline') || ''),
         workingSubhead: String(getVal_('WorkingSubhead') || ''),
         workingCta: String(getVal_('WorkingCTA') || ''),
-        workingBullets: String(getVal_('WorkingBullets') || ''),
-        workingEditorHtml: String(getVal_('WorkingEditorHtml') || '')
+        workingBullets: String(getVal_('WorkingBullets') || '')
       };
 
       function pickTranslatableFields_(obj) {
@@ -1825,8 +1753,7 @@ function doGet(e) {
           workingHeadline: String(obj.workingHeadline || ''),
           workingSubhead: String(obj.workingSubhead || ''),
           workingCta: String(obj.workingCta || ''),
-          workingBullets: String(obj.workingBullets || ''),
-          workingEditorHtml: String(obj.workingEditorHtml || '')
+          workingBullets: String(obj.workingBullets || '')
         };
       }
 
@@ -1865,31 +1792,11 @@ function doGet(e) {
         }
       }
 
-      // HTML-aware translation: translate text content while preserving HTML structure
-      function translateHtml_(html) {
-        if (!html) return '';
-        // Match block elements (p, li) and translate their text content
-        // Preserves attributes like style=""
-        return html.replace(/<(p|li)([^>]*)>([\s\S]*?)<\/\1>/gi, function(match, tag, attrs, content) {
-          // Don't translate empty content
-          if (!content.trim()) return match;
-          // Translate the text content (may contain inline tags like <strong>)
-          // Strip HTML for translation, then we'll lose inline formatting
-          // Better approach: translate text nodes only
-          var textOnly = content.replace(/<[^>]+>/g, '').trim();
-          if (!textOnly) return match;
-          var translatedText = tr_(textOnly);
-          // Reconstruct with translated text (inline formatting will be reapplied by client)
-          return '<' + tag + attrs + '>' + translatedText + '</' + tag + '>';
-        });
-      }
-
       var translated = {
         workingHeadline: tr_(fields.workingHeadline),
         workingSubhead: tr_(fields.workingSubhead),
         workingCta: tr_(fields.workingCta),
         workingBullets: tr_(fields.workingBullets),
-        workingEditorHtml: translateHtml_(fields.workingEditorHtml),
       };
 
       // Persist as machine translation (human=false)
