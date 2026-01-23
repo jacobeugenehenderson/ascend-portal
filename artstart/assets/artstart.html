@@ -1768,14 +1768,14 @@
       }
 
       if (fontSelect) {
+        // Store selection before dropdown opens
+        fontSelect.addEventListener('mousedown', () => {
+          window.__lastEditorSelection__ = editor.state.selection;
+        });
+
         fontSelect.addEventListener('change', () => {
           const font = fontSelect.value;
-          // Unset font if returning to default, otherwise set explicitly
-          if (font === 'Source Sans 3') {
-            editor.chain().focus().unsetFontFamily().run();
-          } else {
-            editor.chain().focus().setFontFamily(font).run();
-          }
+          editor.chain().focus().setFontFamily(font).run();
           fontSelect.style.fontFamily = font;
           updateWeightSelectorFont(font);
         });
