@@ -1060,7 +1060,8 @@ function handleUpdateArtStartDraftFields_(e) {
   let payload;
 
   // Preferred path: JSON body (POST from tools that send JSON)
-  if (e.postData && e.postData.contents) {
+  // But NOT for form-urlencoded POST (iframe form submits)
+  if (e.postData && e.postData.contents && e.postData.type === 'application/json') {
     try {
       payload = JSON.parse(e.postData.contents);
     } catch (err) {
