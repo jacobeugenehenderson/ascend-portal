@@ -1788,7 +1788,12 @@
         function applyFontToEditor(font) {
           // Apply font to current selection only (no selectAll)
           // If nothing is selected, this sets the font for future typed text
-          editor.chain().focus().setFontFamily(font).run();
+          // For Source Sans 3 (the CSS default), unset the mark so text inherits the default
+          if (font === 'Source Sans 3') {
+            editor.chain().focus().unsetFontFamily().run();
+          } else {
+            editor.chain().focus().setFontFamily(font).run();
+          }
           // Update dropdown display font
           fontSelect.style.setProperty('font-family', font, 'important');
           updateWeightSelectorFont(font);
