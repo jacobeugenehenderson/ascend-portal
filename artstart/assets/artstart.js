@@ -629,8 +629,25 @@ function retranslateLanguage_(lang) {
 
       applyTranslatedFields_(data.fields);
 
-      // Baseline becomes the machine text (prevents blur-save from re-marking as human)
-      try { setLangBaseline_(lang, data.fields); } catch (_e2) {}
+      // Baseline must use NORMALIZED HTML from the editor, not original server HTML.
+      // Tiptap normalizes HTML (whitespace, attribute order) when parsing, so
+      // original !== editor.getHTML(). Using original would make baseline check
+      // always return "changed" and trigger unwanted human-edit marking.
+      var normalizedFields = {
+        workingHeadline: data.fields.workingHeadline || '',
+        workingSubhead: data.fields.workingSubhead || '',
+        workingCta: data.fields.workingCta || '',
+        workingBullets: data.fields.workingBullets || '',
+        workingEditorHtml: (typeof window.__ARTSTART_GET_EDITOR_HTML__ === 'function')
+          ? window.__ARTSTART_GET_EDITOR_HTML__()
+          : (data.fields.workingEditorHtml || ''),
+        workingIndentH: data.fields.workingIndentH || '',
+        workingIndentV: data.fields.workingIndentV || ''
+      };
+      try { setLangBaseline_(lang, normalizedFields); } catch (_e2) {}
+
+      // Also update translationsDb with normalized HTML so in-memory cache matches
+      translationsDb[lang].fields.workingEditorHtml = normalizedFields.workingEditorHtml;
 
       updateLangDot_();
       setSaveStatus('Saved');
@@ -2099,17 +2116,9 @@ function autoscaleCanvasBands() {
       });
     } catch (_e4) {}
 
-    // Establish baselines for every available translation record (required for "changed vs baseline" logic).
-    try {
-      translationsDb = translationsDb || {};
-      Object.keys(translationsDb).forEach(function (l) {
-        var L = String(l || '').trim().toUpperCase();
-        if (!L || L === baseLanguage) return;
-        var rec = translationsDb[L];
-        if (!rec || !rec.fields) return;
-        setLangBaseline_(L, rec.fields);
-      });
-    } catch (_eB) {}
+    // NOTE: Baselines are now set AFTER content is applied to the editor,
+    // using normalized HTML from Tiptap. This prevents false "changed" detection
+    // due to HTML normalization differences. See baseline setting in paths (1), (2), (3) below.
 
     // Populate language dropdown
     if (langSelect) {
@@ -2206,7 +2215,24 @@ if (code === baseLanguage) {
 
       // (1) In-memory cache
       if (entry && entry.fields) {
+        // Mark that populateJob is handling content, so populateEditorFromJob won't overwrite with English
+        window.__ARTSTART_POPULATE_JOB_RAN__ = true;
         applyTranslatedFields_(entry.fields);
+        // Update baseline with NORMALIZED HTML from editor (prevents false "changed" detection)
+        var normalizedEntry = {
+          workingHeadline: entry.fields.workingHeadline || '',
+          workingSubhead: entry.fields.workingSubhead || '',
+          workingCta: entry.fields.workingCta || '',
+          workingBullets: entry.fields.workingBullets || '',
+          workingEditorHtml: (typeof window.__ARTSTART_GET_EDITOR_HTML__ === 'function')
+            ? window.__ARTSTART_GET_EDITOR_HTML__()
+            : (entry.fields.workingEditorHtml || ''),
+          workingIndentH: entry.fields.workingIndentH || '',
+          workingIndentV: entry.fields.workingIndentV || ''
+        };
+        try { setLangBaseline_(keyUpper, normalizedEntry); } catch (_eBL) {}
+        // Update in-memory cache with normalized HTML
+        entry.fields.workingEditorHtml = normalizedEntry.workingEditorHtml;
         usedTranslation = true;
         updateLangDot_();
       }
@@ -2217,14 +2243,28 @@ if (code === baseLanguage) {
           var jobIdNow = currentJobId || (job && job.id) || getJobIdFromQuery();
           var localDraft = loadLangDraft_(jobIdNow, keyUpper);
           if (localDraft && localDraft.fields) {
+            // Mark that populateJob is handling content, so populateEditorFromJob won't overwrite with English
+            window.__ARTSTART_POPULATE_JOB_RAN__ = true;
             applyTranslatedFields_(localDraft.fields);
-            try { setLangBaseline_(keyUpper, localDraft.fields); } catch (_eBL0) {}
+            // Baseline must use normalized HTML from editor
+            var normalizedDraft = {
+              workingHeadline: localDraft.fields.workingHeadline || '',
+              workingSubhead: localDraft.fields.workingSubhead || '',
+              workingCta: localDraft.fields.workingCta || '',
+              workingBullets: localDraft.fields.workingBullets || '',
+              workingEditorHtml: (typeof window.__ARTSTART_GET_EDITOR_HTML__ === 'function')
+                ? window.__ARTSTART_GET_EDITOR_HTML__()
+                : (localDraft.fields.workingEditorHtml || ''),
+              workingIndentH: localDraft.fields.workingIndentH || '',
+              workingIndentV: localDraft.fields.workingIndentV || ''
+            };
+            try { setLangBaseline_(keyUpper, normalizedDraft); } catch (_eBL0) {}
             try { saveLangState_(jobIdNow, keyUpper, 'human'); } catch (_eST0) {}
             translationsDb = translationsDb || {};
             translationsDb[keyUpper] = translationsDb[keyUpper] || {};
             translationsDb[keyUpper].human = true;
             translationsDb[keyUpper].edited = true;
-            translationsDb[keyUpper].fields = localDraft.fields;
+            translationsDb[keyUpper].fields = normalizedDraft;
             usedTranslation = true;
             updateLangDot_();
           }
@@ -2236,6 +2276,9 @@ if (code === baseLanguage) {
         try {
           var jobIdNow2 = currentJobId || (job && job.id) || getJobIdFromQuery();
           if (jobIdNow2) {
+            // Mark that populateJob is handling content (async, but prevents race with populateEditorFromJob)
+            window.__ARTSTART_POPULATE_JOB_RAN__ = true;
+
             var urlT = ARTSTART_API_BASE
               + '?action=translateArtStartFields'
               + '&jobId=' + encodeURIComponent(String(jobIdNow2))
@@ -2252,20 +2295,36 @@ if (code === baseLanguage) {
                   workingSubhead:  String(f.workingSubhead || ''),
                   workingCta:      String(f.workingCta || ''),
                   workingBullets:  String(f.workingBullets || ''),
-                  workingEditorHtml: String(f.workingEditorHtml || '')
+                  workingEditorHtml: String(f.workingEditorHtml || ''),
+                  workingIndentH: String(f.workingIndentH || ''),
+                  workingIndentV: String(f.workingIndentV || '')
                 };
 
                 applyTranslatedFields_(fields);
+
+                // Use NORMALIZED HTML for baseline (Tiptap normalizes on parse)
+                var normalizedFields = {
+                  workingHeadline: fields.workingHeadline,
+                  workingSubhead: fields.workingSubhead,
+                  workingCta: fields.workingCta,
+                  workingBullets: fields.workingBullets,
+                  workingEditorHtml: (typeof window.__ARTSTART_GET_EDITOR_HTML__ === 'function')
+                    ? window.__ARTSTART_GET_EDITOR_HTML__()
+                    : fields.workingEditorHtml,
+                  workingIndentH: fields.workingIndentH,
+                  workingIndentV: fields.workingIndentV
+                };
+
                 translationsDb = translationsDb || {};
                 translationsDb[keyUpper] = translationsDb[keyUpper] || {};
-                translationsDb[keyUpper].fields = fields;
+                translationsDb[keyUpper].fields = normalizedFields;
 
                 // Respect returned human/machine if present; default to machine.
                 var isHuman = !!(payload && payload.human === true);
                 translationsDb[keyUpper].human = isHuman;
                 translationsDb[keyUpper].edited = isHuman;
 
-                try { setLangBaseline_(keyUpper, fields); } catch (_eBL1) {}
+                try { setLangBaseline_(keyUpper, normalizedFields); } catch (_eBL1) {}
                 try { saveLangState_(jobIdNow2, keyUpper, isHuman ? 'human' : 'machine'); } catch (_eST1) {}
 
                 updateLangDot_();
