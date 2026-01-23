@@ -1134,6 +1134,9 @@ function applyTranslatedFields_(f) {
   }
 
 function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
+    console.log('renderCanvasPreview called:', { job: job, dimsOverride: dimsOverride, mediaKindOverride: mediaKindOverride });
+    console.log('job.bleed =', job && job.bleed);
+
     var box = document.getElementById('format-canvas-box');
     var noInfoEl = document.getElementById('canvas-noinfo');
     if (!box) return;
@@ -1272,6 +1275,20 @@ function renderCanvasPreview(job, dimsOverride, mediaKindOverride) {
     }
     var totalWidth = w + bleedAmount * 2;
     var totalHeight = h + bleedAmount * 2;
+
+    // DEBUG: log bleed calculation
+    console.log('Canvas bleed debug:', {
+      rawBleed: job && job.bleed,
+      bleedAmount: bleedAmount,
+      trimW: w,
+      trimH: h,
+      totalWidth: totalWidth,
+      totalHeight: totalHeight,
+      displayWidth: displayWidth,
+      displayHeight: displayHeight,
+      bleedRatioX: bleedAmount / totalWidth,
+      bleedRatioY: bleedAmount / totalHeight
+    });
 
     // 3) Position trim (magenta stroke) and bleed (dashed teal) correctly.
     if (safeEl) {
