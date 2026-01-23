@@ -2694,6 +2694,20 @@ try {
         });
       });
 
+    // Indent fields also trigger autosave (always save as base language)
+    ['toolbar-indent-h', 'toolbar-indent-v'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+
+      el.addEventListener('input', function () {
+        scheduleAutosave(baseLanguage);
+      });
+
+      el.addEventListener('change', function () {
+        scheduleAutosave(baseLanguage);
+      });
+    });
+
     function finalSave() {
       try {
         // If there is a pending debounce, flush it and save immediately.
