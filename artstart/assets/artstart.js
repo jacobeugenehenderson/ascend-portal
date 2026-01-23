@@ -1917,20 +1917,27 @@ function autoscaleCanvasBands() {
 
     // Set default indents based on safe zone size (replaces old CSS percentage padding)
     // Print: 6%, Digital: 2%
-    setTimeout(function() {
-      var safeEl = document.querySelector('.artstart-canvas-safe');
-      var indentH = document.getElementById('toolbar-indent-h');
-      var indentV = document.getElementById('toolbar-indent-v');
-      if (safeEl && indentH && indentV) {
-        var pct = mediaKind === 'digital' ? 0.02 : 0.06;
-        var defaultH = Math.round(safeEl.clientWidth * pct);
-        var defaultV = Math.round(safeEl.clientHeight * pct);
-        indentH.value = defaultH;
-        indentV.value = defaultV;
-        // Trigger update
-        indentH.dispatchEvent(new Event('input'));
-      }
-    }, 0);
+    // ONLY apply defaults if there are no saved values - otherwise we overwrite user settings
+    var hasSavedIndentH = job && job.workingIndentH && job.workingIndentH !== '0';
+    var hasSavedIndentV = job && job.workingIndentV && job.workingIndentV !== '0';
+    if (!hasSavedIndentH && !hasSavedIndentV) {
+      setTimeout(function() {
+        var safeEl = document.querySelector('.artstart-canvas-safe');
+        var indentH = document.getElementById('toolbar-indent-h');
+        var indentV = document.getElementById('toolbar-indent-v');
+        if (safeEl && indentH && indentV) {
+          var pct = mediaKind === 'digital' ? 0.02 : 0.06;
+          var defaultH = Math.round(safeEl.clientWidth * pct);
+          var defaultV = Math.round(safeEl.clientHeight * pct);
+          indentH.value = defaultH;
+          indentV.value = defaultV;
+          // Trigger update (but not autosave - this is initial setup)
+          if (typeof window.__ARTSTART_UPDATE_INDENTS__ === 'function') {
+            window.__ARTSTART_UPDATE_INDENTS__();
+          }
+        }
+      }, 0);
+    }
 
     // Working draft fields
     var prevActiveLanguage = activeLanguage;
@@ -2466,11 +2473,16 @@ try {
   var c0 = String((payload && payload.workingCta) || '').trim();
   var b0 = String((payload && payload.workingBullets) || '').trim();
   var html0 = String((payload && payload.workingEditorHtml) || '').trim();
+  var notes0 = String((payload && payload.workingNotes) || '').trim();
+  var website0 = String((payload && payload.workingWebsite) || '').trim();
+  var email0 = String((payload && payload.workingEmail) || '').trim();
 
-  // If content is blank (no legacy fields AND editor HTML is empty/trivial), bail out.
+  // If content is blank (no text fields AND editor HTML is empty/trivial), bail out.
   // Allow any HTML longer than a bare paragraph tag through.
+  // Also allow save if notes, website, or email have content.
   var hasEditorContent = html0 && html0.length > 12;
-  if (!h0 && !s0 && !c0 && !b0 && !hasEditorContent) {
+  var hasMetaContent = notes0 || website0 || email0;
+  if (!h0 && !s0 && !c0 && !b0 && !hasEditorContent && !hasMetaContent) {
     return;
   }
 } catch (_eBlank0) {}

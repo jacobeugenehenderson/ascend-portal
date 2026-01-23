@@ -2030,6 +2030,8 @@
         editorArea.style.paddingRight = '0';
         editorArea.style.paddingBottom = '0';
       }
+      // Expose globally for artstart.js indent restore
+      window.__ARTSTART_UPDATE_INDENTS__ = updateIndents;
 
       // Stepper button handlers
       document.querySelectorAll('.artstart-indent-btn').forEach(btn => {
@@ -2051,6 +2053,7 @@
       indentH?.addEventListener('change', updateIndents);
       indentV?.addEventListener('change', updateIndents);
       indentH?.addEventListener('input', updateIndents);
+      indentV?.addEventListener('input', updateIndents);
 
       // ========== BRIDGE TO LEGACY FIELD FORMAT ==========
       // Convert Tiptap HTML to legacy fields and vice versa
