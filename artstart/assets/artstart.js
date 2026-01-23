@@ -1921,11 +1921,15 @@ function autoscaleCanvasBands() {
       ? String(job.languagePrimary).trim().toUpperCase()
       : 'EN';
 
+    console.log('[populateJob] prevActiveLanguage:', prevActiveLanguage, 'baseLanguage:', baseLanguage);
+
     // Preserve user selection across fetchJob() refreshes.
     // Only snap to base if we have no prior selection.
     activeLanguage = prevActiveLanguage
       ? String(prevActiveLanguage).trim().toUpperCase()
       : baseLanguage;
+
+    console.log('[populateJob] activeLanguage after preserve:', activeLanguage);
 
     // Parse translations JSON
     try {
@@ -2003,8 +2007,10 @@ function autoscaleCanvasBands() {
     // Restore saved language selection for this job (prevents snap-back during async refreshes)
     var jobKey = (job && (job.jobId || job.ascendJobId)) || getJobIdFromQuery();
     var savedLang = loadActiveLanguage_(jobKey);
+    console.log('[populateJob] savedLang from localStorage:', savedLang);
     if (savedLang) {
       activeLanguage = savedLang;
+      console.log('[populateJob] activeLanguage set to savedLang:', activeLanguage);
     }
 
     // Merge local drafts last so fetchJob() can never overwrite unsaved/just-saved translation edits.
@@ -2139,7 +2145,9 @@ if (code === baseLanguage) {
     // If a non-base language is active, NEVER overwrite the 4 translation fields with EN.
     // Prefer: (1) cached translationsDb, (2) local lang draft v1, (3) backend translated-fields fetch.
     var usedTranslation = false;
+    console.log('[populateJob] Final check - activeLanguage:', activeLanguage, 'baseLanguage:', baseLanguage);
     if (activeLanguage && baseLanguage && activeLanguage !== baseLanguage) {
+      console.log('[populateJob] Loading translation content for:', activeLanguage);
       var keyUpper = String(activeLanguage).trim().toUpperCase();
       var keyLower = keyUpper.toLowerCase();
       var entry = translationsDb && (translationsDb[keyUpper] || translationsDb[keyLower]);
