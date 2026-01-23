@@ -522,7 +522,7 @@
       @media (min-aspect-ratio: 16/7) {
         .artstart-canvas-box[data-media-kind="digital"] .artstart-canvas-safe {
           inset: 2% 1.5%;
-          padding: 2% 1.5%;
+          padding: 0;
         }
       }
 
@@ -2027,7 +2027,7 @@
           const dir = parseInt(btn.dataset.dir, 10);
           const input = document.getElementById(targetId);
           if (input) {
-            let val = parseInt(input.value || '16', 10);
+            let val = parseInt(input.value || '0', 10);
             val = Math.max(0, Math.min(100, val + dir * 4)); // step by 4px
             input.value = val;
             updateIndents();
