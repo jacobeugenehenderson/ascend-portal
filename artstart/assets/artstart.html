@@ -664,13 +664,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 28px;
-        width: 36px;
+        height: 36px;
+        width: 44px;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
         background: #ffffff;
-        font-family: Georgia, 'Times New Roman', serif !important;
-        font-size: 22px;
+        font-family: inherit;
+        font-size: 28px;
         line-height: 1;
         color: #1e293b;
         cursor: pointer;
@@ -710,13 +710,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border: none;
         border-radius: 4px;
         background: transparent;
-        font-family: Georgia, 'Times New Roman', serif !important;
-        font-size: 20px;
+        font-family: inherit;
+        font-size: 24px;
         line-height: 1;
         color: #1e293b;
         cursor: pointer;
@@ -1755,14 +1755,22 @@
 
       // Font family
       const fontSelect = document.getElementById('toolbar-font');
+      const weightSelector = document.getElementById('toolbar-weight');
+
+      function updateWeightSelectorFont(fontFamily) {
+        if (weightSelector) {
+          weightSelector.style.fontFamily = fontFamily;
+        }
+      }
+
       if (fontSelect) {
         fontSelect.addEventListener('change', () => {
           editor.chain().focus().setFontFamily(fontSelect.value).run();
-        });
-        // Update the select to show in the selected font
-        fontSelect.addEventListener('change', () => {
           fontSelect.style.fontFamily = fontSelect.value;
+          updateWeightSelectorFont(fontSelect.value);
         });
+        // Initialize weight selector with current font
+        updateWeightSelectorFont(fontSelect.value);
       }
 
       // Font size (signal bars)
@@ -1787,7 +1795,6 @@
       }
 
       // Font weight + style custom dropdown
-      const weightSelector = document.getElementById('toolbar-weight');
       if (weightSelector) {
         const weightBtn = weightSelector.querySelector('.artstart-weight-btn');
         const weightDropdown = weightSelector.querySelector('.artstart-weight-dropdown');
