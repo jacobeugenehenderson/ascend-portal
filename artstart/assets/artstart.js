@@ -628,7 +628,37 @@ function applyTranslatedFields_(f) {
 
   // Update Tiptap editor if available
   if (typeof window.__ARTSTART_FIELDS_TO_HTML__ === 'function' && typeof window.__ARTSTART_SET_EDITOR_HTML__ === 'function') {
-    var html = window.__ARTSTART_FIELDS_TO_HTML__(f);
+    var html = null;
+
+    // Try to reconstruct HTML from template (preserves formatting)
+    var jobIdNow = currentJobId || getJobIdFromQuery();
+    var langNow = String(activeLanguage || '').trim().toUpperCase();
+
+    if (jobIdNow && langNow && typeof window.__ARTSTART_APPLY_TRANSLATION__ === 'function') {
+      try {
+        // Check if we have a template for this job+lang
+        var hasTemplate = typeof window.__ARTSTART_GET_TEMPLATE__ === 'function' &&
+                          window.__ARTSTART_GET_TEMPLATE__(jobIdNow, langNow);
+
+        if (hasTemplate) {
+          // Split translated bullets back into segments
+          var translatedBullets = String(f.workingBullets || '');
+          var segments = translatedBullets.split('\n').filter(function(s) { return s.length > 0; });
+
+          // Reconstruct HTML from template + translated segments
+          html = window.__ARTSTART_APPLY_TRANSLATION__(segments, jobIdNow, langNow);
+        }
+      } catch (_eRT) {
+        console.warn('Template reconstruction failed:', _eRT);
+        html = null;
+      }
+    }
+
+    // Fallback to legacy conversion if no template or reconstruction failed
+    if (!html) {
+      html = window.__ARTSTART_FIELDS_TO_HTML__(f);
+    }
+
     window.__ARTSTART_SET_EDITOR_HTML__(html);
   }
 
@@ -2888,6 +2918,14 @@ if (langSelect) {
           String(liveBaseFields.workingBullets  || '').trim() ||
           (editorHtml && editorHtml.length > 12)
         );
+
+        // Prepare HTML template for translation (preserves formatting)
+        // This extracts text segments and stores the HTML structure
+        if (editorHtml && typeof window.__ARTSTART_PREPARE_TRANSLATION__ === 'function') {
+          try {
+            window.__ARTSTART_PREPARE_TRANSLATION__(editorHtml, jobIdNow, next);
+          } catch (_ePT) {}
+        }
 
         // Store the editor HTML for translation
         liveBaseFields.workingEditorHtml = editorHtml;

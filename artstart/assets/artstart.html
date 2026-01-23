@@ -1947,6 +1947,126 @@
         };
       };
 
+      // ========== HTML-AWARE TRANSLATION ==========
+      // Storage for HTML templates during translation (block-level styles)
+      window.__ARTSTART_TRANSLATION_TEMPLATES__ = {};
+
+      // Prepare HTML for translation: extract block structure and text
+      window.__ARTSTART_PREPARE_TRANSLATION__ = function(html, jobId, targetLang) {
+        const container = document.createElement('div');
+        container.innerHTML = html;
+
+        // Extract block elements (p, li) with their styles
+        const blocks = container.querySelectorAll('p, li');
+        const template = [];
+
+        blocks.forEach(block => {
+          const text = block.textContent.trim();
+          if (text) {
+            template.push({
+              tag: block.tagName.toLowerCase(),
+              style: block.getAttribute('style') || '',
+              // Store parent info for list items
+              parentTag: block.parentElement ? block.parentElement.tagName.toLowerCase() : null
+            });
+          }
+        });
+
+        // Store template keyed by job+lang
+        const key = `${jobId}_${targetLang}`;
+        window.__ARTSTART_TRANSLATION_TEMPLATES__[key] = JSON.stringify(template);
+
+        // Also persist to localStorage in case of page refresh during translation
+        try {
+          localStorage.setItem('artstart_tpl_' + key, JSON.stringify(template));
+        } catch (e) {}
+
+        return template;
+      };
+
+      // Reconstruct HTML from translated segments using stored block styles
+      window.__ARTSTART_APPLY_TRANSLATION__ = function(translatedSegments, jobId, lang) {
+        const key = `${jobId}_${lang}`;
+
+        // Try memory first, then localStorage
+        let templateJson = window.__ARTSTART_TRANSLATION_TEMPLATES__[key];
+        if (!templateJson) {
+          try {
+            templateJson = localStorage.getItem('artstart_tpl_' + key);
+          } catch (e) {}
+        }
+
+        if (!templateJson) {
+          return null;
+        }
+
+        let template;
+        try {
+          template = JSON.parse(templateJson);
+        } catch (e) {
+          return null;
+        }
+
+        // Build HTML from template + translated text
+        const parts = [];
+        let inList = false;
+        let listType = null;
+
+        translatedSegments.forEach((text, idx) => {
+          const block = template[idx];
+          if (!block) {
+            // No template info, use plain paragraph
+            parts.push(`<p>${escapeHtml(text)}</p>`);
+            return;
+          }
+
+          // Apply auto-bold for dash patterns (preserves the feature)
+          const dashMatch = text.match(/^(.+?)\s+[-–—]{1,2}\s+(.+)$/);
+          let content;
+          if (dashMatch) {
+            content = `<strong>${escapeHtml(dashMatch[1])}</strong> – ${escapeHtml(dashMatch[2])}`;
+          } else {
+            content = escapeHtml(text);
+          }
+
+          const styleAttr = block.style ? ` style="${block.style}"` : '';
+
+          if (block.tag === 'li') {
+            // Handle list items
+            const parentList = block.parentTag === 'ol' ? 'ol' : 'ul';
+            if (!inList || listType !== parentList) {
+              if (inList) parts.push(`</${listType}>`);
+              parts.push(`<${parentList}>`);
+              inList = true;
+              listType = parentList;
+            }
+            parts.push(`<li${styleAttr}>${content}</li>`);
+          } else {
+            // Close any open list
+            if (inList) {
+              parts.push(`</${listType}>`);
+              inList = false;
+              listType = null;
+            }
+            parts.push(`<${block.tag}${styleAttr}>${content}</${block.tag}>`);
+          }
+        });
+
+        // Close any remaining open list
+        if (inList) {
+          parts.push(`</${listType}>`);
+        }
+
+        return parts.join('');
+      };
+
+      // Get stored template for a job+lang
+      window.__ARTSTART_GET_TEMPLATE__ = function(jobId, lang) {
+        const key = `${jobId}_${lang}`;
+        return window.__ARTSTART_TRANSLATION_TEMPLATES__[key] ||
+               localStorage.getItem('artstart_tpl_' + key);
+      };
+
       function escapeHtml(str) {
         const div = document.createElement('div');
         div.textContent = str;
