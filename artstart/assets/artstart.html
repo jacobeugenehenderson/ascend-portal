@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@200;300;400;500;600;700;800;900&family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@300;400;700&family=Open+Sans:wght@300;400;600;700&family=Montserrat:wght@300;400;600;700&family=Oswald:wght@300;400;600;700&family=Lato:wght@300;400;700&family=Raleway:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <style>
       /* Top-level styling comes from ascend-apps.css (same as job intake). */
@@ -555,9 +556,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 28px;
+        min-width: 32px;
         height: 28px;
-        padding: 0 6px;
+        padding: 0 8px;
         border: none;
         border-radius: 4px;
         background: transparent;
@@ -566,6 +567,11 @@
         font-weight: 500;
         cursor: pointer;
         transition: background 0.15s, color 0.15s;
+        white-space: nowrap;
+      }
+
+      .artstart-toolbar-btn .material-icons {
+        font-size: 18px;
       }
 
       .artstart-toolbar-btn:hover {
@@ -592,6 +598,35 @@
         border-color: #cbd5e1;
       }
 
+      /* Indent controls */
+      .artstart-indent-group {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .artstart-indent-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #6b7280;
+      }
+
+      .artstart-indent-input {
+        width: 42px;
+        height: 24px;
+        padding: 0 4px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 11px;
+        text-align: center;
+        background: #ffffff;
+      }
+
+      .artstart-indent-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+      }
+
       /* Color swatches */
       .artstart-color-swatch {
         width: 20px;
@@ -611,7 +646,6 @@
       }
 
       .artstart-color-swatch[data-color="black"] { background: #000000; }
-      .artstart-color-swatch[data-color="white"] { background: #ffffff; border: 2px solid #e2e8f0; }
       .artstart-color-swatch[data-color="blue"] { background: #0033a0; }
       .artstart-color-swatch[data-color="navy"] { background: #001a41; }
       .artstart-color-swatch[data-color="gold"] { background: #b8860b; }
@@ -743,8 +777,8 @@
 
       .artstart-canvas-safe .artstart-workspace-meta input[type="text"],
       .artstart-canvas-safe .artstart-workspace-meta input[type="email"] {
-        padding: 2px 0;
-        border: none;
+        padding: 2px 4px;
+        border: none !important;
         border-radius: 0;
         font-size: 10px;
         font-family: 'Source Sans 3', sans-serif;
@@ -754,17 +788,19 @@
         min-width: 100px;
         max-width: 180px;
         color: #374151;
-        box-shadow: none;
+        box-shadow: none !important;
       }
 
       .artstart-canvas-safe .artstart-workspace-meta input:hover {
         background: rgba(255, 255, 255, 0.5);
+        border: none !important;
       }
 
       .artstart-canvas-safe .artstart-workspace-meta input:focus {
         outline: none;
         background: rgba(255, 255, 255, 0.8);
-        box-shadow: none;
+        box-shadow: none !important;
+        border: none !important;
       }
 
       .artstart-canvas-safe .artstart-workspace-meta input::placeholder {
@@ -1098,22 +1134,34 @@
               <!-- Colors -->
               <div class="artstart-toolbar-group">
                 <button class="artstart-color-swatch is-active" data-color="black" title="Black"></button>
-                <button class="artstart-color-swatch" data-color="white" title="White"></button>
                 <button class="artstart-color-swatch" data-color="blue" title="Nordson Blue"></button>
                 <button class="artstart-color-swatch" data-color="navy" title="Nordson Navy"></button>
                 <button class="artstart-color-swatch" data-color="gold" title="Nordson Gold"></button>
               </div>
 
+              <!-- Text transform -->
+              <div class="artstart-toolbar-group">
+                <button class="artstart-toolbar-btn" id="toolbar-uppercase" title="All caps">AA</button>
+              </div>
+
               <!-- Alignment -->
               <div class="artstart-toolbar-group">
-                <button class="artstart-toolbar-btn is-active" id="toolbar-align-left" title="Align left">⫷</button>
-                <button class="artstart-toolbar-btn" id="toolbar-align-center" title="Align center">☰</button>
-                <button class="artstart-toolbar-btn" id="toolbar-align-right" title="Align right">⫸</button>
+                <button class="artstart-toolbar-btn is-active" id="toolbar-align-left" title="Align left"><span class="material-icons">format_align_left</span></button>
+                <button class="artstart-toolbar-btn" id="toolbar-align-center" title="Align center"><span class="material-icons">format_align_center</span></button>
+                <button class="artstart-toolbar-btn" id="toolbar-align-right" title="Align right"><span class="material-icons">format_align_right</span></button>
               </div>
 
               <!-- Bullets -->
               <div class="artstart-toolbar-group">
                 <button class="artstart-toolbar-btn" id="toolbar-bullets" title="Bullet list">•</button>
+              </div>
+
+              <!-- Indent controls -->
+              <div class="artstart-toolbar-group artstart-indent-group">
+                <label class="artstart-indent-label">H</label>
+                <input type="number" id="toolbar-indent-h" class="artstart-indent-input" value="8" min="0" max="50" title="Horizontal indent (%)">
+                <label class="artstart-indent-label">V</label>
+                <input type="number" id="toolbar-indent-v" class="artstart-indent-input" value="8" min="0" max="50" title="Vertical indent (%)">
               </div>
 
               <!-- Language selector (moved from working draft) -->
@@ -1334,7 +1382,6 @@
       // Brand color map
       const BRAND_COLORS = {
         black: '#000000',
-        white: '#ffffff',
         blue: '#0033a0',
         navy: '#001a41',
         gold: '#b8860b',
@@ -1479,6 +1526,36 @@
         editor.chain().focus().toggleBulletList().run();
         bulletsBtn.classList.toggle('is-active', editor.isActive('bulletList'));
       });
+
+      // Uppercase button
+      const uppercaseBtn = document.getElementById('toolbar-uppercase');
+      let isUppercase = false;
+      uppercaseBtn?.addEventListener('click', () => {
+        isUppercase = !isUppercase;
+        uppercaseBtn.classList.toggle('is-active', isUppercase);
+        const editorContent = document.querySelector('.artstart-editor .ProseMirror');
+        if (editorContent) {
+          editorContent.style.textTransform = isUppercase ? 'uppercase' : 'none';
+        }
+      });
+
+      // Indent controls
+      const indentH = document.getElementById('toolbar-indent-h');
+      const indentV = document.getElementById('toolbar-indent-v');
+      const canvasSafe = document.querySelector('.artstart-canvas-safe');
+
+      function updateIndents() {
+        if (!canvasSafe) return;
+        const h = parseInt(indentH?.value || '8', 10);
+        const v = parseInt(indentV?.value || '8', 10);
+        canvasSafe.style.inset = `${v}% ${h}%`;
+        canvasSafe.style.padding = `${Math.max(2, v - 2)}% ${Math.max(2, h - 2)}%`;
+      }
+
+      indentH?.addEventListener('change', updateIndents);
+      indentV?.addEventListener('change', updateIndents);
+      indentH?.addEventListener('input', updateIndents);
+      indentV?.addEventListener('input', updateIndents);
 
       // ========== BRIDGE TO LEGACY FIELD FORMAT ==========
       // Convert Tiptap HTML to legacy fields and vice versa
