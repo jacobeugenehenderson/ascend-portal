@@ -2037,10 +2037,12 @@
           const targetId = btn.dataset.target;
           const dir = parseInt(btn.dataset.dir, 10);
           const input = document.getElementById(targetId);
+          console.log('[indent-btn click]', targetId, 'dir:', dir, 'input:', input ? 'found' : 'NOT FOUND');
           if (input) {
             let val = parseInt(input.value || '0', 10);
             val = Math.max(0, Math.min(100, val + dir * 4)); // step by 4px
             input.value = val;
+            console.log('[indent-btn click] New value:', val, 'dispatching input event');
             updateIndents();
             // Dispatch input event to trigger autosave listeners
             input.dispatchEvent(new Event('input', { bubbles: true }));

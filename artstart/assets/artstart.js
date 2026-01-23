@@ -2737,15 +2737,18 @@ try {
 
     ['toolbar-indent-h', 'toolbar-indent-v'].forEach(function (id) {
       var el = document.getElementById(id);
+      console.log('[attachBlurListeners] Indent element', id, ':', el ? 'found' : 'NOT FOUND');
       if (!el) return;
 
       el.addEventListener('input', function () {
+        console.log('[indent input]', id, 'value:', el.value);
         setSaveStatus('Editing…');
         if (indentDebounceTimer) clearTimeout(indentDebounceTimer);
         indentDebounceTimer = setTimeout(saveIndentsOnly, 1500);
       });
 
       el.addEventListener('change', function () {
+        console.log('[indent change]', id, 'value:', el.value);
         setSaveStatus('Editing…');
         if (indentDebounceTimer) clearTimeout(indentDebounceTimer);
         indentDebounceTimer = setTimeout(saveIndentsOnly, 1500);
