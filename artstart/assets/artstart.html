@@ -1663,6 +1663,43 @@
       // Expose editor globally for artstart.js integration
       window.__ARTSTART_EDITOR__ = editor;
 
+      // ========== AUTO-BOLD ON ENTER ==========
+      // When user presses Enter and line contains " - " pattern, bold text before dash
+      editorEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+
+        // Get current paragraph text and position
+        const { state } = editor;
+        const { $from } = state.selection;
+        const currentNode = $from.parent;
+
+        if (currentNode.type.name !== 'paragraph' && currentNode.type.name !== 'listItem') return;
+
+        const text = currentNode.textContent;
+        const dashMatch = text.match(/^(.+?)\s+([-–—]{1,2})\s+(.+)$/);
+
+        if (!dashMatch) return;
+
+        // Found a dash pattern - prevent default and reformat
+        e.preventDefault();
+
+        const beforeText = dashMatch[1];
+        const afterText = dashMatch[3];
+
+        // Get paragraph start position
+        const paragraphStart = $from.start();
+        const beforeEnd = paragraphStart + beforeText.length;
+
+        // Select the "before" text and make it bold
+        editor.chain()
+          .focus()
+          .setTextSelection({ from: paragraphStart, to: beforeEnd })
+          .setBold()
+          .setTextSelection($from.end()) // move to end
+          .insertContent('<br>') // or split to new line
+          .run();
+      });
+
       // ========== TOOLBAR BINDINGS ==========
 
       // Prevent toolbar buttons from stealing focus
