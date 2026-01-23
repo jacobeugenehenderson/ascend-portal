@@ -2042,6 +2042,8 @@
             val = Math.max(0, Math.min(100, val + dir * 4)); // step by 4px
             input.value = val;
             updateIndents();
+            // Dispatch input event to trigger autosave listeners
+            input.dispatchEvent(new Event('input', { bubbles: true }));
           }
         });
       });
