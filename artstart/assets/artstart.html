@@ -1766,9 +1766,15 @@
 
       if (fontSelect) {
         fontSelect.addEventListener('change', () => {
-          editor.chain().focus().setFontFamily(fontSelect.value).run();
-          fontSelect.style.fontFamily = fontSelect.value;
-          updateWeightSelectorFont(fontSelect.value);
+          const font = fontSelect.value;
+          // Unset font if returning to default, otherwise set explicitly
+          if (font === 'Source Sans 3') {
+            editor.chain().focus().unsetFontFamily().run();
+          } else {
+            editor.chain().focus().setFontFamily(font).run();
+          }
+          fontSelect.style.fontFamily = font;
+          updateWeightSelectorFont(font);
         });
         // Initialize weight selector with current font
         updateWeightSelectorFont(fontSelect.value);
