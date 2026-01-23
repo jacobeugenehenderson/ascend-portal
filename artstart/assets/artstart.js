@@ -3376,7 +3376,10 @@ if (langSelect) {
         }
 
         // Only commit as human if it was already human, or we have a real diff against an existing record.
-        if (wasHuman || stPrev === 'human' || changed) {
+        // IMPORTANT: Skip if a translation action (reset/retranslate) is in progress - the async callback
+        // will handle state correctly. Without this check, switching languages during a reset
+        // would incorrectly save the translation as human before the reset's .then() runs.
+        if (!__ARTSTART_TRANSLATION_ACTION__ && (wasHuman || stPrev === 'human' || changed)) {
           translationsDb = translationsDb || {};
           translationsDb[prevLang] = translationsDb[prevLang] || {};
           translationsDb[prevLang].human = true;
