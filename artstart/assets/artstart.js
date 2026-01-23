@@ -2477,12 +2477,12 @@ try {
     '?action=' + (isBase ? 'updateArtStartDraftFields' : 'updateArtStartTranslatedFields') +
     (isBase ? '' : ('&lang=' + encodeURIComponent(langToSave)));
 
-  Object.keys(payload).forEach(function (key) {
-    var value = payload[key];
-    url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
-  });
-
-  return fetch(url)
+  // Use POST with JSON body to handle large payloads (editor HTML can exceed URL length limits)
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (!data || data.success === false) {
