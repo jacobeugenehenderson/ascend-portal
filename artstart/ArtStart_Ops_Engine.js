@@ -1865,21 +1865,24 @@ function doGet(e) {
         }
       }
 
-      // HTML-aware translation: translate text content while preserving HTML structure
+      // HTML-aware translation: Google Translate often preserves HTML tags
       function translateHtml_(html) {
         if (!html) return '';
-        // Match block elements (p, li) and translate their text content
-        // Preserves attributes like style=""
+        // Try translating the entire HTML - Google Translate usually preserves tags
+        try {
+          var translated = LanguageApp.translate(html, baseLang, targetLang);
+          // Verify we got HTML back (not mangled)
+          if (translated && translated.indexOf('<') !== -1) {
+            return translated;
+          }
+        } catch (e) {}
+
+        // Fallback: translate block by block, preserving structure but losing inline formatting
         return html.replace(/<(p|li)([^>]*)>([\s\S]*?)<\/\1>/gi, function(match, tag, attrs, content) {
-          // Don't translate empty content
           if (!content.trim()) return match;
-          // Translate the text content (may contain inline tags like <strong>)
-          // Strip HTML for translation, then we'll lose inline formatting
-          // Better approach: translate text nodes only
           var textOnly = content.replace(/<[^>]+>/g, '').trim();
           if (!textOnly) return match;
           var translatedText = tr_(textOnly);
-          // Reconstruct with translated text (inline formatting will be reapplied by client)
           return '<' + tag + attrs + '>' + translatedText + '</' + tag + '>';
         });
       }
