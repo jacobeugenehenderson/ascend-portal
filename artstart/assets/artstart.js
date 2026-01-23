@@ -2872,23 +2872,25 @@ if (langSelect) {
     // Default: use cached EN snapshot (written during EN hydration)
     try { baseHasText = baseHasTextForJob_(jobIdNow); } catch (_eBHC) { baseHasText = false; }
 
-    // If we are currently in EN and leaving it, compute live from the DOM and refresh the cache
+    // If we are currently in EN and leaving it, compute live from the editor and refresh the cache
     if (leavingBase) {
       try {
-        var liveBaseFields = {
-          workingHeadline: String(((document.getElementById('working-headline') || {}).value) || ''),
-          workingSubhead:  String(((document.getElementById('working-subhead')  || {}).value) || ''),
-          workingCta:      String(((document.getElementById('working-cta')      || {}).value) || ''),
-          workingBullets:  String(((document.getElementById('working-bullets')  || {}).value) || '')
-        };
+        var liveBaseFields = _readWorkingFields_();
+
+        // Check editor HTML for content
+        var editorHtml = '';
+        try { editorHtml = window.__ARTSTART_GET_EDITOR_HTML__ ? window.__ARTSTART_GET_EDITOR_HTML__() : ''; } catch (_eH) {}
 
         baseHasText = !!(
           String(liveBaseFields.workingHeadline || '').trim() ||
           String(liveBaseFields.workingSubhead  || '').trim() ||
           String(liveBaseFields.workingCta      || '').trim() ||
-          String(liveBaseFields.workingBullets  || '').trim()
+          String(liveBaseFields.workingBullets  || '').trim() ||
+          (editorHtml && editorHtml.length > 12)
         );
 
+        // Store the editor HTML for translation
+        liveBaseFields.workingEditorHtml = editorHtml;
         try { saveBaseText_(jobIdNow, liveBaseFields); } catch (_eBHS) {}
       } catch (_eBH) { baseHasText = baseHasTextForJob_(jobIdNow); }
     }
@@ -2897,12 +2899,9 @@ if (langSelect) {
     try {
       var prevLang = prevLangSafe;
       if (prevLang && prevLang !== baseLanguage) {
-        var snap = {
-          workingHeadline: (document.getElementById('working-headline') || {}).value || '',
-          workingSubhead:  (document.getElementById('working-subhead')  || {}).value || '',
-          workingCta:      (document.getElementById('working-cta')      || {}).value || '',
-          workingBullets:  (document.getElementById('working-bullets')  || {}).value || ''
-        };
+        var snap = _readWorkingFields_();
+        // Also capture editor HTML
+        try { snap.workingEditorHtml = window.__ARTSTART_GET_EDITOR_HTML__ ? window.__ARTSTART_GET_EDITOR_HTML__() : ''; } catch (_eSnap) {}
 
         // If this language is still "machine" and the user hasn't changed anything,
         // do NOT flip it to human or write a draft (prevents false "human edited" persistence).
