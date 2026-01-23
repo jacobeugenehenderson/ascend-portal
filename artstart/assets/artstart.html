@@ -1716,8 +1716,13 @@
       // Expose editor globally for artstart.js integration
       window.__ARTSTART_EDITOR__ = editor;
 
+      // ========== BULLET DASH PATTERN ==========
+      // Pattern: "Label - description" where text before dash gets bolded
+      // Matches: text, whitespace, 1-2 dashes (hyphen/en/em), whitespace, optional text
+      const DASH_PATTERN = /^(.+?)\s+([-–—]{1,2})\s+(.*)$/;
+
       // ========== AUTO-BOLD ON ENTER (LIST ITEMS ONLY) ==========
-      // When user presses Enter in a list item with " - " pattern, bold text before dash
+      // When user presses Enter in a list item with dash pattern, bold text before dash
       // Only applies in bullet/ordered lists, not regular paragraphs
       editorEl.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
@@ -1734,7 +1739,7 @@
         if (currentNode.type.name !== 'paragraph') return;
 
         const text = currentNode.textContent;
-        const dashMatch = text.match(/^(.+?)\s+([-–—]{1,2})\s+(.+)$/);
+        const dashMatch = text.match(DASH_PATTERN);
 
         if (!dashMatch) return;
 
@@ -1742,19 +1747,33 @@
         e.preventDefault();
 
         const beforeText = dashMatch[1];
-
-        // Get paragraph start position
         const paragraphStart = $from.start();
         const beforeEnd = paragraphStart + beforeText.length;
 
-        // Select the "before" text, make it bold, then split list item
-        editor.chain()
-          .focus()
-          .setTextSelection({ from: paragraphStart, to: beforeEnd })
-          .setBold()
-          .setTextSelection($from.end()) // move to end
-          .splitListItem('listItem') // create new list item
-          .run();
+        // Check if already bold - if so, just split
+        let alreadyBold = true;
+        const checkLen = Math.min(beforeText.length, currentNode.content.size);
+        if (checkLen > 0) {
+          currentNode.nodesBetween(0, checkLen, (child) => {
+            if (child.isText && !child.marks.some(m => m.type.name === 'bold')) {
+              alreadyBold = false;
+            }
+          });
+        }
+
+        if (alreadyBold) {
+          // Already bold, just split the list item
+          editor.chain().focus().splitListItem('listItem').run();
+        } else {
+          // Apply bold then split
+          editor.chain()
+            .focus()
+            .setTextSelection({ from: paragraphStart, to: beforeEnd })
+            .setBold()
+            .setTextSelection($from.end())
+            .splitListItem('listItem')
+            .run();
+        }
       });
 
       // ========== TOOLBAR BINDINGS ==========
@@ -1937,74 +1956,220 @@
         updateAlignButtons('right');
       });
 
-      // Bullet list with dash-bold formatting
+      // ========== BULLET LIST WITH DASH-BOLD FORMATTING ==========
       const bulletsBtn = document.getElementById('toolbar-bullets');
       bulletsBtn?.addEventListener('click', () => {
         const wasActive = editor.isActive('bulletList');
 
-        // Toggle the bullet list
-        editor.chain().focus().toggleBulletList().run();
-
-        // If we just CREATED a bullet list (not removed), apply dash-bold formatting
-        // Use setTimeout to let editor state settle after toggle
-        if (!wasActive) {
-          setTimeout(() => {
-            if (editor.isActive('bulletList')) {
-              applyDashBoldToListItems();
-            }
-            bulletsBtn.classList.toggle('is-active', editor.isActive('bulletList'));
-          }, 0);
+        if (wasActive) {
+          // REMOVING bullets: first remove bold from dash patterns, then remove list
+          removeDashBoldFromCurrentList();
+          editor.chain().focus().toggleBulletList().run();
         } else {
-          bulletsBtn.classList.toggle('is-active', editor.isActive('bulletList'));
+          // ADDING bullets: first add list, then apply bold to dash patterns
+          editor.chain().focus().toggleBulletList().run();
+          // Wait for editor state to settle, then apply formatting
+          requestAnimationFrame(() => {
+            if (editor.isActive('bulletList')) {
+              applyDashBoldToCurrentList();
+            }
+          });
         }
+
+        // Update button state
+        requestAnimationFrame(() => {
+          bulletsBtn.classList.toggle('is-active', editor.isActive('bulletList'));
+        });
       });
 
-      // Apply bold to text before dash pattern in all list items
-      function applyDashBoldToListItems() {
-        const state = editor.view.state;
-        const { tr, doc, schema } = state;
-        const boldMark = schema.marks.bold;
+      // Find the bullet/ordered list containing the current selection
+      function findCurrentList() {
+        const { state } = editor;
+        const { selection, doc } = state;
+        const $from = selection.$from;
 
-        // Collect all ranges that need bold marks
+        // Walk up from cursor position to find containing list
+        for (let d = $from.depth; d >= 0; d--) {
+          const node = $from.node(d);
+          if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
+            // Found the list - return its position range
+            const listStart = $from.before(d);
+            const listEnd = $from.after(d);
+            return { node, start: listStart, end: listEnd };
+          }
+        }
+        return null;
+      }
+
+      // Apply bold to text before dash pattern in current list
+      function applyDashBoldToCurrentList() {
+        const list = findCurrentList();
+        if (!list) return;
+
+        const { state } = editor;
+        const { doc, schema } = state;
+        const boldMark = schema.marks.bold;
+        if (!boldMark) return;
+
         const ranges = [];
 
-        doc.descendants((node, pos) => {
-          // Look for paragraphs directly
-          if (node.type.name === 'paragraph') {
-            // Check if this paragraph is inside a listItem
-            const $pos = doc.resolve(pos);
-            let inListItem = false;
-            for (let d = $pos.depth; d > 0; d--) {
-              if ($pos.node(d).type.name === 'listItem') {
-                inListItem = true;
-                break;
-              }
-            }
+        // Process all paragraphs within the list
+        doc.nodesBetween(list.start, list.end, (node, pos) => {
+          if (node.type.name !== 'paragraph') return;
 
-            if (inListItem) {
-              const text = node.textContent;
-              const dashMatch = text.match(/^(.+?)\s+([-–—]{1,2})\s+(.+)$/);
-
-              if (dashMatch) {
-                const beforeText = dashMatch[1];
-                // pos is before paragraph, +1 to get inside paragraph at text start
-                const startPos = pos + 1;
-                const endPos = startPos + beforeText.length;
-                ranges.push({ from: startPos, to: endPos });
-              }
+          // Verify this paragraph is inside a list item
+          const $pos = doc.resolve(pos + 1);
+          let inListItem = false;
+          for (let d = $pos.depth; d >= 0; d--) {
+            if ($pos.node(d).type.name === 'listItem') {
+              inListItem = true;
+              break;
             }
+          }
+          if (!inListItem) return;
+
+          // Get text content and find dash pattern
+          const text = node.textContent;
+          const match = text.match(DASH_PATTERN);
+          if (!match) return;
+
+          const beforeText = match[1];
+          const contentStart = pos + 1;
+          const boldEnd = contentStart + beforeText.length;
+
+          // Check if any part needs bolding
+          let needsBold = false;
+          const checkLen = Math.min(beforeText.length, node.content.size);
+          if (checkLen > 0) {
+            node.nodesBetween(0, checkLen, (child) => {
+              if (child.isText && !child.marks.some(m => m.type.name === 'bold')) {
+                needsBold = true;
+              }
+            });
+          } else {
+            needsBold = true; // Empty content, can't check
+          }
+
+          if (needsBold) {
+            ranges.push({ from: contentStart, to: boldEnd });
           }
         });
 
-        // Apply all bold marks in a single transaction
+        // Apply bold marks in a single transaction
         if (ranges.length > 0) {
-          let transaction = tr;
+          const tr = state.tr;
           ranges.forEach(({ from, to }) => {
-            transaction = transaction.addMark(from, to, boldMark.create());
+            tr.addMark(from, to, boldMark.create());
           });
-          editor.view.dispatch(transaction);
+          editor.view.dispatch(tr);
         }
       }
+
+      // Remove bold from dash patterns in current list when removing bullets
+      function removeDashBoldFromCurrentList() {
+        const list = findCurrentList();
+        if (!list) return;
+
+        const { state } = editor;
+        const { doc, schema } = state;
+        const boldMark = schema.marks.bold;
+        if (!boldMark) return;
+
+        const ranges = [];
+
+        doc.nodesBetween(list.start, list.end, (node, pos) => {
+          if (node.type.name !== 'paragraph') return;
+
+          // Verify inside list item
+          const $pos = doc.resolve(pos + 1);
+          let inListItem = false;
+          for (let d = $pos.depth; d >= 0; d--) {
+            if ($pos.node(d).type.name === 'listItem') {
+              inListItem = true;
+              break;
+            }
+          }
+          if (!inListItem) return;
+
+          // Get text content and find dash pattern
+          const text = node.textContent;
+          const match = text.match(DASH_PATTERN);
+          if (!match) return;
+
+          const beforeText = match[1];
+          const contentStart = pos + 1;
+          const boldEnd = contentStart + beforeText.length;
+
+          ranges.push({ from: contentStart, to: boldEnd });
+        });
+
+        // Remove bold marks in a single transaction
+        if (ranges.length > 0) {
+          const tr = state.tr;
+          ranges.forEach(({ from, to }) => {
+            tr.removeMark(from, to, boldMark);
+          });
+          editor.view.dispatch(tr);
+        }
+      }
+
+      // Apply dash-bold to ALL list items in document (for loaded content)
+      function applyDashBoldToAllListItems() {
+        const { state } = editor;
+        const { doc, schema } = state;
+        const boldMark = schema.marks.bold;
+        if (!boldMark) return;
+
+        const ranges = [];
+
+        doc.descendants((node, pos) => {
+          if (node.type.name !== 'paragraph') return;
+
+          // Check if inside a list item
+          const $pos = doc.resolve(pos + 1);
+          let inListItem = false;
+          for (let d = $pos.depth; d >= 0; d--) {
+            if ($pos.node(d).type.name === 'listItem') {
+              inListItem = true;
+              break;
+            }
+          }
+          if (!inListItem) return;
+
+          const text = node.textContent;
+          const match = text.match(DASH_PATTERN);
+          if (!match) return;
+
+          const beforeText = match[1];
+          const contentStart = pos + 1;
+
+          // Check if already bold
+          let alreadyBold = true;
+          let checkLen = Math.min(beforeText.length, node.content.size);
+          if (checkLen > 0) {
+            node.nodesBetween(0, checkLen, (child) => {
+              if (child.isText && !child.marks.some(m => m.type.name === 'bold')) {
+                alreadyBold = false;
+              }
+            });
+          }
+
+          if (!alreadyBold) {
+            ranges.push({ from: contentStart, to: contentStart + beforeText.length });
+          }
+        });
+
+        if (ranges.length > 0) {
+          const tr = state.tr;
+          ranges.forEach(({ from, to }) => {
+            tr.addMark(from, to, boldMark.create());
+          });
+          editor.view.dispatch(tr);
+        }
+      }
+
+      // Expose for use after loading content
+      window.__ARTSTART_APPLY_DASH_BOLD__ = applyDashBoldToAllListItems;
 
       // Uppercase button - applies to selected text only
       const uppercaseBtn = document.getElementById('toolbar-uppercase');
@@ -2080,12 +2245,13 @@
         console.log('[SET_EDITOR_HTML] Input HTML length:', (html || '').length);
         console.log('[SET_EDITOR_HTML] Input HTML preview:', (html || '').substring(0, 300));
         editor.commands.setContent(html || '<p></p>');
-        // Log what the editor actually parsed
-        setTimeout(() => {
+        // After content loads, apply dash-bold formatting to any list items
+        requestAnimationFrame(() => {
+          applyDashBoldToAllListItems();
           const resultHtml = editor.getHTML();
           console.log('[SET_EDITOR_HTML] Result HTML length:', resultHtml.length);
           console.log('[SET_EDITOR_HTML] Result HTML preview:', resultHtml.substring(0, 300));
-        }, 100);
+        });
       };
 
       // Set editor content from JSON
@@ -2115,18 +2281,22 @@
         }
         if (f.workingBullets) {
           const lines = f.workingBullets.split('\n').filter(l => l.trim());
-          lines.forEach(l => {
-            // If line contains " - ", bold the part before it
-            // Match " - ", " -- ", " – " (en dash), " — " (em dash)
-            const dashMatch = l.match(/^(.+?)\s+[-–—]{1,2}\s+(.+)$/);
-            if (dashMatch) {
-              const before = dashMatch[1];
-              const after = dashMatch[2];
-              parts.push(`<p><strong>${escapeHtml(before)}</strong> – ${escapeHtml(after)}</p>`);
-            } else {
-              parts.push(`<p>${escapeHtml(l)}</p>`);
-            }
-          });
+          if (lines.length > 0) {
+            // Create proper bullet list with dash-bold formatting
+            const listItems = lines.map(l => {
+              // If line contains " - ", bold the part before it
+              const dashMatch = l.match(/^(.+?)\s+([-–—]{1,2})\s+(.*)$/);
+              if (dashMatch) {
+                const before = dashMatch[1];
+                const dash = '–'; // normalize to en-dash
+                const after = dashMatch[3];
+                return `<li><p><strong>${escapeHtml(before)}</strong> ${dash} ${escapeHtml(after)}</p></li>`;
+              } else {
+                return `<li><p>${escapeHtml(l)}</p></li>`;
+              }
+            });
+            parts.push(`<ul>${listItems.join('')}</ul>`);
+          }
         }
 
         return parts.length > 0 ? parts.join('') : '<p></p>';
@@ -2236,11 +2406,11 @@
           const styleAttr = block.style ? ` style="${block.style}"` : '';
 
           if (block.tag === 'li') {
-            // Handle list items - apply auto-bold for dash patterns (only for bullets)
-            const dashMatch = text.match(/^(.+?)\s+[-–—]{1,2}\s+(.+)$/);
+            // Handle list items - apply auto-bold for dash patterns (bullets only)
+            const dashMatch = text.match(/^(.+?)\s+([-–—]{1,2})\s+(.*)$/);
             let content;
             if (dashMatch) {
-              content = `<strong>${escapeHtml(dashMatch[1])}</strong> – ${escapeHtml(dashMatch[2])}`;
+              content = `<strong>${escapeHtml(dashMatch[1])}</strong> – ${escapeHtml(dashMatch[3])}`;
             } else {
               content = escapeHtml(text);
             }
@@ -2252,7 +2422,8 @@
               inList = true;
               listType = parentList;
             }
-            parts.push(`<li${styleAttr}>${content}</li>`);
+            // Use <p> wrapper inside <li> for Tiptap compatibility
+            parts.push(`<li><p${styleAttr}>${content}</p></li>`);
           } else {
             // Close any open list
             if (inList) {
