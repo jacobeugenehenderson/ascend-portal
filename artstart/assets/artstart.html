@@ -654,41 +654,82 @@
       .artstart-size-signal .artstart-size-bar:nth-child(4) { height: 13px; }
       .artstart-size-signal .artstart-size-bar:nth-child(5) { height: 16px; }
 
-      /* Weight/Style dropdown with styled 'a' characters */
-      .artstart-weight-select {
-        height: 36px;
-        line-height: 34px;
-        padding: 0 12px;
+      /* Weight/Style selector with styled 'a' glyph */
+      .artstart-weight-selector {
+        position: relative;
+        display: inline-block;
+      }
+
+      .artstart-weight-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
+        width: 36px;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
         background: #ffffff;
         font-family: Georgia, 'Times New Roman', serif !important;
-        font-size: 24px;
+        font-size: 22px;
+        line-height: 1;
         color: #1e293b;
         cursor: pointer;
-        min-width: 52px;
-        text-align: center;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        overflow: visible;
+        transition: background 0.15s;
       }
 
-      .artstart-weight-select option {
+      .artstart-weight-btn:hover {
+        background: #f1f5f9;
+      }
+
+      .artstart-weight-btn:active,
+      .artstart-weight-btn.is-open {
+        background: #e2e8f0;
+      }
+
+      .artstart-weight-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 50%;
+        transform: translateX(-50%);
+        display: none;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+      }
+
+      .artstart-weight-dropdown.is-open {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2px;
+      }
+
+      .artstart-weight-option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
         font-family: Georgia, 'Times New Roman', serif !important;
         font-size: 20px;
-        padding: 4px 8px;
+        line-height: 1;
+        color: #1e293b;
+        cursor: pointer;
+        transition: background 0.15s;
       }
 
-      /* Weight variants - unfortunately browsers limit option styling */
-      .artstart-weight-select option[value="300"] { font-weight: 300; }
-      .artstart-weight-select option[value="300i"] { font-weight: 300; font-style: italic; }
-      .artstart-weight-select option[value="400"] { font-weight: 400; }
-      .artstart-weight-select option[value="400i"] { font-weight: 400; font-style: italic; }
-      .artstart-weight-select option[value="600"] { font-weight: 600; }
-      .artstart-weight-select option[value="600i"] { font-weight: 600; font-style: italic; }
-      .artstart-weight-select option[value="700"] { font-weight: 700; }
-      .artstart-weight-select option[value="700i"] { font-weight: 700; font-style: italic; }
+      .artstart-weight-option:hover {
+        background: #f1f5f9;
+      }
+
+      .artstart-weight-option.is-active {
+        background: #e2e8f0;
+      }
 
       /* Indent controls with stepper buttons */
       .artstart-indent-group {
@@ -1253,16 +1294,19 @@
 
               <!-- Weight + Style -->
               <div class="artstart-toolbar-group">
-                <select class="artstart-weight-select" id="toolbar-weight" title="Weight & Style">
-                  <option value="300" style="font-weight:300">a</option>
-                  <option value="300i" style="font-weight:300;font-style:italic">a</option>
-                  <option value="400" selected style="font-weight:400">a</option>
-                  <option value="400i" style="font-weight:400;font-style:italic">a</option>
-                  <option value="600" style="font-weight:600">a</option>
-                  <option value="600i" style="font-weight:600;font-style:italic">a</option>
-                  <option value="700" style="font-weight:700">a</option>
-                  <option value="700i" style="font-weight:700;font-style:italic">a</option>
-                </select>
+                <div class="artstart-weight-selector" id="toolbar-weight">
+                  <button type="button" class="artstart-weight-btn" title="Weight & Style" data-value="400" style="font-weight:400;font-style:normal">a</button>
+                  <div class="artstart-weight-dropdown">
+                    <button type="button" class="artstart-weight-option" data-value="300" style="font-weight:300">a</button>
+                    <button type="button" class="artstart-weight-option is-active" data-value="400" style="font-weight:400">a</button>
+                    <button type="button" class="artstart-weight-option" data-value="600" style="font-weight:600">a</button>
+                    <button type="button" class="artstart-weight-option" data-value="700" style="font-weight:700">a</button>
+                    <button type="button" class="artstart-weight-option" data-value="300i" style="font-weight:300;font-style:italic">a</button>
+                    <button type="button" class="artstart-weight-option" data-value="400i" style="font-weight:400;font-style:italic">a</button>
+                    <button type="button" class="artstart-weight-option" data-value="600i" style="font-weight:600;font-style:italic">a</button>
+                    <button type="button" class="artstart-weight-option" data-value="700i" style="font-weight:700;font-style:italic">a</button>
+                  </div>
+                </div>
               </div>
 
               <!-- Colors -->
@@ -1742,26 +1786,59 @@
         });
       }
 
-      // Font weight + style dropdown
-      const weightSelect = document.getElementById('toolbar-weight');
-      if (weightSelect) {
-        // Prevent focus loss when clicking the select
-        weightSelect.addEventListener('mousedown', (e) => {
-          // Store selection before dropdown opens
+      // Font weight + style custom dropdown
+      const weightSelector = document.getElementById('toolbar-weight');
+      if (weightSelector) {
+        const weightBtn = weightSelector.querySelector('.artstart-weight-btn');
+        const weightDropdown = weightSelector.querySelector('.artstart-weight-dropdown');
+        const weightOptions = weightSelector.querySelectorAll('.artstart-weight-option');
+
+        // Toggle dropdown on button click
+        weightBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           window.__lastEditorSelection__ = editor.state.selection;
+          const isOpen = weightDropdown.classList.toggle('is-open');
+          weightBtn.classList.toggle('is-open', isOpen);
         });
 
-        weightSelect.addEventListener('change', () => {
-          const val = weightSelect.value;
-          const isItalic = val.endsWith('i');
-          const weight = isItalic ? val.slice(0, -1) : val;
+        // Handle option selection
+        weightOptions.forEach(option => {
+          option.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const val = option.dataset.value;
+            const isItalic = val.endsWith('i');
+            const weight = isItalic ? val.slice(0, -1) : val;
 
-          // Restore selection and apply both weight and italic
-          editor.chain()
-            .focus()
-            .setFontWeight(weight)
-            .setFontStyle(isItalic ? 'italic' : 'normal')
-            .run();
+            // Update button appearance to match selection
+            weightBtn.style.fontWeight = weight;
+            weightBtn.style.fontStyle = isItalic ? 'italic' : 'normal';
+            weightBtn.dataset.value = val;
+
+            // Update active state
+            weightOptions.forEach(o => o.classList.remove('is-active'));
+            option.classList.add('is-active');
+
+            // Close dropdown
+            weightDropdown.classList.remove('is-open');
+            weightBtn.classList.remove('is-open');
+
+            // Apply to editor
+            editor.chain()
+              .focus()
+              .setFontWeight(weight)
+              .setFontStyle(isItalic ? 'italic' : 'normal')
+              .run();
+          });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!weightSelector.contains(e.target)) {
+            weightDropdown.classList.remove('is-open');
+            weightBtn.classList.remove('is-open');
+          }
         });
       }
 
