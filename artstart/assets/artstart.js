@@ -2387,6 +2387,9 @@ function saveDraft(jobId, langOverride) {
 
   var payload = buildDraftPayload(jobId);
 
+  console.log('[saveDraft] Payload workingBullets:', payload.workingBullets);
+  console.log('[saveDraft] Payload workingEditorHtml:', payload.workingEditorHtml);
+
   var isBase = (langToSave === baseLanguage);
 
 // Guard: on unload, never persist a blank Working Draft snapshot.

@@ -2020,19 +2020,18 @@
             return;
           }
 
-          // Apply auto-bold for dash patterns (preserves the feature)
-          const dashMatch = text.match(/^(.+?)\s+[-–—]{1,2}\s+(.+)$/);
-          let content;
-          if (dashMatch) {
-            content = `<strong>${escapeHtml(dashMatch[1])}</strong> – ${escapeHtml(dashMatch[2])}`;
-          } else {
-            content = escapeHtml(text);
-          }
-
           const styleAttr = block.style ? ` style="${block.style}"` : '';
 
           if (block.tag === 'li') {
-            // Handle list items
+            // Handle list items - apply auto-bold for dash patterns (only for bullets)
+            const dashMatch = text.match(/^(.+?)\s+[-–—]{1,2}\s+(.+)$/);
+            let content;
+            if (dashMatch) {
+              content = `<strong>${escapeHtml(dashMatch[1])}</strong> – ${escapeHtml(dashMatch[2])}`;
+            } else {
+              content = escapeHtml(text);
+            }
+
             const parentList = block.parentTag === 'ol' ? 'ol' : 'ul';
             if (!inList || listType !== parentList) {
               if (inList) parts.push(`</${listType}>`);
@@ -2048,7 +2047,8 @@
               inList = false;
               listType = null;
             }
-            parts.push(`<${block.tag}${styleAttr}>${content}</${block.tag}>`);
+            // Regular paragraphs - no auto-bold
+            parts.push(`<${block.tag}${styleAttr}>${escapeHtml(text)}</${block.tag}>`);
           }
         });
 
