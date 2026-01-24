@@ -171,24 +171,6 @@ def generate_pdf_thumbnail(source_path: Path, thumb_path: Path) -> bool:
         return False
 
 
-def get_dominant_color(img_path: Path) -> str:
-    """Extract dominant color from an image, return as hex string."""
-    try:
-        with Image.open(img_path) as img:
-            # Resize to tiny size for fast color averaging
-            small = img.convert('RGB').resize((50, 50), Image.LANCZOS)
-            pixels = list(small.getdata())
-
-            # Calculate average color
-            r = sum(p[0] for p in pixels) // len(pixels)
-            g = sum(p[1] for p in pixels) // len(pixels)
-            b = sum(p[2] for p in pixels) // len(pixels)
-
-            return f"#{r:02x}{g:02x}{b:02x}"
-    except:
-        return "#e2e8f0"  # Default gray
-
-
 def generate_image_thumbnail(source_path: Path, thumb_path: Path, ext: str) -> bool:
     """Generate thumbnail for regular images (jpg, png, gif, webp) or copy SVG."""
     try:
@@ -242,7 +224,6 @@ def generate_thumbnail(asset: dict, library_path: Path, thumbs_path: Path) -> bo
             thumb_mtime = thumb_path.stat().st_mtime
             if thumb_mtime >= source_mtime:
                 asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_filename}"
-                asset["thumbColor"] = get_dominant_color(thumb_path)
                 return True
         except:
             pass
@@ -253,7 +234,6 @@ def generate_thumbnail(asset: dict, library_path: Path, thumbs_path: Path) -> bo
     if ext == "pdf":
         if generate_pdf_thumbnail(source_path, thumb_path):
             asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_filename}"
-            asset["thumbColor"] = get_dominant_color(thumb_path)
             return True
         return False
 
@@ -263,10 +243,8 @@ def generate_thumbnail(asset: dict, library_path: Path, thumbs_path: Path) -> bo
             # SVG keeps its extension, others become .webp
             if ext == 'svg':
                 asset["thumbUrl"] = f"{THUMBS_DIR}/{asset['id']}.svg"
-                asset["thumbColor"] = "#e2e8f0"  # Default for SVG
             else:
                 asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_filename}"
-                asset["thumbColor"] = get_dominant_color(thumb_path)
             return True
         return False
 
@@ -284,7 +262,6 @@ def generate_thumbnail(asset: dict, library_path: Path, thumbs_path: Path) -> bo
         if ql_output.exists():
             shutil.move(str(ql_output), str(thumb_path))
             asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_filename}"
-            asset["thumbColor"] = get_dominant_color(thumb_path)
             return True
         else:
             return False

@@ -439,11 +439,8 @@
       return folder === folderPath || folder.startsWith(folderPath + '/');
     });
 
-    // Get first N assets with thumbnails and their colors
-    return assets.slice(0, count).map(a => ({
-      url: getThumbUrl(a),
-      color: a.thumbColor || '#e2e8f0'
-    }));
+    // Get first N assets with thumbnails
+    return assets.slice(0, count).map(a => getThumbUrl(a));
   }
 
   function renderBreadcrumbs() {
@@ -481,16 +478,9 @@
     }
 
     container.innerHTML = folders.map(folder => {
-      // Filter to only valid previews (those with urls)
-      const validPreviews = folder.previews.filter(p => p && p.url);
+      // Filter to only valid preview URLs
+      const validPreviews = folder.previews.filter(url => url);
       const count = validPreviews.length;
-
-      // Calculate average color from previews for empty slot background
-      let avgColor = '#e2e8f0';
-      if (validPreviews.length > 0) {
-        const colors = validPreviews.map(p => p.color || '#e2e8f0');
-        avgColor = averageColors(colors);
-      }
 
       // Dynamic layout class based on image count
       let layoutClass = 'layout-empty';
@@ -498,30 +488,30 @@
 
       if (count === 0) {
         layoutClass = 'layout-empty';
-        previewHtml = `<div class="empty-slot" style="background:${avgColor}"></div>`;
+        previewHtml = '<div class="empty-slot"></div>';
       } else if (count === 1) {
         layoutClass = 'layout-single';
-        previewHtml = `<img src="${validPreviews[0].url}" alt="" loading="lazy">`;
+        previewHtml = `<img src="${validPreviews[0]}" alt="" loading="lazy">`;
       } else if (count === 2) {
         layoutClass = 'layout-duo';
-        previewHtml = validPreviews.slice(0, 2).map(p =>
-          `<img src="${p.url}" alt="" loading="lazy">`
+        previewHtml = validPreviews.slice(0, 2).map(url =>
+          `<img src="${url}" alt="" loading="lazy">`
         ).join('');
       } else if (count === 3) {
         layoutClass = 'layout-trio';
-        previewHtml = validPreviews.slice(0, 3).map(p =>
-          `<img src="${p.url}" alt="" loading="lazy">`
+        previewHtml = validPreviews.slice(0, 3).map(url =>
+          `<img src="${url}" alt="" loading="lazy">`
         ).join('');
       } else {
         layoutClass = 'layout-quad';
-        previewHtml = validPreviews.slice(0, 4).map(p =>
-          `<img src="${p.url}" alt="" loading="lazy">`
+        previewHtml = validPreviews.slice(0, 4).map(url =>
+          `<img src="${url}" alt="" loading="lazy">`
         ).join('');
       }
 
       return `
         <div class="library-folder-tile" data-folder="${escapeHtml(folder.name)}">
-          <div class="library-folder-tile-preview ${layoutClass}" style="background:${avgColor}">
+          <div class="library-folder-tile-preview ${layoutClass}">
             ${previewHtml}
           </div>
           <div class="library-folder-tile-info">
@@ -531,22 +521,6 @@
         </div>
       `;
     }).join('');
-  }
-
-  function averageColors(hexColors) {
-    // Average multiple hex colors
-    let r = 0, g = 0, b = 0;
-    hexColors.forEach(hex => {
-      const c = hex.replace('#', '');
-      r += parseInt(c.substr(0, 2), 16);
-      g += parseInt(c.substr(2, 2), 16);
-      b += parseInt(c.substr(4, 2), 16);
-    });
-    const n = hexColors.length;
-    r = Math.round(r / n);
-    g = Math.round(g / n);
-    b = Math.round(b / n);
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
 
   function renderActiveFilters() {
