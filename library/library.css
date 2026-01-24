@@ -12,6 +12,8 @@
 
 /* =========================================
  * HEADER
+ * Uses ascend-app-header pattern but with
+ * 3-column layout for center mode toggle
  * ======================================= */
 
 .library-header {
@@ -24,11 +26,16 @@
   background: rgba(255, 255, 255, 0.5);
 }
 
-.library-header-left {
+.library-header-left,
+.library-header-right {
   display: flex;
   align-items: center;
   gap: 1rem;
   flex: 1;
+}
+
+.library-header-right {
+  justify-content: flex-end;
 }
 
 .library-header-center {
@@ -37,56 +44,20 @@
   justify-content: center;
 }
 
-/* Mode Toggle Pill */
-.library-mode-toggle {
-  display: flex;
-  background: var(--ascend-control-bg);
-  border: 1px solid var(--ascend-control-border);
-  border-radius: 999px;
-  padding: 3px;
-}
-
-.library-mode-btn {
-  padding: 0.4rem 1.25rem;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ascend-app-text-muted);
-  cursor: pointer;
-  transition: all 150ms ease;
-}
-
-.library-mode-btn:hover {
-  color: var(--ascend-app-text-main);
-}
-
-.library-mode-btn.is-active {
-  background: var(--ascend-app-accent);
-  color: #0b1025;
-}
-
-.library-header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-  justify-content: flex-end;
-}
-
+/* Back button - styled as control (uses ascend control tokens) */
 .library-back {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  padding: 0;
+  text-decoration: none;
+  font-size: 1.1rem;
+  border-radius: var(--ascend-control-radius, 10px);
   background: var(--ascend-control-bg);
   border: 1px solid var(--ascend-control-border);
   color: var(--ascend-app-text-main);
-  text-decoration: none;
-  font-size: 1.1rem;
   transition: background 120ms ease;
 }
 
@@ -94,6 +65,7 @@
   background: var(--ascend-control-bg-hover);
 }
 
+/* Title block - mirrors ascend-app-title-block */
 .library-title-block {
   display: flex;
   flex-direction: column;
@@ -101,7 +73,7 @@
 }
 
 .library-label {
-  font-size: 0.7rem;
+  font-size: var(--ascend-text-xs, 0.72rem);
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -109,60 +81,60 @@
 }
 
 .library-title {
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.24rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
   margin: 0;
   color: var(--ascend-app-text-main);
 }
 
-.library-header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+/* Mode Toggle Pill */
+.library-mode-toggle {
+  display: inline-flex;
+  background: var(--ascend-control-bg);
+  border: 1px solid var(--ascend-control-border);
+  border-radius: var(--ascend-app-radius-pill, 999px);
+  padding: 3px;
 }
 
+.library-mode-btn {
+  padding: 0.4rem 1.25rem;
+  border: none;
+  border-radius: var(--ascend-app-radius-pill, 999px);
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ascend-app-text-muted);
+  cursor: pointer;
+  transition: all 150ms ease;
+  box-shadow: none;
+}
+
+.library-mode-btn:hover {
+  color: var(--ascend-app-text-main);
+  background: transparent;
+}
+
+.library-mode-btn.is-active {
+  background: var(--ascend-app-accent);
+  color: #0b1025;
+}
+
+/* Search - uses base input styles, just adjusts shape */
 .library-search-box {
   position: relative;
 }
 
 .library-search-box input {
   width: 240px;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--ascend-control-border);
-  border-radius: 999px;
-  background: var(--ascend-control-bg);
-  font-size: 0.85rem;
-  color: var(--ascend-app-text-main);
+  border-radius: var(--ascend-app-radius-pill, 999px);
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
-.library-search-box input:focus {
-  outline: none;
-  border-color: var(--ascend-app-accent);
-  box-shadow: 0 0 0 2px var(--ascend-app-accent-soft);
-}
-
-.library-search-box input::placeholder {
-  color: var(--ascend-app-text-muted);
-}
-
+/* Cart trigger - button styling inherited */
 .library-cart-trigger {
-  display: flex;
-  align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--ascend-control-border);
-  border-radius: 10px;
-  background: var(--ascend-control-bg);
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ascend-app-text-main);
-  transition: background 120ms ease;
-}
-
-.library-cart-trigger:hover {
-  background: var(--ascend-control-bg-hover);
 }
 
 .library-cart-icon {
@@ -176,7 +148,7 @@
   min-width: 1.4rem;
   height: 1.4rem;
   padding: 0 0.4rem;
-  border-radius: 999px;
+  border-radius: var(--ascend-app-radius-pill, 999px);
   background: var(--ascend-app-accent);
   color: #0b1025;
   font-size: 0.72rem;
@@ -187,9 +159,10 @@
   display: none;
 }
 
+/* User chip - matches portal ascend-user-chip */
 .library-user {
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--ascend-app-radius-pill, 999px);
   background: rgba(79, 209, 197, 0.12);
   border: 1px solid rgba(79, 209, 197, 0.35);
   font-size: 0.75rem;
@@ -215,19 +188,24 @@
   margin-top: 0.5rem;
 }
 
+/* Collection header - clickable row */
 .library-collection-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
   padding: 0.6rem 0.75rem;
   margin: 0;
   background: rgba(0, 0, 0, 0.04);
+  border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--ascend-app-text-main);
+  text-align: left;
   transition: background 120ms ease;
+  box-shadow: none;
 }
 
 .library-collection-header:hover {
@@ -275,7 +253,7 @@
   /* Each mode container */
 }
 
-/* Source Buttons (Browse Mode) */
+/* Source Buttons (Browse Mode) - inherits button base from ascend-apps.css */
 .library-source {
   margin-bottom: 0.5rem;
 }
@@ -287,20 +265,10 @@
   width: 100%;
   min-height: 56px;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--ascend-control-border);
-  border-radius: 10px;
-  background: var(--ascend-control-bg);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--ascend-app-text-main);
   text-align: left;
-  transition: all 120ms ease;
-  box-sizing: border-box;
 }
 
 .library-source-btn:hover {
-  background: var(--ascend-control-bg-hover);
   border-color: var(--ascend-app-accent);
 }
 
@@ -406,12 +374,14 @@
   font-weight: 600;
 }
 
+/* Filter pill remove - reset control styling for inline icon */
 .library-filter-pill-remove {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 14px;
   height: 14px;
+  padding: 0;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.15);
   border: none;
@@ -420,23 +390,28 @@
   line-height: 1;
   color: #0b1025;
   transition: background 80ms ease;
+  box-shadow: none;
 }
 
 .library-filter-pill-remove:hover {
   background: rgba(0, 0, 0, 0.3);
 }
 
+/* Clear all filters - link-style button */
 .library-clear-all-filters {
   border: none;
   background: none;
-  font-size: 0.75rem;
+  padding: 0;
+  font-size: var(--ascend-text-xs, 0.75rem);
   color: var(--ascend-app-text-muted);
   cursor: pointer;
   text-decoration: underline;
+  box-shadow: none;
 }
 
 .library-clear-all-filters:hover {
   color: var(--ascend-app-text-main);
+  background: none;
 }
 
 /* =========================================
@@ -468,14 +443,14 @@
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
 }
 
+/* Folder tile preview - dynamic mosaic layouts */
 .library-folder-tile-preview {
   aspect-ratio: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
   gap: 2px;
   padding: 2px;
   background: #e2e8f0;
+  overflow: hidden;
 }
 
 .library-folder-tile-preview img {
@@ -486,7 +461,41 @@
 }
 
 .library-folder-tile-preview .empty-slot {
-  background: #f1f5f9;
+  background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%);
+}
+
+/* Layout: Empty - single placeholder */
+.library-folder-tile-preview.layout-empty {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+/* Layout: Single - one large image */
+.library-folder-tile-preview.layout-single {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+/* Layout: Duo - two images stacked */
+.library-folder-tile-preview.layout-duo {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* Layout: Trio - 1 large left, 2 stacked right */
+.library-folder-tile-preview.layout-trio {
+  grid-template-columns: 1.5fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.library-folder-tile-preview.layout-trio img:first-child {
+  grid-row: 1 / -1;
+}
+
+/* Layout: Quad - 2x2 grid */
+.library-folder-tile-preview.layout-quad {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
 }
 
 .library-folder-tile-info {
@@ -575,8 +584,9 @@
   margin-bottom: 1rem;
 }
 
+/* Sidebar title - matches ascend-app section labels */
 .library-sidebar-title {
-  font-size: 0.8rem;
+  font-size: var(--ascend-text-s, 0.8rem);
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -584,18 +594,22 @@
   margin: 0;
 }
 
+/* Clear filters - link-style button */
 .library-clear-filters {
   border: none;
   background: none;
-  font-size: 0.75rem;
+  padding: 0;
+  font-size: var(--ascend-text-xs, 0.75rem);
   color: var(--ascend-app-accent);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
+  box-shadow: none;
 }
 
 .library-clear-filters:hover {
   color: var(--ascend-app-text-main);
+  background: none;
 }
 
 .library-sidebar-section {
@@ -604,8 +618,9 @@
   border-top: 1px solid var(--ascend-app-border);
 }
 
+/* Sidebar section subtitle */
 .library-sidebar-subtitle {
-  font-size: 0.72rem;
+  font-size: var(--ascend-text-xs, 0.72rem);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -622,12 +637,13 @@
   overflow-y: auto;
 }
 
+/* Product chips - interactive filter pills */
 .library-product {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
   padding: 0.3rem 0.65rem;
-  border-radius: 999px;
+  border-radius: var(--ascend-app-radius-pill, 999px);
   background: rgba(45, 55, 72, 0.08);
   border: 1px solid transparent;
   font-size: 0.75rem;
@@ -635,6 +651,7 @@
   color: var(--ascend-app-text-main);
   cursor: pointer;
   transition: background 80ms ease, border-color 80ms ease;
+  box-shadow: none;
 }
 
 .library-product:hover {
@@ -658,12 +675,13 @@
   gap: 0.4rem;
 }
 
+/* Tag chips - interactive filter pills */
 .library-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
   padding: 0.3rem 0.65rem;
-  border-radius: 999px;
+  border-radius: var(--ascend-app-radius-pill, 999px);
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid transparent;
   font-size: 0.75rem;
@@ -671,6 +689,7 @@
   color: var(--ascend-app-text-main);
   cursor: pointer;
   transition: background 80ms ease, border-color 80ms ease;
+  box-shadow: none;
 }
 
 .library-tag:hover {
@@ -694,21 +713,23 @@
   gap: 0.4rem;
 }
 
+/* File type chips - interactive filter pills */
 .library-filetype {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
   padding: 0.3rem 0.65rem;
-  border-radius: 999px;
+  border-radius: var(--ascend-app-radius-pill, 999px);
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid transparent;
-  font-size: 0.72rem;
+  font-size: var(--ascend-text-xs, 0.72rem);
   font-weight: 600;
   color: var(--ascend-app-text-main);
   cursor: pointer;
   transition: background 80ms ease, border-color 80ms ease;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  box-shadow: none;
 }
 
 .library-filetype:hover {
@@ -769,15 +790,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.8rem;
+  font-size: var(--ascend-text-s, 0.8rem);
   color: var(--ascend-app-text-main);
   cursor: pointer;
 }
 
-.library-checkbox input {
+.library-checkbox input[type="checkbox"] {
   width: 16px;
   height: 16px;
   accent-color: var(--ascend-app-accent);
+  cursor: pointer;
 }
 
 /* =========================================
@@ -802,14 +824,10 @@
   color: var(--ascend-app-text-muted);
 }
 
+/* Sort select - inherits base select styles from ascend-apps.css */
 .library-sort select {
-  padding: 0.4rem 2rem 0.4rem 0.75rem;
-  border: 1px solid var(--ascend-app-border);
-  border-radius: 8px;
-  background: var(--ascend-control-bg);
+  width: auto;
   font-size: 0.8rem;
-  color: var(--ascend-app-text-main);
-  cursor: pointer;
 }
 
 /* =========================================
@@ -913,13 +931,14 @@
   content: "✦";
 }
 
-/* Cart button overlay on thumbnail */
+/* Cart button overlay on thumbnail - special positioning */
 .library-card-cart-btn {
   position: absolute;
   top: 8px;
   right: 8px;
   width: 28px;
   height: 28px;
+  padding: 0;
   border-radius: 6px;
   border: none;
   background: rgba(255, 255, 255, 0.9);
@@ -931,6 +950,7 @@
   color: var(--ascend-app-text-muted);
   opacity: 0;
   transition: opacity 120ms ease, background 80ms ease;
+  box-shadow: none;
 }
 
 .library-card:hover .library-card-cart-btn {
@@ -1000,7 +1020,7 @@
   font-style: italic;
 }
 
-/* Load More */
+/* Load More - uses pill button style */
 .library-load-more {
   display: flex;
   justify-content: center;
@@ -1009,18 +1029,7 @@
 
 .library-load-more-btn {
   padding: 0.6rem 2rem;
-  border: 1px solid var(--ascend-control-border);
-  border-radius: 999px;
-  background: var(--ascend-control-bg);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ascend-app-text-main);
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.library-load-more-btn:hover {
-  background: var(--ascend-control-bg-hover);
+  border-radius: var(--ascend-app-radius-pill, 999px);
 }
 
 /* =========================================
@@ -1053,21 +1062,22 @@
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
 }
 
+/* Modal close button - transparent style */
 .library-modal-close {
   position: absolute;
   top: 16px;
   right: 16px;
   width: 36px;
   height: 36px;
+  padding: 0;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--ascend-control-radius, 10px);
   background: rgba(0, 0, 0, 0.05);
   font-size: 24px;
   line-height: 1;
-  cursor: pointer;
   color: var(--ascend-app-text-muted);
   z-index: 10;
-  transition: background 80ms ease;
+  box-shadow: none;
 }
 
 .library-modal-close:hover {
@@ -1161,28 +1171,10 @@
   vertical-align: middle;
 }
 
-/* Notes textarea */
+/* Notes textarea - inherits base textarea styles from ascend-apps.css */
 .library-modal-notes {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--ascend-control-border);
-  border-radius: 6px;
-  background: var(--ascend-control-bg);
-  color: var(--ascend-app-text-main);
-  font-family: inherit;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  resize: vertical;
   min-height: 60px;
-}
-
-.library-modal-notes:focus {
-  outline: none;
-  border-color: var(--ascend-app-accent);
-}
-
-.library-modal-notes::placeholder {
-  color: var(--ascend-app-text-muted);
+  resize: vertical;
 }
 
 .library-notes-status {
@@ -1208,8 +1200,9 @@
   margin-bottom: 1.5rem;
 }
 
+/* Modal section headers - consistent with sidebar subtitles */
 .library-modal-section h3 {
-  font-size: 0.72rem;
+  font-size: var(--ascend-text-xs, 0.72rem);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1252,23 +1245,26 @@
   overflow-y: auto;
 }
 
+/* Tag toggle buttons in modal picker */
 .library-tag-toggle {
   display: inline-flex;
   align-items: center;
   padding: 0.35rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--ascend-app-radius-pill, 999px);
   border: 1px solid var(--ascend-app-border);
   background: var(--ascend-app-surface);
-  font-size: 0.8rem;
+  font-size: var(--ascend-text-s, 0.8rem);
   font-weight: 500;
   color: var(--ascend-app-text-muted);
   cursor: pointer;
   transition: all 80ms ease;
+  box-shadow: none;
 }
 
 .library-tag-toggle:hover {
   border-color: var(--ascend-app-accent);
   color: var(--ascend-app-text-main);
+  background: var(--ascend-app-surface);
 }
 
 .library-tag-toggle.is-active {
@@ -1285,35 +1281,22 @@
   border-top: 1px solid var(--ascend-app-border);
 }
 
+/* Input inherits base styles from ascend-apps.css */
 .library-tag-picker-add input {
   flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--ascend-control-border);
-  border-radius: 6px;
-  background: var(--ascend-control-bg);
   font-size: 0.85rem;
-  color: var(--ascend-app-text-main);
 }
 
-.library-tag-picker-add input:focus {
-  outline: none;
-  border-color: var(--ascend-app-accent);
-}
-
+/* Add button uses accent styling */
 .library-tag-picker-add button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
   background: var(--ascend-app-accent);
+  border-color: var(--ascend-app-accent);
   color: #0b1025;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 80ms ease;
 }
 
 .library-tag-picker-add button:hover {
-  opacity: 0.85;
+  opacity: 0.9;
+  background: var(--ascend-app-accent);
 }
 
 .library-tag-suggestion {
@@ -1328,7 +1311,7 @@
   background: var(--ascend-app-accent-soft);
 }
 
-/* Action Buttons */
+/* Action Buttons - extend ascend-app button base */
 .library-modal-actions {
   display: flex;
   flex-direction: column;
@@ -1336,33 +1319,24 @@
 }
 
 .library-btn {
-  padding: 0.6rem 1.25rem;
-  border-radius: 10px;
-  border: 1px solid var(--ascend-control-border);
-  background: var(--ascend-control-bg);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ascend-app-text-main);
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: background 80ms ease;
+  padding: 0.6rem 1.25rem;
 }
 
-.library-btn:hover {
-  background: var(--ascend-control-bg-hover);
-}
-
+/* Primary uses ascend-app-primary-btn gradient */
 .library-btn-primary {
   background: linear-gradient(135deg, #4fd1c5, #2c7a7b);
   border-color: transparent;
   color: #0b1025;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.25);
 }
 
 .library-btn-primary:hover {
-  filter: brightness(0.95);
+  filter: brightness(0.97);
+  background: linear-gradient(135deg, #4fd1c5, #2c7a7b);
 }
 
 .library-btn-cart.is-in-cart {
@@ -1401,13 +1375,14 @@
   gap: 0.5rem;
 }
 
+/* File path display - mono font */
 .library-file-path {
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: rgba(0, 0, 0, 0.04);
-  border-radius: 6px;
-  font-family: var(--ascend-font-mono, monospace);
-  font-size: 0.72rem;
+  border-radius: var(--ascend-control-radius, 6px);
+  font-family: var(--ascend-font-mono);
+  font-size: var(--ascend-text-xs, 0.72rem);
   color: var(--ascend-app-text-muted);
   word-break: break-all;
   user-select: all;
@@ -1474,6 +1449,7 @@
   text-overflow: ellipsis;
 }
 
+/* Remove button - reset control styling for icon-only */
 .library-cart-item-remove {
   border: none;
   background: none;
@@ -1484,11 +1460,13 @@
   line-height: 1;
   opacity: 0.6;
   transition: opacity 80ms ease;
+  box-shadow: none;
 }
 
 .library-cart-item-remove:hover {
   opacity: 1;
   color: #dc2626;
+  background: none;
 }
 
 .library-cart-empty {
@@ -1503,22 +1481,10 @@
   background: rgba(0, 0, 0, 0.02);
 }
 
+/* Textarea inherits base styles from ascend-apps.css */
 .library-cart-footer textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--ascend-control-border);
-  border-radius: 10px;
-  background: var(--ascend-control-bg);
-  font-size: 0.85rem;
-  color: var(--ascend-app-text-main);
-  resize: vertical;
   min-height: 80px;
   margin-bottom: 1rem;
-}
-
-.library-cart-footer textarea:focus {
-  outline: none;
-  border-color: var(--ascend-app-accent);
 }
 
 /* =========================================
@@ -1550,6 +1516,7 @@
 
 /* =========================================
  * LOADING STATE
+ * Uses ascend-spin animation from ascend.css
  * ======================================= */
 
 .library-loading {
@@ -1567,12 +1534,8 @@
   border: 2px solid var(--ascend-app-border);
   border-top-color: var(--ascend-app-accent);
   border-radius: 50%;
-  animation: library-spin 700ms linear infinite;
+  animation: ascend-spin 700ms linear infinite;
   margin-left: 0.75rem;
-}
-
-@keyframes library-spin {
-  to { transform: rotate(360deg); }
 }
 
 /* =========================================
