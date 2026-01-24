@@ -2067,17 +2067,29 @@ function doGet(e) {
     try {
       var result = createJob(payloadObj);
 
-      // Attempt to send ArtStart email; log if it fails but don't break the response
-      try {
-        sendArtStartEmail(result.ascendJobId);
-      } catch (emailErr2) {
-        Logger.log('Error sending ArtStart email (JSONP): ' + emailErr2);
-        result.emailError = String(emailErr2);
-      }
+      // NOTE: Email is now triggered by Dave after files are created.
+      // Dave calls ?action=sendArtStartEmail&jobId=... when ready.
+      // (Removed automatic sendArtStartEmail call here)
 
       return jsonResponse_(result, callback);
     } catch (err4) {
       return jsonResponse_({ success: false, error: String(err4) }, callback);
+    }
+  }
+
+  // Dave triggers this after creating local files
+  if (action === 'sendArtStartEmail') {
+    try {
+      var emailJobId = e.parameter.jobId || '';
+      if (!emailJobId) {
+        return jsonResponse_({ success: false, error: 'Missing jobId parameter' }, callback);
+      }
+
+      sendArtStartEmail(emailJobId);
+      return jsonResponse_({ success: true, jobId: emailJobId, emailSent: true }, callback);
+    } catch (emailErr) {
+      Logger.log('Error sending ArtStart email: ' + emailErr);
+      return jsonResponse_({ success: false, error: String(emailErr) }, callback);
     }
   }
 
@@ -2182,14 +2194,9 @@ function doPost(e) {
       // Create the job in Sheets
       var result = createJob(payload);
 
-      // Send the ArtStart email
-      try {
-        sendArtStartEmail(result.ascendJobId);
-      } catch (emailErr) {
-        // log but don't fail the whole response
-        Logger.log('Error sending ArtStart email: ' + emailErr);
-        result.emailError = String(emailErr);
-      }
+      // NOTE: Email is now triggered by Dave after files are created.
+      // Dave calls ?action=sendArtStartEmail&jobId=... when ready.
+      // (Removed automatic sendArtStartEmail call here)
 
       return jsonResponse_(result);
     } catch (err2) {
