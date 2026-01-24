@@ -1,0 +1,11 @@
+# Ignore frontend files
+library.js
+library.css
+library.html
+library-manifest.json
+library-assets.json
+library-tags.json
+*.md
+*.py
+thumbs/
+assets/

@@ -138,6 +138,50 @@
      */
     async listTrashedAssets() {
       return this._jsonp('listTrashedAssets');
+    },
+
+    /**
+     * Move asset to virtual folder
+     */
+    async moveAsset(assetId, virtualFolder, path) {
+      return this._jsonp('moveAsset', {
+        asset_id: assetId,
+        virtual_folder: virtualFolder,
+        path: path || ''
+      });
+    },
+
+    /**
+     * Batch move assets to virtual folder (POST)
+     */
+    async batchMoveAssets(assetIds, virtualFolder, pathMap) {
+      return this._post('batchMoveAssets', {
+        asset_ids: assetIds,
+        virtual_folder: virtualFolder,
+        path_map: pathMap || {}
+      });
+    },
+
+    /**
+     * Rename a virtual folder
+     */
+    async renameFolder(oldPath, newPath, source) {
+      return this._jsonp('renameFolder', {
+        old_path: oldPath,
+        new_path: newPath,
+        source: source || ''
+      });
+    },
+
+    /**
+     * Delete a virtual folder (trashes all contents)
+     */
+    async deleteFolder(folderPath, source, userEmail) {
+      return this._jsonp('deleteFolder', {
+        path: folderPath,
+        source: source || '',
+        user_email: userEmail || ''
+      });
     }
   };
 
@@ -180,7 +224,8 @@
     sort: 'name-asc',
     page: 1,
     currentAsset: null,
-    isLoading: false
+    isLoading: false,
+    draggedAssetId: null  // For drag-drop folder management
   };
 
   const Config = window.LIBRARY_CONFIG || {};
@@ -333,8 +378,8 @@
       if (source === 'publications' && asset.collection !== 'publications') return false;
       if (source === 'fileroom') return false; // TODO: Fileroom assets
 
-      // Filter by folder path
-      const assetFolder = asset.folder || '';
+      // Filter by folder path (use virtual folder if set)
+      const assetFolder = getEffectiveFolder(asset);
 
       if (folderPrefix === '') {
         // Root level - show assets with no subfolder or first-level items
@@ -382,11 +427,14 @@
     const subfolderSet = new Set();
 
     State.assets.forEach(asset => {
+      // Skip trashed assets
+      if (isAssetTrashed(asset.id)) return;
+
       // Filter by source
       if (source === 'stock' && asset.collection !== 'stock') return;
       if (source === 'publications' && asset.collection !== 'publications') return;
 
-      const folder = asset.folder || '';
+      const folder = getEffectiveFolder(asset);
       if (!folder) return;
 
       // Check if this asset is under the current path
@@ -422,20 +470,22 @@
 
   function countAssetsInFolder(source, folderPath) {
     return State.assets.filter(asset => {
+      if (isAssetTrashed(asset.id)) return false;
       if (source === 'stock' && asset.collection !== 'stock') return false;
       if (source === 'publications' && asset.collection !== 'publications') return false;
 
-      const folder = asset.folder || '';
+      const folder = getEffectiveFolder(asset);
       return folder === folderPath || folder.startsWith(folderPath + '/');
     }).length;
   }
 
   function getPreviewsForFolder(source, folderPath, count) {
     const assets = State.assets.filter(asset => {
+      if (isAssetTrashed(asset.id)) return false;
       if (source === 'stock' && asset.collection !== 'stock') return false;
       if (source === 'publications' && asset.collection !== 'publications') return false;
 
-      const folder = asset.folder || '';
+      const folder = getEffectiveFolder(asset);
       return folder === folderPath || folder.startsWith(folderPath + '/');
     });
 
@@ -674,6 +724,7 @@
               products: a.products || [],
               tags: a.tags || [],
               notes: a.notes || '',
+              virtualFolder: a.virtual_folder || null,
               trashed: !!a.trashed_at,
               trashedAt: a.trashed_at || '',
               trashedBy: a.trashed_by || ''
@@ -1099,9 +1150,62 @@
 
   function getAssetMeta(assetId) {
     if (!State.assetMeta[assetId]) {
-      State.assetMeta[assetId] = { products: [], tags: [], notes: '' };
+      State.assetMeta[assetId] = { products: [], tags: [], notes: '', virtualFolder: null };
     }
     return State.assetMeta[assetId];
+  }
+
+  /**
+   * Get effective folder for an asset.
+   * Returns virtualFolder from metadata if set, otherwise the original folder from manifest.
+   */
+  function getEffectiveFolder(asset) {
+    const meta = State.assetMeta[asset.id];
+    if (meta && meta.virtualFolder !== null && meta.virtualFolder !== undefined) {
+      return meta.virtualFolder;
+    }
+    return asset.folder || '';
+  }
+
+  /**
+   * Move asset to a virtual folder
+   */
+  async function moveAssetToFolder(assetId, virtualFolder) {
+    const meta = getAssetMeta(assetId);
+    meta.virtualFolder = virtualFolder;
+
+    // Find asset to get its path
+    const asset = State.assets.find(a => a.id === assetId);
+    const path = asset ? asset.path : '';
+
+    try {
+      await LibraryAPI.moveAsset(assetId, virtualFolder, path);
+      console.log('[Library] Moved asset', assetId, 'to', virtualFolder);
+    } catch (e) {
+      console.warn('[Library] Move failed:', e.message);
+    }
+  }
+
+  /**
+   * Batch move assets to a virtual folder
+   */
+  async function batchMoveAssetsToFolder(assetIds, virtualFolder) {
+    const pathMap = {};
+
+    assetIds.forEach(id => {
+      const meta = getAssetMeta(id);
+      meta.virtualFolder = virtualFolder;
+
+      const asset = State.assets.find(a => a.id === id);
+      if (asset) pathMap[id] = asset.path;
+    });
+
+    try {
+      await LibraryAPI.batchMoveAssets(assetIds, virtualFolder, pathMap);
+      console.log('[Library] Batch moved', assetIds.length, 'assets to', virtualFolder);
+    } catch (e) {
+      console.warn('[Library] Batch move failed:', e.message);
+    }
   }
 
   function addProductToAsset(assetId, product) {
@@ -1444,7 +1548,7 @@
       : '';
 
     return `
-      <article class="library-card ${inCart ? 'is-in-cart' : ''} ${isPdf ? 'is-pdf' : ''}" data-id="${escapeHtml(asset.id)}">
+      <article class="library-card ${inCart ? 'is-in-cart' : ''} ${isPdf ? 'is-pdf' : ''}" data-id="${escapeHtml(asset.id)}" draggable="true">
         <div class="library-card-thumb">
           ${thumbContent}
           ${extLabel ? `<span class="library-card-type">${extLabel}</span>` : ''}
@@ -2097,6 +2201,130 @@
       }
     });
 
+    // Drag and drop for asset organization (Browse mode)
+    const gridEl = document.getElementById('library-grid');
+    if (gridEl) {
+      gridEl.addEventListener('dragstart', (e) => {
+        const card = e.target.closest('.library-card');
+        if (!card) return;
+
+        State.draggedAssetId = card.dataset.id;
+        card.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+
+        // Add drag-active class to body for global styling
+        document.body.classList.add('library-drag-active');
+      });
+
+      gridEl.addEventListener('dragend', (e) => {
+        const card = e.target.closest('.library-card');
+        if (card) card.classList.remove('is-dragging');
+
+        State.draggedAssetId = null;
+        document.body.classList.remove('library-drag-active');
+
+        // Remove all drop targets
+        document.querySelectorAll('.is-drop-target').forEach(el => {
+          el.classList.remove('is-drop-target');
+        });
+      });
+    }
+
+    // Drop handlers for folder tiles (Browse mode)
+    const folderGrid = document.getElementById('library-folder-grid');
+    if (folderGrid) {
+      folderGrid.addEventListener('dragover', (e) => {
+        if (!State.draggedAssetId) return;
+        const tile = e.target.closest('.library-folder-tile');
+        if (!tile) return;
+
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        tile.classList.add('is-drop-target');
+      });
+
+      folderGrid.addEventListener('dragleave', (e) => {
+        const tile = e.target.closest('.library-folder-tile');
+        if (tile && !tile.contains(e.relatedTarget)) {
+          tile.classList.remove('is-drop-target');
+        }
+      });
+
+      folderGrid.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const tile = e.target.closest('.library-folder-tile');
+        if (!tile || !State.draggedAssetId) return;
+
+        tile.classList.remove('is-drop-target');
+
+        const targetFolderName = tile.dataset.folder;
+        const currentPath = State.browse.path.join('/');
+        const targetPath = currentPath ? `${currentPath}/${targetFolderName}` : targetFolderName;
+
+        // Get asset name for feedback
+        const asset = State.assets.find(a => a.id === State.draggedAssetId);
+        const assetName = asset ? asset.name : 'Asset';
+
+        // Move asset to target folder
+        await moveAssetToFolder(State.draggedAssetId, targetPath);
+
+        showToast(`Moved "${assetName}" to ${targetFolderName}`, 'success');
+
+        // Refresh the view
+        renderBrowseView();
+      });
+    }
+
+    // Drop handlers for breadcrumbs (navigate up and drop)
+    const breadcrumbs = document.getElementById('library-breadcrumbs');
+    if (breadcrumbs) {
+      breadcrumbs.addEventListener('dragover', (e) => {
+        if (!State.draggedAssetId) return;
+        const crumb = e.target.closest('.library-breadcrumb');
+        if (!crumb) return;
+
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        crumb.classList.add('is-drop-target');
+      });
+
+      breadcrumbs.addEventListener('dragleave', (e) => {
+        const crumb = e.target.closest('.library-breadcrumb');
+        if (crumb && !crumb.contains(e.relatedTarget)) {
+          crumb.classList.remove('is-drop-target');
+        }
+      });
+
+      breadcrumbs.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const crumb = e.target.closest('.library-breadcrumb');
+        if (!crumb || !State.draggedAssetId) return;
+
+        crumb.classList.remove('is-drop-target');
+
+        // Determine target path from breadcrumb
+        let targetPath = '';
+        let targetName = 'root';
+        if (!crumb.classList.contains('is-root')) {
+          targetPath = crumb.dataset.path || '';
+          targetName = targetPath ? targetPath.split('/').pop() : crumb.textContent.trim();
+        }
+
+        // Get asset name for feedback
+        const asset = State.assets.find(a => a.id === State.draggedAssetId);
+        const assetName = asset ? asset.name : 'Asset';
+
+        // Move asset to target folder
+        await moveAssetToFolder(State.draggedAssetId, targetPath);
+
+        showToast(`Moved "${assetName}" to ${targetName}`, 'success');
+
+        // Refresh the view
+        renderBrowseView();
+      });
+    }
+
     // Load more
     document.getElementById('library-load-more-btn')?.addEventListener('click', () => {
       State.page++;
@@ -2356,6 +2584,28 @@
       i++;
     }
     return `${bytes.toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
+  }
+
+  function showToast(message, type = 'info') {
+    // Remove existing toast
+    const existing = document.querySelector('.library-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `library-toast is-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      toast.classList.add('is-visible');
+    });
+
+    // Auto-remove after 3s
+    setTimeout(() => {
+      toast.classList.remove('is-visible');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
   }
 
   // =========================================

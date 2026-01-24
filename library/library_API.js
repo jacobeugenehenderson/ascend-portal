@@ -1,12 +1,12 @@
 /**
- * Library Tags Master API v1.0
+ * Library Tags Master API v1.1
  * Google Apps Script for managing Library asset metadata.
  *
  * Sheet: Tags Master (1ZtR9Jv64Jogrvx77drQGNosCo0-sjDMTulC_Q__TpQQ)
  *
  * Required Tabs:
  *  - TAXONOMY (headers: Name, Tags, LOB)
- *  - ASSETS   (headers: AssetId, Path, Products, Tags, Notes, TrashedAt, TrashedBy, UpdatedAt)
+ *  - ASSETS   (headers: AssetId, Path, Products, Tags, Notes, VirtualFolder, TrashedAt, TrashedBy, UpdatedAt)
  *
  * Deploy as Web App:
  *  - Execute as: Me
@@ -24,6 +24,10 @@
  *  ?action=trashAsset&asset_id=xxx&user_email=xxx&callback=cb
  *  ?action=restoreAsset&asset_id=xxx&callback=cb
  *  ?action=batchUpsertAssets (POST only, JSON body)
+ *  ?action=moveAsset&asset_id=xxx&virtual_folder=xxx&callback=cb
+ *  ?action=batchMoveAssets (POST only, JSON body: { asset_ids: [], virtual_folder: '' })
+ *  ?action=renameFolder&old_path=xxx&new_path=xxx&source=xxx&callback=cb
+ *  ?action=deleteFolder&path=xxx&source=xxx&user_email=xxx&callback=cb
  */
 
 /** =========================
@@ -33,7 +37,7 @@ const TAGS_MASTER_SPREADSHEET_ID = '1ZtR9Jv64Jogrvx77drQGNosCo0-sjDMTulC_Q__TpQQ
 const TAXONOMY_SHEET_NAME = 'TAXONOMY';
 const ASSETS_SHEET_NAME = 'ASSETS';
 
-const LIBRARY_API_VERSION = 'library_v1_2025-01-24';
+const LIBRARY_API_VERSION = 'library_v1.1_2026-01-24';
 
 const LIBRARY_ADMIN_EMAILS = [
   'jacob@jacobhenderson.studio',
@@ -85,6 +89,18 @@ function doGet(e) {
         data = listTrashedAssets_(p);
         break;
 
+      case 'moveAsset':
+        data = moveAsset_(p);
+        break;
+
+      case 'renameFolder':
+        data = renameFolder_(p);
+        break;
+
+      case 'deleteFolder':
+        data = deleteFolder_(p);
+        break;
+
       default:
         throw new Error('Unknown action: ' + action);
     }
@@ -125,6 +141,22 @@ function doPost(e) {
         data = restoreAsset_(body);
         break;
 
+      case 'moveAsset':
+        data = moveAsset_(body);
+        break;
+
+      case 'batchMoveAssets':
+        data = batchMoveAssets_(body);
+        break;
+
+      case 'renameFolder':
+        data = renameFolder_(body);
+        break;
+
+      case 'deleteFolder':
+        data = deleteFolder_(body);
+        break;
+
       default:
         throw new Error('Unknown action: ' + action);
     }
@@ -149,11 +181,11 @@ function setupAssetsTab() {
 
   if (!sh) {
     sh = ss.insertSheet(ASSETS_SHEET_NAME);
-    sh.getRange(1, 1, 1, 8).setValues([[
-      'AssetId', 'Path', 'Products', 'Tags', 'Notes', 'TrashedAt', 'TrashedBy', 'UpdatedAt'
+    sh.getRange(1, 1, 1, 9).setValues([[
+      'AssetId', 'Path', 'Products', 'Tags', 'Notes', 'VirtualFolder', 'TrashedAt', 'TrashedBy', 'UpdatedAt'
     ]]);
     sh.setFrozenRows(1);
-    sh.getRange(1, 1, 1, 8).setFontWeight('bold');
+    sh.getRange(1, 1, 1, 9).setFontWeight('bold');
     Logger.log('Created ASSETS tab with headers');
   } else {
     Logger.log('ASSETS tab already exists');
@@ -233,6 +265,7 @@ function getAssetMeta_(p) {
     products: parseList_(obj.Products),
     tags: parseList_(obj.Tags),
     notes: obj.Notes || '',
+    virtual_folder: obj.VirtualFolder || '',
     trashed_at: obj.TrashedAt || '',
     trashed_by: obj.TrashedBy || '',
     updated_at: obj.UpdatedAt || ''
@@ -269,6 +302,7 @@ function listAssetsMeta_(p) {
       products: parseList_(obj.Products),
       tags: parseList_(obj.Tags),
       notes: obj.Notes || '',
+      virtual_folder: obj.VirtualFolder || '',
       trashed_at: trashedAt,
       trashed_by: obj.TrashedBy || '',
       updated_at: obj.UpdatedAt || ''
@@ -298,6 +332,7 @@ function upsertAssetMeta_(p) {
     const products = p.products !== undefined ? normalizeList_(p.products) : null;
     const tags = p.tags !== undefined ? normalizeList_(p.tags) : null;
     const notes = p.notes !== undefined ? String(p.notes || '') : null;
+    const virtualFolder = p.virtual_folder !== undefined ? String(p.virtual_folder || '') : null;
 
     const existingRow = findAssetRow_(sh, header, assetId);
 
@@ -310,6 +345,7 @@ function upsertAssetMeta_(p) {
         Products: products !== null ? products.join(',') : '',
         Tags: tags !== null ? tags.join(',') : '',
         Notes: notes !== null ? notes : '',
+        VirtualFolder: virtualFolder !== null ? virtualFolder : '',
         TrashedAt: '',
         TrashedBy: '',
         UpdatedAt: nowIso
@@ -326,6 +362,7 @@ function upsertAssetMeta_(p) {
         Products: products !== null ? products.join(',') : (existing.Products || ''),
         Tags: tags !== null ? tags.join(',') : (existing.Tags || ''),
         Notes: notes !== null ? notes : (existing.Notes || ''),
+        VirtualFolder: virtualFolder !== null ? virtualFolder : (existing.VirtualFolder || ''),
         TrashedAt: existing.TrashedAt || '',
         TrashedBy: existing.TrashedBy || '',
         UpdatedAt: nowIso
@@ -481,6 +518,200 @@ function listTrashedAssets_(p) {
   return { assets: assets, count: assets.length };
 }
 
+/**
+ * moveAsset
+ * Move a single asset to a virtual folder.
+ */
+function moveAsset_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    const assetId = String(p.asset_id || '').trim();
+    const virtualFolder = String(p.virtual_folder || '');
+    if (!assetId) throw new Error('Missing asset_id');
+
+    const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+    const sh = ensureAssetsSheet_(ss);
+    const header = getHeaderMap_(sh);
+
+    const nowIso = new Date().toISOString();
+    const existingRow = findAssetRow_(sh, header, assetId);
+
+    if (existingRow === -1) {
+      // Create new entry with just the virtual folder
+      const newRow = sh.getLastRow() + 1;
+      const rowObj = {
+        AssetId: assetId,
+        Path: String(p.path || '').trim(),
+        Products: '',
+        Tags: '',
+        Notes: '',
+        VirtualFolder: virtualFolder,
+        TrashedAt: '',
+        TrashedBy: '',
+        UpdatedAt: nowIso
+      };
+      writeRowByHeader_(sh, header, newRow, rowObj);
+      return { action: 'move', asset_id: assetId, virtual_folder: virtualFolder, created: true };
+    } else {
+      // Update existing row
+      if (header['VirtualFolder']) {
+        sh.getRange(existingRow, header['VirtualFolder']).setValue(virtualFolder);
+      }
+      sh.getRange(existingRow, header['UpdatedAt']).setValue(nowIso);
+      return { action: 'move', asset_id: assetId, virtual_folder: virtualFolder, created: false };
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * batchMoveAssets
+ * Move multiple assets to a virtual folder (POST only).
+ * Body: { asset_ids: [], virtual_folder: '', path_map: { assetId: path, ... } }
+ */
+function batchMoveAssets_(body) {
+  const assetIds = body.asset_ids;
+  const virtualFolder = String(body.virtual_folder || '');
+  const pathMap = body.path_map || {};
+
+  if (!Array.isArray(assetIds)) throw new Error('Missing asset_ids array');
+
+  const results = [];
+  for (let i = 0; i < assetIds.length; i++) {
+    try {
+      const assetId = String(assetIds[i]).trim();
+      const r = moveAsset_({
+        asset_id: assetId,
+        virtual_folder: virtualFolder,
+        path: pathMap[assetId] || ''
+      });
+      results.push({ asset_id: assetId, ok: true, result: r });
+    } catch (e) {
+      results.push({ asset_id: assetIds[i], ok: false, error: String(e.message || e) });
+    }
+  }
+
+  const successCount = results.filter(r => r.ok).length;
+  return { processed: results.length, success: successCount, virtual_folder: virtualFolder, results: results };
+}
+
+/**
+ * renameFolder
+ * Rename a virtual folder by updating all assets with that folder prefix.
+ */
+function renameFolder_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const oldPath = String(p.old_path || '').trim();
+    const newPath = String(p.new_path || '').trim();
+    const source = String(p.source || '').toLowerCase().trim();
+
+    if (!oldPath) throw new Error('Missing old_path');
+    if (!newPath) throw new Error('Missing new_path');
+
+    const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+    const sh = ensureAssetsSheet_(ss);
+    const header = getHeaderMap_(sh);
+
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return { action: 'rename', old_path: oldPath, new_path: newPath, updated: 0 };
+
+    const vfCol = header['VirtualFolder'];
+    if (!vfCol) throw new Error('VirtualFolder column not found');
+
+    const lastCol = sh.getLastColumn();
+    const values = sh.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    const nowIso = new Date().toISOString();
+
+    let updated = 0;
+    const oldPathSlash = oldPath + '/';
+
+    for (let i = 0; i < values.length; i++) {
+      const row = values[i];
+      const vf = String(row[vfCol - 1] || '').trim();
+
+      if (!vf) continue;
+
+      let newVf = null;
+      if (vf === oldPath) {
+        // Exact match
+        newVf = newPath;
+      } else if (vf.startsWith(oldPathSlash)) {
+        // Nested folder
+        newVf = newPath + '/' + vf.slice(oldPathSlash.length);
+      }
+
+      if (newVf !== null) {
+        const rowIndex = 2 + i;
+        sh.getRange(rowIndex, vfCol).setValue(newVf);
+        sh.getRange(rowIndex, header['UpdatedAt']).setValue(nowIso);
+        updated++;
+      }
+    }
+
+    return { action: 'rename', old_path: oldPath, new_path: newPath, updated: updated };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * deleteFolder
+ * Delete a virtual folder by trashing all assets in it (and subfolders).
+ */
+function deleteFolder_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const folderPath = String(p.path || '').trim();
+    const source = String(p.source || '').toLowerCase().trim();
+    const userEmail = String(p.user_email || '').toLowerCase().trim();
+
+    if (!folderPath) throw new Error('Missing path');
+
+    const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+    const sh = ensureAssetsSheet_(ss);
+    const header = getHeaderMap_(sh);
+
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return { action: 'delete_folder', path: folderPath, trashed: 0 };
+
+    const vfCol = header['VirtualFolder'];
+    if (!vfCol) throw new Error('VirtualFolder column not found');
+
+    const lastCol = sh.getLastColumn();
+    const values = sh.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    const nowIso = new Date().toISOString();
+
+    let trashed = 0;
+    const folderPathSlash = folderPath + '/';
+
+    for (let i = 0; i < values.length; i++) {
+      const row = values[i];
+      const vf = String(row[vfCol - 1] || '').trim();
+      const alreadyTrashed = String(row[header['TrashedAt'] - 1] || '').trim();
+
+      if (!vf || alreadyTrashed) continue;
+
+      // Check if asset is in this folder or subfolder
+      if (vf === folderPath || vf.startsWith(folderPathSlash)) {
+        const rowIndex = 2 + i;
+        sh.getRange(rowIndex, header['TrashedAt']).setValue(nowIso);
+        sh.getRange(rowIndex, header['TrashedBy']).setValue(userEmail);
+        sh.getRange(rowIndex, header['UpdatedAt']).setValue(nowIso);
+        trashed++;
+      }
+    }
+
+    return { action: 'delete_folder', path: folderPath, trashed: trashed };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /** =========================
  * HELPERS
  * ======================= */
@@ -504,8 +735,8 @@ function ensureAssetsSheet_(ss) {
   let sh = ss.getSheetByName(ASSETS_SHEET_NAME);
   if (!sh) {
     sh = ss.insertSheet(ASSETS_SHEET_NAME);
-    sh.getRange(1, 1, 1, 8).setValues([[
-      'AssetId', 'Path', 'Products', 'Tags', 'Notes', 'TrashedAt', 'TrashedBy', 'UpdatedAt'
+    sh.getRange(1, 1, 1, 9).setValues([[
+      'AssetId', 'Path', 'Products', 'Tags', 'Notes', 'VirtualFolder', 'TrashedAt', 'TrashedBy', 'UpdatedAt'
     ]]);
     sh.setFrozenRows(1);
   }
