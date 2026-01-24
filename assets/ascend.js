@@ -72,9 +72,9 @@
   // Legacy in-memory reference for compatibility
   const PENDING_WF_DELETIONS = loadPendingWfDeletions_();
 
-  // FileRoom (output / delivery layer)
+  // FileRoom (output / delivery layer) - now points to Library
   const FILEROOM_URL =
-    "https://jacobeugenehenderson.github.io/ascend-portal/fileroom/frontend/index.html";
+    "https://jacobeugenehenderson.github.io/ascend-portal/library/index.html";
 
   const FILEROOM_API_BASE =
     "https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec";
