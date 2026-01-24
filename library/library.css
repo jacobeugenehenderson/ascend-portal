@@ -312,17 +312,24 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.25rem;
-  font-size: 0.85rem;
+  font-size: var(--ascend-text-s, 0.85rem);
 }
 
+/* Breadcrumb links - styled inline, not as buttons */
 .library-breadcrumb {
   color: var(--ascend-app-accent);
   cursor: pointer;
   transition: color 80ms ease;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  box-shadow: none;
 }
 
 .library-breadcrumb:hover {
   text-decoration: underline;
+  background: none;
 }
 
 .library-breadcrumb.is-current {
@@ -754,16 +761,22 @@
   gap: 0.25rem;
 }
 
+/* Folder buttons in sidebar tree */
 .library-folder {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
   padding: 0.4rem 0.6rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  border: none;
+  border-radius: var(--ascend-control-radius, 6px);
+  background: transparent;
+  font-size: var(--ascend-text-s, 0.8rem);
   color: var(--ascend-app-text-main);
+  text-align: left;
   cursor: pointer;
   transition: background 80ms ease;
+  box-shadow: none;
 }
 
 .library-folder:hover {
