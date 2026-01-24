@@ -1,0 +1,8 @@
+# Generated thumbnails (too large for git)
+thumbs/
+
+# Asset symlinks
+assets/
+
+# Local cache
+.DS_Store

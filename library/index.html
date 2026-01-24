@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Library – Ascend</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../assets/ascend.css">
+  <link rel="stylesheet" href="../assets/ascend-apps.css">
+  <link rel="stylesheet" href="library.css">
+</head>
+<body class="ascend-app-body">
+  <div class="ascend-app-shell">
+    <div class="ascend-app-panel library-panel">
+
+      <!-- Header -->
+      <header class="library-header">
+        <div class="library-header-left">
+          <a href="../" class="library-back" title="Back to Ascend">←</a>
+          <div class="library-title-block">
+            <div class="library-label">Ascend</div>
+            <h1 class="library-title">Library</h1>
+          </div>
+        </div>
+
+        <div class="library-header-center">
+          <!-- Mode Toggle Pill -->
+          <div class="library-mode-toggle" id="library-mode-toggle">
+            <button type="button" class="library-mode-btn is-active" data-mode="browse">Browse</button>
+            <button type="button" class="library-mode-btn" data-mode="tags">Tags</button>
+          </div>
+        </div>
+
+        <div class="library-header-right">
+          <div class="library-search-box">
+            <input type="text" id="library-search" placeholder="Search..." autocomplete="off">
+          </div>
+          <button type="button" class="library-cart-trigger" id="library-cart-trigger">
+            <span class="library-cart-icon">◫</span>
+            <span class="library-cart-label">Cart</span>
+            <span class="library-cart-count" id="library-cart-count"></span>
+          </button>
+          <div class="library-user" id="library-user">
+            <span class="library-user-label" id="library-user-label">Admin</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Layout -->
+      <div class="library-main">
+
+        <!-- Sidebar -->
+        <aside class="library-sidebar" id="library-sidebar">
+
+          <!-- ==================== BROWSE MODE SIDEBAR ==================== -->
+          <div class="library-sidebar-mode" id="sidebar-browse-mode">
+            <div class="library-sidebar-header">
+              <h2 class="library-sidebar-title">Sources</h2>
+            </div>
+
+            <!-- Stock Source -->
+            <div class="library-source" data-source="stock">
+              <button type="button" class="library-source-btn" data-source="stock">
+                <span class="library-source-icon">📁</span>
+                <span class="library-source-name">Stock</span>
+                <span class="library-source-count" id="stock-count"></span>
+              </button>
+            </div>
+
+            <!-- Publications Source -->
+            <div class="library-source" data-source="publications">
+              <button type="button" class="library-source-btn" data-source="publications">
+                <span class="library-source-icon">📁</span>
+                <span class="library-source-name">Publications</span>
+                <span class="library-source-count" id="publications-count"></span>
+              </button>
+            </div>
+
+            <!-- Fileroom Source (Deliverables) -->
+            <div class="library-source" data-source="fileroom">
+              <button type="button" class="library-source-btn" data-source="fileroom">
+                <span class="library-source-icon">📁</span>
+                <span class="library-source-name">Fileroom</span>
+                <span class="library-source-count" id="fileroom-count"></span>
+              </button>
+            </div>
+
+            <!-- Current Path Display -->
+            <div class="library-sidebar-section library-current-path" id="library-current-path" style="display:none;">
+              <h3 class="library-sidebar-subtitle">Current Folder</h3>
+              <div class="library-path-display" id="library-path-display"></div>
+            </div>
+          </div>
+
+          <!-- ==================== TAGS MODE SIDEBAR ==================== -->
+          <div class="library-sidebar-mode" id="sidebar-tags-mode" style="display:none;">
+            <div class="library-sidebar-header">
+              <h2 class="library-sidebar-title">Filter by Tags</h2>
+              <button type="button" class="library-clear-filters" id="library-clear-filters">Clear</button>
+            </div>
+
+            <!-- Products -->
+            <div class="library-sidebar-section">
+              <h3 class="library-sidebar-subtitle">Products</h3>
+              <div class="library-product-list" id="library-product-list">
+                <!-- Products populated by JS -->
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="library-sidebar-section">
+              <h3 class="library-sidebar-subtitle">Tags</h3>
+              <div class="library-tag-cloud" id="library-tag-cloud">
+                <!-- Tags populated by JS -->
+              </div>
+            </div>
+
+            <!-- File Types -->
+            <div class="library-sidebar-section">
+              <h3 class="library-sidebar-subtitle">File Types</h3>
+              <div class="library-filetype-list" id="library-filetype-list">
+                <!-- File types populated by JS -->
+              </div>
+            </div>
+
+            <!-- Status Filters -->
+            <div class="library-sidebar-section">
+              <h3 class="library-sidebar-subtitle">Status</h3>
+              <div class="library-status-filters" id="library-status-filters">
+                <label class="library-checkbox">
+                  <input type="checkbox" value="untagged" id="filter-untagged">
+                  <span>Untagged only</span>
+                </label>
+                <label class="library-checkbox">
+                  <input type="checkbox" value="trashed" id="filter-trashed">
+                  <span>Trash <span class="library-trash-count" id="library-trash-count"></span></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+
+        <!-- Content Area -->
+        <main class="library-content">
+          <!-- Toolbar: Breadcrumbs / Active Filters + Sort -->
+          <div class="library-toolbar">
+            <div class="library-toolbar-left">
+              <!-- Breadcrumbs (Browse mode) -->
+              <nav class="library-breadcrumbs" id="library-breadcrumbs">
+                <span class="library-breadcrumb is-root" data-path="">Library</span>
+              </nav>
+              <!-- Active Filters (Tags mode) -->
+              <div class="library-active-filters" id="library-active-filters" style="display:none;">
+                <span class="library-active-filters-label">Showing:</span>
+                <div class="library-active-filter-pills" id="library-active-filter-pills">
+                  <!-- Filter pills populated by JS -->
+                </div>
+              </div>
+            </div>
+            <div class="library-toolbar-right">
+              <div class="library-result-count" id="library-result-count">Loading...</div>
+              <div class="library-sort">
+                <select id="library-sort">
+                  <option value="name-asc">Name A-Z</option>
+                  <option value="name-desc">Name Z-A</option>
+                  <option value="date-desc">Newest first</option>
+                  <option value="date-asc">Oldest first</option>
+                  <option value="folder">By folder</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Folder Grid (Browse mode - shows folders) -->
+          <div class="library-folder-grid" id="library-folder-grid">
+            <!-- Folder tiles populated by JS -->
+          </div>
+
+          <!-- Asset Grid -->
+          <div class="library-grid" id="library-grid">
+            <!-- Asset cards populated by JS -->
+          </div>
+
+          <div class="library-load-more" id="library-load-more" style="display:none;">
+            <button type="button" class="library-load-more-btn" id="library-load-more-btn">Load more</button>
+          </div>
+        </main>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Asset Detail Modal -->
+  <div class="library-modal" id="library-modal" style="display:none;" aria-hidden="true">
+    <div class="library-modal-backdrop" data-modal-close="1"></div>
+    <div class="library-modal-panel">
+      <button type="button" class="library-modal-close" data-modal-close="1">×</button>
+
+      <div class="library-modal-body">
+        <div class="library-modal-preview">
+          <img id="library-modal-image" src="" alt="">
+        </div>
+
+        <div class="library-modal-info">
+          <h2 class="library-modal-title" id="library-modal-title"></h2>
+          <div class="library-modal-meta" id="library-modal-meta"></div>
+
+          <div class="library-modal-section">
+            <div class="library-modal-tags" id="library-modal-tags">
+              <!-- Product & tag pickers populated by JS -->
+            </div>
+          </div>
+
+          <div class="library-modal-section library-modal-notes-section">
+            <h3>Notes</h3>
+            <textarea id="library-modal-notes" class="library-modal-notes" placeholder="Add notes about this asset..." rows="3"></textarea>
+            <div class="library-notes-status" id="library-notes-status"></div>
+          </div>
+
+          <div class="library-modal-section library-modal-actions">
+            <button type="button" class="library-btn library-btn-cart" id="library-modal-cart-btn">
+              <span class="icon">+</span> Add to Cart
+            </button>
+
+            <!-- Admin only -->
+            <div class="library-admin-actions" id="library-admin-actions">
+              <button type="button" class="library-btn library-btn-reveal" id="library-modal-reveal-btn">
+                Reveal in Finder
+              </button>
+              <button type="button" class="library-btn library-btn-trash" id="library-modal-trash-btn">
+                Move to Trash
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Modal -->
+  <div class="library-modal" id="library-cart-modal" style="display:none;" aria-hidden="true">
+    <div class="library-modal-backdrop" data-modal-close="1"></div>
+    <div class="library-modal-panel library-cart-panel">
+      <div class="library-modal-header">
+        <h2>Your Cart</h2>
+        <button type="button" class="library-modal-close" data-modal-close="1">×</button>
+      </div>
+
+      <div class="library-cart-body" id="library-cart-body">
+        <!-- Cart items populated by JS -->
+      </div>
+
+      <div class="library-cart-footer">
+        <textarea id="library-cart-notes" placeholder="Notes (optional) - e.g., 'Need these for Q2 brochure'"></textarea>
+        <button type="button" class="library-btn library-btn-primary" id="library-cart-submit">
+          Request Assets
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config -->
+  <script>
+    window.LIBRARY_CONFIG = {
+      // Base paths (for Reveal in Finder)
+      basePath: '/Volumes/Today/Nordson/LIBRARY',
+      publicationsPath: '/Volumes/Today/Nordson/PUBLICATIONS',
+      stockFolder: 'STOCK',
+
+      // Manifest file (generated by scan script)
+      manifestUrl: 'library-manifest.json',
+
+      // Library API (Google Apps Script)
+      // Uncomment and set after deploying library_API.js to Apps Script:
+      // libraryApiUrl: 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec',
+
+      // Tags Master Google Sheet ID
+      taxonomySheetId: '1ZtR9Jv64Jogrvx77drQGNosCo0-sjDMTulC_Q__TpQQ',
+      taxonomyGid: '0',
+
+      // Fallback: static asset metadata file (used when API unavailable)
+      assetMetaUrl: 'library-assets.json',
+
+      // User info (for trash attribution)
+      userEmail: '',  // Set from auth when available
+
+      // Are we in admin mode?
+      isAdmin: true,
+
+      // Supported image extensions
+      imageExtensions: ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'],
+
+      // Max display size (prevents downloading full-res)
+      maxDisplaySize: 1200,
+
+      // Items per page
+      pageSize: 60
+    };
+  </script>
+  <script src="library.js"></script>
+</body>
+</html>
