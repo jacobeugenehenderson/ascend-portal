@@ -1411,11 +1411,9 @@
       ? meta.products.slice(0, 3).map(p => `<span class="library-card-product">${escapeHtml(p)}</span>`).join('')
       : '<span class="library-card-product is-untagged">untagged</span>';
 
-    // PDFs render natively, images use img tag
+    // Use thumbnails for all types (actual files not hosted on GitHub Pages)
     const placeholder = getPlaceholderForType(ext);
-    const thumbContent = isPdf
-      ? `<object data="${getAssetUrl(asset)}#page=1&view=FitH" type="application/pdf"></object>`
-      : `<img src="${getThumbUrl(asset)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${placeholder}'">`;
+    const thumbContent = `<img src="${getThumbUrl(asset)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${placeholder}'">`;
 
     // Gold seal for assets with source files
     const sourceSealHtml = hasSourceFile
@@ -1551,12 +1549,10 @@
     const isPdf = ext === 'pdf';
     const assetUrl = getAssetUrl(asset);
 
-    // Set preview content - PDF uses object, images use img
+    // Set preview content - use thumbnail for all types (actual files not hosted on GitHub Pages)
     const placeholder = getPlaceholderForType(ext);
-    if (isPdf) {
-      previewContainer.innerHTML = `<object data="${assetUrl}" type="application/pdf"></object>`;
-    } else {
-      previewContainer.innerHTML = `<img id="library-modal-image" src="${getThumbUrl(asset)}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
+    const thumbUrl = getThumbUrl(asset);
+    previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
     }
 
     title.textContent = asset.name;
