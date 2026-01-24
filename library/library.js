@@ -1553,7 +1553,6 @@
     const placeholder = getPlaceholderForType(ext);
     const thumbUrl = getThumbUrl(asset);
     previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
-    }
 
     title.textContent = asset.name;
 
