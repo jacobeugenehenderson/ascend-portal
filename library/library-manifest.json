@@ -1,5 +1,5 @@
 {
-  "generated": "2026-01-24T16:41:04.118214",
+  "generated": "2026-01-24T16:46:41.175762",
   "sources": {
     "library": "/Volumes/Today/Nordson/LIBRARY",
     "publications": "/Volumes/Today/Nordson/PUBLICATIONS"
@@ -336,7 +336,8 @@
       "size": 1629,
       "modified": "2024-03-01T16:05:23",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/be58c2224e71.svg"
     },
     {
       "id": "7086e1db7a4e",
@@ -348,7 +349,8 @@
       "size": 1450,
       "modified": "2024-03-01T16:10:18",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/7086e1db7a4e.svg"
     },
     {
       "id": "5453a33125ab",
@@ -360,7 +362,8 @@
       "size": 1426,
       "modified": "2024-03-01T16:09:31",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/5453a33125ab.svg"
     },
     {
       "id": "2fe110ca2ac7",
@@ -372,7 +375,8 @@
       "size": 1186,
       "modified": "2024-03-01T16:08:34",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/2fe110ca2ac7.svg"
     },
     {
       "id": "44836bc4cf53",
@@ -384,7 +388,8 @@
       "size": 77279,
       "modified": "2024-03-01T16:07:52",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/44836bc4cf53.svg"
     },
     {
       "id": "c0f134cf8ed2",
@@ -396,7 +401,8 @@
       "size": 1407,
       "modified": "2024-03-01T16:07:14",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/c0f134cf8ed2.svg"
     },
     {
       "id": "0c5f82f361d8",
@@ -408,7 +414,8 @@
       "size": 1627,
       "modified": "2024-03-01T16:06:06",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/0c5f82f361d8.svg"
     },
     {
       "id": "6993b2713319",
@@ -420,7 +427,8 @@
       "size": 2532,
       "modified": "2024-03-01T16:05:58",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/6993b2713319.svg"
     },
     {
       "id": "e289805d7c11",
@@ -432,7 +440,8 @@
       "size": 799,
       "modified": "2024-03-01T15:59:58",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/e289805d7c11.svg"
     },
     {
       "id": "224d9197a0ea",
@@ -444,7 +453,8 @@
       "size": 1344,
       "modified": "2024-03-26T16:59:45",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/224d9197a0ea.svg"
     },
     {
       "id": "413150012bc7",
@@ -456,7 +466,8 @@
       "size": 7846,
       "modified": "2025-05-28T20:25:12.540000",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/413150012bc7.svg"
     },
     {
       "id": "095ac8b8f5d4",
@@ -468,7 +479,8 @@
       "size": 68390,
       "modified": "2025-05-28T22:11:09.430000",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/095ac8b8f5d4.svg"
     },
     {
       "id": "c37919ef752b",
@@ -1373,7 +1385,8 @@
       "size": 558,
       "modified": "2025-10-07T10:33:43.440000",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/62ec8c5d5acb.svg"
     },
     {
       "id": "1e063e3c812b",
@@ -2727,7 +2740,8 @@
       "size": 4521,
       "modified": "2023-10-30T14:52:07",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/6ea0e45f0ab2.svg"
     },
     {
       "id": "3ac5a1e2f7a8",
@@ -2855,7 +2869,8 @@
       "size": 3652,
       "modified": "2025-08-19T08:42:36.940000",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/c60235853de5.svg"
     },
     {
       "id": "d21466f3f84f",
@@ -2880,7 +2895,8 @@
       "size": 9962,
       "modified": "2025-08-19T13:56:11.020000",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/146d208e4d4b.svg"
     },
     {
       "id": "a5eea721ba5f",
@@ -2944,7 +2960,8 @@
       "size": 539,
       "modified": "2024-05-13T15:49:20",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/221dbb268593.svg"
     },
     {
       "id": "2dc3d161d87c",
@@ -2956,7 +2973,8 @@
       "size": 243,
       "modified": "2024-05-13T15:42:18",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/2dc3d161d87c.svg"
     },
     {
       "id": "cff9fe00b098",
@@ -3012,7 +3030,8 @@
       "size": 916,
       "modified": "2023-08-28T14:34:03",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/554cd04663ce.svg"
     },
     {
       "id": "f63f2c74210a",
@@ -3147,7 +3166,8 @@
       "size": 1717,
       "modified": "2025-01-09T15:29:11",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/20d9e404f391.svg"
     },
     {
       "id": "f05cdeaeb556",
@@ -3172,7 +3192,8 @@
       "size": 43701,
       "modified": "2023-02-12T12:48:43",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/c74cb45df7a1.svg"
     },
     {
       "id": "4058acec9375",
@@ -3225,7 +3246,8 @@
       "size": 1537,
       "modified": "2025-01-09T16:02:29",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/558f82ce05b2.svg"
     },
     {
       "id": "c5456bf6ba88",
@@ -3250,7 +3272,8 @@
       "size": 10048,
       "modified": "2024-07-11T15:37:40",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/2e53bbb3c5f9.svg"
     },
     {
       "id": "b6f9f60a3bdb",
@@ -19060,7 +19083,8 @@
       "size": 41988,
       "modified": "2025-11-20T16:41:09.910000",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/d7c4d11fb26b.svg"
     },
     {
       "id": "97fae019b05a",
@@ -20340,7 +20364,8 @@
       "size": 1085,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/961167a6399d.svg"
     },
     {
       "id": "880d10c49016",
@@ -20352,7 +20377,8 @@
       "size": 2736,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/880d10c49016.svg"
     },
     {
       "id": "155c8ed1788c",
@@ -20364,7 +20390,8 @@
       "size": 1571,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/155c8ed1788c.svg"
     },
     {
       "id": "87752c4d78ea",
@@ -20376,7 +20403,8 @@
       "size": 551,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/87752c4d78ea.svg"
     },
     {
       "id": "101e83402cf0",
@@ -20388,7 +20416,8 @@
       "size": 1374,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/101e83402cf0.svg"
     },
     {
       "id": "96a7326d2c40",
@@ -20400,7 +20429,8 @@
       "size": 1940,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/96a7326d2c40.svg"
     },
     {
       "id": "6f90d3db6308",
@@ -20412,7 +20442,8 @@
       "size": 2744,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/6f90d3db6308.svg"
     },
     {
       "id": "c33b5f2823ad",
@@ -20424,7 +20455,8 @@
       "size": 411,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/c33b5f2823ad.svg"
     },
     {
       "id": "63d644f389e4",
@@ -20436,7 +20468,8 @@
       "size": 1505,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/63d644f389e4.svg"
     },
     {
       "id": "9abf440c735e",
@@ -20448,7 +20481,8 @@
       "size": 1373,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/9abf440c735e.svg"
     },
     {
       "id": "101c23229a08",
@@ -20460,7 +20494,8 @@
       "size": 597,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/101c23229a08.svg"
     },
     {
       "id": "4695b8b322ac",
@@ -20472,7 +20507,8 @@
       "size": 2107,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/4695b8b322ac.svg"
     },
     {
       "id": "0c6f19f54bfb",
@@ -20484,7 +20520,8 @@
       "size": 2236,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/0c6f19f54bfb.svg"
     },
     {
       "id": "620afdaa498b",
@@ -20496,7 +20533,8 @@
       "size": 1872,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/620afdaa498b.svg"
     },
     {
       "id": "44125ebf00a8",
@@ -20508,7 +20546,8 @@
       "size": 486,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/44125ebf00a8.svg"
     },
     {
       "id": "32103fe9aad6",
@@ -20520,7 +20559,8 @@
       "size": 8039,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/32103fe9aad6.svg"
     },
     {
       "id": "72533b458e36",
@@ -20532,7 +20572,8 @@
       "size": 1991,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/72533b458e36.svg"
     },
     {
       "id": "936562301326",
@@ -20544,7 +20585,8 @@
       "size": 2290,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/936562301326.svg"
     },
     {
       "id": "2563920e8087",
@@ -20556,7 +20598,8 @@
       "size": 940,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/2563920e8087.svg"
     },
     {
       "id": "cc5c6a31fe63",
@@ -20568,7 +20611,8 @@
       "size": 2540,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/cc5c6a31fe63.svg"
     },
     {
       "id": "8a8b35a3cd63",
@@ -20580,7 +20624,8 @@
       "size": 1259,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/8a8b35a3cd63.svg"
     },
     {
       "id": "fd20ce348faf",
@@ -20592,7 +20637,8 @@
       "size": 1086,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/fd20ce348faf.svg"
     },
     {
       "id": "fa21fa5e8047",
@@ -20604,7 +20650,8 @@
       "size": 2842,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/fa21fa5e8047.svg"
     },
     {
       "id": "9d70baecb7fb",
@@ -20616,7 +20663,8 @@
       "size": 4463,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/9d70baecb7fb.svg"
     },
     {
       "id": "38ffea942b76",
@@ -20628,7 +20676,8 @@
       "size": 1275,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/38ffea942b76.svg"
     },
     {
       "id": "49d9ce925182",
@@ -20640,7 +20689,8 @@
       "size": 1761,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/49d9ce925182.svg"
     },
     {
       "id": "4a9bba2952bb",
@@ -20652,7 +20702,8 @@
       "size": 2378,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/4a9bba2952bb.svg"
     },
     {
       "id": "fcd0a269190c",
@@ -20664,7 +20715,8 @@
       "size": 1407,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/fcd0a269190c.svg"
     },
     {
       "id": "351fd7222de8",
@@ -20676,7 +20728,8 @@
       "size": 4372,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/351fd7222de8.svg"
     },
     {
       "id": "aa20f2f3845f",
@@ -20688,7 +20741,8 @@
       "size": 1621,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/aa20f2f3845f.svg"
     },
     {
       "id": "7701fd52c408",
@@ -20700,7 +20754,8 @@
       "size": 1648,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/7701fd52c408.svg"
     },
     {
       "id": "2c375216aa32",
@@ -20712,7 +20767,8 @@
       "size": 528,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/2c375216aa32.svg"
     },
     {
       "id": "c33f43c4eea9",
@@ -20724,7 +20780,8 @@
       "size": 2011,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/c33f43c4eea9.svg"
     },
     {
       "id": "19f4a4316d5d",
@@ -20736,7 +20793,8 @@
       "size": 3483,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/19f4a4316d5d.svg"
     },
     {
       "id": "14147bc1ed90",
@@ -20748,7 +20806,8 @@
       "size": 1739,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/14147bc1ed90.svg"
     },
     {
       "id": "ff671a547fed",
@@ -20760,7 +20819,8 @@
       "size": 2051,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/ff671a547fed.svg"
     },
     {
       "id": "4f98a0f40306",
@@ -20772,7 +20832,8 @@
       "size": 1245,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/4f98a0f40306.svg"
     },
     {
       "id": "121dd84d4f3d",
@@ -20784,7 +20845,8 @@
       "size": 3177,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/121dd84d4f3d.svg"
     },
     {
       "id": "6cbca9e77ecd",
@@ -20796,7 +20858,8 @@
       "size": 480,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/6cbca9e77ecd.svg"
     },
     {
       "id": "ead7d205f59c",
@@ -20808,7 +20871,8 @@
       "size": 2203,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/ead7d205f59c.svg"
     },
     {
       "id": "c7f4bb669177",
@@ -20820,7 +20884,8 @@
       "size": 1065,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/c7f4bb669177.svg"
     },
     {
       "id": "87ff6a5e81c1",
@@ -20832,7 +20897,8 @@
       "size": 1048,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/87ff6a5e81c1.svg"
     },
     {
       "id": "aa64ae6fdfab",
@@ -20844,7 +20910,8 @@
       "size": 381,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/aa64ae6fdfab.svg"
     },
     {
       "id": "1d749c6f1ade",
@@ -20856,7 +20923,8 @@
       "size": 2042,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/1d749c6f1ade.svg"
     },
     {
       "id": "b9f04ba591a8",
@@ -22205,7 +22273,8 @@
       "size": 35402,
       "modified": "2024-02-29T10:20:23",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/f1e877614edb.svg"
     },
     {
       "id": "ac78478d2ac3",
@@ -28331,7 +28400,8 @@
       "size": 1717,
       "modified": "2025-01-09T15:29:11.580000",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/82ec147f522d.svg"
     },
     {
       "id": "e4813077e862",
@@ -28343,7 +28413,8 @@
       "size": 1537,
       "modified": "2025-01-09T16:02:29.640000",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/e4813077e862.svg"
     },
     {
       "id": "d47d4f2c4737",
@@ -34642,7 +34713,8 @@
       "size": 36197,
       "modified": "2023-06-26T16:31:02",
       "collection": "stock",
-      "isImage": true
+      "isImage": true,
+      "thumbUrl": "thumbs/751ef69a852a.svg"
     },
     {
       "id": "783f2547a73b",

@@ -429,9 +429,14 @@ def main():
     linked_thumbs = 0
     for asset in assets:
         if not asset.get("thumbUrl"):
-            thumb_file = thumbs_path / f"{asset['id']}.webp"
+            # SVGs keep their extension, others use .webp
+            ext = asset.get("ext", "").lower()
+            if ext == "svg":
+                thumb_file = thumbs_path / f"{asset['id']}.svg"
+            else:
+                thumb_file = thumbs_path / f"{asset['id']}.webp"
             if thumb_file.exists():
-                asset["thumbUrl"] = f"{THUMBS_DIR}/{asset['id']}.webp"
+                asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_file.name}"
                 linked_thumbs += 1
     if linked_thumbs > 0:
         print(f"Linked {linked_thumbs} existing thumbnails")
