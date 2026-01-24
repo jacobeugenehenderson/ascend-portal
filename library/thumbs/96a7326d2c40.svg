@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="33px" height="40px" viewBox="0 0 33 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>reciprocator</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="12" height="36"></rect>
+    </defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-Copy-3" transform="translate(-918.000000, -147.000000)">
+            <g id="reciprocator" transform="translate(918.000000, 147.000000)">
+                <g id="Recip/Oscila">
+                    <rect id="Rectangle-Copy-6" fill="#0071BE" x="5" y="0" width="12" height="36"></rect>
+                    <g id="Asset-33-Copy-3" transform="translate(0.000000, 13.000000)" stroke="#0071BE" stroke-width="2">
+                        <path d="M0,0 C2.75,0 2.75,8 5.5,8 C8.25,8 8.25,0 11,0 C13.75,0 13.74,8 16.49,8 C19.24,8 19.24,0 21.99,0 C24.74,0 24.74,8 27.5,8 C30.26,8 30.25,0 33,0" id="Shape"></path>
+                    </g>
+                    <rect id="Rectangle-2-Copy-6" fill="#0071BE" x="1" y="36" width="31" height="4"></rect>
+                    <g id="Shape-Copy-2" transform="translate(5.000000, 0.000000)">
+                        <mask id="mask-2" fill="white">
+                            <use xlink:href="#path-1"></use>
+                        </mask>
+                        <use id="Mask" fill="#0071BE" xlink:href="#path-1"></use>
+                        <path d="M-5,13 C-2.25,13 -2.25,21 0.5,21 C3.25,21 3.25,13 6,13 C8.75,13 8.74,21 11.49,21 C14.24,21 14.24,13 16.99,13 C19.74,13 19.74,21 22.5,21 C25.26,21 25.25,13 28,13" id="Shape" stroke="#FFFFFF" stroke-width="2" mask="url(#mask-2)"></path>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

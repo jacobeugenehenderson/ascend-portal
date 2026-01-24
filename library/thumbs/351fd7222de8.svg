@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="39px" height="30px" viewBox="0 0 39 30" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>Assist Air</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-Copy-3" transform="translate(-920.000000, -332.000000)" fill="#0071BE">
+            <g id="Assist-Air" transform="translate(920.000000, 332.000000)">
+                <g id="Asset-60">
+                    <circle id="Oval" fill-rule="nonzero" cx="35.97" cy="16.4" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="37.97" cy="20.11" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="37.97" cy="23.82" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="35.97" cy="26.95" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="31.96" cy="28.42" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="27.75" cy="27.95" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="25.15" cy="24.82" r="1"></circle>
+                    <path d="M31.26,25.68 C28.7581501,25.68 26.73,23.6518499 26.73,21.15 C26.7193327,20.970158 26.7193327,20.789842 26.73,20.61 L28.73,20.61 C28.7142927,20.7896573 28.7142927,20.9703427 28.73,21.15 C28.73,22.5528033 29.8671967,23.69 31.27,23.69 C31.9436499,23.69 32.5897088,23.4223936 33.0660512,22.9460512 C33.5423936,22.4697088 33.81,21.8236499 33.81,21.15 C33.8100108,19.7455699 32.6744193,18.6055076 31.27,18.6 L14,18.6 L14,16.6 L31.27,16.6 C32.4731653,16.5999971 33.6269066,17.078636 34.4767344,17.9303399 C35.3265623,18.7820437 35.802656,19.9368376 35.8,21.14 C35.8026628,22.3448972 35.3251978,23.5012117 34.4732048,24.3532048 C33.6212117,25.2051978 32.4648972,25.6826628 31.26,25.68 Z" id="Shape" fill-rule="nonzero"></path>
+                    <circle id="Oval" fill-rule="nonzero" cx="10.29" cy="17.61" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="5.68" cy="17.61" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="1.06" cy="17.61" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="8.94" cy="9.51" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="4.32" cy="9.51" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="22.87" cy="9.51" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="18.26" cy="9.51" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="13.64" cy="9.51" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="31.79" cy="9.51" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="27.76" cy="9.51" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="29.18" cy="5.3" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="32.79" cy="6.02" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="13.56" cy="21.4" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="8.94" cy="21.4" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="4.32" cy="21.4" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="22.87" cy="21.4" r="1"></circle>
+                    <circle id="Oval" fill-rule="nonzero" cx="18.26" cy="21.4" r="1"></circle>
+                    <path d="M30.48,2.90164371e-16 C26.8772938,-0.00171393685 23.8136179,2.62854316 23.27,6.19 L25.33,6.19 C25.8439979,3.75374918 27.9901299,2.00767283 30.48,2 C31.8829043,1.99997727 33.2279159,2.55932407 34.2170996,3.55413873 C35.2062832,4.54895339 35.7579862,5.89711844 35.75,7.3 C35.7505181,10.1664092 33.4558912,12.5055056 30.59,12.56 L0,12.56 L0,14.56 L30.19,14.56 L30.48,14.56 C32.4178142,14.5600018 34.2761149,13.7895243 35.6454183,12.4183452 C37.0147216,11.047166 37.7826545,9.18781241 37.78,7.25 C37.752519,3.23786121 34.4922329,-9.41142719e-05 30.48,2.90164371e-16 Z" id="Shape" fill-rule="nonzero"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

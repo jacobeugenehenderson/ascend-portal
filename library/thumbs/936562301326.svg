@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="31px" height="26px" viewBox="0 0 31 26" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>add note</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="add-note-button" transform="translate(-5.000000, -7.000000)">
+            <g id="Group">
+                <g id="add-note" transform="translate(5.000000, 7.000000)">
+                    <g id="Group">
+                        <rect id="Rectangle-17-Copy-6" fill="#0071BE" x="0" y="1" width="22" height="23" rx="1"></rect>
+                        <rect id="Rectangle-7-Copy-42" fill="#FFFFFF" x="7" y="12" width="10" height="2"></rect>
+                        <rect id="Rectangle-7-Copy-43" fill="#FFFFFF" x="3" y="12" width="2" height="2"></rect>
+                        <rect id="Rectangle-7-Copy-44" fill="#FFFFFF" x="7" y="7" width="10" height="2"></rect>
+                        <rect id="Rectangle-7-Copy-45" fill="#FFFFFF" x="3" y="7" width="2" height="2"></rect>
+                        <rect id="Rectangle-7-Copy-46" fill="#FFFFFF" x="7" y="17" width="10" height="2"></rect>
+                        <rect id="Rectangle-7-Copy-47" fill="#FFFFFF" x="3" y="17" width="2" height="2"></rect>
+                        <g id="Group-38" transform="translate(26.000000, 0.000000)" fill="#0071BE">
+                            <rect id="Rectangle-19" x="0" y="5" width="5" height="15"></rect>
+                            <path d="M2,0 L3,0 C4.1045695,-2.02906125e-16 5,0.8954305 5,2 L5,4 L0,4 L0,2 C-1.3527075e-16,0.8954305 0.8954305,2.02906125e-16 2,0 Z" id="Rectangle-19-Copy"></path>
+                            <path d="M2.7236068,21.4472136 L5,26 L0,26 L2.2763932,21.4472136 C2.33814051,21.323719 2.48830877,21.2736629 2.6118034,21.3354102 C2.66018525,21.3596011 2.69941587,21.3988317 2.7236068,21.4472136 Z" id="Triangle" transform="translate(2.500000, 23.500000) scale(1, -1) translate(-2.500000, -23.500000) "></path>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

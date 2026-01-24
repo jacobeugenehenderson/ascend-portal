@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="46px" height="29px" viewBox="0 0 46 29" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>guns</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-Copy-3" transform="translate(-273.000000, -514.000000)">
+            <g id="guns" transform="translate(273.000000, 514.000000)">
+                <g id="Group-9">
+                    <g>
+                        <g id="Group-7" transform="translate(25.000000, 0.000000)">
+                            <g id="Group-29-Copy" transform="translate(17.000000, 25.000000)"></g>
+                            <circle id="Oval-3-Copy-15" fill="#0071BE" cx="19.25" cy="1.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-16" fill="#0071BE" cx="19.25" cy="27.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-17" fill="#0071BE" cx="12.25" cy="26.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-18" fill="#0071BE" cx="12.25" cy="2.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-19" fill="#0071BE" cx="5.25" cy="7.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-20" fill="#0071BE" cx="5.25" cy="22.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-21" fill="#0071BE" cx="12.25" cy="18.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-22" fill="#0071BE" cx="12.25" cy="10.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-23" fill="#0071BE" cx="19.25" cy="8.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-24" fill="#0071BE" cx="19.25" cy="14.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-25" fill="#0071BE" cx="7.25" cy="14.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-26" fill="#0071BE" cx="1.25" cy="14.25" r="1.25"></circle>
+                            <circle id="Oval-3-Copy-27" fill="#0071BE" cx="19.25" cy="20.25" r="1.25"></circle>
+                        </g>
+                        <g id="Group-8" transform="translate(0.000000, 5.000000)" fill="#0071B7">
+                            <polygon id="Fill-30" points="8.8578 14 21.7808 14 21.7808 4 8.8578 4"></polygon>
+                            <polygon id="Fill-32" points="10.686 0 0 0 0 18 10.686 18 12.858 14 12.858 4"></polygon>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

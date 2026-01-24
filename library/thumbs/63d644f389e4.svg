@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="30px" height="30px" viewBox="0 0 30 30" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>nav_back</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <polygon id="path-1" points="0.0004 0.0003 30 0.0003 30 30 0.0004 30"></polygon>
+    </defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-Copy-3" transform="translate(-455.000000, -88.000000)">
+            <g id="back-button" transform="translate(455.000000, 88.000000)">
+                <g id="Page-1">
+                    <circle id="Oval" fill="#FFFFFF" cx="16" cy="15" r="12"></circle>
+                    <mask id="mask-2" fill="white">
+                        <use xlink:href="#path-1"></use>
+                    </mask>
+                    <g id="Clip-2"></g>
+                    <path d="M22.8754,16.5003 L12.8624,16.5003 L16.3134,19.9503 L14.1754,22.0873 L7.1254,15.0003 L14.1754,7.9503 L16.3134,10.0873 L12.8624,13.5003 L22.8754,13.5003 L22.8754,16.5003 Z M15.0004,0.0003 C6.7124,0.0003 0.0004,6.7123 0.0004,15.0003 C0.0004,23.2873 6.7124,30.0003 15.0004,30.0003 C23.2874,30.0003 30.0004,23.2873 30.0004,15.0003 C30.0004,6.7123 23.2874,0.0003 15.0004,0.0003 Z" id="Fill-1" fill="#4D4D4D" mask="url(#mask-2)"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

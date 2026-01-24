@@ -31,9 +31,11 @@ THUMB_SIZE = 400  # pixels
 
 # File extensions
 WEB_DISPLAYABLE = {'.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp'}
-NEEDS_THUMBNAIL = {'.pdf', '.ai', '.psd', '.eps'}  # INDD excluded - handled as project files
+NEEDS_CONVERSION = {'.pdf', '.ai', '.psd', '.eps'}  # Need special handling (Quick Look or PyMuPDF)
 PROJECT_FILE_EXTENSIONS = {'.indd'}  # Track these but don't list them
-ALL_EXTENSIONS = WEB_DISPLAYABLE | NEEDS_THUMBNAIL | PROJECT_FILE_EXTENSIONS
+ALL_EXTENSIONS = WEB_DISPLAYABLE | NEEDS_CONVERSION | PROJECT_FILE_EXTENSIONS
+# All displayable files need thumbnails for GitHub Pages hosting
+NEEDS_THUMBNAIL = WEB_DISPLAYABLE | NEEDS_CONVERSION
 
 
 def generate_asset_id(path: str) -> str:
@@ -151,23 +153,49 @@ def generate_pdf_thumbnail(source_path: Path, thumb_path: Path) -> bool:
         mat = fitz.Matrix(zoom, zoom)
         pix = page.get_pixmap(matrix=mat, alpha=False)
 
-        # Scale down to target size
-        if pix.width > THUMB_SIZE or pix.height > THUMB_SIZE:
-            scale = THUMB_SIZE / max(pix.width, pix.height)
-            new_width = int(pix.width * scale)
-            new_height = int(pix.height * scale)
-            # Create scaled pixmap
-            from PIL import Image
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            img = img.resize((new_width, new_height), Image.LANCZOS)
-            img.save(thumb_path, "PNG")
-        else:
-            pix.save(thumb_path)
+        # Convert to PIL and save as WebP
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
+        # Scale down to target size
+        if img.width > THUMB_SIZE or img.height > THUMB_SIZE:
+            scale = THUMB_SIZE / max(img.width, img.height)
+            new_width = int(img.width * scale)
+            new_height = int(img.height * scale)
+            img = img.resize((new_width, new_height), Image.LANCZOS)
+
+        img.save(thumb_path, "WEBP", quality=85)
         doc.close()
         return True
     except Exception as e:
         print(f"  PDF thumbnail error: {e}")
+        return False
+
+
+def generate_image_thumbnail(source_path: Path, thumb_path: Path, ext: str) -> bool:
+    """Generate thumbnail for regular images (jpg, png, gif, webp) or copy SVG."""
+    try:
+        # SVG: just copy the file (they're vector, no resizing needed)
+        if ext == 'svg':
+            svg_thumb = thumb_path.with_suffix('.svg')
+            shutil.copy2(source_path, svg_thumb)
+            return True
+
+        with Image.open(source_path) as img:
+            # Convert to RGB if necessary (for PNG with alpha, etc.)
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+
+            # Scale down to target size
+            if img.width > THUMB_SIZE or img.height > THUMB_SIZE:
+                scale = THUMB_SIZE / max(img.width, img.height)
+                new_width = int(img.width * scale)
+                new_height = int(img.height * scale)
+                img = img.resize((new_width, new_height), Image.LANCZOS)
+
+            img.save(thumb_path, "WEBP", quality=85)
+        return True
+    except Exception as e:
+        print(f"  Image thumbnail error: {e}")
         return False
 
 
@@ -209,7 +237,18 @@ def generate_thumbnail(asset: dict, library_path: Path, thumbs_path: Path) -> bo
             return True
         return False
 
-    # Use Quick Look for other formats (AI, PSD, INDD, EPS)
+    # Use PIL for regular images (jpg, png, gif, webp) or copy SVG
+    if ext in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'):
+        if generate_image_thumbnail(source_path, thumb_path, ext):
+            # SVG keeps its extension, others become .webp
+            if ext == 'svg':
+                asset["thumbUrl"] = f"{THUMBS_DIR}/{asset['id']}.svg"
+            else:
+                asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_filename}"
+            return True
+        return False
+
+    # Use Quick Look for other formats (AI, PSD, EPS)
     try:
         result = subprocess.run(
             ["qlmanage", "-t", "-s", str(THUMB_SIZE), "-o", str(thumbs_path), str(source_path)],

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="31px" height="28px" viewBox="0 0 31 28" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>create recipe small</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="create-recipe-button-small" transform="translate(-6.000000, -7.000000)">
+            <g id="Group">
+                <g id="create-recipe-small" transform="translate(6.000000, 7.000000)">
+                    <g id="Group">
+                        <g id="Group-28">
+                            <rect id="Rectangle-17-Copy-6" fill="#0071BE" x="0" y="0" width="28" height="23" rx="1"></rect>
+                            <rect id="Rectangle-7-Copy-42" fill="#FFFFFF" x="9" y="11" width="15" height="2"></rect>
+                            <rect id="Rectangle-7-Copy-43" fill="#FFFFFF" x="4" y="11" width="2" height="2"></rect>
+                            <rect id="Rectangle-7-Copy-44" fill="#FFFFFF" x="9" y="6" width="15" height="2"></rect>
+                            <rect id="Rectangle-7-Copy-45" fill="#FFFFFF" x="4" y="6" width="2" height="2"></rect>
+                            <rect id="Rectangle-7-Copy-46" fill="#FFFFFF" x="9" y="16" width="15" height="2"></rect>
+                            <rect id="Rectangle-7-Copy-47" fill="#FFFFFF" x="4" y="16" width="2" height="2"></rect>
+                        </g>
+                        <g id="Group-33" transform="translate(14.000000, 11.000000)">
+                            <circle id="Oval-2-Copy" stroke="#0071BE" stroke-width="2" fill="#FFFFFF" cx="8" cy="8" r="8"></circle>
+                            <rect id="Rectangle-14-Copy-2" fill="#0071BE" x="7" y="4" width="2" height="8"></rect>
+                            <rect id="Rectangle-14-Copy-3" fill="#0071BE" transform="translate(8.000000, 8.000000) rotate(90.000000) translate(-8.000000, -8.000000) " x="7" y="4" width="2" height="8"></rect>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

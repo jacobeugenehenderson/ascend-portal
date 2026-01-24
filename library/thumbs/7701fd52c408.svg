@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="56px" height="38px" viewBox="0 0 56 38" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>network</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-Copy-3" transform="translate(-273.000000, -870.000000)" fill="#0071BE">
+            <g id="network" transform="translate(273.000000, 870.000000)">
+                <g id="Group-6">
+                    <g>
+                        <rect id="Rectangle-24" x="0" y="26" width="12" height="12" rx="1"></rect>
+                        <rect id="Rectangle-24-Copy" x="22" y="26" width="12" height="12" rx="1"></rect>
+                        <rect id="Rectangle-24-Copy-3" x="22" y="0" width="12" height="12" rx="1"></rect>
+                        <rect id="Rectangle-24-Copy-2" x="44" y="26" width="12" height="12" rx="1"></rect>
+                        <rect id="Rectangle-25" x="4" y="31" width="48" height="2" rx="1"></rect>
+                        <rect id="Rectangle-25-Copy" x="5" y="17" width="46" height="2"></rect>
+                        <rect id="Rectangle-26" x="27" y="6" width="2" height="25"></rect>
+                        <rect id="Rectangle-26-Copy" x="5" y="17" width="2" height="16"></rect>
+                        <rect id="Rectangle-26-Copy-2" x="49" y="17" width="2" height="16"></rect>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

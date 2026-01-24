@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="25px" height="25px" viewBox="0 0 25 25" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>login</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-Copy-3" transform="translate(-276.000000, -32.000000)" fill="#4D4D4D">
+            <g id="login" transform="translate(276.000000, 32.000000)">
+                <g>
+                    <polygon id="Fill-1" transform="translate(15.666500, 12.475800) scale(-1, 1) translate(-15.666500, -12.475800) " points="17.072 8.2153 19.816 11.0553 6.333 11.0553 6.333 13.8963 19.816 13.8963 17.072 16.7373 19.004 18.7613 25 12.4763 19.004 6.1903"></polygon>
+                    <polygon id="Fill-2" points="17 18 17 22 3 22 3 3 17 3 17 7 20 7 20 0 0 0 0 25 20 25 20 18"></polygon>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

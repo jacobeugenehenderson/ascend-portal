@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="30px" height="25px" viewBox="0 0 30 25" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>nav_logout</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-Copy-3" transform="translate(-314.000000, -32.000000)" fill="#4D4D4D">
+            <g id="logout" transform="translate(314.000000, 32.000000)">
+                <g>
+                    <polygon id="Fill-1" points="21.9305727 8.09410548 24.7235228 11.0310238 11 11.0310238 11 13.9689762 24.7235228 13.9689762 21.9305727 16.9069286 23.8970376 19 30 12.5005171 23.8970376 6"></polygon>
+                    <polygon id="Fill-2" points="16.15 18 16.15 22 2.85 22 2.85 3 16.15 3 16.15 7 19 7 19 0 0 0 0 25 19 25 19 18"></polygon>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

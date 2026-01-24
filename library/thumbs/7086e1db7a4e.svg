@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 28.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 1000 600" style="enable-background:new 0 0 1000 600;" xml:space="preserve">
+<style type="text/css">
+	.st0{clip-path:url(#SVGID_00000037687314290776870550000008127708826874379946_);}
+	.st1{clip-path:url(#SVGID_00000037687314290776870550000008127708826874379946_);fill:#DD0000;}
+	.st2{clip-path:url(#SVGID_00000037687314290776870550000008127708826874379946_);fill:#FFCE00;}
+</style>
+<g>
+	<defs>
+		<circle id="SVGID_1_" cx="500" cy="300" r="297.5"/>
+	</defs>
+	<clipPath id="SVGID_00000023260513634713954350000000177495439991139723_">
+		<use xlink:href="#SVGID_1_"  style="overflow:visible;"/>
+	</clipPath>
+	
+		<rect id="black_stripe" style="clip-path:url(#SVGID_00000023260513634713954350000000177495439991139723_);" width="1000" height="600"/>
+	
+		<rect id="red_stripe" y="200" style="clip-path:url(#SVGID_00000023260513634713954350000000177495439991139723_);fill:#DD0000;" width="1000" height="400"/>
+	
+		<rect id="gold_stripe" y="400" style="clip-path:url(#SVGID_00000023260513634713954350000000177495439991139723_);fill:#FFCE00;" width="1000" height="200"/>
+	<use xlink:href="#SVGID_1_"  style="overflow:visible;fill:none;stroke:#000000;stroke-miterlimit:10;"/>
+</g>
+</svg>

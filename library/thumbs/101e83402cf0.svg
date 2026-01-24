@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="36px" height="36px" viewBox="0 0 36 36" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 50.2 (55047) - http://www.bohemiancoding.com/sketch -->
+    <title>percent adjustment</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard-Copy-3" transform="translate(-271.000000, -388.000000)">
+            <g id="percent-adjustment" transform="translate(271.000000, 388.000000)">
+                <g>
+                    <rect id="Rectangle-4-Copy-35" fill="#4D4D4D" x="0" y="0" width="36" height="36" rx="1"></rect>
+                    <g id="Group-3" transform="translate(17.677670, 17.677670) rotate(-45.000000) translate(-17.677670, -17.677670) translate(5.177670, 5.177670)" fill="#FFFFFF">
+                        <rect id="Rectangle-18" transform="translate(12.500000, 12.500000) scale(-1, 1) translate(-12.500000, -12.500000) " x="0" y="11" width="25" height="3"></rect>
+                        <circle id="Oval-3-Copy" cx="12.5" cy="21.5" r="3.5"></circle>
+                        <circle id="Oval-3-Copy-2" cx="12.5" cy="3.5" r="3.5"></circle>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
