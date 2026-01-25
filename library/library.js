@@ -1742,7 +1742,6 @@
     // Populate notes
     const notesTextarea = document.getElementById('library-modal-notes');
     const notesStatus = document.getElementById('library-notes-status');
-    const assetMeta = getAssetMeta(asset.id);
     if (notesTextarea) {
       notesTextarea.value = assetMeta.notes || '';
       notesStatus.textContent = '';
