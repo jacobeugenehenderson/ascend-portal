@@ -151,7 +151,7 @@ def generate_ai_thumbnail(src_path: Path, rel_path: str) -> bool:
         return False
 
 def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
-    """Generate WebP thumbnails (small + large) from EPS file using Pillow + Ghostscript."""
+    """Generate WebP thumbnails (small + large) from EPS file using Ghostscript directly."""
     thumb_id = get_thumb_id(rel_path)
     small_path = THUMBS_PATH / f"{thumb_id}.webp"
     large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
@@ -161,23 +161,30 @@ def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
         return True
 
     try:
-        # Open EPS with Pillow (requires Ghostscript)
-        with Image.open(src_path) as img:
-            # Calculate scale for large size
-            orig_width, orig_height = img.size
+        # Use Ghostscript directly (much faster than Pillow's EPS handler)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_png = Path(tmp_dir) / "render.png"
 
-            if orig_width > orig_height:
-                scale = MAX_SIZE_LG / orig_width
-            else:
-                scale = MAX_SIZE_LG / orig_height
+            # Render at 150 DPI - gives good quality for most EPS files
+            result = subprocess.run([
+                "gs", "-dNOPAUSE", "-dBATCH", "-dSAFER",
+                "-sDEVICE=png16m", "-r150",
+                "-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+                f"-sOutputFile={tmp_png}", str(src_path)
+            ], capture_output=True, timeout=30)
 
-            # Load at target size (Pillow will use Ghostscript)
-            img.load(scale=max(scale, 1))
+            if not tmp_png.exists():
+                raise ValueError(f"Ghostscript failed: {result.stderr.decode()[:100]}")
 
-            # Save both sizes
-            save_both_sizes(img, thumb_id)
+            # Convert to WebP at both sizes
+            with Image.open(tmp_png) as img:
+                save_both_sizes(img, thumb_id)
+
         return True
 
+    except subprocess.TimeoutExpired:
+        print(f"  ERROR: Timeout", file=sys.stderr)
+        return False
     except Exception as e:
         print(f"  ERROR: {e}", file=sys.stderr)
         return False
