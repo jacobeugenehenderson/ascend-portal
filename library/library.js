@@ -1769,20 +1769,27 @@
   // File types that browsers can display directly
   const WEB_DISPLAYABLE = new Set(['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp']);
 
-  function getThumbUrl(asset) {
+  function getThumbUrl(asset, size = 'sm') {
+    // size: 'sm' = 500px (grid cards), 'lg' = 1200px (modal preview)
+    const thumbFolder = size === 'lg' ? 'thumbs-lg' : 'thumbs';
+
     // Use pre-generated thumbnail if available
     if (asset.thumbUrl) {
+      // Replace thumbs/ with appropriate folder
+      if (size === 'lg' && asset.thumbUrl.startsWith('thumbs/')) {
+        return asset.thumbUrl.replace('thumbs/', 'thumbs-lg/');
+      }
       return asset.thumbUrl;
     }
 
     const ext = asset.ext.toLowerCase();
 
-    // Check for WebP thumbnail by asset ID (PSD, AI, EPS)
-    if (ext === 'psd' || ext === 'ai' || ext === 'eps') {
-      return `thumbs/${asset.id}.webp`;
+    // Check for WebP thumbnail by asset ID (PSD, AI, EPS, INDD)
+    if (ext === 'psd' || ext === 'ai' || ext === 'eps' || ext === 'indd') {
+      return `${thumbFolder}/${asset.id}.webp`;
     }
 
-    // Web-displayable images: use the file directly
+    // Web-displayable images: use the file directly (or could use thumbs for large images)
     if (WEB_DISPLAYABLE.has(ext)) {
       return `assets/${asset.path}`;
     }
@@ -1874,9 +1881,9 @@
     const isPdf = ext === 'pdf';
     const assetUrl = getAssetUrl(asset);
 
-    // Set preview content - use thumbnail for all types (actual files not hosted on GitHub Pages)
+    // Set preview content - use large thumbnail for modal (actual files not hosted on GitHub Pages)
     const placeholder = getPlaceholderForType(ext);
-    const thumbUrl = getThumbUrl(asset);
+    const thumbUrl = getThumbUrl(asset, 'lg');
     previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
 
     // Show display name if set, otherwise use filename

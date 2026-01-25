@@ -22,20 +22,74 @@ Image.MAX_IMAGE_PIXELS = 400_000_000
 LIBRARY_PATH = Path("/Volumes/Today/Nordson/LIBRARY")
 PUBLICATIONS_PATH = Path("/Volumes/Today/Nordson/PUBLICATIONS")
 THUMBS_PATH = Path("/Volumes/Today/ascend-portal/library/thumbs")
-MAX_SIZE = 1600  # Longest edge
+THUMBS_LG_PATH = Path("/Volumes/Today/ascend-portal/library/thumbs-lg")
+MAX_SIZE = 500       # Small thumbnails for grid cards
+MAX_SIZE_LG = 1200   # Large thumbnails for modal preview
 WEBP_QUALITY = 82
 
 def get_thumb_id(rel_path: str) -> str:
     """Generate consistent ID from relative path."""
     return hashlib.md5(rel_path.encode()).hexdigest()[:12]
 
-def generate_psd_thumbnail(src_path: Path, rel_path: str) -> bool:
-    """Generate WebP thumbnail from PSD file using psd-tools."""
-    thumb_id = get_thumb_id(rel_path)
-    thumb_path = THUMBS_PATH / f"{thumb_id}.webp"
+def save_both_sizes(img: Image.Image, thumb_id: str, force: bool = False) -> tuple:
+    """Save image at both small and large sizes. Returns (small_saved, large_saved)."""
+    small_path = THUMBS_PATH / f"{thumb_id}.webp"
+    large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
 
-    # Skip if already exists
-    if thumb_path.exists():
+    small_saved = False
+    large_saved = False
+
+    # Convert to RGB if necessary
+    if img.mode == 'RGBA':
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        background.paste(img, mask=img.split()[3])
+        img = background
+    elif img.mode == 'CMYK':
+        img = img.convert('RGB')
+    elif img.mode != 'RGB':
+        img = img.convert('RGB')
+
+    width, height = img.size
+
+    # Save large version first (from original)
+    if force or not large_path.exists():
+        if width > height:
+            new_width = MAX_SIZE_LG
+            new_height = int(height * (MAX_SIZE_LG / width))
+        else:
+            new_height = MAX_SIZE_LG
+            new_width = int(width * (MAX_SIZE_LG / height))
+
+        if width > MAX_SIZE_LG or height > MAX_SIZE_LG:
+            img_lg = img.resize((new_width, new_height), Image.LANCZOS)
+        else:
+            img_lg = img
+        img_lg.save(large_path, 'WebP', quality=WEBP_QUALITY)
+        large_saved = True
+
+    # Save small version
+    if force or not small_path.exists():
+        if width > height:
+            new_width = MAX_SIZE
+            new_height = int(height * (MAX_SIZE / width))
+        else:
+            new_height = MAX_SIZE
+            new_width = int(width * (MAX_SIZE / height))
+
+        img_sm = img.resize((new_width, new_height), Image.LANCZOS)
+        img_sm.save(small_path, 'WebP', quality=WEBP_QUALITY)
+        small_saved = True
+
+    return (small_saved, large_saved)
+
+def generate_psd_thumbnail(src_path: Path, rel_path: str) -> bool:
+    """Generate WebP thumbnails (small + large) from PSD file using psd-tools."""
+    thumb_id = get_thumb_id(rel_path)
+    small_path = THUMBS_PATH / f"{thumb_id}.webp"
+    large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
+
+    # Skip if both already exist
+    if small_path.exists() and large_path.exists():
         return True
 
     try:
@@ -46,31 +100,8 @@ def generate_psd_thumbnail(src_path: Path, rel_path: str) -> bool:
         if img is None:
             raise ValueError("No composite image in PSD")
 
-        # Convert to RGB if necessary
-        if img.mode == 'RGBA':
-            # Create white background for transparency
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            background.paste(img, mask=img.split()[3])
-            img = background
-        elif img.mode == 'CMYK':
-            img = img.convert('RGB')
-        elif img.mode != 'RGB':
-            img = img.convert('RGB')
-
-        # Calculate resize dimensions
-        width, height = img.size
-        if width > height:
-            new_width = MAX_SIZE
-            new_height = int(height * (MAX_SIZE / width))
-        else:
-            new_height = MAX_SIZE
-            new_width = int(width * (MAX_SIZE / height))
-
-        # Resize with high-quality resampling
-        img = img.resize((new_width, new_height), Image.LANCZOS)
-
-        # Save as WebP
-        img.save(thumb_path, 'WebP', quality=WEBP_QUALITY)
+        # Save both sizes
+        save_both_sizes(img, thumb_id)
         return True
 
     except Exception as e:
@@ -78,12 +109,13 @@ def generate_psd_thumbnail(src_path: Path, rel_path: str) -> bool:
         return False
 
 def generate_ai_thumbnail(src_path: Path, rel_path: str) -> bool:
-    """Generate WebP thumbnail from AI file using PyMuPDF."""
+    """Generate WebP thumbnails (small + large) from AI file using PyMuPDF."""
     thumb_id = get_thumb_id(rel_path)
-    thumb_path = THUMBS_PATH / f"{thumb_id}.webp"
+    small_path = THUMBS_PATH / f"{thumb_id}.webp"
+    large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
 
-    # Skip if already exists
-    if thumb_path.exists():
+    # Skip if both already exist
+    if small_path.exists() and large_path.exists():
         return True
 
     try:
@@ -91,16 +123,15 @@ def generate_ai_thumbnail(src_path: Path, rel_path: str) -> bool:
         doc = fitz.open(src_path)
         page = doc[0]  # First page
 
-        # Calculate zoom factor to get ~MAX_SIZE on longest edge
+        # Calculate zoom factor to get high-res render for large thumbnail
         rect = page.rect
         width, height = rect.width, rect.height
 
-        # Base DPI is 72 for PDF; we want high-res render
-        # Calculate scale to get MAX_SIZE on longest edge
+        # Render at scale for MAX_SIZE_LG (we'll downscale for small)
         if width > height:
-            scale = MAX_SIZE / width
+            scale = MAX_SIZE_LG / width
         else:
-            scale = MAX_SIZE / height
+            scale = MAX_SIZE_LG / height
 
         # Render at calculated scale (minimum 2x for quality)
         zoom = max(scale, 2.0)
@@ -109,21 +140,10 @@ def generate_ai_thumbnail(src_path: Path, rel_path: str) -> bool:
 
         # Convert to PIL Image
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-
-        # Resize to MAX_SIZE if larger
-        width, height = img.size
-        if width > MAX_SIZE or height > MAX_SIZE:
-            if width > height:
-                new_width = MAX_SIZE
-                new_height = int(height * (MAX_SIZE / width))
-            else:
-                new_height = MAX_SIZE
-                new_width = int(width * (MAX_SIZE / height))
-            img = img.resize((new_width, new_height), Image.LANCZOS)
-
-        # Save as WebP
-        img.save(thumb_path, 'WebP', quality=WEBP_QUALITY)
         doc.close()
+
+        # Save both sizes
+        save_both_sizes(img, thumb_id)
         return True
 
     except Exception as e:
@@ -131,53 +151,31 @@ def generate_ai_thumbnail(src_path: Path, rel_path: str) -> bool:
         return False
 
 def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
-    """Generate WebP thumbnail from EPS file using Pillow + Ghostscript."""
+    """Generate WebP thumbnails (small + large) from EPS file using Pillow + Ghostscript."""
     thumb_id = get_thumb_id(rel_path)
-    thumb_path = THUMBS_PATH / f"{thumb_id}.webp"
+    small_path = THUMBS_PATH / f"{thumb_id}.webp"
+    large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
 
-    # Skip if already exists
-    if thumb_path.exists():
+    # Skip if both already exist
+    if small_path.exists() and large_path.exists():
         return True
 
     try:
         # Open EPS with Pillow (requires Ghostscript)
-        # Set a high DPI for quality rasterization
         with Image.open(src_path) as img:
-            # EPS files need explicit loading with desired size
-            # Calculate scale to get MAX_SIZE on longest edge
+            # Calculate scale for large size
             orig_width, orig_height = img.size
 
             if orig_width > orig_height:
-                scale = MAX_SIZE / orig_width
+                scale = MAX_SIZE_LG / orig_width
             else:
-                scale = MAX_SIZE / orig_height
+                scale = MAX_SIZE_LG / orig_height
 
             # Load at target size (Pillow will use Ghostscript)
-            new_width = int(orig_width * scale)
-            new_height = int(orig_height * scale)
             img.load(scale=max(scale, 1))
 
-            # Convert to RGB if necessary
-            if img.mode == 'RGBA':
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                background.paste(img, mask=img.split()[3])
-                img = background
-            elif img.mode != 'RGB':
-                img = img.convert('RGB')
-
-            # Resize if needed
-            width, height = img.size
-            if width > MAX_SIZE or height > MAX_SIZE:
-                if width > height:
-                    new_width = MAX_SIZE
-                    new_height = int(height * (MAX_SIZE / width))
-                else:
-                    new_height = MAX_SIZE
-                    new_width = int(width * (MAX_SIZE / height))
-                img = img.resize((new_width, new_height), Image.LANCZOS)
-
-            # Save as WebP
-            img.save(thumb_path, 'WebP', quality=WEBP_QUALITY)
+            # Save both sizes
+            save_both_sizes(img, thumb_id)
         return True
 
     except Exception as e:
@@ -185,22 +183,23 @@ def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
         return False
 
 def generate_indd_thumbnail(src_path: Path, rel_path: str) -> bool:
-    """Generate WebP thumbnail from InDesign file using Quick Look."""
+    """Generate WebP thumbnails (small + large) from InDesign file using Quick Look."""
     thumb_id = get_thumb_id(rel_path)
-    thumb_path = THUMBS_PATH / f"{thumb_id}.webp"
+    small_path = THUMBS_PATH / f"{thumb_id}.webp"
+    large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
 
-    # Skip if already exists
-    if thumb_path.exists():
+    # Skip if both already exist
+    if small_path.exists() and large_path.exists():
         return True
 
     try:
-        # Use Quick Look to generate preview (works if InDesign preview is available)
+        # Use Quick Look to generate preview at large size
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_path = Path(tmp_dir)
 
             # qlmanage generates a PNG preview
             result = subprocess.run(
-                ["qlmanage", "-t", "-s", str(MAX_SIZE), "-o", str(tmp_path), str(src_path)],
+                ["qlmanage", "-t", "-s", str(MAX_SIZE_LG), "-o", str(tmp_path), str(src_path)],
                 capture_output=True,
                 timeout=60
             )
@@ -211,28 +210,9 @@ def generate_indd_thumbnail(src_path: Path, rel_path: str) -> bool:
             if not ql_output.exists():
                 raise ValueError("Quick Look failed to generate preview")
 
-            # Convert to WebP
+            # Convert to WebP at both sizes
             with Image.open(ql_output) as img:
-                # Convert to RGB if necessary
-                if img.mode == 'RGBA':
-                    background = Image.new('RGB', img.size, (255, 255, 255))
-                    background.paste(img, mask=img.split()[3])
-                    img = background
-                elif img.mode != 'RGB':
-                    img = img.convert('RGB')
-
-                # Resize if needed
-                width, height = img.size
-                if width > MAX_SIZE or height > MAX_SIZE:
-                    if width > height:
-                        new_width = MAX_SIZE
-                        new_height = int(height * (MAX_SIZE / width))
-                    else:
-                        new_height = MAX_SIZE
-                        new_width = int(width * (MAX_SIZE / height))
-                    img = img.resize((new_width, new_height), Image.LANCZOS)
-
-                img.save(thumb_path, 'WebP', quality=WEBP_QUALITY)
+                save_both_sizes(img, thumb_id)
 
         return True
 
@@ -275,12 +255,14 @@ def process_files(files: list, generator_func, label: str):
 
     for i, (file_path, full_path) in enumerate(files, 1):
         thumb_id = get_thumb_id(full_path)
-        thumb_path = THUMBS_PATH / f"{thumb_id}.webp"
+        small_path = THUMBS_PATH / f"{thumb_id}.webp"
+        large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
 
         # Progress
         print(f"[{i}/{len(files)}] {file_path.name[:50]}...", end=" ", flush=True)
 
-        if thumb_path.exists():
+        # Skip only if BOTH sizes exist
+        if small_path.exists() and large_path.exists():
             print("SKIP (exists)")
             skipped += 1
             continue
@@ -296,6 +278,7 @@ def process_files(files: list, generator_func, label: str):
 
 def main():
     THUMBS_PATH.mkdir(exist_ok=True)
+    THUMBS_LG_PATH.mkdir(exist_ok=True)
 
     # Parse command line args
     file_type = sys.argv[1] if len(sys.argv) > 1 else "psd"
