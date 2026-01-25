@@ -102,13 +102,16 @@
     /**
      * Update asset metadata (products, tags, notes, displayName)
      */
-    async upsertAssetMeta(assetId, path, products, tags, notes, displayName) {
+    async upsertAssetMeta(assetId, path, products, tags, lob, notes, displayName) {
       const params = {
         asset_id: assetId,
         path: path || '',
         products: Array.isArray(products) ? products.join(',') : (products || ''),
         tags: Array.isArray(tags) ? tags.join(',') : (tags || '')
       };
+      if (lob !== undefined) {
+        params.lob = lob;
+      }
       if (notes !== undefined) {
         params.notes = notes;
       }
@@ -672,12 +675,12 @@
     const asset = State.assets.find(a => a.id === assetId);
     const path = asset?.path || '';
 
-    console.log('[Library] Saving asset meta:', assetId, { products: meta.products, tags: meta.tags });
+    console.log('[Library] Saving asset meta:', assetId, { products: meta.products, tags: meta.tags, lob: meta.lob });
 
     // Try API first
     if (LibraryAPI.baseUrl) {
       try {
-        const result = await LibraryAPI.upsertAssetMeta(assetId, path, meta.products, meta.tags, meta.notes, meta.displayName);
+        const result = await LibraryAPI.upsertAssetMeta(assetId, path, meta.products, meta.tags, meta.lob, meta.notes, meta.displayName);
         console.log('[Library] Saved asset meta to API:', assetId, result);
         showToast('Saved', 'success');
         return;
@@ -763,6 +766,7 @@
             State.assetMeta[a.asset_id] = {
               products: a.products || [],
               tags: a.tags || [],
+              lob: a.lob || '',
               notes: a.notes || '',
               displayName: a.display_name || '',
               virtualFolder: a.virtual_folder || null,
@@ -1211,9 +1215,16 @@
 
   function getAssetMeta(assetId) {
     if (!State.assetMeta[assetId]) {
-      State.assetMeta[assetId] = { products: [], tags: [], notes: '', virtualFolder: null, displayName: '' };
+      State.assetMeta[assetId] = { products: [], tags: [], lob: '', notes: '', virtualFolder: null, displayName: '' };
     }
     return State.assetMeta[assetId];
+  }
+
+  function setLobForAsset(assetId, lob) {
+    const meta = getAssetMeta(assetId);
+    meta.lob = lob || '';
+    saveAssetMeta(assetId); // async, fire and forget
+    return true;
   }
 
   /**
@@ -1859,9 +1870,10 @@
 
   function renderModalTags(assetId) {
     const container = document.getElementById('library-modal-tags');
-    const meta = State.assetMeta[assetId] || { products: [], tags: [] };
+    const meta = State.assetMeta[assetId] || { products: [], tags: [], lob: '' };
     const assetProducts = meta.products;
     const assetTags = meta.tags;
+    const assetLob = meta.lob || '';
 
     // Render product picker (from master list)
     const productListHtml = State.productList.length > 0
@@ -1877,13 +1889,22 @@
         }).join('')
       : '<span class="library-empty-hint">No products defined</span>';
 
-    // Render tag picker (from master list + any used)
-    const allTags = new Set([...State.tagList]);
-    Object.values(State.assetMeta).forEach(m => {
-      (m.tags || []).forEach(t => allTags.add(t));
-    });
+    // Render LOB picker (from master list - single select)
+    const lobListHtml = State.lobList.length > 0
+      ? State.lobList.map(lob => {
+          const isActive = assetLob === lob;
+          return `
+            <button type="button"
+                    class="library-tag-toggle ${isActive ? 'is-active' : ''}"
+                    data-lob="${escapeHtml(lob)}">
+              ${escapeHtml(lob)}
+            </button>
+          `;
+        }).join('')
+      : '<span class="library-empty-hint">No LOBs defined</span>';
 
-    const sortedTags = [...allTags].sort();
+    // Render tag picker (from TAXONOMY only - source of truth)
+    const sortedTags = [...State.tagList].sort();
     const tagListHtml = sortedTags.length > 0
       ? sortedTags.map(tag => {
           const isActive = assetTags.includes(tag);
@@ -1902,6 +1923,11 @@
         <h4 class="library-picker-label">Products</h4>
         <div class="library-tag-picker-list" id="library-product-picker">
           ${productListHtml}
+        </div>
+
+        <h4 class="library-picker-label">LOB</h4>
+        <div class="library-tag-picker-list" id="library-lob-picker">
+          ${lobListHtml}
         </div>
 
         <h4 class="library-picker-label">Tags</h4>
@@ -1929,6 +1955,21 @@
         removeProductFromAsset(assetId, product);
       } else {
         addProductToAsset(assetId, product);
+      }
+      renderModalTags(assetId);
+      renderGrid();
+    });
+
+    // Bind LOB picker clicks (single select - clicking active deselects)
+    document.getElementById('library-lob-picker')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-lob]');
+      if (!btn) return;
+
+      const lob = btn.dataset.lob;
+      if (assetLob === lob) {
+        setLobForAsset(assetId, ''); // Deselect
+      } else {
+        setLobForAsset(assetId, lob);
       }
       renderModalTags(assetId);
       renderGrid();

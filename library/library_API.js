@@ -6,7 +6,7 @@
  *
  * Required Tabs:
  *  - TAXONOMY (headers: Name, Tags, LOB)
- *  - ASSETS   (headers: AssetId, Path, Products, Tags, Notes, VirtualFolder, TrashedAt, TrashedBy, UpdatedAt)
+ *  - ASSETS   (headers: AssetId, Path, Products, Tags, LOB, Notes, VirtualFolder, TrashedAt, TrashedBy, UpdatedAt)
  *
  * Deploy as Web App:
  *  - Execute as: Me
@@ -236,29 +236,9 @@ function listTaxonomy_() {
     }
   }
 
-  // Also extract unique tags across all products
+  // Extract unique tags from TAXONOMY only (source of truth)
   const allTags = new Set();
   products.forEach(p => p.tags.forEach(t => allTags.add(t)));
-
-  // Also collect tags from ASSETS sheet (user-created tags)
-  try {
-    const assetsSh = ss.getSheetByName(ASSETS_SHEET_NAME);
-    if (assetsSh && assetsSh.getLastRow() > 1) {
-      const assetsHeader = getHeaderMap_(assetsSh);
-      const tagsCol = assetsHeader['Tags'];
-      if (tagsCol) {
-        const tagsData = assetsSh.getRange(2, tagsCol, assetsSh.getLastRow() - 1, 1).getValues();
-        tagsData.forEach(row => {
-          const tags = String(row[0] || '').trim();
-          if (tags) {
-            tags.split(',').map(t => t.trim()).filter(t => t).forEach(t => allTags.add(t));
-          }
-        });
-      }
-    }
-  } catch (e) {
-    // Ignore errors reading ASSETS tags
-  }
 
   // Extract unique LOBs
   const allLobs = new Set();
@@ -332,6 +312,7 @@ function listAssetsMeta_(p) {
       path: obj.Path || '',
       products: parseList_(obj.Products),
       tags: parseList_(obj.Tags),
+      lob: obj.LOB || '',
       notes: obj.Notes || '',
       display_name: obj.DisplayName || '',
       virtual_folder: obj.VirtualFolder || '',
@@ -363,6 +344,7 @@ function upsertAssetMeta_(p) {
 
     const products = p.products !== undefined ? normalizeList_(p.products) : null;
     const tags = p.tags !== undefined ? normalizeList_(p.tags) : null;
+    const lob = p.lob !== undefined ? String(p.lob || '') : null;
     const notes = p.notes !== undefined ? String(p.notes || '') : null;
     const displayName = p.display_name !== undefined ? String(p.display_name || '') : null;
     const virtualFolder = p.virtual_folder !== undefined ? String(p.virtual_folder || '') : null;
@@ -377,6 +359,7 @@ function upsertAssetMeta_(p) {
         Path: String(p.path || '').trim(),
         Products: products !== null ? products.join(',') : '',
         Tags: tags !== null ? tags.join(',') : '',
+        LOB: lob !== null ? lob : '',
         Notes: notes !== null ? notes : '',
         DisplayName: displayName !== null ? displayName : '',
         VirtualFolder: virtualFolder !== null ? virtualFolder : '',
@@ -395,6 +378,7 @@ function upsertAssetMeta_(p) {
         Path: p.path !== undefined ? String(p.path).trim() : (existing.Path || ''),
         Products: products !== null ? products.join(',') : (existing.Products || ''),
         Tags: tags !== null ? tags.join(',') : (existing.Tags || ''),
+        LOB: lob !== null ? lob : (existing.LOB || ''),
         Notes: notes !== null ? notes : (existing.Notes || ''),
         DisplayName: displayName !== null ? displayName : (existing.DisplayName || ''),
         VirtualFolder: virtualFolder !== null ? virtualFolder : (existing.VirtualFolder || ''),
@@ -885,7 +869,7 @@ function jsonp_(callback, payload) {
 }
 
 function ensureAssetsSheet_(ss) {
-  const requiredColumns = ['AssetId', 'Path', 'Products', 'Tags', 'Notes', 'DisplayName', 'VirtualFolder', 'TrashedAt', 'TrashedBy', 'UpdatedAt'];
+  const requiredColumns = ['AssetId', 'Path', 'Products', 'Tags', 'LOB', 'Notes', 'DisplayName', 'VirtualFolder', 'TrashedAt', 'TrashedBy', 'UpdatedAt'];
 
   let sh = ss.getSheetByName(ASSETS_SHEET_NAME);
   if (!sh) {
