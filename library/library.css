@@ -1397,6 +1397,56 @@
   padding: 0.75rem;
 }
 
+/* Collapsible picker sections in modal */
+.library-picker-section {
+  margin-bottom: 0.5rem;
+}
+
+.library-picker-section:not(:first-child) {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--ascend-app-border);
+}
+
+.library-picker-section.is-collapsible .library-picker-label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+  margin: 0 0 0.5rem;
+}
+
+.library-picker-section.is-collapsible .library-picker-label:hover {
+  color: var(--ascend-app-text-main);
+}
+
+.library-picker-section .collapse-icon {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform 150ms ease;
+}
+
+.library-picker-section.is-collapsed .collapse-icon {
+  transform: rotate(-90deg);
+}
+
+.library-picker-content {
+  overflow: hidden;
+  transition: max-height 200ms ease, opacity 150ms ease;
+  max-height: 200px;
+  opacity: 1;
+}
+
+.library-picker-section.is-collapsed .library-picker-content {
+  max-height: 0;
+  opacity: 0;
+}
+
 .library-picker-label {
   font-size: 0.7rem;
   font-weight: 600;
@@ -1404,12 +1454,6 @@
   text-transform: uppercase;
   color: var(--ascend-app-text-muted);
   margin: 0 0 0.5rem;
-}
-
-.library-picker-label:not(:first-child) {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--ascend-app-border);
 }
 
 .library-tag-picker-list {

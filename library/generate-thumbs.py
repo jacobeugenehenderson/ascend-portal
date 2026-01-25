@@ -23,7 +23,7 @@ LIBRARY_PATH = Path("/Volumes/Today/Nordson/LIBRARY")
 PUBLICATIONS_PATH = Path("/Volumes/Today/Nordson/PUBLICATIONS")
 THUMBS_PATH = Path("/Volumes/Today/ascend-portal/library/thumbs")
 THUMBS_LG_PATH = Path("/Volumes/Today/ascend-portal/library/thumbs-lg")
-MAX_SIZE = 500       # Small thumbnails for grid cards
+MAX_SIZE = 400       # Small thumbnails for grid cards
 MAX_SIZE_LG = 1200   # Large thumbnails for modal preview
 WEBP_QUALITY = 82
 

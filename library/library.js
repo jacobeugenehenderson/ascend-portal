@@ -2081,19 +2081,37 @@
 
     container.innerHTML = `
       <div class="library-tag-picker">
-        <h4 class="library-picker-label">Products</h4>
-        <div class="library-tag-picker-list" id="library-product-picker">
-          ${productListHtml}
+        <div class="library-picker-section is-collapsible" data-section="products">
+          <h4 class="library-picker-label" data-toggle="collapse">
+            <span class="collapse-icon"></span>Products
+          </h4>
+          <div class="library-picker-content">
+            <div class="library-tag-picker-list" id="library-product-picker">
+              ${productListHtml}
+            </div>
+          </div>
         </div>
 
-        <h4 class="library-picker-label">LOB</h4>
-        <div class="library-tag-picker-list" id="library-lob-picker">
-          ${lobListHtml}
+        <div class="library-picker-section is-collapsible is-collapsed" data-section="lob">
+          <h4 class="library-picker-label" data-toggle="collapse">
+            <span class="collapse-icon"></span>LOB
+          </h4>
+          <div class="library-picker-content">
+            <div class="library-tag-picker-list" id="library-lob-picker">
+              ${lobListHtml}
+            </div>
+          </div>
         </div>
 
-        <h4 class="library-picker-label">Tags</h4>
-        <div class="library-tag-picker-list" id="library-tag-picker">
-          ${tagListHtml}
+        <div class="library-picker-section is-collapsible is-collapsed" data-section="tags">
+          <h4 class="library-picker-label" data-toggle="collapse">
+            <span class="collapse-icon"></span>Tags
+          </h4>
+          <div class="library-picker-content">
+            <div class="library-tag-picker-list" id="library-tag-picker">
+              ${tagListHtml}
+            </div>
+          </div>
         </div>
 
         <div class="library-tag-picker-add">
@@ -2174,6 +2192,16 @@
     });
 
     addBtn?.addEventListener('click', addNewTag);
+
+    // Bind collapsible section toggles
+    container.querySelectorAll('.library-picker-label[data-toggle="collapse"]').forEach(label => {
+      label.addEventListener('click', () => {
+        const section = label.closest('.library-picker-section');
+        if (section) {
+          section.classList.toggle('is-collapsed');
+        }
+      });
+    });
   }
 
   // =========================================
