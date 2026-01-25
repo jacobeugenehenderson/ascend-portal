@@ -692,6 +692,46 @@
   margin: 0 0 0.75rem;
 }
 
+/* Collapsible sections */
+.library-sidebar-section.is-collapsible .library-sidebar-subtitle {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.library-sidebar-section.is-collapsible .library-sidebar-subtitle:hover {
+  color: var(--ascend-app-text-main);
+}
+
+.collapse-icon {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform 150ms ease;
+}
+
+.library-sidebar-section.is-collapsed .collapse-icon {
+  transform: rotate(-90deg);
+}
+
+.library-section-content {
+  overflow: hidden;
+  transition: max-height 200ms ease, opacity 150ms ease;
+  max-height: 500px;
+  opacity: 1;
+}
+
+.library-sidebar-section.is-collapsed .library-section-content {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+}
+
 /* Product List (sidebar filter) */
 .library-product-list {
   display: flex;
@@ -894,10 +934,11 @@
   color: var(--ascend-app-text-muted);
 }
 
-/* Sort select - inherits base select styles from ascend-apps.css */
-.library-sort select {
-  width: auto;
-  font-size: 0.8rem;
+/* LOB List (sidebar filter) - same style as products */
+.library-lob-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
 }
 
 /* =========================================

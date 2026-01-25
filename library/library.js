@@ -241,6 +241,7 @@
     activeFilters: {
       products: [],     // Filter by product
       tags: [],         // Filter by tag
+      lob: null,        // Filter by LOB (single select)
       fileTypes: [],    // Filter by file extension
       folder: null,
       search: '',
@@ -289,6 +290,7 @@
 
     // Build initial view
     buildProductList();
+    buildLobList();
     buildTagCloud();
     buildFileTypeList();
     updateSourceCounts();
@@ -610,6 +612,7 @@
 
   function renderActiveFilters() {
     const container = document.getElementById('library-active-filter-pills');
+    const wrapper = document.getElementById('library-active-filters');
     if (!container) return;
 
     const pills = [];
@@ -617,6 +620,10 @@
     State.activeFilters.products.forEach(p => {
       pills.push(`<span class="library-filter-pill" data-type="product" data-value="${escapeHtml(p)}">${escapeHtml(p)}<button class="library-filter-pill-remove">×</button></span>`);
     });
+
+    if (State.activeFilters.lob) {
+      pills.push(`<span class="library-filter-pill" data-type="lob" data-value="${escapeHtml(State.activeFilters.lob)}">${escapeHtml(State.activeFilters.lob)}<button class="library-filter-pill-remove">×</button></span>`);
+    }
 
     State.activeFilters.tags.forEach(t => {
       pills.push(`<span class="library-filter-pill" data-type="tag" data-value="${escapeHtml(t)}">${escapeHtml(t)}<button class="library-filter-pill-remove">×</button></span>`);
@@ -626,8 +633,13 @@
       pills.push(`<span class="library-filter-pill" data-type="filetype" data-value="${escapeHtml(ft)}">${escapeHtml(ft.toUpperCase())}<button class="library-filter-pill-remove">×</button></span>`);
     });
 
+    // Show/hide the wrapper based on whether there are active filters
+    if (wrapper) {
+      wrapper.style.display = pills.length > 0 ? 'flex' : 'none';
+    }
+
     if (pills.length === 0) {
-      container.innerHTML = '<span class="library-no-filters">All assets</span>';
+      container.innerHTML = '';
     } else {
       container.innerHTML = pills.join('') + '<button class="library-clear-all-filters">Clear all</button>';
     }
@@ -1033,6 +1045,14 @@
       });
     }
 
+    // LOB filter
+    if (State.activeFilters.lob) {
+      assets = assets.filter(a => {
+        const meta = State.assetMeta[a.id] || { lob: '' };
+        return meta.lob === State.activeFilters.lob;
+      });
+    }
+
     // File type filter
     if (State.activeFilters.fileTypes.length > 0) {
       assets = assets.filter(a => {
@@ -1134,6 +1154,38 @@
                 class="library-product ${isActive ? 'is-active' : ''}"
                 data-product="${escapeHtml(product)}">
           ${escapeHtml(product)}
+          ${count > 0 ? `<span class="library-product-count">${count}</span>` : ''}
+        </button>
+      `;
+    }).join('');
+  }
+
+  function buildLobList() {
+    const container = document.getElementById('library-lob-list');
+    if (!container) return;
+
+    // Count LOBs in use
+    const lobCounts = {};
+    for (const assetId in State.assetMeta) {
+      const lob = State.assetMeta[assetId]?.lob;
+      if (lob) {
+        lobCounts[lob] = (lobCounts[lob] || 0) + 1;
+      }
+    }
+
+    if (State.lobList.length === 0) {
+      container.innerHTML = '<div class="library-empty-hint">No LOBs defined</div>';
+      return;
+    }
+
+    container.innerHTML = State.lobList.map(lob => {
+      const count = lobCounts[lob] || 0;
+      const isActive = State.activeFilters.lob === lob;
+      return `
+        <button type="button"
+                class="library-product ${isActive ? 'is-active' : ''}"
+                data-lob="${escapeHtml(lob)}">
+          ${escapeHtml(lob)}
           ${count > 0 ? `<span class="library-product-count">${count}</span>` : ''}
         </button>
       `;
@@ -2230,6 +2282,9 @@
         if (type === 'product') {
           State.activeFilters.products = State.activeFilters.products.filter(p => p !== value);
           buildProductList();
+        } else if (type === 'lob') {
+          State.activeFilters.lob = null;
+          buildLobList();
         } else if (type === 'tag') {
           State.activeFilters.tags = State.activeFilters.tags.filter(t => t !== value);
           buildTagCloud();
@@ -2247,9 +2302,11 @@
       const clearAll = e.target.closest('.library-clear-all-filters');
       if (clearAll) {
         State.activeFilters.products = [];
+        State.activeFilters.lob = null;
         State.activeFilters.tags = [];
         State.activeFilters.fileTypes = [];
         buildProductList();
+        buildLobList();
         buildTagCloud();
         buildFileTypeList();
         applyFilters();
@@ -2308,15 +2365,13 @@
       });
     }
 
-    // Sort
-    const sortSelect = document.getElementById('library-sort');
-    if (sortSelect) {
-      sortSelect.addEventListener('change', () => {
-        State.sort = sortSelect.value;
-        applyFilters();
-        renderGrid();
+    // Collapsible sidebar sections
+    document.querySelectorAll('.library-sidebar-section.is-collapsible .library-sidebar-subtitle').forEach(subtitle => {
+      subtitle.addEventListener('click', () => {
+        const section = subtitle.closest('.library-sidebar-section');
+        section.classList.toggle('is-collapsed');
       });
-    }
+    });
 
     // Product list clicks (sidebar filter)
     document.getElementById('library-product-list')?.addEventListener('click', (e) => {
@@ -2335,6 +2390,22 @@
       buildProductList();
       applyFilters();
       renderGrid();
+      renderActiveFilters();
+    });
+
+    // LOB list clicks (sidebar filter - single select)
+    document.getElementById('library-lob-list')?.addEventListener('click', (e) => {
+      const lobBtn = e.target.closest('[data-lob]');
+      if (!lobBtn) return;
+
+      const lob = lobBtn.dataset.lob;
+      // Toggle: if same LOB, deselect; otherwise select
+      State.activeFilters.lob = (State.activeFilters.lob === lob) ? null : lob;
+
+      buildLobList();
+      applyFilters();
+      renderGrid();
+      renderActiveFilters();
     });
 
     // Tag cloud clicks
@@ -2354,6 +2425,7 @@
       buildTagCloud();
       applyFilters();
       renderGrid();
+      renderActiveFilters();
     });
 
     // File type clicks
@@ -2373,6 +2445,7 @@
       buildFileTypeList();
       applyFilters();
       renderGrid();
+      renderActiveFilters();
     });
 
     // Folder tree clicks (both stock and publications)

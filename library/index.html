@@ -99,41 +99,69 @@
             </div>
 
             <!-- Products -->
-            <div class="library-sidebar-section">
-              <h3 class="library-sidebar-subtitle">Products</h3>
-              <div class="library-product-list" id="library-product-list">
-                <!-- Products populated by JS -->
+            <div class="library-sidebar-section is-collapsible">
+              <h3 class="library-sidebar-subtitle" data-toggle="collapse">
+                <span class="collapse-icon"></span>Products
+              </h3>
+              <div class="library-section-content">
+                <div class="library-product-list" id="library-product-list">
+                  <!-- Products populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- LOB -->
+            <div class="library-sidebar-section is-collapsible">
+              <h3 class="library-sidebar-subtitle" data-toggle="collapse">
+                <span class="collapse-icon"></span>LOB
+              </h3>
+              <div class="library-section-content">
+                <div class="library-lob-list" id="library-lob-list">
+                  <!-- LOBs populated by JS -->
+                </div>
               </div>
             </div>
 
             <!-- Tags -->
-            <div class="library-sidebar-section">
-              <h3 class="library-sidebar-subtitle">Tags</h3>
-              <div class="library-tag-cloud" id="library-tag-cloud">
-                <!-- Tags populated by JS -->
+            <div class="library-sidebar-section is-collapsible">
+              <h3 class="library-sidebar-subtitle" data-toggle="collapse">
+                <span class="collapse-icon"></span>Tags
+              </h3>
+              <div class="library-section-content">
+                <div class="library-tag-cloud" id="library-tag-cloud">
+                  <!-- Tags populated by JS -->
+                </div>
               </div>
             </div>
 
             <!-- File Types -->
-            <div class="library-sidebar-section">
-              <h3 class="library-sidebar-subtitle">File Types</h3>
-              <div class="library-filetype-list" id="library-filetype-list">
-                <!-- File types populated by JS -->
+            <div class="library-sidebar-section is-collapsible">
+              <h3 class="library-sidebar-subtitle" data-toggle="collapse">
+                <span class="collapse-icon"></span>File Types
+              </h3>
+              <div class="library-section-content">
+                <div class="library-filetype-list" id="library-filetype-list">
+                  <!-- File types populated by JS -->
+                </div>
               </div>
             </div>
 
             <!-- Status Filters -->
-            <div class="library-sidebar-section">
-              <h3 class="library-sidebar-subtitle">Status</h3>
-              <div class="library-status-filters" id="library-status-filters">
-                <label class="library-checkbox">
-                  <input type="checkbox" value="untagged" id="filter-untagged">
-                  <span>Untagged only</span>
-                </label>
-                <label class="library-checkbox">
-                  <input type="checkbox" value="trashed" id="filter-trashed">
-                  <span>Trash <span class="library-trash-count" id="library-trash-count"></span></span>
-                </label>
+            <div class="library-sidebar-section is-collapsible">
+              <h3 class="library-sidebar-subtitle" data-toggle="collapse">
+                <span class="collapse-icon"></span>Status
+              </h3>
+              <div class="library-section-content">
+                <div class="library-status-filters" id="library-status-filters">
+                  <label class="library-checkbox">
+                    <input type="checkbox" value="untagged" id="filter-untagged">
+                    <span>Untagged only</span>
+                  </label>
+                  <label class="library-checkbox">
+                    <input type="checkbox" value="trashed" id="filter-trashed">
+                    <span>Trash <span class="library-trash-count" id="library-trash-count"></span></span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -159,15 +187,6 @@
             </div>
             <div class="library-toolbar-right">
               <div class="library-result-count" id="library-result-count">Loading...</div>
-              <div class="library-sort">
-                <select id="library-sort">
-                  <option value="name-asc">Name A-Z</option>
-                  <option value="name-desc">Name Z-A</option>
-                  <option value="date-desc">Newest first</option>
-                  <option value="date-asc">Oldest first</option>
-                  <option value="folder">By folder</option>
-                </select>
-              </div>
             </div>
           </div>
 
