@@ -2077,7 +2077,7 @@
       input.select();
 
       let committed = false;
-      const commitRename = async () => {
+      const commitRename = () => {
         if (committed) return;
         committed = true;
 
@@ -2090,26 +2090,31 @@
           return;
         }
 
-        try {
-          const result = await LibraryAPI.setFolderDisplayName(fullPath, source, effectiveDisplayName);
-          console.log('[FolderRename] API result:', result);
-
-          // Update local state
-          const key = `${source}:${fullPath}`;
-          if (effectiveDisplayName) {
-            State.folderDisplayNames[key] = effectiveDisplayName;
-            showToast(`Renamed to "${newDisplayName}"`, 'success');
-          } else {
-            delete State.folderDisplayNames[key];
-            showToast(`Reset to "${folderName}"`, 'success');
-          }
-
-          renderBrowseView();
-        } catch (err) {
-          console.error('[FolderRename] API error:', err);
-          showToast(`Rename failed: ${err.message}`, 'error');
-          nameEl.textContent = currentDisplayName;
+        // Optimistic update - immediately update UI
+        const key = `${source}:${fullPath}`;
+        if (effectiveDisplayName) {
+          State.folderDisplayNames[key] = effectiveDisplayName;
+        } else {
+          delete State.folderDisplayNames[key];
         }
+        renderBrowseView();
+
+        // Save to API in background
+        LibraryAPI.setFolderDisplayName(fullPath, source, effectiveDisplayName)
+          .then(result => {
+            console.log('[FolderRename] Saved:', result);
+          })
+          .catch(err => {
+            console.error('[FolderRename] API error:', err);
+            showToast(`Save failed: ${err.message}`, 'error');
+            // Revert on failure
+            if (currentDisplayName && currentDisplayName !== folderName) {
+              State.folderDisplayNames[key] = currentDisplayName;
+            } else {
+              delete State.folderDisplayNames[key];
+            }
+            renderBrowseView();
+          });
       };
 
       // Click anywhere outside input commits the change
