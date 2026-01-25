@@ -2069,15 +2069,7 @@
     const thumbFolder = size === 'lg' ? 'thumbs-lg' : 'thumbs';
     const ext = asset.ext.toLowerCase();
 
-    // Web-displayable images (PNG, SVG, JPG, etc.): use the file directly
-    // These don't need generated thumbnails - browsers render them natively
-    if (WEB_DISPLAYABLE.has(ext)) {
-      const encodedPath = asset.path.split('/').map(segment => encodeURIComponent(segment)).join('/');
-      return `assets/${encodedPath}`;
-    }
-
-    // For non-web formats, use pre-generated WebP thumbnail
-    // Check thumbUrl first, then fall back to ID-based path
+    // Use pre-generated WebP thumbnail if available (works for all types)
     if (asset.thumbUrl && asset.thumbUrl.endsWith('.webp')) {
       if (size === 'lg' && asset.thumbUrl.startsWith('thumbs/')) {
         return asset.thumbUrl.replace('thumbs/', 'thumbs-lg/');
@@ -2088,6 +2080,12 @@
     // PSD, AI, EPS, INDD: use WebP thumbnail by asset ID
     if (ext === 'psd' || ext === 'ai' || ext === 'eps' || ext === 'indd') {
       return `${thumbFolder}/${asset.id}.webp`;
+    }
+
+    // Web-displayable images without pre-generated thumbnails: use file directly
+    if (WEB_DISPLAYABLE.has(ext)) {
+      const encodedPath = asset.path.split('/').map(segment => encodeURIComponent(segment)).join('/');
+      return `assets/${encodedPath}`;
     }
 
     // Non-displayable: return placeholder data URI by type

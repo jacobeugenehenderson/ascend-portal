@@ -1037,6 +1037,7 @@
   position: absolute;
   inset: 0;
   background: transparent;
+  pointer-events: none; /* Allow clicks to pass through to buttons */
 }
 
 .library-card-type {
