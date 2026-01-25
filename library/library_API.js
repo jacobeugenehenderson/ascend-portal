@@ -36,7 +36,7 @@
  * CONFIG
  * ======================= */
 const TAGS_MASTER_SPREADSHEET_ID = '1ZtR9Jv64Jogrvx77drQGNosCo0-sjDMTulC_Q__TpQQ';
-const TAXONOMY_SHEET_NAME = 'TAXONOMY';
+const TAXONOMY_SHEET_NAME = 'Tags';
 const ASSETS_SHEET_NAME = 'ASSETS';
 const FOLDERS_SHEET_NAME = 'FOLDERS';
 
