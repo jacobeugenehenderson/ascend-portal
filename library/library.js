@@ -1559,6 +1559,9 @@
       ? `<span class="library-card-source-seal" title="Has editable source file (${asset.projectFiles.map(p => p.ext.toUpperCase()).join(', ')})"></span>`
       : '';
 
+    // Display name (editable) or original filename
+    const displayName = meta.displayName || asset.name;
+
     return `
       <article class="library-card ${inCart ? 'is-in-cart' : ''} ${isPdf ? 'is-pdf' : ''}" data-id="${escapeHtml(asset.id)}" draggable="true">
         <div class="library-card-thumb">
@@ -1573,7 +1576,10 @@
             ${inCart ? '✓' : '+'}
           </button>
         </div>
-        <div class="library-card-products">${productsHtml}</div>
+        <div class="library-card-info">
+          <div class="library-card-name" title="${escapeHtml(asset.name)}">${escapeHtml(displayName)}</div>
+          ${productsHtml ? `<div class="library-card-products">${productsHtml}</div>` : ''}
+        </div>
       </article>
     `;
   }
