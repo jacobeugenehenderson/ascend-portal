@@ -2043,23 +2043,22 @@
           const result = await LibraryAPI.renameFolder(oldPath, newPath, State.browse.source);
           console.log('[FolderRename] API result:', result);
           showToast(`Renamed "${oldName}" to "${newName}"`, 'success');
-          // Reload asset metadata to get updated virtual folder paths
-          const metaResult = await LibraryAPI.listAssetsMeta(true);
-          if (metaResult && metaResult.assets) {
-            State.assetMeta = {};
-            metaResult.assets.forEach(a => {
-              State.assetMeta[a.asset_id] = {
-                products: a.products || [],
-                tags: a.tags || [],
-                notes: a.notes || '',
-                virtualFolder: a.virtual_folder || null,
-                displayName: a.display_name || '',
-                trashed: !!a.trashed_at,
-                trashedAt: a.trashed_at || '',
-                trashedBy: a.trashed_by || ''
-              };
-            });
+
+          // Update local asset metadata with new folder name
+          Object.values(State.assetMeta).forEach(meta => {
+            if (meta.virtualFolder === oldPath) {
+              meta.virtualFolder = newPath;
+            } else if (meta.virtualFolder && meta.virtualFolder.startsWith(oldPath + '/')) {
+              meta.virtualFolder = newPath + meta.virtualFolder.slice(oldPath.length);
+            }
+          });
+
+          // Update browse path if we renamed current folder
+          const pathIndex = State.browse.path.indexOf(oldName);
+          if (pathIndex !== -1) {
+            State.browse.path[pathIndex] = newName;
           }
+
           renderBrowseView();
         } catch (err) {
           console.error('[FolderRename] API error:', err);
