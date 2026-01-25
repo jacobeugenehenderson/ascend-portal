@@ -264,6 +264,7 @@
 
   async function init() {
     console.log('[Library] Initializing...');
+    const startTime = performance.now();
 
     // Configure API URL
     if (Config.libraryApiUrl) {
@@ -279,29 +280,30 @@
     // Bind event listeners
     bindEvents();
 
-    // Load manifest
-    await loadManifest();
+    // Load manifest and taxonomy/meta in PARALLEL for faster startup
+    await Promise.all([
+      loadManifest(),
+      loadTaxonomyAndMeta()
+    ]);
 
-    // Load taxonomy and asset metadata from API (with localStorage fallback)
-    await loadTaxonomyAndMeta();
-
-    // Auto-detect products from filenames/folders
-    autoTagAssets();
-
-    // Build initial view
+    // Build initial view BEFORE auto-tagging (show UI fast)
     buildProductList();
     buildLobList();
     buildTagCloud();
     buildFileTypeList();
     updateSourceCounts();
 
-    // Set initial mode
+    // Set initial mode (renders the grid)
     setMode('browse');
 
     updateCartCount();
     updateTrashCount();
 
-    console.log('[Library] Ready. Assets:', State.assets.length);
+    const loadTime = Math.round(performance.now() - startTime);
+    console.log(`[Library] Ready. Assets: ${State.assets.length}, Load time: ${loadTime}ms`);
+
+    // Auto-detect products from filenames/folders AFTER initial render (non-blocking)
+    requestIdleCallback ? requestIdleCallback(() => autoTagAssets()) : setTimeout(autoTagAssets, 100);
   }
 
   // =========================================
@@ -759,25 +761,40 @@
   }
 
   async function loadTaxonomyAndMeta() {
-    // Try loading from API first
+    // FAST PATH: Load cached data from localStorage first for instant UI
+    const cachedMeta = localStorage.getItem('library-asset-meta');
+    if (cachedMeta) {
+      try {
+        State.assetMeta = JSON.parse(cachedMeta);
+        console.log('[Library] Loaded cached asset meta:', Object.keys(State.assetMeta).length, 'assets');
+      } catch (e) {
+        console.warn('[Library] Could not parse cached meta:', e);
+      }
+    }
+
+    // Then load fresh data from API
     if (LibraryAPI.baseUrl) {
       try {
-        // Load taxonomy (products, tags, LOBs) from API
-        const taxonomy = await LibraryAPI.listTaxonomy();
+        // Load all API data in PARALLEL for faster startup
+        const [taxonomy, metaResult, folderResult] = await Promise.all([
+          LibraryAPI.listTaxonomy().catch(e => { console.warn('[Library] Taxonomy load failed:', e.message); return null; }),
+          LibraryAPI.listAssetsMeta(true).catch(e => { console.warn('[Library] Asset meta load failed:', e.message); return null; }),
+          LibraryAPI.listFolderDisplayNames().catch(e => { console.warn('[Library] Folder names load failed:', e.message); return null; })
+        ]);
+
+        // Process taxonomy
         if (taxonomy) {
           State.productList = taxonomy.products?.map(p => p.name) || [];
           State.tagList = taxonomy.tags || [];
           State.lobList = taxonomy.lobs || [];
-          State.taxonomyMap = {}; // product name -> { tags, lob }
+          State.taxonomyMap = {};
           (taxonomy.products || []).forEach(p => {
             State.taxonomyMap[p.name] = { tags: p.tags, lob: p.lob };
           });
           console.log('[Library] Loaded taxonomy from API:', State.productList.length, 'products');
         }
 
-        // Load asset metadata from API
-        const metaResult = await LibraryAPI.listAssetsMeta(true);
-        console.log('[Library] Raw API response:', metaResult);
+        // Process asset metadata
         if (metaResult && metaResult.assets) {
           State.assetMeta = {};
           metaResult.assets.forEach(a => {
@@ -794,11 +811,6 @@
             };
           });
           console.log('[Library] Loaded asset metadata from API:', metaResult.count, 'assets');
-          // Log first few assets with tags for debugging
-          const withTags = metaResult.assets.filter(a => a.tags && a.tags.length > 0).slice(0, 5);
-          if (withTags.length > 0) {
-            console.log('[Library] Sample assets with tags:', withTags);
-          }
 
           // Cache to localStorage for offline use
           try {
@@ -808,21 +820,14 @@
           }
         }
 
-        // Load folder display names
-        try {
-          const folderResult = await LibraryAPI.listFolderDisplayNames();
-          console.log('[Library] Folder display names raw response:', folderResult);
-          if (folderResult && folderResult.folders) {
-            State.folderDisplayNames = {};
-            folderResult.folders.forEach(f => {
-              const key = `${f.source}:${f.path}`;
-              State.folderDisplayNames[key] = f.display_name;
-              console.log('[Library] Loaded folder display name:', key, '=', f.display_name);
-            });
-            console.log('[Library] Loaded folder display names:', folderResult.count, State.folderDisplayNames);
-          }
-        } catch (e) {
-          console.warn('[Library] Could not load folder display names:', e.message);
+        // Process folder display names
+        if (folderResult && folderResult.folders) {
+          State.folderDisplayNames = {};
+          folderResult.folders.forEach(f => {
+            const key = `${f.source}:${f.path}`;
+            State.folderDisplayNames[key] = f.display_name;
+          });
+          console.log('[Library] Loaded folder display names:', folderResult.count);
         }
 
         return; // API loaded successfully
