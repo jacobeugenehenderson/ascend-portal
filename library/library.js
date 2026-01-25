@@ -225,7 +225,8 @@
     page: 1,
     currentAsset: null,
     isLoading: false,
-    draggedAssetId: null  // For drag-drop folder management
+    draggedAssetId: null,  // For drag-drop folder management
+    lastViewedIndex: -1    // For returning to position after modal close
   };
 
   const Config = window.LIBRARY_CONFIG || {};
@@ -1665,6 +1666,8 @@
     if (!asset) return;
 
     State.currentAsset = asset;
+    // Remember position for when modal closes
+    State.lastViewedIndex = State.filteredAssets.findIndex(a => a.id === assetId);
 
     const modal = document.getElementById('library-modal');
     const previewContainer = document.querySelector('.library-modal-preview');
@@ -1737,6 +1740,29 @@
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+
+    // Scroll to and highlight the next card at the position we were viewing
+    if (State.lastViewedIndex !== undefined && State.lastViewedIndex >= 0) {
+      // Re-render grid first (in case asset was trashed)
+      renderGrid();
+
+      // Find the card at or near that index
+      const targetIndex = Math.min(State.lastViewedIndex, State.filteredAssets.length - 1);
+      if (targetIndex >= 0) {
+        const targetAsset = State.filteredAssets[targetIndex];
+        if (targetAsset) {
+          const card = document.querySelector(`.library-card[data-id="${targetAsset.id}"]`);
+          if (card) {
+            // Scroll into view
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Briefly highlight
+            card.classList.add('is-highlighted');
+            setTimeout(() => card.classList.remove('is-highlighted'), 1500);
+          }
+        }
+      }
+    }
+
     State.currentAsset = null;
   }
 
