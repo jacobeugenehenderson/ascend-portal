@@ -49,6 +49,7 @@
         const url = new URL(this.baseUrl);
         url.searchParams.set('action', action);
         url.searchParams.set('callback', callbackName);
+        url.searchParams.set('_', Date.now()); // Cache buster
 
         for (const key in params) {
           if (params[key] !== undefined && params[key] !== null) {
