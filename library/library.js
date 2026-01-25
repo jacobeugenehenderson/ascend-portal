@@ -2042,7 +2042,16 @@
         try {
           const result = await LibraryAPI.renameFolder(oldPath, newPath, State.browse.source);
           console.log('[FolderRename] API result:', result);
-          showToast(`Renamed "${oldName}" to "${newName}"`, 'success');
+
+          if (result.updated === 0) {
+            // No assets were in a virtual folder with this name
+            // This is a filesystem folder - we can't rename it, only create a display name
+            showToast(`No virtual folder "${oldName}" found to rename`, 'warning');
+            nameEl.textContent = oldName;
+            return;
+          }
+
+          showToast(`Renamed "${oldName}" to "${newName}" (${result.updated} assets)`, 'success');
 
           // Update local asset metadata with new folder name
           Object.values(State.assetMeta).forEach(meta => {
