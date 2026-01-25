@@ -253,7 +253,8 @@
     currentAsset: null,
     isLoading: false,
     draggedAssetId: null,  // For drag-drop folder management
-    lastViewedIndex: -1    // For returning to position after modal close
+    lastViewedIndex: -1,   // For returning to position after modal close
+    selectedAssets: []     // For batch operations
   };
 
   const Config = window.LIBRARY_CONFIG || {};
@@ -1678,6 +1679,261 @@
   }
 
   // =========================================
+  // BATCH SELECTION
+  // =========================================
+
+  function toggleAssetSelection(assetId) {
+    const idx = State.selectedAssets.indexOf(assetId);
+    if (idx === -1) {
+      State.selectedAssets.push(assetId);
+    } else {
+      State.selectedAssets.splice(idx, 1);
+    }
+    renderGrid();
+    renderBatchToolbar();
+  }
+
+  function clearSelection() {
+    State.selectedAssets = [];
+    renderGrid();
+    renderBatchToolbar();
+  }
+
+  function selectAllVisible() {
+    const pageSize = Config.pageSize || 60;
+    const visible = State.filteredAssets.slice(0, State.page * pageSize);
+    State.selectedAssets = visible.map(a => a.id);
+    renderGrid();
+    renderBatchToolbar();
+  }
+
+  function renderBatchToolbar() {
+    let toolbar = document.getElementById('library-batch-toolbar');
+
+    if (State.selectedAssets.length === 0) {
+      if (toolbar) toolbar.remove();
+      return;
+    }
+
+    if (!toolbar) {
+      toolbar = document.createElement('div');
+      toolbar.id = 'library-batch-toolbar';
+      toolbar.className = 'library-batch-toolbar';
+      document.body.appendChild(toolbar);
+    }
+
+    toolbar.innerHTML = `
+      <div class="library-batch-count">${State.selectedAssets.length} selected</div>
+      <div class="library-batch-actions">
+        <button type="button" class="library-batch-btn" data-action="batch-tag">
+          <span class="icon">🏷️</span> Tag
+        </button>
+        <button type="button" class="library-batch-btn" data-action="batch-product">
+          <span class="icon">📦</span> Product
+        </button>
+        <button type="button" class="library-batch-btn" data-action="batch-job">
+          <span class="icon">📁</span> Add to Job
+        </button>
+        <button type="button" class="library-batch-btn is-secondary" data-action="batch-clear">
+          Clear
+        </button>
+      </div>
+    `;
+
+    // Bind toolbar actions
+    toolbar.onclick = (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      if (action === 'batch-clear') {
+        clearSelection();
+      } else if (action === 'batch-tag') {
+        openBatchTagPicker();
+      } else if (action === 'batch-product') {
+        openBatchProductPicker();
+      } else if (action === 'batch-job') {
+        batchAddToJob();
+      }
+    };
+  }
+
+  function openBatchTagPicker() {
+    // Create modal with tag picker
+    const existing = document.getElementById('library-batch-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'library-batch-modal';
+    modal.className = 'library-batch-modal';
+    modal.innerHTML = `
+      <div class="library-batch-modal-content">
+        <div class="library-batch-modal-header">
+          <h3>Add Tags to ${State.selectedAssets.length} Assets</h3>
+          <button type="button" class="library-batch-modal-close">×</button>
+        </div>
+        <div class="library-batch-modal-body">
+          <div class="library-batch-tags">
+            ${State.tagList.map(tag => `
+              <label class="library-batch-tag-option">
+                <input type="checkbox" value="${escapeHtml(tag)}">
+                <span>${escapeHtml(tag)}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+        <div class="library-batch-modal-footer">
+          <button type="button" class="library-batch-apply-btn">Apply Tags</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close handlers
+    modal.querySelector('.library-batch-modal-close').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    // Apply handler
+    modal.querySelector('.library-batch-apply-btn').onclick = async () => {
+      const selectedTags = Array.from(modal.querySelectorAll('input:checked')).map(cb => cb.value);
+      if (selectedTags.length === 0) {
+        showToast('Select at least one tag');
+        return;
+      }
+
+      await batchApplyTags(selectedTags);
+      modal.remove();
+    };
+  }
+
+  function openBatchProductPicker() {
+    const existing = document.getElementById('library-batch-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'library-batch-modal';
+    modal.className = 'library-batch-modal';
+    modal.innerHTML = `
+      <div class="library-batch-modal-content">
+        <div class="library-batch-modal-header">
+          <h3>Add Products to ${State.selectedAssets.length} Assets</h3>
+          <button type="button" class="library-batch-modal-close">×</button>
+        </div>
+        <div class="library-batch-modal-body">
+          <div class="library-batch-tags">
+            ${State.productList.map(product => `
+              <label class="library-batch-tag-option">
+                <input type="checkbox" value="${escapeHtml(product)}">
+                <span>${escapeHtml(product)}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+        <div class="library-batch-modal-footer">
+          <button type="button" class="library-batch-apply-btn">Apply Products</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.querySelector('.library-batch-modal-close').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    modal.querySelector('.library-batch-apply-btn').onclick = async () => {
+      const selectedProducts = Array.from(modal.querySelectorAll('input:checked')).map(cb => cb.value);
+      if (selectedProducts.length === 0) {
+        showToast('Select at least one product');
+        return;
+      }
+
+      await batchApplyProducts(selectedProducts);
+      modal.remove();
+    };
+  }
+
+  async function batchApplyTags(tags) {
+    showToast(`Applying ${tags.length} tag(s) to ${State.selectedAssets.length} assets...`);
+
+    for (const assetId of State.selectedAssets) {
+      const asset = State.assets.find(a => a.id === assetId);
+      if (!asset) continue;
+
+      const meta = getAssetMeta(assetId);
+      const newTags = [...new Set([...meta.tags, ...tags])];
+
+      State.assetMeta[assetId] = { ...meta, tags: newTags };
+
+      // Save to API
+      try {
+        await LibraryAPI.upsertAssetMeta(
+          assetId,
+          asset.path,
+          meta.products,
+          newTags,
+          meta.lob,
+          meta.notes,
+          meta.displayName
+        );
+      } catch (e) {
+        console.error('[Library] Failed to save tags for', assetId, e);
+      }
+    }
+
+    saveAssetMetaToLocal();
+    showToast(`Added ${tags.length} tag(s) to ${State.selectedAssets.length} assets`);
+    clearSelection();
+  }
+
+  async function batchApplyProducts(products) {
+    showToast(`Applying ${products.length} product(s) to ${State.selectedAssets.length} assets...`);
+
+    for (const assetId of State.selectedAssets) {
+      const asset = State.assets.find(a => a.id === assetId);
+      if (!asset) continue;
+
+      const meta = getAssetMeta(assetId);
+      const newProducts = [...new Set([...meta.products, ...products])];
+
+      State.assetMeta[assetId] = { ...meta, products: newProducts };
+
+      // Save to API
+      try {
+        await LibraryAPI.upsertAssetMeta(
+          assetId,
+          asset.path,
+          newProducts,
+          meta.tags,
+          meta.lob,
+          meta.notes,
+          meta.displayName
+        );
+      } catch (e) {
+        console.error('[Library] Failed to save products for', assetId, e);
+      }
+    }
+
+    saveAssetMetaToLocal();
+    showToast(`Added ${products.length} product(s) to ${State.selectedAssets.length} assets`);
+    clearSelection();
+  }
+
+  function batchAddToJob() {
+    let added = 0;
+    for (const assetId of State.selectedAssets) {
+      if (!isInCart(assetId)) {
+        State.cart.push(assetId);
+        added++;
+      }
+    }
+    saveCartToLocal();
+    updateCartCount();
+    showToast(`Added ${added} asset(s) to Job`);
+    clearSelection();
+  }
+
+  // =========================================
   // RENDERING
   // =========================================
 
@@ -1718,6 +1974,7 @@
   function renderCard(asset) {
     const meta = State.assetMeta[asset.id] || { products: [], tags: [] };
     const inCart = isInCart(asset.id);
+    const isSelected = State.selectedAssets.includes(asset.id);
     const ext = (asset.ext || '').toLowerCase();
     const extLabel = ext.toUpperCase();
     const isPdf = ext === 'pdf';
@@ -1741,16 +1998,23 @@
     const displayName = meta.displayName || asset.name;
 
     return `
-      <article class="library-card ${inCart ? 'is-in-cart' : ''} ${isPdf ? 'is-pdf' : ''}" data-id="${escapeHtml(asset.id)}" draggable="true">
+      <article class="library-card ${inCart ? 'is-in-cart' : ''} ${isPdf ? 'is-pdf' : ''} ${isSelected ? 'is-selected' : ''}" data-id="${escapeHtml(asset.id)}" draggable="true">
         <div class="library-card-thumb">
           ${thumbContent}
           ${extLabel ? `<span class="library-card-type">${extLabel}</span>` : ''}
           ${sourceSealHtml}
           <button type="button"
+                  class="library-card-select-btn"
+                  data-action="select"
+                  data-id="${escapeHtml(asset.id)}"
+                  title="Select for batch actions">
+            ${isSelected ? '✓' : ''}
+          </button>
+          <button type="button"
                   class="library-card-cart-btn"
                   data-action="cart"
                   data-id="${escapeHtml(asset.id)}"
-                  title="${inCart ? 'Remove from cart' : 'Add to cart'}">
+                  title="${inCart ? 'Remove from Job' : 'Add to Job'}">
             ${inCart ? '✓' : '+'}
           </button>
         </div>
@@ -2662,8 +2926,18 @@
       renderGrid();
     });
 
-    // Grid clicks (card + cart button)
+    // Grid clicks (card, cart button, select button)
     document.getElementById('library-grid')?.addEventListener('click', (e) => {
+      // Select button for batch operations
+      const selectBtn = e.target.closest('[data-action="select"]');
+      if (selectBtn) {
+        e.stopPropagation();
+        const id = selectBtn.dataset.id;
+        toggleAssetSelection(id);
+        return;
+      }
+
+      // Cart/Job button
       const cartBtn = e.target.closest('[data-action="cart"]');
       if (cartBtn) {
         e.stopPropagation();

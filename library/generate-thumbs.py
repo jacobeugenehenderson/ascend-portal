@@ -189,47 +189,6 @@ def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
         print(f"  ERROR: {e}", file=sys.stderr)
         return False
 
-def generate_indd_thumbnail(src_path: Path, rel_path: str) -> bool:
-    """Generate WebP thumbnails (small + large) from InDesign file using Quick Look."""
-    thumb_id = get_thumb_id(rel_path)
-    small_path = THUMBS_PATH / f"{thumb_id}.webp"
-    large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
-
-    # Skip if both already exist
-    if small_path.exists() and large_path.exists():
-        return True
-
-    try:
-        # Use Quick Look to generate preview at large size
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
-
-            # qlmanage generates a PNG preview
-            result = subprocess.run(
-                ["qlmanage", "-t", "-s", str(MAX_SIZE_LG), "-o", str(tmp_path), str(src_path)],
-                capture_output=True,
-                timeout=60
-            )
-
-            # qlmanage creates file with .png suffix added to original name
-            ql_output = tmp_path / f"{src_path.name}.png"
-
-            if not ql_output.exists():
-                raise ValueError("Quick Look failed to generate preview")
-
-            # Convert to WebP at both sizes
-            with Image.open(ql_output) as img:
-                save_both_sizes(img, thumb_id)
-
-        return True
-
-    except subprocess.TimeoutExpired:
-        print(f"  ERROR: Timeout", file=sys.stderr)
-        return False
-    except Exception as e:
-        print(f"  ERROR: {e}", file=sys.stderr)
-        return False
-
 def find_files(extensions: list, label: str) -> list:
     """Find files with given extensions from both sources."""
     files = []
@@ -299,9 +258,6 @@ def main():
     elif file_type == "eps":
         files = find_files(["eps"], "EPS")
         process_files(files, generate_eps_thumbnail, "EPS")
-    elif file_type == "indd":
-        files = find_files(["indd"], "INDD")
-        process_files(files, generate_indd_thumbnail, "INDD")
     elif file_type == "all":
         # Process all types
         psd_files = find_files(["psd"], "PSD")
@@ -312,16 +268,14 @@ def main():
         print()
         eps_files = find_files(["eps"], "EPS")
         process_files(eps_files, generate_eps_thumbnail, "EPS")
-        print()
-        indd_files = find_files(["indd"], "INDD")
-        process_files(indd_files, generate_indd_thumbnail, "INDD")
     else:
-        print(f"Usage: {sys.argv[0]} [psd|ai|eps|indd|all]")
+        print(f"Usage: {sys.argv[0]} [psd|ai|eps|all]")
         print("  psd  - Generate thumbnails for PSD files (default)")
         print("  ai   - Generate thumbnails for AI files")
         print("  eps  - Generate thumbnails for EPS files")
-        print("  indd - Generate thumbnails for InDesign files")
         print("  all  - Generate thumbnails for all supported types")
+        print()
+        print("Note: INDD files are source files shown with a badge, not thumbnailed.")
         sys.exit(1)
 
 if __name__ == "__main__":
