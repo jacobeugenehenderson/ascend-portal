@@ -2012,6 +2012,43 @@
 
   const JOB_CACHE_TTL = 60000; // 1 minute cache
 
+  /**
+   * Check if a date string has passed end-of-day Eastern time.
+   * Matches the logic in ascend.js isPastEofdEastern_
+   */
+  function isPastEofdEastern(dateStr, nowMs) {
+    if (!dateStr) return false;
+    try {
+      // Parse date (handle various formats)
+      let d;
+      if (typeof dateStr === 'string') {
+        // Try ISO format first, then common date formats
+        d = new Date(dateStr);
+        if (isNaN(d.getTime())) {
+          // Try MM/DD/YYYY or similar
+          const parts = dateStr.split(/[-/]/);
+          if (parts.length === 3) {
+            d = new Date(parts[2], parts[0] - 1, parts[1]);
+          }
+        }
+      } else {
+        d = new Date(dateStr);
+      }
+
+      if (isNaN(d.getTime())) return false;
+
+      // End of day in Eastern time (approximate: add 1 day, compare to now)
+      // Jobs exit at end of day Eastern, so we check if we're past that day
+      const jobDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      jobDate.setDate(jobDate.getDate() + 1); // End of that day
+      jobDate.setHours(5, 0, 0, 0); // ~midnight Eastern in UTC
+
+      return nowMs > jobDate.getTime();
+    } catch (e) {
+      return false;
+    }
+  }
+
   function batchAddToJob() {
     openJobModal();
   }
@@ -2146,14 +2183,26 @@
       window[callbackName] = (response) => {
         try {
           const jobs = response?.jobs || response?.data?.jobs || [];
-          _jobsCache.artstart = jobs.map(j => ({
-            id: j.AscendJobId || j.JobId || j.jobId || j.id,
-            name: j.NordsonJobId || j.Title || j.JobName || j.name || 'Untitled',
-            subtitle: j.Publication || j.PublicationOrChannel || '',
-            app: 'artstart',
-            status: j.Status || '',
-            createdAt: j.CreatedAt || ''
-          })).filter(j => j.status !== 'Deleted');
+          const nowMs = Date.now();
+
+          // Filter to only "in play" jobs (not deleted, deadline not passed)
+          _jobsCache.artstart = jobs
+            .filter(j => {
+              // Skip deleted jobs
+              if ((j.Status || '').toLowerCase() === 'deleted') return false;
+              // Skip jobs past their MaterialsDueDate (they've moved to FileRoom)
+              if (j.MaterialsDueDate && isPastEofdEastern(j.MaterialsDueDate, nowMs)) return false;
+              return true;
+            })
+            .map(j => ({
+              id: j.AscendJobId || j.JobId || j.jobId || j.id,
+              name: j.NordsonJobId || j.Title || j.JobName || j.name || 'Untitled',
+              subtitle: j.PublicationName || j.Publication || j.PublicationOrChannel || '',
+              app: 'artstart',
+              status: j.Status || '',
+              createdAt: j.CreatedAt || '',
+              materialsDueDate: j.MaterialsDueDate || ''
+            }));
         } catch (e) {
           console.error('[Library] Error parsing ArtStart jobs:', e);
           _jobsCache.artstart = [];
@@ -2196,15 +2245,34 @@
       window[callbackName] = (response) => {
         try {
           const jobs = response?.jobs || response?.data?.jobs || [];
-          _jobsCache.copydesk = jobs.map(j => ({
-            id: j.JobId || j.jobId || j.id,
-            name: j.JobName || j.Title || j.name || 'Untitled',
-            subtitle: j.Status || '',
-            app: 'copydesk',
-            status: j.Status || '',
-            createdAt: j.CreatedAt || '',
-            closedAt: j.ClosedAt || ''
-          }));
+          const nowMs = Date.now();
+
+          // Filter to only "in play" jobs (not closed, cutoff not passed)
+          // Exception: Open translation subjobs stay even if past cutoff
+          _jobsCache.copydesk = jobs
+            .filter(j => {
+              const status = (j.Status || '').toLowerCase();
+              const isTranslation = !!(j.IsTranslation || j.Lang || j.Language);
+              const isOpenTranslation = isTranslation && status === 'open';
+
+              // Skip closed jobs (they've moved to FileRoom)
+              if (status === 'closed') return false;
+
+              // Skip jobs past their Cutoff date (unless it's an open translation)
+              if (j.Cutoff && isPastEofdEastern(j.Cutoff, nowMs) && !isOpenTranslation) return false;
+
+              return true;
+            })
+            .map(j => ({
+              id: j.JobId || j.jobId || j.id,
+              name: j.JobName || j.Title || j.name || 'Untitled',
+              subtitle: j.Cutoff ? `Due: ${j.Cutoff}` : (j.Status || ''),
+              app: 'copydesk',
+              status: j.Status || '',
+              createdAt: j.CreatedAt || '',
+              closedAt: j.ClosedAt || '',
+              cutoff: j.Cutoff || ''
+            }));
         } catch (e) {
           console.error('[Library] Error parsing Copydesk jobs:', e);
           _jobsCache.copydesk = [];
