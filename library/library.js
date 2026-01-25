@@ -2020,7 +2020,11 @@
       input.focus();
       input.select();
 
+      let committed = false;
       const commitRename = async () => {
+        if (committed) return;
+        committed = true;
+
         const newName = input.value.trim();
         if (!newName || newName === oldName) {
           nameEl.textContent = oldName;
@@ -2044,14 +2048,31 @@
         }
       };
 
-      input.addEventListener('blur', commitRename, { once: true });
+      // Click anywhere outside input commits the change
+      const handleClickOutside = (ev) => {
+        if (!input.contains(ev.target)) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          document.removeEventListener('click', handleClickOutside, true);
+          commitRename();
+        }
+      };
+      // Use capture phase to intercept before other handlers
+      setTimeout(() => document.addEventListener('click', handleClickOutside, true), 0);
+
+      input.addEventListener('blur', () => {
+        document.removeEventListener('click', handleClickOutside, true);
+        commitRename();
+      });
+
       input.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter') {
           ev.preventDefault();
           input.blur();
         } else if (ev.key === 'Escape') {
-          input.value = oldName; // Reset to trigger no-change path
-          input.blur();
+          committed = true; // Prevent save
+          nameEl.textContent = oldName;
+          document.removeEventListener('click', handleClickOutside, true);
         }
       });
     });
