@@ -2022,10 +2022,12 @@
 
       let committed = false;
       const commitRename = async () => {
+        console.log('[FolderRename] commitRename called, committed:', committed);
         if (committed) return;
         committed = true;
 
         const newName = input.value.trim();
+        console.log('[FolderRename] oldName:', oldName, 'newName:', newName);
         if (!newName || newName === oldName) {
           nameEl.textContent = oldName;
           return;
@@ -2035,14 +2037,17 @@
         const basePath = State.browse.path.join('/');
         const oldPath = basePath ? `${basePath}/${oldName}` : oldName;
         const newPath = basePath ? `${basePath}/${newName}` : newName;
+        console.log('[FolderRename] Calling API:', oldPath, '->', newPath);
 
         try {
-          await LibraryAPI.renameFolder(oldPath, newPath, State.browse.source);
+          const result = await LibraryAPI.renameFolder(oldPath, newPath, State.browse.source);
+          console.log('[FolderRename] API result:', result);
           showToast(`Renamed "${oldName}" to "${newName}"`, 'success');
           // Reload asset metadata to get updated virtual folder paths
           await loadAssetMetadata();
           renderBrowseView();
         } catch (err) {
+          console.error('[FolderRename] API error:', err);
           showToast(`Rename failed: ${err.message}`, 'error');
           nameEl.textContent = oldName;
         }
@@ -2070,7 +2075,9 @@
       });
 
       input.addEventListener('keydown', (ev) => {
+        console.log('[FolderRename] keydown:', ev.key);
         if (ev.key === 'Enter') {
+          console.log('[FolderRename] Enter pressed');
           ev.preventDefault();
           cleanup();
           commitRename();
