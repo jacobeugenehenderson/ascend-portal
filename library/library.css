@@ -2050,3 +2050,62 @@
 .library-batch-apply-btn:hover {
   background: #ffd633;
 }
+
+/* Batch modal sections */
+.library-batch-section {
+  margin-bottom: 1.25rem;
+}
+
+.library-batch-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.library-batch-section-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ascend-app-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.library-batch-hint {
+  font-weight: 400;
+  text-transform: none;
+  opacity: 0.7;
+}
+
+.library-batch-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.library-batch-empty {
+  font-size: 0.85rem;
+  color: var(--ascend-app-text-muted);
+  font-style: italic;
+}
+
+.library-batch-notes {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--ascend-app-border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--ascend-app-surface);
+  color: var(--ascend-app-text-main);
+}
+
+.library-batch-notes:focus {
+  outline: none;
+  border-color: var(--ascend-app-accent);
+  box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.2);
+}
+
+.library-batch-notes::placeholder {
+  color: var(--ascend-app-text-muted);
+}
