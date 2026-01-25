@@ -2027,7 +2027,8 @@
   }
 
   function getAssetUrl(asset) {
-    return `assets/${asset.path}`;
+    const encodedPath = asset.path.split('/').map(segment => encodeURIComponent(segment)).join('/');
+    return `assets/${encodedPath}`;
   }
 
   // File types that browsers can display directly
@@ -2053,9 +2054,11 @@
       return `${thumbFolder}/${asset.id}.webp`;
     }
 
-    // Web-displayable images: use the file directly (or could use thumbs for large images)
+    // Web-displayable images: use the file directly
+    // Encode path segments to handle spaces and special characters
     if (WEB_DISPLAYABLE.has(ext)) {
-      return `assets/${asset.path}`;
+      const encodedPath = asset.path.split('/').map(segment => encodeURIComponent(segment)).join('/');
+      return `assets/${encodedPath}`;
     }
 
     // Non-displayable: return placeholder data URI by type
