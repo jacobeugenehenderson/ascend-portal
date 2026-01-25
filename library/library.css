@@ -91,33 +91,37 @@
 /* Mode Toggle Pill */
 .library-mode-toggle {
   display: inline-flex;
-  background: var(--ascend-control-bg);
-  border: 1px solid var(--ascend-control-border);
+  background: rgba(15, 23, 42, 0.06);
+  border: none;
   border-radius: var(--ascend-app-radius-pill, 999px);
-  padding: 3px;
+  padding: 4px;
+  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.1);
 }
 
 .library-mode-btn {
-  padding: 0.4rem 1.25rem;
+  padding: 0.5rem 1.5rem;
   border: none;
   border-radius: var(--ascend-app-radius-pill, 999px);
   background: transparent;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--ascend-app-text-muted);
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: all 180ms ease;
   box-shadow: none;
 }
 
-.library-mode-btn:hover {
+.library-mode-btn:hover:not(.is-active) {
   color: var(--ascend-app-text-main);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .library-mode-btn.is-active {
-  background: var(--ascend-app-accent);
-  color: #0b1025;
+  background: white;
+  color: var(--ascend-app-text-main);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 /* Search - uses base input styles, just adjusts shape */
