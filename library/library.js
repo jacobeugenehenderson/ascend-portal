@@ -2175,7 +2175,17 @@
 
     if (isMediaKitsPdf) {
       // Media Kits PDFs: use iframe with browser's native PDF viewer (multi-page navigation, zoom)
-      previewContainer.innerHTML = `<iframe class="library-pdf-viewer" src="${assetUrl}" title="${escapeHtml(asset.name)}"></iframe>`;
+      // Build full local file path (assets symlinks don't work on GitHub Pages)
+      let pdfPath;
+      if (asset.path.startsWith('library/')) {
+        pdfPath = `${Config.basePath}/${asset.path.slice(8)}`;
+      } else if (asset.path.startsWith('publications/')) {
+        pdfPath = `${Config.publicationsPath}/${asset.path.slice(13)}`;
+      } else {
+        pdfPath = `${Config.basePath}/${asset.path}`;
+      }
+      const pdfUrl = `file://${encodeURI(pdfPath)}`;
+      previewContainer.innerHTML = `<iframe class="library-pdf-viewer" src="${pdfUrl}" title="${escapeHtml(asset.name)}"></iframe>`;
     } else {
       // All other assets: use large thumbnail
       previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
