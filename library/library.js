@@ -641,20 +641,27 @@
     const asset = State.assets.find(a => a.id === assetId);
     const path = asset?.path || '';
 
+    console.log('[Library] Saving asset meta:', assetId, { products: meta.products, tags: meta.tags });
+
     // Try API first
     if (LibraryAPI.baseUrl) {
       try {
-        await LibraryAPI.upsertAssetMeta(assetId, path, meta.products, meta.tags, meta.notes);
-        console.log('[Library] Saved asset meta to API:', assetId);
+        const result = await LibraryAPI.upsertAssetMeta(assetId, path, meta.products, meta.tags, meta.notes);
+        console.log('[Library] Saved asset meta to API:', assetId, result);
+        showToast('Saved', 'success');
         return;
       } catch (e) {
-        console.warn('[Library] API save failed, falling back to localStorage:', e.message);
+        console.error('[Library] API save failed:', e.message, e);
+        showToast('Save failed: ' + e.message, 'error');
       }
+    } else {
+      console.warn('[Library] No API URL configured');
     }
 
     // Fallback to localStorage
     try {
       localStorage.setItem('library-asset-meta', JSON.stringify(State.assetMeta));
+      console.log('[Library] Saved to localStorage');
     } catch (e) {
       console.warn('[Library] Could not save to localStorage:', e);
     }
