@@ -181,8 +181,17 @@ def generate_image_thumbnail(source_path: Path, thumb_path: Path, ext: str) -> b
             return True
 
         with Image.open(source_path) as img:
-            # Convert to RGB if necessary (for PNG with alpha, etc.)
-            if img.mode in ('RGBA', 'P'):
+            # Preserve transparency: convert palette mode to RGBA if it has transparency
+            if img.mode == 'P':
+                if 'transparency' in img.info:
+                    img = img.convert('RGBA')
+                else:
+                    img = img.convert('RGB')
+            # Keep RGBA as-is (WebP supports transparency)
+            # Convert other modes (L, LA, etc.) appropriately
+            elif img.mode == 'LA':
+                img = img.convert('RGBA')
+            elif img.mode not in ('RGB', 'RGBA'):
                 img = img.convert('RGB')
 
             # Scale down to target size
