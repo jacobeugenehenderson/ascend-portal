@@ -27,7 +27,9 @@ PUBLICATIONS_PATH = "/Volumes/Today/Nordson/PUBLICATIONS"
 STOCK_FOLDER = "STOCK"
 OUTPUT_FILE = "library-manifest.json"
 THUMBS_DIR = "thumbs"
-THUMB_SIZE = 400  # pixels
+THUMB_SIZE = 1200  # pixels (max on longest edge, 2x retina for ~600px display)
+WEBP_QUALITY = 95  # Maximum practical quality
+PNG_COMPRESS = 6   # PNG compression level (0-9, 6 is default balance)
 
 # File extensions
 WEB_DISPLAYABLE = {'.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp'}
@@ -163,7 +165,7 @@ def generate_pdf_thumbnail(source_path: Path, thumb_path: Path) -> bool:
             new_height = int(img.height * scale)
             img = img.resize((new_width, new_height), Image.LANCZOS)
 
-        img.save(thumb_path, "WEBP", quality=85)
+        img.save(thumb_path, "WEBP", quality=WEBP_QUALITY)
         doc.close()
         return True
     except Exception as e:
@@ -172,7 +174,11 @@ def generate_pdf_thumbnail(source_path: Path, thumb_path: Path) -> bool:
 
 
 def generate_image_thumbnail(source_path: Path, thumb_path: Path, ext: str) -> bool:
-    """Generate thumbnail for regular images (jpg, png, gif, webp) or copy SVG."""
+    """Generate thumbnail for regular images (jpg, png, gif, webp) or copy SVG.
+
+    PNGs with actual transparency (alpha < 255) are saved as PNG.
+    PNGs without transparency and other formats are saved as high-quality WebP.
+    """
     try:
         # SVG: just copy the file (they're vector, no resizing needed)
         if ext == 'svg':
@@ -181,14 +187,38 @@ def generate_image_thumbnail(source_path: Path, thumb_path: Path, ext: str) -> b
             return True
 
         with Image.open(source_path) as img:
+            # Animated GIF: copy as-is to preserve animation
+            if ext == 'gif' and getattr(img, 'n_frames', 1) > 1:
+                gif_thumb = thumb_path.with_suffix('.gif')
+                # For animated GIFs, resize all frames
+                frames = []
+                durations = []
+                for frame_num in range(img.n_frames):
+                    img.seek(frame_num)
+                    frame = img.copy()
+                    if frame.width > THUMB_SIZE or frame.height > THUMB_SIZE:
+                        scale = THUMB_SIZE / max(frame.width, frame.height)
+                        new_width = int(frame.width * scale)
+                        new_height = int(frame.height * scale)
+                        frame = frame.resize((new_width, new_height), Image.LANCZOS)
+                    frames.append(frame)
+                    durations.append(img.info.get('duration', 100))
+                frames[0].save(
+                    gif_thumb,
+                    save_all=True,
+                    append_images=frames[1:],
+                    duration=durations,
+                    loop=img.info.get('loop', 0)
+                )
+                return True
+
             # Preserve transparency: convert palette mode to RGBA if it has transparency
             if img.mode == 'P':
                 if 'transparency' in img.info:
                     img = img.convert('RGBA')
                 else:
                     img = img.convert('RGB')
-            # Keep RGBA as-is (WebP supports transparency)
-            # Convert other modes (L, LA, etc.) appropriately
+            # Keep RGBA as-is for transparency
             elif img.mode == 'LA':
                 img = img.convert('RGBA')
             elif img.mode not in ('RGB', 'RGBA'):
@@ -201,7 +231,23 @@ def generate_image_thumbnail(source_path: Path, thumb_path: Path, ext: str) -> b
                 new_height = int(img.height * scale)
                 img = img.resize((new_width, new_height), Image.LANCZOS)
 
-            img.save(thumb_path, "WEBP", quality=85)
+            # PNG with actual transparency: save as PNG to preserve RGBA
+            # PNG without transparency: convert to WebP for better compression
+            if ext == 'png' and img.mode == 'RGBA':
+                # Check if alpha channel is actually used (not all 255)
+                alpha = img.getchannel('A')
+                if alpha.getextrema()[0] < 255:  # Has actual transparency
+                    png_path = thumb_path.with_suffix('.png')
+                    img.save(png_path, "PNG", compress_level=PNG_COMPRESS)
+                else:
+                    # No transparency used, convert to WebP
+                    img = img.convert('RGB')
+                    img.save(thumb_path, "WEBP", quality=WEBP_QUALITY)
+            else:
+                # JPG, GIF, WebP, or PNG without alpha: save as high-quality WebP
+                if img.mode == 'RGBA':
+                    img = img.convert('RGB')
+                img.save(thumb_path, "WEBP", quality=WEBP_QUALITY)
         return True
     except Exception as e:
         print(f"  Image thumbnail error: {e}")
@@ -249,9 +295,23 @@ def generate_thumbnail(asset: dict, library_path: Path, thumbs_path: Path) -> bo
     # Use PIL for regular images (jpg, png, gif, webp) or copy SVG
     if ext in ('jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'):
         if generate_image_thumbnail(source_path, thumb_path, ext):
-            # SVG keeps its extension, others become .webp
+            # SVG keeps .svg, animated GIF keeps .gif, PNG may be .png or .webp
             if ext == 'svg':
                 asset["thumbUrl"] = f"{THUMBS_DIR}/{asset['id']}.svg"
+            elif ext == 'gif':
+                # Check if animated GIF was preserved
+                gif_path = thumb_path.with_suffix('.gif')
+                if gif_path.exists():
+                    asset["thumbUrl"] = f"{THUMBS_DIR}/{asset['id']}.gif"
+                else:
+                    asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_filename}"
+            elif ext == 'png':
+                # Check which format was actually created
+                png_path = thumb_path.with_suffix('.png')
+                if png_path.exists():
+                    asset["thumbUrl"] = f"{THUMBS_DIR}/{asset['id']}.png"
+                else:
+                    asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_filename}"
             else:
                 asset["thumbUrl"] = f"{THUMBS_DIR}/{thumb_filename}"
             return True
@@ -438,10 +498,20 @@ def main():
     linked_thumbs = 0
     for asset in assets:
         if not asset.get("thumbUrl"):
-            # SVGs keep their extension, others use .webp
+            # SVG keeps .svg, animated GIF keeps .gif, PNG can be .png or .webp
             ext = asset.get("ext", "").lower()
             if ext == "svg":
                 thumb_file = thumbs_path / f"{asset['id']}.svg"
+            elif ext == "gif":
+                # Animated GIFs stay .gif, static GIFs become .webp
+                gif_file = thumbs_path / f"{asset['id']}.gif"
+                webp_file = thumbs_path / f"{asset['id']}.webp"
+                thumb_file = gif_file if gif_file.exists() else webp_file
+            elif ext == "png":
+                # PNG thumbnails may be .png (with alpha) or .webp (without)
+                png_file = thumbs_path / f"{asset['id']}.png"
+                webp_file = thumbs_path / f"{asset['id']}.webp"
+                thumb_file = png_file if png_file.exists() else webp_file
             else:
                 thumb_file = thumbs_path / f"{asset['id']}.webp"
             if thumb_file.exists():
