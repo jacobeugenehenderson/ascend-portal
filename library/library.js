@@ -2004,7 +2004,6 @@
   function renderCard(asset) {
     const meta = State.assetMeta[asset.id] || { products: [], tags: [] };
     const isSelected = State.selectedAssets.includes(asset.id);
-    const inCart = isInCart(asset.id);
     const ext = (asset.ext || '').toLowerCase();
     const extLabel = ext.toUpperCase();
     const isPdf = ext === 'pdf';
@@ -2039,13 +2038,6 @@
                   data-id="${escapeHtml(asset.id)}"
                   title="Select for batch actions">
             ${isSelected ? '✓' : ''}
-          </button>
-          <button type="button"
-                  class="library-card-cart-btn ${inCart ? 'is-in-cart' : ''}"
-                  data-action="cart"
-                  data-id="${escapeHtml(asset.id)}"
-                  title="${inCart ? 'Remove from Job' : 'Add to Job'}">
-            ${inCart ? '✓' : '+'}
           </button>
         </div>
         <div class="library-card-info">
@@ -2956,7 +2948,7 @@
       renderGrid();
     });
 
-    // Grid clicks (card + select button + cart button)
+    // Grid clicks (card + select button)
     document.getElementById('library-grid')?.addEventListener('click', (e) => {
       // Select button for batch operations
       const selectBtn = e.target.closest('[data-action="select"]');
@@ -2964,15 +2956,6 @@
         e.stopPropagation();
         const id = selectBtn.dataset.id;
         toggleAssetSelection(id);
-        return;
-      }
-
-      // Cart button for add/remove from job
-      const cartBtn = e.target.closest('[data-action="cart"]');
-      if (cartBtn) {
-        e.stopPropagation();
-        const id = cartBtn.dataset.id;
-        toggleCart(id);
         return;
       }
 
