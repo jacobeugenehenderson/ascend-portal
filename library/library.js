@@ -1861,7 +1861,6 @@
     title.innerHTML = `<input type="text" id="library-modal-name-input" value="${escapeHtml(displayName)}" placeholder="${escapeHtml(asset.name)}" title="Click to edit display name">`;
 
     const metaParts = [];
-    if (asset.folder) metaParts.push(asset.folder);
     if (asset.ext) metaParts.push(asset.ext.toUpperCase());
     if (asset.width && asset.height) metaParts.push(`${asset.width} × ${asset.height}`);
     if (asset.dpi) metaParts.push(`${asset.dpi} DPI`);
@@ -1884,8 +1883,8 @@
     const inCart = isInCart(asset.id);
     cartBtn.classList.toggle('is-in-cart', inCart);
     cartBtn.innerHTML = inCart
-      ? '<span class="icon">✓</span> In Cart'
-      : '<span class="icon">+</span> Add to Cart';
+      ? '<span class="icon">✓</span> In Job'
+      : '<span class="icon">+</span> Add to Job';
 
     // Render tags
     renderModalTags(asset.id);
@@ -2789,8 +2788,8 @@
       const inCart = isInCart(id);
       btn.classList.toggle('is-in-cart', inCart);
       btn.innerHTML = inCart
-        ? '<span class="icon">✓</span> In Cart'
-        : '<span class="icon">+</span> Add to Cart';
+        ? '<span class="icon">✓</span> In Job'
+        : '<span class="icon">+</span> Add to Job';
 
       renderGrid();
     });
