@@ -150,40 +150,23 @@ def generate_ai_thumbnail(src_path: Path, rel_path: str) -> bool:
         print(f"  ERROR: {e}", file=sys.stderr)
         return False
 
-def auto_crop_whitespace(img: Image.Image, padding: int = 10, threshold: int = 240) -> Image.Image:
-    """Crop whitespace from image, keeping some padding.
+def auto_crop_whitespace(img: Image.Image, padding: int = 10) -> Image.Image:
+    """Crop to content bounding box, preserving alpha channel.
 
     Args:
-        img: PIL Image to crop
+        img: PIL Image to crop (preserves RGBA if present)
         padding: Pixels of padding to keep around content
-        threshold: Grayscale value below which pixels are considered "content" (0-255)
     """
-    # Convert to RGB if needed for consistent processing
-    if img.mode == 'RGBA':
-        # Create white background and paste image
-        bg = Image.new('RGB', img.size, (255, 255, 255))
-        bg.paste(img, mask=img.split()[3])
-        img = bg
-    elif img.mode != 'RGB':
-        img = img.convert('RGB')
+    # Ensure RGBA mode for consistent alpha handling
+    if img.mode != 'RGBA':
+        img = img.convert('RGBA')
 
-    from PIL import ImageOps
-
-    # Create grayscale version
-    gray = img.convert('L')
-
-    # Apply threshold - pixels darker than threshold become black, rest white
-    # This treats near-white (anti-aliasing) as background
-    thresholded = gray.point(lambda p: 0 if p < threshold else 255)
-
-    # Invert so content is white (255) and background is black (0)
-    inverted = ImageOps.invert(thresholded)
-
-    # Get bounding box of non-zero (content) pixels
-    bbox = inverted.getbbox()
+    # Use alpha channel to find content (non-transparent pixels)
+    alpha = img.split()[3]
+    bbox = alpha.getbbox()
 
     if bbox is None:
-        # All background, return as-is
+        # Fully transparent, return as-is
         return img
 
     # Add padding
@@ -193,13 +176,7 @@ def auto_crop_whitespace(img: Image.Image, padding: int = 10, threshold: int = 2
     x2 = min(img.width, x2 + padding)
     y2 = min(img.height, y2 + padding)
 
-    # Only crop if we're removing significant whitespace (>20%)
-    original_area = img.width * img.height
-    cropped_area = (x2 - x1) * (y2 - y1)
-    if cropped_area < original_area * 0.8:
-        return img.crop((x1, y1, x2, y2))
-
-    return img
+    return img.crop((x1, y1, x2, y2))
 
 def create_checkerboard(size: int, square_size: int = 10) -> Image.Image:
     """Create a checkerboard pattern for transparency visualization."""
