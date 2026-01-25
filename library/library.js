@@ -207,6 +207,42 @@
      */
     async listFolderDisplayNames() {
       return this._jsonp('listFolderDisplayNames');
+    },
+
+    /**
+     * Link assets to a job
+     */
+    async linkAssetsToJob(assetIds, jobId, jobApp, userEmail) {
+      return this._jsonp('linkAssetsToJob', {
+        asset_ids: Array.isArray(assetIds) ? assetIds.join(',') : assetIds,
+        job_id: jobId,
+        job_app: jobApp,
+        user_email: userEmail || ''
+      });
+    },
+
+    /**
+     * Unlink assets from a job
+     */
+    async unlinkAssetsFromJob(assetIds, jobId) {
+      return this._jsonp('unlinkAssetsFromJob', {
+        asset_ids: Array.isArray(assetIds) ? assetIds.join(',') : assetIds,
+        job_id: jobId
+      });
+    },
+
+    /**
+     * List jobs linked to an asset
+     */
+    async listLinkedJobs(assetId) {
+      return this._jsonp('listLinkedJobs', { asset_id: assetId });
+    },
+
+    /**
+     * List assets linked to a job
+     */
+    async listJobAssets(jobId) {
+      return this._jsonp('listJobAssets', { job_id: jobId });
     }
   };
 
@@ -1955,18 +1991,421 @@
     clearSelection();
   }
 
+  // =========================================
+  // ADD TO JOB MODAL
+  // =========================================
+
+  // API URLs for job systems
+  const JOB_API_URLS = {
+    artstart: 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec',
+    copydesk: 'https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec',
+    fileroom: 'https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec'
+  };
+
+  // Cache for loaded jobs
+  let _jobsCache = {
+    artstart: null,
+    copydesk: null,
+    fileroom: null,
+    lastFetch: 0
+  };
+
+  const JOB_CACHE_TTL = 60000; // 1 minute cache
+
   function batchAddToJob() {
-    let added = 0;
-    for (const assetId of State.selectedAssets) {
-      if (!isInCart(assetId)) {
-        State.cart.push(assetId);
-        added++;
-      }
+    openJobModal();
+  }
+
+  function openJobModal() {
+    const modal = document.getElementById('library-job-modal');
+    if (!modal) {
+      console.error('[Library] Job modal not found in DOM');
+      return;
     }
-    saveCartToLocal();
-    updateCartCount();
-    showToast(`Added ${added} asset(s) to Job`);
-    clearSelection();
+
+    // Update asset count
+    const countEl = document.getElementById('library-job-asset-count');
+    if (countEl) {
+      countEl.textContent = State.selectedAssets.length;
+    }
+
+    modal.style.display = '';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    // Load jobs
+    loadAllJobs();
+
+    // Bind close handlers (only once)
+    initJobModalHandlers();
+  }
+
+  function closeJobModal() {
+    const modal = document.getElementById('library-job-modal');
+    if (!modal) return;
+
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function initJobModalHandlers() {
+    const modal = document.getElementById('library-job-modal');
+    if (!modal || modal._handlersInit) return;
+    modal._handlersInit = true;
+
+    // Close button
+    const closeBtn = document.getElementById('library-job-modal-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeJobModal);
+    }
+
+    // Backdrop click
+    modal.addEventListener('click', (e) => {
+      if (e.target.getAttribute('data-modal-close') === '1') {
+        closeJobModal();
+      }
+    });
+
+    // ESC key (global, but check if modal is open)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.style.display !== 'none') {
+        closeJobModal();
+      }
+    });
+  }
+
+  function getCurrentUserEmail() {
+    // Try Config first
+    if (Config.userEmail) return Config.userEmail;
+
+    // Try Ascend session
+    try {
+      const raw = localStorage.getItem('ascend_session_v1');
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj && (obj.userEmail || obj.email)) {
+          return String(obj.userEmail || obj.email).trim();
+        }
+      }
+    } catch (e) {}
+
+    return '';
+  }
+
+  async function loadAllJobs() {
+    const now = Date.now();
+    const needRefresh = (now - _jobsCache.lastFetch) > JOB_CACHE_TTL;
+
+    const activeList = document.getElementById('library-job-list-active');
+    const archivalList = document.getElementById('library-job-list-archival');
+
+    if (activeList) {
+      activeList.innerHTML = '';
+      activeList.classList.add('is-loading');
+    }
+    if (archivalList) {
+      archivalList.innerHTML = '';
+      archivalList.classList.add('is-loading');
+    }
+
+    const userEmail = getCurrentUserEmail();
+    if (!userEmail) {
+      if (activeList) activeList.classList.remove('is-loading');
+      if (archivalList) archivalList.classList.remove('is-loading');
+      showToast('Please sign in to view your jobs');
+      return;
+    }
+
+    // Fetch from all three APIs in parallel
+    const promises = [];
+
+    if (needRefresh || !_jobsCache.artstart) {
+      promises.push(fetchArtStartJobs(userEmail));
+    }
+    if (needRefresh || !_jobsCache.copydesk) {
+      promises.push(fetchCopydeskJobs(userEmail));
+    }
+    if (needRefresh || !_jobsCache.fileroom) {
+      promises.push(fetchFileRoomJobs(userEmail));
+    }
+
+    if (promises.length > 0) {
+      await Promise.allSettled(promises);
+      _jobsCache.lastFetch = Date.now();
+    }
+
+    // Render
+    renderJobLists();
+  }
+
+  function fetchArtStartJobs(userEmail) {
+    return new Promise((resolve) => {
+      const callbackName = `__libraryArtStartCallback_${Date.now()}`;
+
+      window[callbackName] = (response) => {
+        try {
+          const jobs = response?.jobs || response?.data?.jobs || [];
+          _jobsCache.artstart = jobs.map(j => ({
+            id: j.AscendJobId || j.JobId || j.jobId || j.id,
+            name: j.NordsonJobId || j.Title || j.JobName || j.name || 'Untitled',
+            subtitle: j.Publication || j.PublicationOrChannel || '',
+            app: 'artstart',
+            status: j.Status || '',
+            createdAt: j.CreatedAt || ''
+          })).filter(j => j.status !== 'Deleted');
+        } catch (e) {
+          console.error('[Library] Error parsing ArtStart jobs:', e);
+          _jobsCache.artstart = [];
+        }
+        delete window[callbackName];
+        resolve();
+      };
+
+      const url = new URL(JOB_API_URLS.artstart);
+      url.searchParams.set('action', 'listArtStartJobsForUser');
+      url.searchParams.set('user_email', userEmail);
+      url.searchParams.set('limit', '50');
+      url.searchParams.set('callback', callbackName);
+      url.searchParams.set('_', Date.now());
+
+      const script = document.createElement('script');
+      script.src = url.toString();
+      script.onerror = () => {
+        _jobsCache.artstart = [];
+        delete window[callbackName];
+        resolve();
+      };
+      document.head.appendChild(script);
+
+      // Timeout fallback
+      setTimeout(() => {
+        if (window[callbackName]) {
+          _jobsCache.artstart = _jobsCache.artstart || [];
+          delete window[callbackName];
+          resolve();
+        }
+      }, 10000);
+    });
+  }
+
+  function fetchCopydeskJobs(userEmail) {
+    return new Promise((resolve) => {
+      const callbackName = `__libraryCopydeskCallback_${Date.now()}`;
+
+      window[callbackName] = (response) => {
+        try {
+          const jobs = response?.jobs || response?.data?.jobs || [];
+          _jobsCache.copydesk = jobs.map(j => ({
+            id: j.JobId || j.jobId || j.id,
+            name: j.JobName || j.Title || j.name || 'Untitled',
+            subtitle: j.Status || '',
+            app: 'copydesk',
+            status: j.Status || '',
+            createdAt: j.CreatedAt || '',
+            closedAt: j.ClosedAt || ''
+          }));
+        } catch (e) {
+          console.error('[Library] Error parsing Copydesk jobs:', e);
+          _jobsCache.copydesk = [];
+        }
+        delete window[callbackName];
+        resolve();
+      };
+
+      const url = new URL(JOB_API_URLS.copydesk);
+      url.searchParams.set('action', 'listCopydeskJobsForUser');
+      url.searchParams.set('user_email', userEmail);
+      url.searchParams.set('limit', '50');
+      url.searchParams.set('callback', callbackName);
+      url.searchParams.set('_', Date.now());
+
+      const script = document.createElement('script');
+      script.src = url.toString();
+      script.onerror = () => {
+        _jobsCache.copydesk = [];
+        delete window[callbackName];
+        resolve();
+      };
+      document.head.appendChild(script);
+
+      // Timeout fallback
+      setTimeout(() => {
+        if (window[callbackName]) {
+          _jobsCache.copydesk = _jobsCache.copydesk || [];
+          delete window[callbackName];
+          resolve();
+        }
+      }, 10000);
+    });
+  }
+
+  function fetchFileRoomJobs(userEmail) {
+    return new Promise((resolve) => {
+      const callbackName = `__libraryFileRoomCallback_${Date.now()}`;
+
+      window[callbackName] = (response) => {
+        try {
+          let jobs = [];
+          if (response?.data?.jobs) jobs = response.data.jobs;
+          else if (response?.jobs) jobs = response.jobs;
+          else if (Array.isArray(response?.data)) jobs = response.data;
+
+          _jobsCache.fileroom = jobs.map(j => ({
+            id: j.AscendJobKey || j.ascend_job_key || j.JobId || j.id,
+            name: j.Title || j.JobName || j.name || 'Untitled',
+            subtitle: j.App || j.Status || 'Completed',
+            app: 'fileroom',
+            status: j.Status || 'Completed',
+            createdAt: j.CreatedAt || '',
+            closedAt: j.ClosedAt || ''
+          }));
+        } catch (e) {
+          console.error('[Library] Error parsing FileRoom jobs:', e);
+          _jobsCache.fileroom = [];
+        }
+        delete window[callbackName];
+        resolve();
+      };
+
+      const url = new URL(JOB_API_URLS.fileroom);
+      url.searchParams.set('action', 'listJobsForUser');
+      url.searchParams.set('user_email', userEmail);
+      url.searchParams.set('limit', '100');
+      url.searchParams.set('callback', callbackName);
+      url.searchParams.set('_', Date.now());
+
+      const script = document.createElement('script');
+      script.src = url.toString();
+      script.onerror = () => {
+        _jobsCache.fileroom = [];
+        delete window[callbackName];
+        resolve();
+      };
+      document.head.appendChild(script);
+
+      // Timeout fallback
+      setTimeout(() => {
+        if (window[callbackName]) {
+          _jobsCache.fileroom = _jobsCache.fileroom || [];
+          delete window[callbackName];
+          resolve();
+        }
+      }, 10000);
+    });
+  }
+
+  function renderJobLists() {
+    const activeList = document.getElementById('library-job-list-active');
+    const archivalList = document.getElementById('library-job-list-archival');
+
+    if (activeList) {
+      activeList.classList.remove('is-loading');
+      activeList.innerHTML = '';
+
+      // Combine ArtStart + Copydesk (non-closed) for active jobs
+      const activeJobs = [
+        ...(_jobsCache.artstart || []),
+        ...(_jobsCache.copydesk || []).filter(j => !j.closedAt)
+      ];
+
+      // Sort by createdAt descending
+      activeJobs.sort((a, b) => {
+        const at = Date.parse(a.createdAt) || 0;
+        const bt = Date.parse(b.createdAt) || 0;
+        return bt - at;
+      });
+
+      activeJobs.forEach(job => {
+        activeList.appendChild(createJobRow(job));
+      });
+    }
+
+    if (archivalList) {
+      archivalList.classList.remove('is-loading');
+      archivalList.innerHTML = '';
+
+      // FileRoom jobs (archival)
+      const archivalJobs = _jobsCache.fileroom || [];
+
+      archivalJobs.forEach(job => {
+        archivalList.appendChild(createJobRow(job));
+      });
+    }
+  }
+
+  function createJobRow(job) {
+    const row = document.createElement('div');
+    row.className = 'library-job-row';
+    row.dataset.jobId = job.id;
+    row.dataset.jobApp = job.app;
+
+    // Thumb with provenance bar
+    const thumb = document.createElement('div');
+    thumb.className = 'library-job-thumb';
+
+    const icon = document.createElement('div');
+    icon.className = `library-job-icon is-${job.app}`;
+
+    const iconLabel = document.createElement('div');
+    iconLabel.className = 'library-job-icon-label';
+    // First letter of app name
+    iconLabel.textContent = job.app.charAt(0).toUpperCase();
+
+    thumb.appendChild(icon);
+    thumb.appendChild(iconLabel);
+
+    // Text
+    const text = document.createElement('div');
+    text.className = 'library-job-text';
+
+    const title = document.createElement('div');
+    title.className = 'library-job-row-title';
+    title.textContent = job.name || 'Untitled';
+
+    const sub = document.createElement('div');
+    sub.className = 'library-job-row-sub';
+    sub.textContent = job.subtitle || job.status || job.app;
+
+    text.appendChild(title);
+    text.appendChild(sub);
+
+    // Link status
+    const status = document.createElement('div');
+    status.className = 'library-job-link-status';
+    status.textContent = 'Link';
+
+    row.appendChild(thumb);
+    row.appendChild(text);
+    row.appendChild(status);
+
+    // Click handler
+    row.addEventListener('click', () => {
+      linkAssetsToJob(job.id, job.app, job.name);
+    });
+
+    return row;
+  }
+
+  async function linkAssetsToJob(jobId, jobApp, jobName) {
+    const assetIds = State.selectedAssets.slice();
+    if (assetIds.length === 0) {
+      showToast('No assets selected');
+      return;
+    }
+
+    showToast(`Linking ${assetIds.length} asset(s) to ${jobName}...`);
+
+    try {
+      const userEmail = getCurrentUserEmail();
+      await LibraryAPI.linkAssetsToJob(assetIds, jobId, jobApp, userEmail);
+      showToast(`Linked ${assetIds.length} asset(s) to ${jobName}`, 'success');
+      closeJobModal();
+      clearSelection();
+    } catch (e) {
+      console.error('[Library] Failed to link assets:', e);
+      showToast('Failed to link assets: ' + e.message, 'error');
+    }
   }
 
   // =========================================

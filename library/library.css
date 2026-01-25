@@ -2153,3 +2153,278 @@
 .library-batch-notes::placeholder {
   color: var(--ascend-app-text-muted);
 }
+
+/* =========================================
+ * ADD TO JOB MODAL (Drawer Style)
+ * Mimics ArtStart QR drawer using Ascend tokens
+ * ======================================= */
+
+.library-job-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.library-job-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.library-job-modal-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(860px, calc(100vw - 28px));
+  max-height: min(720px, calc(100vh - 28px));
+  background: var(--ascend-app-surface, #fff);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(16, 24, 40, 0.30);
+  display: flex;
+  flex-direction: column;
+}
+
+.library-job-modal-header {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ascend-app-border, rgba(15, 23, 42, 0.10));
+}
+
+.library-job-modal-title {
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--ascend-app-text-main, rgba(15, 23, 42, 0.86));
+}
+
+.library-job-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.library-job-modal-x {
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ascend-app-text-muted, rgba(15, 23, 42, 0.62));
+  padding: 4px 8px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.library-job-modal-x:hover {
+  color: var(--ascend-app-text-main, rgba(15, 23, 42, 0.86));
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.library-job-modal-body {
+  padding: 12px 14px 14px;
+  overflow: auto;
+  background: linear-gradient(
+    180deg,
+    rgba(240, 246, 252, 0.9),
+    rgba(236, 242, 248, 0.9)
+  );
+  flex: 1;
+  min-height: 0;
+}
+
+.library-job-modal-note {
+  font-size: 12px;
+  color: var(--ascend-app-text-muted, #6b7280);
+  margin-bottom: 10px;
+}
+
+/* Job Sections */
+.library-job-section {
+  margin-bottom: 16px;
+}
+
+.library-job-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ascend-app-text-muted, rgba(15, 23, 42, 0.55));
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+
+.library-job-section-archival {
+  padding-top: 12px;
+  border-top: 1px solid var(--ascend-app-border, rgba(15, 23, 42, 0.08));
+}
+
+/* Job List (matching artstart-qr-list) */
+.library-job-list {
+  display: block;
+  border: 1px solid var(--ascend-app-border, rgba(15, 23, 42, 0.10));
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.library-job-list:empty::after {
+  content: "No jobs found";
+  display: block;
+  padding: 14px;
+  font-size: 12px;
+  color: var(--ascend-app-text-muted, #6b7280);
+  text-align: center;
+}
+
+.library-job-list.is-loading::after {
+  content: "Loading jobs...";
+  display: block;
+  padding: 14px;
+  font-size: 12px;
+  color: var(--ascend-app-text-muted, #6b7280);
+  text-align: center;
+}
+
+/* Job Row */
+.library-job-row {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 12px;
+  align-items: stretch;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--ascend-app-border, rgba(15, 23, 42, 0.08));
+  transition: background-color 120ms ease;
+}
+
+.library-job-row:last-child {
+  border-bottom: 0;
+}
+
+/* Zebra striping */
+.library-job-row:nth-child(odd) {
+  background: rgba(240, 246, 252, 0.65);
+}
+
+.library-job-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.library-job-row:hover {
+  background: rgba(79, 209, 197, 0.12);
+}
+
+.library-job-row.is-linked {
+  background: rgba(79, 209, 197, 0.18);
+}
+
+/* Provenance Icon (vertical gradient bar + monogram) */
+.library-job-thumb {
+  align-self: stretch;
+  width: 48px;
+  min-height: 29px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 26px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ascend-app-text-main, rgba(15, 23, 42, 0.82));
+}
+
+.library-job-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 29px;
+  width: 7px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* App-specific provenance colors using Ascend hopper tokens */
+.library-job-icon.is-artstart {
+  background: linear-gradient(
+    180deg,
+    var(--ascend-hopper-stage-1, #e6956a) 0%,
+    color-mix(in srgb, var(--ascend-hopper-stage-1, #e6956a) 70%, white) 50%,
+    color-mix(in srgb, var(--ascend-hopper-stage-1, #e6956a) 50%, white) 100%
+  );
+}
+
+.library-job-icon.is-copydesk {
+  background: linear-gradient(
+    180deg,
+    var(--ascend-hopper-stage-3, #4e86df) 0%,
+    color-mix(in srgb, var(--ascend-hopper-stage-3, #4e86df) 70%, white) 50%,
+    color-mix(in srgb, var(--ascend-hopper-stage-3, #4e86df) 50%, white) 100%
+  );
+}
+
+.library-job-icon.is-fileroom {
+  background: linear-gradient(
+    180deg,
+    var(--ascend-hopper-stage-2, #6fb9ad) 0%,
+    color-mix(in srgb, var(--ascend-hopper-stage-2, #6fb9ad) 70%, white) 50%,
+    color-mix(in srgb, var(--ascend-hopper-stage-2, #6fb9ad) 50%, white) 100%
+  );
+}
+
+.library-job-icon-label {
+  position: relative;
+  z-index: 1;
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: inherit;
+  text-transform: uppercase;
+}
+
+/* Text content */
+.library-job-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.library-job-row-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ascend-app-text-main, rgba(15, 23, 42, 0.86));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.library-job-row-sub {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--ascend-app-text-muted, rgba(100, 116, 139, 0.95));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Link status indicator */
+.library-job-link-status {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ascend-app-text-muted, rgba(15, 23, 42, 0.5));
+  white-space: nowrap;
+}
+
+.library-job-row.is-linked .library-job-link-status {
+  color: var(--ascend-color-success, #10b981);
+  font-weight: 600;
+}
+
+.library-job-row.is-linked .library-job-link-status::before {
+  content: "✓ ";
+}

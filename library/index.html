@@ -273,6 +273,40 @@
     </div>
   </div>
 
+  <!-- Add to Job Modal -->
+  <div class="library-job-modal" id="library-job-modal" style="display:none;" aria-hidden="true">
+    <div class="library-job-modal-backdrop" data-modal-close="1"></div>
+    <div class="library-job-modal-panel" role="dialog" aria-modal="true" aria-labelledby="library-job-modal-title">
+      <div class="library-job-modal-header">
+        <div class="library-job-modal-title" id="library-job-modal-title">Add to Job</div>
+        <div class="library-job-modal-actions">
+          <button type="button" class="library-job-modal-x" id="library-job-modal-close" aria-label="Close">×</button>
+        </div>
+      </div>
+      <div class="library-job-modal-body">
+        <div class="library-job-modal-note" id="library-job-modal-note">
+          Select a job to link <span id="library-job-asset-count">0</span> selected asset(s).
+        </div>
+
+        <!-- Active Jobs Section (ArtStart + Copydesk) -->
+        <div class="library-job-section">
+          <div class="library-job-section-label">Active Jobs</div>
+          <div class="library-job-list" id="library-job-list-active">
+            <!-- rows injected by JS -->
+          </div>
+        </div>
+
+        <!-- Archival Jobs Section (FileRoom) -->
+        <div class="library-job-section library-job-section-archival">
+          <div class="library-job-section-label">Completed Jobs (FileRoom)</div>
+          <div class="library-job-list" id="library-job-list-archival">
+            <!-- rows injected by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Config -->
   <script>
     window.LIBRARY_CONFIG = {

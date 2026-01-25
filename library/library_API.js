@@ -39,8 +39,9 @@ const TAGS_MASTER_SPREADSHEET_ID = '1ZtR9Jv64Jogrvx77drQGNosCo0-sjDMTulC_Q__TpQQ
 const TAXONOMY_SHEET_NAME = 'Tags';
 const ASSETS_SHEET_NAME = 'ASSETS';
 const FOLDERS_SHEET_NAME = 'FOLDERS';
+const ASSET_JOBS_SHEET_NAME = 'ASSET_JOBS';
 
-const LIBRARY_API_VERSION = 'library_v1.2_2026-01-24_folder_names';
+const LIBRARY_API_VERSION = 'library_v1.3_2026-01-25_asset_jobs';
 
 const LIBRARY_ADMIN_EMAILS = [
   'jacob@jacobhenderson.studio',
@@ -112,6 +113,22 @@ function doGet(e) {
         data = listFolderDisplayNames_();
         break;
 
+      case 'linkAssetsToJob':
+        data = linkAssetsToJob_(p);
+        break;
+
+      case 'unlinkAssetsFromJob':
+        data = unlinkAssetsFromJob_(p);
+        break;
+
+      case 'listLinkedJobs':
+        data = listLinkedJobs_(p);
+        break;
+
+      case 'listJobAssets':
+        data = listJobAssets_(p);
+        break;
+
       default:
         throw new Error('Unknown action: ' + action);
     }
@@ -166,6 +183,14 @@ function doPost(e) {
 
       case 'deleteFolder':
         data = deleteFolder_(body);
+        break;
+
+      case 'linkAssetsToJob':
+        data = linkAssetsToJob_(body);
+        break;
+
+      case 'unlinkAssetsFromJob':
+        data = unlinkAssetsFromJob_(body);
         break;
 
       default:
@@ -862,6 +887,242 @@ function ensureFoldersSheet_(ss) {
     }
   }
   return sh;
+}
+
+/** =========================
+ * ASSET-JOB LINKING
+ * ======================= */
+
+/**
+ * linkAssetsToJob
+ * Link one or more assets to a job.
+ * Params: asset_ids (array or single), job_id, job_app, user_email
+ */
+function linkAssetsToJob_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    // Handle array, comma-separated string, or single value
+    let assetIds = [];
+    if (Array.isArray(p.asset_ids)) {
+      assetIds = p.asset_ids;
+    } else if (p.asset_ids) {
+      assetIds = String(p.asset_ids).split(',').map(s => s.trim()).filter(s => s);
+    } else if (p.asset_id) {
+      assetIds = [String(p.asset_id).trim()];
+    }
+
+    const jobId = String(p.job_id || '').trim();
+    const jobApp = String(p.job_app || '').trim();
+    const userEmail = String(p.user_email || '').toLowerCase().trim();
+
+    if (!jobId) throw new Error('Missing job_id');
+    if (assetIds.length === 0) throw new Error('Missing asset_ids');
+
+    const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+    const sh = ensureAssetJobsSheet_(ss);
+    const header = getHeaderMap_(sh);
+    const nowIso = new Date().toISOString();
+
+    const results = [];
+    for (let i = 0; i < assetIds.length; i++) {
+      const assetId = String(assetIds[i]).trim();
+      if (!assetId) continue;
+
+      // Check if link already exists
+      const existingRow = findAssetJobRow_(sh, header, assetId, jobId);
+      if (existingRow > 0) {
+        results.push({ asset_id: assetId, action: 'already_linked' });
+        continue;
+      }
+
+      // Insert new link
+      const newRow = sh.getLastRow() + 1;
+      sh.getRange(newRow, header['AssetId']).setValue(assetId);
+      sh.getRange(newRow, header['JobId']).setValue(jobId);
+      sh.getRange(newRow, header['JobApp']).setValue(jobApp);
+      sh.getRange(newRow, header['LinkedAt']).setValue(nowIso);
+      sh.getRange(newRow, header['LinkedBy']).setValue(userEmail);
+
+      results.push({ asset_id: assetId, action: 'linked' });
+    }
+
+    const linkedCount = results.filter(r => r.action === 'linked').length;
+    return { job_id: jobId, job_app: jobApp, linked: linkedCount, results: results };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * unlinkAssetsFromJob
+ * Remove link between one or more assets and a job.
+ * Params: asset_ids (array or single), job_id
+ */
+function unlinkAssetsFromJob_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    // Handle array, comma-separated string, or single value
+    let assetIds = [];
+    if (Array.isArray(p.asset_ids)) {
+      assetIds = p.asset_ids;
+    } else if (p.asset_ids) {
+      assetIds = String(p.asset_ids).split(',').map(s => s.trim()).filter(s => s);
+    } else if (p.asset_id) {
+      assetIds = [String(p.asset_id).trim()];
+    }
+
+    const jobId = String(p.job_id || '').trim();
+
+    if (!jobId) throw new Error('Missing job_id');
+
+    const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+    const sh = ensureAssetJobsSheet_(ss);
+    const header = getHeaderMap_(sh);
+
+    // Delete rows in reverse to avoid index shifting
+    const rowsToDelete = [];
+    for (let i = 0; i < assetIds.length; i++) {
+      const assetId = String(assetIds[i]).trim();
+      if (!assetId) continue;
+
+      const row = findAssetJobRow_(sh, header, assetId, jobId);
+      if (row > 0) {
+        rowsToDelete.push(row);
+      }
+    }
+
+    // Sort descending and delete
+    rowsToDelete.sort((a, b) => b - a);
+    for (const row of rowsToDelete) {
+      sh.deleteRow(row);
+    }
+
+    return { job_id: jobId, removed: rowsToDelete.length };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * listLinkedJobs
+ * Get all jobs linked to a specific asset.
+ * Params: asset_id
+ */
+function listLinkedJobs_(p) {
+  const assetId = String(p.asset_id || '').trim();
+  if (!assetId) throw new Error('Missing asset_id');
+
+  const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+  const sh = ss.getSheetByName(ASSET_JOBS_SHEET_NAME);
+  if (!sh || sh.getLastRow() < 2) return { asset_id: assetId, jobs: [] };
+
+  const header = getHeaderMap_(sh);
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  const data = sh.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  const jobs = [];
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const rowAssetId = String(row[header['AssetId'] - 1] || '').trim();
+    if (rowAssetId === assetId) {
+      jobs.push({
+        job_id: String(row[header['JobId'] - 1] || '').trim(),
+        job_app: String(row[header['JobApp'] - 1] || '').trim(),
+        linked_at: String(row[header['LinkedAt'] - 1] || '').trim(),
+        linked_by: String(row[header['LinkedBy'] - 1] || '').trim()
+      });
+    }
+  }
+
+  return { asset_id: assetId, jobs: jobs };
+}
+
+/**
+ * listJobAssets
+ * Get all assets linked to a specific job.
+ * Params: job_id
+ */
+function listJobAssets_(p) {
+  const jobId = String(p.job_id || '').trim();
+  if (!jobId) throw new Error('Missing job_id');
+
+  const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+  const sh = ss.getSheetByName(ASSET_JOBS_SHEET_NAME);
+  if (!sh || sh.getLastRow() < 2) return { job_id: jobId, assets: [] };
+
+  const header = getHeaderMap_(sh);
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  const data = sh.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  const assets = [];
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const rowJobId = String(row[header['JobId'] - 1] || '').trim();
+    if (rowJobId === jobId) {
+      assets.push({
+        asset_id: String(row[header['AssetId'] - 1] || '').trim(),
+        linked_at: String(row[header['LinkedAt'] - 1] || '').trim(),
+        linked_by: String(row[header['LinkedBy'] - 1] || '').trim()
+      });
+    }
+  }
+
+  return { job_id: jobId, assets: assets };
+}
+
+/**
+ * Ensure ASSET_JOBS sheet exists with required columns.
+ */
+function ensureAssetJobsSheet_(ss) {
+  const requiredColumns = ['AssetId', 'JobId', 'JobApp', 'LinkedAt', 'LinkedBy'];
+
+  let sh = ss.getSheetByName(ASSET_JOBS_SHEET_NAME);
+  if (!sh) {
+    sh = ss.insertSheet(ASSET_JOBS_SHEET_NAME);
+    sh.getRange(1, 1, 1, requiredColumns.length).setValues([requiredColumns]);
+    sh.setFrozenRows(1);
+  } else {
+    // Ensure all required columns exist
+    const lastCol = sh.getLastColumn();
+    const existingHeaders = lastCol > 0 ? sh.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+    const existingSet = new Set(existingHeaders.map(h => String(h).trim()));
+
+    for (const col of requiredColumns) {
+      if (!existingSet.has(col)) {
+        const newCol = sh.getLastColumn() + 1;
+        sh.getRange(1, newCol).setValue(col);
+      }
+    }
+  }
+  return sh;
+}
+
+/**
+ * Find a row in ASSET_JOBS by asset ID and job ID.
+ */
+function findAssetJobRow_(sh, header, assetId, jobId) {
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return -1;
+
+  const aidCol = header['AssetId'];
+  const jidCol = header['JobId'];
+  if (!aidCol || !jidCol) return -1;
+
+  const maxCol = Math.max(aidCol, jidCol);
+  const data = sh.getRange(2, 1, lastRow - 1, maxCol).getValues();
+
+  for (let i = 0; i < data.length; i++) {
+    const rowAssetId = String(data[i][aidCol - 1] || '').trim();
+    const rowJobId = String(data[i][jidCol - 1] || '').trim();
+    if (rowAssetId === assetId && rowJobId === jobId) {
+      return i + 2;
+    }
+  }
+  return -1;
 }
 
 /** =========================
