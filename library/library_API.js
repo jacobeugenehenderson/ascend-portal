@@ -217,37 +217,40 @@ function listTaxonomy_() {
   if (!sh) throw new Error('TAXONOMY sheet not found');
 
   const lastRow = sh.getLastRow();
-  if (lastRow < 2) return { products: [] };
+  if (lastRow < 2) return { products: [], tags: [], lobs: [] };
 
+  // Read all three columns independently (they are separate lists, not related rows)
   const data = sh.getRange(2, 1, lastRow - 1, 3).getValues();
+
   const products = [];
+  const tags = [];
+  const lobs = [];
 
   for (let i = 0; i < data.length; i++) {
-    const name = String(data[i][0] || '').trim();
-    const tags = String(data[i][1] || '').trim();
-    const lob = String(data[i][2] || '').trim();
+    const productName = String(data[i][0] || '').trim();
+    const tagName = String(data[i][1] || '').trim();
+    const lobName = String(data[i][2] || '').trim();
 
-    if (name) {
-      products.push({
-        name: name,
-        tags: tags ? tags.split(',').map(t => t.trim()).filter(t => t) : [],
-        lob: lob
-      });
+    // Column A: Products (just names, no associated tags/lob)
+    if (productName) {
+      products.push({ name: productName, tags: [], lob: '' });
+    }
+
+    // Column B: Tags (independent list)
+    if (tagName) {
+      tags.push(tagName);
+    }
+
+    // Column C: LOBs (independent list)
+    if (lobName) {
+      lobs.push(lobName);
     }
   }
 
-  // Extract unique tags from TAXONOMY only (source of truth)
-  const allTags = new Set();
-  products.forEach(p => p.tags.forEach(t => allTags.add(t)));
-
-  // Extract unique LOBs
-  const allLobs = new Set();
-  products.forEach(p => { if (p.lob) allLobs.add(p.lob); });
-
   return {
     products: products,
-    tags: Array.from(allTags).sort(),
-    lobs: Array.from(allLobs).sort()
+    tags: tags.sort(),
+    lobs: lobs.sort()
   };
 }
 
