@@ -2027,9 +2027,11 @@
     // Display name (editable) or original filename
     const displayName = meta.displayName || asset.name;
 
+    const needsCheckerboard = ['svg', 'eps', 'png'].includes(ext);
+
     return `
-      <article class="library-card ${isPdf ? 'is-pdf' : ''} ${isSelected ? 'is-selected' : ''}" data-id="${escapeHtml(asset.id)}" draggable="true">
-        <div class="library-card-thumb">
+      <article class="library-card ${isPdf ? 'is-pdf' : ''} ${isSelected ? 'is-selected' : ''}" data-id="${escapeHtml(asset.id)}" data-ext="${ext}" draggable="true">
+        <div class="library-card-thumb${needsCheckerboard ? ' has-transparency' : ''}">
           ${thumbContent}
           ${extLabel ? `<span class="library-card-type">${extLabel}</span>` : ''}
           ${sourceSealHtml}
@@ -2153,11 +2155,13 @@
 
     const ext = (asset.ext || '').toLowerCase();
     const isPdf = ext === 'pdf';
+    const hasTransparency = ['svg', 'eps', 'png'].includes(ext);
     const assetUrl = getAssetUrl(asset);
 
     // Set preview content - use large thumbnail for modal (actual files not hosted on GitHub Pages)
     const placeholder = getPlaceholderForType(ext);
     const thumbUrl = getThumbUrl(asset, 'lg');
+    previewContainer.classList.toggle('has-transparency', hasTransparency);
     previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
 
     // Show display name if set, otherwise use filename

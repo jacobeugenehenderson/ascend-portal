@@ -46,14 +46,12 @@ def save_both_sizes(img: Image.Image, thumb_id: str, force: bool = False) -> tup
     small_saved = False
     large_saved = False
 
-    # Convert to RGB if necessary
+    # Convert color mode - preserve RGBA for transparency, convert others to RGB
     if img.mode == 'RGBA':
-        background = Image.new('RGB', img.size, (255, 255, 255))
-        background.paste(img, mask=img.split()[3])
-        img = background
+        pass  # Keep RGBA for transparency support in WebP
     elif img.mode == 'CMYK':
         img = img.convert('RGB')
-    elif img.mode != 'RGB':
+    elif img.mode not in ('RGB', 'RGBA'):
         img = img.convert('RGB')
 
     width, height = img.size
