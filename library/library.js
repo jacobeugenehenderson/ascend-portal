@@ -2355,7 +2355,7 @@
 
     container.innerHTML = `
       <div class="library-tag-picker">
-        <div class="library-picker-section is-collapsible" data-section="products">
+        <div class="library-picker-section is-collapsible is-collapsed" data-section="products">
           <h4 class="library-picker-label" data-toggle="collapse">
             <span class="collapse-icon"></span>Products
           </h4>
@@ -2377,7 +2377,7 @@
           </div>
         </div>
 
-        <div class="library-picker-section is-collapsible is-collapsed" data-section="tags">
+        <div class="library-picker-section is-collapsible" data-section="tags">
           <h4 class="library-picker-label" data-toggle="collapse">
             <span class="collapse-icon"></span>Tags
           </h4>
