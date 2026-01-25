@@ -3,6 +3,7 @@
 Generate WebP thumbnails from source files.
 Uses psd-tools for proper PSD composite extraction.
 Uses PyMuPDF for AI files (they're PDF-based).
+Uses cairosvg for SVG rasterization.
 """
 
 import os
@@ -14,6 +15,12 @@ from pathlib import Path
 from PIL import Image
 from psd_tools import PSDImage
 import fitz  # PyMuPDF
+try:
+    import cairosvg
+    HAS_CAIROSVG = True
+except ImportError:
+    HAS_CAIROSVG = False
+    print("Warning: cairosvg not installed, SVG thumbnails will be skipped")
 
 # Allow large images (some PSDs are huge)
 Image.MAX_IMAGE_PIXELS = 400_000_000
@@ -292,6 +299,51 @@ def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
         print(f"  ERROR: {e}", file=sys.stderr)
         return False
 
+def generate_raster_thumbnail(src_path: Path, rel_path: str) -> bool:
+    """Generate WebP thumbnails from raster images (PNG, JPG, GIF, WebP)."""
+    thumb_id = get_thumb_id(rel_path)
+    small_path = THUMBS_PATH / f"{thumb_id}.webp"
+    large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
+
+    # Skip if both already exist
+    if small_path.exists() and large_path.exists():
+        return True
+
+    try:
+        with Image.open(src_path) as img:
+            save_both_sizes(img, thumb_id)
+        return True
+    except Exception as e:
+        print(f"  ERROR: {e}", file=sys.stderr)
+        return False
+
+def generate_svg_thumbnail(src_path: Path, rel_path: str) -> bool:
+    """Generate WebP thumbnails from SVG files using cairosvg."""
+    if not HAS_CAIROSVG:
+        return False
+
+    thumb_id = get_thumb_id(rel_path)
+    small_path = THUMBS_PATH / f"{thumb_id}.webp"
+    large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
+
+    # Skip if both already exist
+    if small_path.exists() and large_path.exists():
+        return True
+
+    try:
+        # Render SVG to PNG at high resolution for quality
+        png_data = cairosvg.svg2png(url=str(src_path), output_width=MAX_SIZE_LG)
+
+        # Load into PIL
+        from io import BytesIO
+        img = Image.open(BytesIO(png_data))
+
+        save_both_sizes(img, thumb_id)
+        return True
+    except Exception as e:
+        print(f"  ERROR: {e}", file=sys.stderr)
+        return False
+
 def find_files(extensions: list, label: str) -> list:
     """Find files with given extensions from both sources."""
     files = []
@@ -361,6 +413,15 @@ def main():
     elif file_type == "eps":
         files = find_files(["eps"], "EPS")
         process_files(files, generate_eps_thumbnail, "EPS")
+    elif file_type == "raster":
+        files = find_files(["png", "jpg", "jpeg", "gif", "webp"], "Raster")
+        process_files(files, generate_raster_thumbnail, "Raster")
+    elif file_type == "svg":
+        if not HAS_CAIROSVG:
+            print("ERROR: cairosvg required for SVG thumbnails. Install with: pip install cairosvg")
+            sys.exit(1)
+        files = find_files(["svg"], "SVG")
+        process_files(files, generate_svg_thumbnail, "SVG")
     elif file_type == "all":
         # Process all types
         psd_files = find_files(["psd"], "PSD")
@@ -371,12 +432,23 @@ def main():
         print()
         eps_files = find_files(["eps"], "EPS")
         process_files(eps_files, generate_eps_thumbnail, "EPS")
+        print()
+        raster_files = find_files(["png", "jpg", "jpeg", "gif", "webp"], "Raster")
+        process_files(raster_files, generate_raster_thumbnail, "Raster")
+        print()
+        if HAS_CAIROSVG:
+            svg_files = find_files(["svg"], "SVG")
+            process_files(svg_files, generate_svg_thumbnail, "SVG")
+        else:
+            print("Skipping SVG (cairosvg not installed)")
     else:
-        print(f"Usage: {sys.argv[0]} [psd|ai|eps|all]")
-        print("  psd  - Generate thumbnails for PSD files (default)")
-        print("  ai   - Generate thumbnails for AI files")
-        print("  eps  - Generate thumbnails for EPS files")
-        print("  all  - Generate thumbnails for all supported types")
+        print(f"Usage: {sys.argv[0]} [psd|ai|eps|raster|svg|all]")
+        print("  psd    - Generate thumbnails for PSD files (default)")
+        print("  ai     - Generate thumbnails for AI files")
+        print("  eps    - Generate thumbnails for EPS files")
+        print("  raster - Generate thumbnails for PNG, JPG, GIF, WebP files")
+        print("  svg    - Generate thumbnails for SVG files (requires cairosvg)")
+        print("  all    - Generate thumbnails for all supported types")
         print()
         print("Note: INDD files are source files shown with a badge, not thumbnailed.")
         sys.exit(1)
