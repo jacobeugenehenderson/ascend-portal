@@ -2044,7 +2044,22 @@
           console.log('[FolderRename] API result:', result);
           showToast(`Renamed "${oldName}" to "${newName}"`, 'success');
           // Reload asset metadata to get updated virtual folder paths
-          await loadAssetMetadata();
+          const metaResult = await LibraryAPI.listAssetsMeta(true);
+          if (metaResult && metaResult.assets) {
+            State.assetMeta = {};
+            metaResult.assets.forEach(a => {
+              State.assetMeta[a.asset_id] = {
+                products: a.products || [],
+                tags: a.tags || [],
+                notes: a.notes || '',
+                virtualFolder: a.virtual_folder || null,
+                displayName: a.display_name || '',
+                trashed: !!a.trashed_at,
+                trashedAt: a.trashed_at || '',
+                trashedBy: a.trashed_by || ''
+              };
+            });
+          }
           renderBrowseView();
         } catch (err) {
           console.error('[FolderRename] API error:', err);
