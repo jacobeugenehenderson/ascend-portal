@@ -2060,19 +2060,25 @@
       // Use capture phase to intercept before other handlers
       setTimeout(() => document.addEventListener('click', handleClickOutside, true), 0);
 
-      input.addEventListener('blur', () => {
+      const cleanup = () => {
         document.removeEventListener('click', handleClickOutside, true);
+      };
+
+      input.addEventListener('blur', () => {
+        cleanup();
         commitRename();
       });
 
       input.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter') {
           ev.preventDefault();
-          input.blur();
+          cleanup();
+          commitRename();
         } else if (ev.key === 'Escape') {
+          ev.preventDefault();
           committed = true; // Prevent save
+          cleanup();
           nameEl.textContent = oldName;
-          document.removeEventListener('click', handleClickOutside, true);
         }
       });
     });
