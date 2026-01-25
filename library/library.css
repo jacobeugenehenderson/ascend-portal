@@ -720,16 +720,36 @@
 }
 
 .library-section-content {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   transition: max-height 200ms ease, opacity 150ms ease;
-  max-height: 500px;
+  max-height: 300px;
   opacity: 1;
+}
+
+/* Custom scrollbar for section content */
+.library-section-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.library-section-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.library-section-content::-webkit-scrollbar-thumb {
+  background: var(--ascend-control-border);
+  border-radius: 3px;
+}
+
+.library-section-content::-webkit-scrollbar-thumb:hover {
+  background: var(--ascend-app-text-muted);
 }
 
 .library-sidebar-section.is-collapsed .library-section-content {
   max-height: 0;
   opacity: 0;
   margin: 0;
+  overflow: hidden;
 }
 
 /* Product List (sidebar filter) */
