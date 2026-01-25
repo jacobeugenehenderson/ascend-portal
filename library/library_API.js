@@ -229,6 +229,26 @@ function listTaxonomy_() {
   const allTags = new Set();
   products.forEach(p => p.tags.forEach(t => allTags.add(t)));
 
+  // Also collect tags from ASSETS sheet (user-created tags)
+  try {
+    const assetsSh = ss.getSheetByName(ASSETS_SHEET_NAME);
+    if (assetsSh && assetsSh.getLastRow() > 1) {
+      const assetsHeader = getHeaderMap_(assetsSh);
+      const tagsCol = assetsHeader['Tags'];
+      if (tagsCol) {
+        const tagsData = assetsSh.getRange(2, tagsCol, assetsSh.getLastRow() - 1, 1).getValues();
+        tagsData.forEach(row => {
+          const tags = String(row[0] || '').trim();
+          if (tags) {
+            tags.split(',').map(t => t.trim()).filter(t => t).forEach(t => allTags.add(t));
+          }
+        });
+      }
+    }
+  } catch (e) {
+    // Ignore errors reading ASSETS tags
+  }
+
   // Extract unique LOBs
   const allLobs = new Set();
   products.forEach(p => { if (p.lob) allLobs.add(p.lob); });
