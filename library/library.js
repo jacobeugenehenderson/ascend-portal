@@ -1997,15 +1997,17 @@
       navigateToFolder(newPath);
     });
 
-    // Folder rename (double-click on name)
-    document.getElementById('library-folder-grid')?.addEventListener('dblclick', (e) => {
-      const nameEl = e.target.closest('.library-folder-tile-name');
-      if (!nameEl) return;
-
-      const tile = nameEl.closest('.library-folder-tile');
+    // Folder rename (right-click / context menu)
+    document.getElementById('library-folder-grid')?.addEventListener('contextmenu', (e) => {
+      const tile = e.target.closest('.library-folder-tile');
       if (!tile) return;
 
+      e.preventDefault();
       e.stopPropagation();
+
+      const nameEl = tile.querySelector('.library-folder-tile-name');
+      if (!nameEl) return;
+
       const oldName = tile.dataset.folder;
 
       // Replace name with input
