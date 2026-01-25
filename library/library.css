@@ -1273,8 +1273,10 @@
 
 /* Notes textarea - inherits base textarea styles from ascend-apps.css */
 .library-modal-notes {
+  width: 100%;
   min-height: 60px;
   resize: vertical;
+  box-sizing: border-box;
 }
 
 .library-notes-status {
