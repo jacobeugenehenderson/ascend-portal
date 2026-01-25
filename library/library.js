@@ -277,16 +277,16 @@
     // Load saved state from localStorage (cart only now)
     loadLocalState();
 
+    // FAST: Load cached asset metadata from localStorage (instant)
+    loadCachedAssetMeta();
+
     // Bind event listeners
     bindEvents();
 
-    // Load manifest and taxonomy/meta in PARALLEL for faster startup
-    await Promise.all([
-      loadManifest(),
-      loadTaxonomyAndMeta()
-    ]);
+    // Load manifest (required for asset list)
+    await loadManifest();
 
-    // Build initial view BEFORE auto-tagging (show UI fast)
+    // Build initial view using cached data (fast!)
     buildProductList();
     buildLobList();
     buildTagCloud();
@@ -302,8 +302,33 @@
     const loadTime = Math.round(performance.now() - startTime);
     console.log(`[Library] Ready. Assets: ${State.assets.length}, Load time: ${loadTime}ms`);
 
+    // Load fresh API data in background (non-blocking) and refresh UI when done
+    loadTaxonomyAndMeta().then(() => {
+      buildProductList();
+      buildLobList();
+      buildTagCloud();
+      if (State.mode === 'browse') renderBrowseView();
+      else { applyFilters(); renderGrid(); }
+      console.log('[Library] UI refreshed with API data');
+    });
+
     // Auto-detect products from filenames/folders AFTER initial render (non-blocking)
     requestIdleCallback ? requestIdleCallback(() => autoTagAssets()) : setTimeout(autoTagAssets, 100);
+  }
+
+  /**
+   * Load cached asset metadata from localStorage for instant startup
+   */
+  function loadCachedAssetMeta() {
+    const cachedMeta = localStorage.getItem('library-asset-meta');
+    if (cachedMeta) {
+      try {
+        State.assetMeta = JSON.parse(cachedMeta);
+        console.log('[Library] Loaded cached asset meta:', Object.keys(State.assetMeta).length, 'assets');
+      } catch (e) {
+        console.warn('[Library] Could not parse cached meta:', e);
+      }
+    }
   }
 
   // =========================================
@@ -762,17 +787,7 @@
 
   async function loadTaxonomyAndMeta() {
     // FAST PATH: Load cached data from localStorage first for instant UI
-    const cachedMeta = localStorage.getItem('library-asset-meta');
-    if (cachedMeta) {
-      try {
-        State.assetMeta = JSON.parse(cachedMeta);
-        console.log('[Library] Loaded cached asset meta:', Object.keys(State.assetMeta).length, 'assets');
-      } catch (e) {
-        console.warn('[Library] Could not parse cached meta:', e);
-      }
-    }
-
-    // Then load fresh data from API
+    // Load fresh data from API (cached data already loaded in init)
     if (LibraryAPI.baseUrl) {
       try {
         // Load all API data in PARALLEL for faster startup
@@ -794,9 +809,11 @@
           console.log('[Library] Loaded taxonomy from API:', State.productList.length, 'products');
         }
 
-        // Process asset metadata
+        // Process asset metadata - MERGE with existing cache, don't replace
         if (metaResult && metaResult.assets) {
-          State.assetMeta = {};
+          const cachedCount = Object.keys(State.assetMeta).length;
+
+          // Merge API data into existing state (API data takes priority for conflicts)
           metaResult.assets.forEach(a => {
             State.assetMeta[a.asset_id] = {
               products: a.products || [],
@@ -810,9 +827,11 @@
               trashedBy: a.trashed_by || ''
             };
           });
-          console.log('[Library] Loaded asset metadata from API:', metaResult.count, 'assets');
 
-          // Cache to localStorage for offline use
+          const finalCount = Object.keys(State.assetMeta).length;
+          console.log(`[Library] Merged API metadata: ${metaResult.count} from API, ${cachedCount} cached → ${finalCount} total`);
+
+          // Cache merged data to localStorage
           try {
             localStorage.setItem('library-asset-meta', JSON.stringify(State.assetMeta));
           } catch (e) {
