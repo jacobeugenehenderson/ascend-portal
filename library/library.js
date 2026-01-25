@@ -2310,6 +2310,17 @@
     const assetTags = meta.tags;
     const assetLob = meta.lob || '';
 
+    // Preserve current collapsed state of sections (default: tags open, others closed)
+    const sectionState = {
+      products: true,  // collapsed by default
+      lob: true,       // collapsed by default
+      tags: false      // open by default
+    };
+    container.querySelectorAll('.library-picker-section[data-section]').forEach(section => {
+      const name = section.dataset.section;
+      sectionState[name] = section.classList.contains('is-collapsed');
+    });
+
     // Render product picker (from master list)
     const productListHtml = State.productList.length > 0
       ? State.productList.map(product => {
@@ -2355,7 +2366,7 @@
 
     container.innerHTML = `
       <div class="library-tag-picker">
-        <div class="library-picker-section is-collapsible is-collapsed" data-section="products">
+        <div class="library-picker-section is-collapsible${sectionState.products ? ' is-collapsed' : ''}" data-section="products">
           <h4 class="library-picker-label" data-toggle="collapse">
             <span class="collapse-icon"></span>Products
           </h4>
@@ -2366,7 +2377,7 @@
           </div>
         </div>
 
-        <div class="library-picker-section is-collapsible is-collapsed" data-section="lob">
+        <div class="library-picker-section is-collapsible${sectionState.lob ? ' is-collapsed' : ''}" data-section="lob">
           <h4 class="library-picker-label" data-toggle="collapse">
             <span class="collapse-icon"></span>LOB
           </h4>
@@ -2377,7 +2388,7 @@
           </div>
         </div>
 
-        <div class="library-picker-section is-collapsible" data-section="tags">
+        <div class="library-picker-section is-collapsible${sectionState.tags ? ' is-collapsed' : ''}" data-section="tags">
           <h4 class="library-picker-label" data-toggle="collapse">
             <span class="collapse-icon"></span>Tags
           </h4>
