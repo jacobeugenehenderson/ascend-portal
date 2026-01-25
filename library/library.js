@@ -2175,7 +2175,7 @@
 
     if (isMediaKitsPdf) {
       // Media Kits PDFs: use iframe with browser's native PDF viewer (multi-page navigation, zoom)
-      // Build full local file path (assets symlinks don't work on GitHub Pages)
+      // Serve via reveal server on localhost:8081 (file:// URLs blocked by browser security)
       let pdfPath;
       if (asset.path.startsWith('library/')) {
         pdfPath = `${Config.basePath}/${asset.path.slice(8)}`;
@@ -2184,7 +2184,7 @@
       } else {
         pdfPath = `${Config.basePath}/${asset.path}`;
       }
-      const pdfUrl = `file://${encodeURI(pdfPath)}`;
+      const pdfUrl = `http://localhost:8081/pdf?path=${encodeURIComponent(pdfPath)}`;
       previewContainer.innerHTML = `<iframe class="library-pdf-viewer" src="${pdfUrl}" title="${escapeHtml(asset.name)}"></iframe>`;
     } else {
       // All other assets: use large thumbnail
