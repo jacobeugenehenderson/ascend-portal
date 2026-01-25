@@ -728,6 +728,7 @@
 
         // Load asset metadata from API
         const metaResult = await LibraryAPI.listAssetsMeta(true);
+        console.log('[Library] Raw API response:', metaResult);
         if (metaResult && metaResult.assets) {
           State.assetMeta = {};
           metaResult.assets.forEach(a => {
@@ -743,6 +744,11 @@
             };
           });
           console.log('[Library] Loaded asset metadata from API:', metaResult.count, 'assets');
+          // Log first few assets with tags for debugging
+          const withTags = metaResult.assets.filter(a => a.tags && a.tags.length > 0).slice(0, 5);
+          if (withTags.length > 0) {
+            console.log('[Library] Sample assets with tags:', withTags);
+          }
 
           // Cache to localStorage for offline use
           try {
