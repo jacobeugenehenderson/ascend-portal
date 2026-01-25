@@ -547,8 +547,11 @@
       return folder === folderPath || folder.startsWith(folderPath + '/');
     });
 
-    // Get first N assets with thumbnails
-    return assets.slice(0, count).map(a => getThumbUrl(a));
+    // Get first N assets with thumbnails - include ext for transparency detection
+    return assets.slice(0, count).map(a => ({
+      url: getThumbUrl(a),
+      ext: (a.ext || '').toLowerCase()
+    }));
   }
 
   function renderBreadcrumbs() {
@@ -589,10 +592,18 @@
     const source = State.browse.source;
     const basePath = State.browse.path.join('/');
 
+    const TRANSPARENT_TYPES = new Set(['svg', 'eps', 'png']);
+
     container.innerHTML = folders.map(folder => {
-      // Filter to only valid preview URLs
-      const validPreviews = folder.previews.filter(url => url);
+      // Filter to only valid previews
+      const validPreviews = folder.previews.filter(p => p && p.url);
       const count = validPreviews.length;
+
+      // Helper to generate img tag with transparency class if needed
+      const makeImg = (preview) => {
+        const hasTransparency = TRANSPARENT_TYPES.has(preview.ext);
+        return `<img src="${preview.url}" alt="" loading="lazy" class="${hasTransparency ? 'has-transparency' : ''}">`;
+      };
 
       // Dynamic layout class based on image count
       let layoutClass = 'layout-empty';
@@ -603,22 +614,16 @@
         previewHtml = '<div class="empty-slot"></div>';
       } else if (count === 1) {
         layoutClass = 'layout-single';
-        previewHtml = `<img src="${validPreviews[0]}" alt="" loading="lazy">`;
+        previewHtml = makeImg(validPreviews[0]);
       } else if (count === 2) {
         layoutClass = 'layout-duo';
-        previewHtml = validPreviews.slice(0, 2).map(url =>
-          `<img src="${url}" alt="" loading="lazy">`
-        ).join('');
+        previewHtml = validPreviews.slice(0, 2).map(makeImg).join('');
       } else if (count === 3) {
         layoutClass = 'layout-trio';
-        previewHtml = validPreviews.slice(0, 3).map(url =>
-          `<img src="${url}" alt="" loading="lazy">`
-        ).join('');
+        previewHtml = validPreviews.slice(0, 3).map(makeImg).join('');
       } else {
         layoutClass = 'layout-quad';
-        previewHtml = validPreviews.slice(0, 4).map(url =>
-          `<img src="${url}" alt="" loading="lazy">`
-        ).join('');
+        previewHtml = validPreviews.slice(0, 4).map(makeImg).join('');
       }
 
       // Get full folder path and display name
