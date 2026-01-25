@@ -736,13 +736,25 @@ function jsonp_(callback, payload) {
 }
 
 function ensureAssetsSheet_(ss) {
+  const requiredColumns = ['AssetId', 'Path', 'Products', 'Tags', 'Notes', 'DisplayName', 'VirtualFolder', 'TrashedAt', 'TrashedBy', 'UpdatedAt'];
+
   let sh = ss.getSheetByName(ASSETS_SHEET_NAME);
   if (!sh) {
     sh = ss.insertSheet(ASSETS_SHEET_NAME);
-    sh.getRange(1, 1, 1, 10).setValues([[
-      'AssetId', 'Path', 'Products', 'Tags', 'Notes', 'DisplayName', 'VirtualFolder', 'TrashedAt', 'TrashedBy', 'UpdatedAt'
-    ]]);
+    sh.getRange(1, 1, 1, requiredColumns.length).setValues([requiredColumns]);
     sh.setFrozenRows(1);
+  } else {
+    // Ensure all required columns exist
+    const lastCol = sh.getLastColumn();
+    const existingHeaders = lastCol > 0 ? sh.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+    const existingSet = new Set(existingHeaders.map(h => String(h).trim()));
+
+    for (const col of requiredColumns) {
+      if (!existingSet.has(col)) {
+        const newCol = sh.getLastColumn() + 1;
+        sh.getRange(1, newCol).setValue(col);
+      }
+    }
   }
   return sh;
 }
