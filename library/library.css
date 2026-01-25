@@ -622,6 +622,56 @@
 }
 
 /* =========================================
+ * ADD TO JOB BANNER (bidirectional linking)
+ * ======================================= */
+
+.library-addtojob-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--ascend-hopper-stage-1, #e6956a);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  color: #0b1025;
+  font-size: 0.85rem;
+}
+
+.library-addtojob-banner strong {
+  font-weight: 700;
+}
+
+.library-addtojob-confirm {
+  padding: 6px 16px;
+  background: #0b1025;
+  color: white;
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.library-addtojob-confirm:hover {
+  background: #1a2545;
+}
+
+.library-addtojob-cancel {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.library-addtojob-cancel:hover {
+  background: rgba(0,0,0,0.08);
+}
+
+/* =========================================
  * MAIN LAYOUT
  * ======================================= */
 

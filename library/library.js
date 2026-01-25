@@ -291,10 +291,102 @@
     isLoading: false,
     draggedAssetId: null,  // For drag-drop folder management
     lastViewedIndex: -1,   // For returning to position after modal close
-    selectedAssets: []     // For batch operations
+    selectedAssets: [],    // For batch operations
+    addToJobTarget: null   // { app: 'ARTSTART', jobId: '12345', fullId: 'ARTSTART:12345' }
   };
 
   const Config = window.LIBRARY_CONFIG || {};
+
+  // =========================================
+  // ADD TO JOB MODE (bidirectional linking)
+  // =========================================
+
+  /**
+   * Check for addToJob URL param on page load
+   * Format: ?addToJob=ARTSTART:12345
+   */
+  function checkAddToJobMode() {
+    const params = new URLSearchParams(window.location.search);
+    const addToJob = params.get('addToJob');
+    if (!addToJob) return;
+
+    // Parse job reference (e.g., "ARTSTART:12345")
+    const parts = addToJob.split(':');
+    if (parts.length !== 2) return;
+
+    State.addToJobTarget = {
+      app: parts[0],    // "ARTSTART", "COPYDESK", "FILEROOM"
+      jobId: parts[1],
+      fullId: addToJob
+    };
+
+    console.log('[Library] Add to job mode:', State.addToJobTarget);
+
+    // Show persistent banner after init completes
+    setTimeout(() => showAddToJobBanner(), 0);
+  }
+
+  /**
+   * Show banner indicating we're in "Add to Job" mode
+   */
+  function showAddToJobBanner() {
+    const target = State.addToJobTarget;
+    if (!target) return;
+
+    // Don't duplicate
+    if (document.querySelector('.library-addtojob-banner')) return;
+
+    const toolbar = document.querySelector('.library-toolbar');
+    if (!toolbar) return;
+
+    const banner = document.createElement('div');
+    banner.className = 'library-addtojob-banner';
+    banner.innerHTML = `
+      <span>Adding to <strong>${target.app} #${target.jobId}</strong></span>
+      <button type="button" class="library-addtojob-confirm" id="library-addtojob-confirm">Add Selected</button>
+      <button type="button" class="library-addtojob-cancel" id="library-addtojob-cancel">Cancel</button>
+    `;
+
+    toolbar.parentNode.insertBefore(banner, toolbar);
+
+    document.getElementById('library-addtojob-confirm').addEventListener('click', () => {
+      linkSelectedToTargetJob();
+    });
+
+    document.getElementById('library-addtojob-cancel').addEventListener('click', () => {
+      window.close();
+    });
+  }
+
+  /**
+   * Link selected assets to the target job and close popup
+   */
+  async function linkSelectedToTargetJob() {
+    const target = State.addToJobTarget;
+    if (!target || State.selectedAssets.length === 0) {
+      showToast('No assets selected');
+      return;
+    }
+
+    showToast(`Linking ${State.selectedAssets.length} asset(s) to ${target.app} #${target.jobId}...`);
+
+    try {
+      const userEmail = getCurrentUserEmail();
+      await LibraryAPI.linkAssetsToJob(State.selectedAssets, target.fullId, target.app, userEmail);
+      showToast(`Linked ${State.selectedAssets.length} asset(s) successfully`, 'success');
+
+      // Notify opener window if available
+      if (window.opener && typeof window.opener.refreshLinkedImages === 'function') {
+        window.opener.refreshLinkedImages();
+      }
+
+      // Close popup after brief delay to show success message
+      setTimeout(() => window.close(), 800);
+    } catch (e) {
+      console.error('[Library] Failed to link assets to job:', e);
+      showToast('Failed to link assets: ' + e.message, 'error');
+    }
+  }
 
   // =========================================
   // INITIALIZATION
@@ -303,6 +395,9 @@
   async function init() {
     console.log('[Library] Initializing...');
     const startTime = performance.now();
+
+    // Check for addToJob mode (bidirectional linking from ArtStart/etc)
+    checkAddToJobMode();
 
     // Configure API URL
     if (Config.libraryApiUrl) {

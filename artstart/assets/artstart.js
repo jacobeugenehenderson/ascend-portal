@@ -3206,12 +3206,200 @@ try {
   window.artStartDebug.populateJob = populateJob;
   window.artStartDebug.attachBlurListeners = attachBlurListeners;
 
+  // =========================================
+  // ASSETS TOGGLE (QR / Images)
+  // =========================================
+
+  // Library API for fetching linked images
+  var LIBRARY_API_BASE = window.LIBRARY_API_BASE || 'https://script.google.com/macros/s/AKfycbwNeiZT3D38GzWODUGVW10WDFxZJV2PRZ97f7U8zn7otd13Rxvm6fpWKp0nN-pRYlEs/exec';
+
+  // Assets mode: 'qr' or 'images'
+  var assetsMode_ = 'qr';
+
+  // Cache for linked images
+  var linkedImages_ = [];
+
+  function setAssetsMode_(mode) {
+    assetsMode_ = mode;
+
+    // Update toggle buttons
+    document.querySelectorAll('.artstart-assets-btn').forEach(function(btn) {
+      btn.classList.toggle('is-active', btn.dataset.mode === mode);
+    });
+
+    // Show/hide panels
+    var qrPanel = document.getElementById('artstart-qr-panel');
+    var imagesPanel = document.getElementById('artstart-images-panel');
+    if (qrPanel) qrPanel.style.display = mode === 'qr' ? '' : 'none';
+    if (imagesPanel) imagesPanel.style.display = mode === 'images' ? '' : 'none';
+
+    // Load images if switching to images mode
+    if (mode === 'images') {
+      loadLinkedImages_();
+    }
+  }
+
+  function initAssetsToggle_() {
+    var toggle = document.getElementById('artstart-assets-toggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('click', function(e) {
+      var btn = e.target.closest('.artstart-assets-btn');
+      if (!btn || btn.classList.contains('is-active')) return;
+      setAssetsMode_(btn.dataset.mode);
+    });
+  }
+
+  function loadLinkedImages_() {
+    var jobId = getJobIdFromQuery();
+    if (!jobId) {
+      renderLinkedImages_([]);
+      return;
+    }
+
+    var callbackName = '__artstartLinkedImagesCallback_' + Date.now();
+
+    window[callbackName] = function(response) {
+      try {
+        var assets = (response && response.data && response.data.assets) || [];
+        linkedImages_ = assets;
+        renderLinkedImages_(assets);
+      } catch (e) {
+        console.error('[ArtStart] Error loading linked images:', e);
+        renderLinkedImages_([]);
+      }
+      delete window[callbackName];
+    };
+
+    var url = new URL(LIBRARY_API_BASE);
+    url.searchParams.set('action', 'listJobAssets');
+    url.searchParams.set('job_id', 'ARTSTART:' + jobId);
+    url.searchParams.set('callback', callbackName);
+    url.searchParams.set('_', Date.now());
+
+    var script = document.createElement('script');
+    script.src = url.toString();
+    script.onerror = function() {
+      delete window[callbackName];
+      renderLinkedImages_([]);
+    };
+    document.head.appendChild(script);
+  }
+
+  function renderLinkedImages_(assets) {
+    var scroll = document.getElementById('artstart-images-scroll');
+    var empty = document.getElementById('artstart-images-empty');
+    if (!scroll || !empty) return;
+
+    scroll.innerHTML = '';
+
+    if (!assets || assets.length === 0) {
+      scroll.style.display = 'none';
+      empty.style.display = 'flex';
+      return;
+    }
+
+    scroll.style.display = 'flex';
+    empty.style.display = 'none';
+
+    assets.forEach(function(asset) {
+      var thumb = document.createElement('div');
+      thumb.className = 'artstart-image-thumb';
+      thumb.dataset.assetId = asset.asset_id;
+
+      var img = document.createElement('img');
+      // Use Library thumbnail URL pattern
+      img.src = '../library/thumbs/' + asset.asset_id + '.webp';
+      img.alt = asset.asset_id;
+      img.onerror = function() {
+        // Fallback to placeholder
+        this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Crect fill="%23e2e8f0" width="80" height="80"/%3E%3Ctext x="40" y="45" text-anchor="middle" fill="%2394a3b8" font-size="10"%3ENo preview%3C/text%3E%3C/svg%3E';
+      };
+
+      thumb.appendChild(img);
+      thumb.addEventListener('click', function() {
+        openImagePreview_(asset.asset_id);
+      });
+
+      scroll.appendChild(thumb);
+    });
+  }
+
+  function openImagePreview_(assetId) {
+    var modal = document.getElementById('artstart-image-modal');
+    if (!modal) return;
+
+    var img = document.getElementById('artstart-image-modal-img');
+    var title = document.getElementById('artstart-image-modal-title');
+    var path = document.getElementById('artstart-image-modal-path');
+
+    // Use large thumbnail
+    img.src = '../library/thumbs-lg/' + assetId + '.webp';
+    title.textContent = assetId;
+    path.textContent = ''; // Could fetch full path from manifest
+
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeImagePreview_() {
+    var modal = document.getElementById('artstart-image-modal');
+    if (!modal) return;
+
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function initImageModal_() {
+    var modal = document.getElementById('artstart-image-modal');
+    if (!modal) return;
+
+    // Close button and backdrop
+    modal.addEventListener('click', function(e) {
+      if (e.target.getAttribute('data-modal-close') === '1' ||
+          e.target.closest('[data-modal-close="1"]')) {
+        closeImagePreview_();
+      }
+    });
+
+    // ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && modal.style.display !== 'none') {
+        closeImagePreview_();
+      }
+    });
+  }
+
+  function initAddFromLibraryBtn_() {
+    var btn = document.getElementById('artstart-images-add-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function() {
+      var jobId = getJobIdFromQuery();
+      if (!jobId) return;
+
+      // Open Library in popup with addToJob param
+      var libraryUrl = '../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
+      window.open(libraryUrl, 'libraryPicker', 'width=1200,height=800');
+    });
+  }
+
+  // Expose refresh function for popup callback
+  window.refreshLinkedImages = function() {
+    loadLinkedImages_();
+  };
+
   var getJobIdFromQuery = window.getJobIdFromQuery;
 
   function init() {
     setUserLabel();
     initQrUi_();
     initCanvasDragPan_();
+    initAssetsToggle_();
+    initImageModal_();
+    initAddFromLibraryBtn_();
 
     // Cache language UI
     langSelect = document.getElementById('working-language');

@@ -162,6 +162,218 @@
         background: rgba(255,255,255,0.85);
       }
 
+      /* Assets Card Header */
+      .artstart-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .artstart-card-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--ascend-app-text-main);
+        margin: 0;
+      }
+
+      /* Assets Toggle (QR/Images pill) */
+      .artstart-assets-toggle {
+        display: inline-flex;
+        background: var(--ascend-control-bg, rgba(255,255,255,0.6));
+        border: 1px solid var(--ascend-control-border, rgba(15,23,42,0.12));
+        border-radius: 999px;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .artstart-assets-btn {
+        padding: 0.35rem 0.85rem;
+        border: none;
+        border-radius: 0 !important;
+        background: transparent;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--ascend-app-text-muted, rgba(15,23,42,0.55));
+        cursor: pointer;
+        transition: all 150ms ease;
+      }
+
+      .artstart-assets-btn:hover {
+        color: var(--ascend-app-text-main, rgba(15,23,42,0.86));
+        background: rgba(0, 0, 0, 0.03);
+      }
+
+      .artstart-assets-btn.is-active {
+        background: var(--ascend-app-accent, #4fd1c5);
+        color: #0b1025;
+      }
+
+      /* Assets Panel */
+      .artstart-assets-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      /* Images Panel */
+      .artstart-images-scroll {
+        display: flex;
+        gap: 8px;
+        padding: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex: 1;
+        align-items: center;
+      }
+
+      .artstart-images-scroll::-webkit-scrollbar {
+        height: 6px;
+      }
+
+      .artstart-images-scroll::-webkit-scrollbar-thumb {
+        background: rgba(15,23,42,0.2);
+        border-radius: 3px;
+      }
+
+      .artstart-image-thumb {
+        flex-shrink: 0;
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: border-color 120ms ease, transform 80ms ease;
+        background: rgba(15,23,42,0.05);
+      }
+
+      .artstart-image-thumb:hover {
+        border-color: var(--ascend-app-accent, #4fd1c5);
+        transform: scale(1.05);
+      }
+
+      .artstart-image-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .artstart-images-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 24px;
+        color: var(--ascend-app-text-muted);
+        font-size: 0.85rem;
+        flex: 1;
+      }
+
+      .artstart-images-footer {
+        display: flex;
+        justify-content: center;
+        padding: 8px;
+        border-top: 1px solid rgba(15,23,42,0.08);
+      }
+
+      .artstart-images-add-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        background: var(--ascend-control-bg, rgba(255,255,255,0.6));
+        border: 1px solid var(--ascend-control-border, rgba(15,23,42,0.12));
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 150ms ease;
+      }
+
+      .artstart-images-add-btn:hover {
+        background: rgba(0,0,0,0.05);
+      }
+
+      /* Image Preview Modal */
+      .artstart-image-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .artstart-image-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+      }
+
+      .artstart-image-modal-panel {
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+        background: #1a1a2e;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
+      }
+
+      .artstart-image-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.1);
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .artstart-image-modal-close:hover {
+        background: rgba(255,255,255,0.2);
+      }
+
+      .artstart-image-modal-preview {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        min-height: 300px;
+      }
+
+      .artstart-image-modal-preview img {
+        max-width: 100%;
+        max-height: 75vh;
+        object-fit: contain;
+      }
+
+      .artstart-image-modal-info {
+        padding: 12px 24px 24px;
+        background: rgba(0,0,0,0.3);
+        color: white;
+      }
+
+      .artstart-image-modal-title {
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .artstart-image-modal-path {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 4px;
+      }
+
       /* Modal (minimal, ascend-apps-aligned) */
       .artstart-qr-modal{
         position: fixed;
@@ -1457,34 +1669,56 @@
               </div>
             </section>
 
-            <!-- Right / row 2: QR -->
-            <section class="artstart-card artstart-card--qr" aria-labelledby="qr-card-title">
-              <h2 id="qr-card-title">QR code</h2>
-
-              <!-- Persisted association fields (Projects tab headers already added) -->
-              <input type="hidden" id="qrDriveFileId" value="">
-              <input type="hidden" id="qrOpenUrl" value="">
-              <input type="hidden" id="qrPayloadText" value="">
-
-              <div class="artstart-qr-stage" id="artstart-qr-stage">
-                <!-- Empty state: centered Place button -->
-                <button type="button" class="artstart-qr-place-btn" id="artstart-qr-place">
-                  Place
-                </button>
-
-                <!-- Filled state: QR image is the button -->
-                <a id="artstart-qr-link" href="#" target="_blank" rel="noopener" style="display:none;">
-                  <img id="artstart-qr-img" alt="QR code" style="width:100%; height:auto; display:block;" />
-                </a>
+            <!-- Right / row 2: Assets (QR + Images) -->
+            <section class="artstart-card artstart-card--qr" aria-labelledby="assets-card-title">
+              <div class="artstart-card-header">
+                <h2 id="assets-card-title" class="artstart-card-title">Assets</h2>
+                <div class="artstart-assets-toggle" id="artstart-assets-toggle">
+                  <button type="button" class="artstart-assets-btn is-active" data-mode="qr">QR</button>
+                  <button type="button" class="artstart-assets-btn" data-mode="images">Images</button>
+                </div>
               </div>
 
-              <div class="artstart-qr-meta" style="margin-top:10px;">
-                <div style="font-size:11px; font-weight:600; margin-bottom:4px;">Payload</div>
-                <div id="artstart-qr-payload" style="font-size:11px; color:#6b7280; white-space:pre-wrap; word-break:break-word;"></div>
+              <!-- QR Panel (existing, wrapped) -->
+              <div class="artstart-assets-panel" id="artstart-qr-panel">
+                <!-- Persisted association fields (Projects tab headers already added) -->
+                <input type="hidden" id="qrDriveFileId" value="">
+                <input type="hidden" id="qrOpenUrl" value="">
+                <input type="hidden" id="qrPayloadText" value="">
+
+                <div class="artstart-qr-stage" id="artstart-qr-stage">
+                  <!-- Empty state: centered Place button -->
+                  <button type="button" class="artstart-qr-place-btn" id="artstart-qr-place">
+                    Place
+                  </button>
+
+                  <!-- Filled state: QR image is the button -->
+                  <a id="artstart-qr-link" href="#" target="_blank" rel="noopener" style="display:none;">
+                    <img id="artstart-qr-img" alt="QR code" style="width:100%; height:auto; display:block;" />
+                  </a>
+                </div>
+
+                <div class="artstart-qr-meta" style="margin-top:10px;">
+                  <div style="font-size:11px; font-weight:600; margin-bottom:4px;">Payload</div>
+                  <div id="artstart-qr-payload" style="font-size:11px; color:#6b7280; white-space:pre-wrap; word-break:break-word;"></div>
+                </div>
+
+                <div class="artstart-qr-actions" style="margin-top:10px; display:flex; justify-content:flex-end;">
+                  <button type="button" class="artstart-save-button" id="artstart-qr-clear" style="opacity:0.7; display:none;">Clear</button>
+                </div>
               </div>
 
-              <div class="artstart-qr-actions" style="margin-top:10px; display:flex; justify-content:flex-end;">
-                <button type="button" class="artstart-save-button" id="artstart-qr-clear" style="opacity:0.7; display:none;">Clear</button>
+              <!-- Images Panel (new) -->
+              <div class="artstart-assets-panel" id="artstart-images-panel" style="display:none;">
+                <div class="artstart-images-scroll" id="artstart-images-scroll">
+                  <!-- thumbnails injected by JS -->
+                </div>
+                <div class="artstart-images-empty" id="artstart-images-empty">
+                  <span>No images linked</span>
+                </div>
+                <div class="artstart-images-footer">
+                  <button type="button" class="artstart-images-add-btn" id="artstart-images-add-btn">+ Add from Library</button>
+                </div>
               </div>
             </section>
           </div>
@@ -1538,6 +1772,21 @@
           <div class="artstart-qr-list" id="artstart-qr-list">
             <!-- rows injected by JS -->
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image preview modal -->
+    <div class="artstart-image-modal" id="artstart-image-modal" style="display:none;" aria-hidden="true">
+      <div class="artstart-image-modal-backdrop" data-modal-close="1"></div>
+      <div class="artstart-image-modal-panel">
+        <button type="button" class="artstart-image-modal-close" data-modal-close="1">&times;</button>
+        <div class="artstart-image-modal-preview">
+          <img id="artstart-image-modal-img" src="" alt="">
+        </div>
+        <div class="artstart-image-modal-info">
+          <div class="artstart-image-modal-title" id="artstart-image-modal-title"></div>
+          <div class="artstart-image-modal-path" id="artstart-image-modal-path"></div>
         </div>
       </div>
     </div>
