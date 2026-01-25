@@ -1355,6 +1355,20 @@
   background: white;
 }
 
+/* Media Kits PDF viewer - full multi-page viewer */
+.library-modal-preview.is-pdf-viewer {
+  padding: 0;
+  background: #525659; /* Match browser PDF viewer background */
+}
+
+.library-pdf-viewer {
+  width: 100%;
+  height: 80vh;
+  border: none;
+  border-radius: 4px;
+  background: white;
+}
+
 /* Transparent file types (SVG, EPS, PNG) in modal - keep dark bg, image shows transparency */
 .library-modal-preview.has-transparency {
   background: #1a1a2e;

@@ -2163,11 +2163,23 @@
     const hasTransparency = ['svg', 'eps', 'png'].includes(ext);
     const assetUrl = getAssetUrl(asset);
 
-    // Set preview content - use large thumbnail for modal (actual files not hosted on GitHub Pages)
+    // Check if this is a Media Kits PDF - use full PDF viewer instead of thumbnail
+    const assetFolder = getEffectiveFolder(asset);
+    const isMediaKitsPdf = isPdf && assetFolder === 'MEDIA-KITS';
+
+    // Set preview content
     const placeholder = getPlaceholderForType(ext);
     const thumbUrl = getThumbUrl(asset, 'lg');
     previewContainer.classList.toggle('has-transparency', hasTransparency);
-    previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
+    previewContainer.classList.toggle('is-pdf-viewer', isMediaKitsPdf);
+
+    if (isMediaKitsPdf) {
+      // Media Kits PDFs: use iframe with browser's native PDF viewer (multi-page navigation, zoom)
+      previewContainer.innerHTML = `<iframe class="library-pdf-viewer" src="${assetUrl}" title="${escapeHtml(asset.name)}"></iframe>`;
+    } else {
+      // All other assets: use large thumbnail
+      previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
+    }
 
     // Show display name if set, otherwise use filename
     const assetMeta = getAssetMeta(asset.id);
