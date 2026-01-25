@@ -2062,7 +2062,7 @@
     const ext = asset.ext.toLowerCase();
 
     // All image types use pre-generated WebP thumbnails by asset ID
-    const THUMB_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'psd', 'ai', 'eps', 'indd']);
+    const THUMB_TYPES = new Set(['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'psd', 'ai', 'eps', 'indd', 'pdf']);
     if (THUMB_TYPES.has(ext)) {
       return `${thumbFolder}/${asset.id}.webp`;
     }
