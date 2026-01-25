@@ -687,7 +687,13 @@
     const asset = State.assets.find(a => a.id === assetId);
     const path = asset?.path || '';
 
-    console.log('[Library] Saving asset meta:', assetId, { products: meta.products, tags: meta.tags, lob: meta.lob });
+    console.log('[Library] Saving asset meta:', assetId, {
+      products: meta.products,
+      tags: meta.tags,
+      lob: meta.lob,
+      notes: meta.notes ? `${meta.notes.slice(0, 50)}...` : '',
+      displayName: meta.displayName
+    });
 
     // Try API first
     if (LibraryAPI.baseUrl) {
@@ -1390,6 +1396,13 @@
     if (meta.tags.includes(tag)) return false;
 
     meta.tags.push(tag);
+
+    // Add new tag to master list if not already there (so it appears in tag picker)
+    if (!State.tagList.includes(tag)) {
+      State.tagList.push(tag);
+      State.tagList.sort();
+    }
+
     saveAssetMeta(assetId); // async, fire and forget
     buildTagCloud();
     return true;
@@ -1911,6 +1924,11 @@
   }
 
   function closeAssetModal() {
+    // Save any pending changes before closing
+    if (State.currentAsset) {
+      savePendingModalChanges(State.currentAsset.id);
+    }
+
     const modal = document.getElementById('library-modal');
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
@@ -1939,6 +1957,46 @@
     }
 
     State.currentAsset = null;
+  }
+
+  /**
+   * Save any pending modal changes (display name, notes) immediately
+   * Called when modal is about to close to prevent data loss
+   */
+  function savePendingModalChanges(assetId) {
+    const asset = State.assets.find(a => a.id === assetId);
+    if (!asset) return;
+
+    const meta = getAssetMeta(assetId);
+    let hasChanges = false;
+
+    // Check and save display name
+    const nameInput = document.getElementById('library-modal-name-input');
+    if (nameInput) {
+      const newName = nameInput.value.trim();
+      const expectedDisplayName = (newName === asset.name) ? '' : newName;
+      if (meta.displayName !== expectedDisplayName) {
+        meta.displayName = expectedDisplayName;
+        hasChanges = true;
+      }
+    }
+
+    // Check and save notes
+    const notesTextarea = document.getElementById('library-modal-notes');
+    if (notesTextarea) {
+      const newNotes = notesTextarea.value;
+      if (meta.notes !== newNotes) {
+        meta.notes = newNotes;
+        hasChanges = true;
+      }
+    }
+
+    // Save if there were changes
+    if (hasChanges) {
+      console.log('[Library] Saving pending modal changes for:', assetId);
+      saveAssetMeta(assetId);
+      renderGrid(); // Update card display
+    }
   }
 
   function renderModalTags(assetId) {
@@ -1976,7 +2034,7 @@
         }).join('')
       : '<span class="library-empty-hint">No LOBs defined</span>';
 
-    // Render tag picker (from TAXONOMY only - source of truth)
+    // Render tag picker (from taxonomy + user-created tags)
     const sortedTags = [...State.tagList].sort();
     const tagListHtml = sortedTags.length > 0
       ? sortedTags.map(tag => {
@@ -2214,10 +2272,15 @@
         renderBrowseView();
 
         // Save to API in background
+        if (!LibraryAPI.baseUrl) {
+          console.warn('[FolderRename] No API configured, changes will not persist');
+          return;
+        }
+
         console.log('[FolderRename] Saving:', { path: fullPath, source: source, displayName: effectiveDisplayName, key: key });
         LibraryAPI.setFolderDisplayName(fullPath, source, effectiveDisplayName)
           .then(result => {
-            console.log('[FolderRename] Saved result:', result);
+            console.log('[FolderRename] Saved successfully:', result);
           })
           .catch(err => {
             console.error('[FolderRename] API error:', err);
@@ -2741,6 +2804,9 @@
       notesTextarea.addEventListener('input', () => {
         if (!State.currentAsset) return;
 
+        // Capture asset ID now (in case modal closes before timeout fires)
+        const assetId = State.currentAsset.id;
+
         // Show "typing" indicator
         notesStatus.textContent = '';
         notesStatus.className = 'library-notes-status';
@@ -2748,29 +2814,37 @@
         // Debounce save
         clearTimeout(notesDebounceTimer);
         notesDebounceTimer = setTimeout(async () => {
-          const assetId = State.currentAsset.id;
+          // Modal may have closed - skip status updates but still save
+          const modalOpen = State.currentAsset && State.currentAsset.id === assetId;
+
           const meta = getAssetMeta(assetId);
           meta.notes = notesTextarea.value;
 
-          // Show saving status
-          notesStatus.textContent = 'Saving...';
-          notesStatus.className = 'library-notes-status is-saving';
+          // Show saving status (only if modal still open for this asset)
+          if (modalOpen) {
+            notesStatus.textContent = 'Saving...';
+            notesStatus.className = 'library-notes-status is-saving';
+          }
 
           try {
             await saveAssetMeta(assetId);
-            notesStatus.textContent = 'Saved';
-            notesStatus.className = 'library-notes-status is-saved';
+            if (modalOpen) {
+              notesStatus.textContent = 'Saved';
+              notesStatus.className = 'library-notes-status is-saved';
 
-            // Clear after a moment
-            setTimeout(() => {
-              if (notesStatus.textContent === 'Saved') {
-                notesStatus.textContent = '';
-                notesStatus.className = 'library-notes-status';
-              }
-            }, 2000);
+              // Clear after a moment
+              setTimeout(() => {
+                if (notesStatus.textContent === 'Saved') {
+                  notesStatus.textContent = '';
+                  notesStatus.className = 'library-notes-status';
+                }
+              }, 2000);
+            }
           } catch (e) {
-            notesStatus.textContent = 'Error saving';
-            notesStatus.className = 'library-notes-status is-error';
+            if (modalOpen) {
+              notesStatus.textContent = 'Error saving';
+              notesStatus.className = 'library-notes-status is-error';
+            }
           }
         }, 800); // 800ms debounce
       });
