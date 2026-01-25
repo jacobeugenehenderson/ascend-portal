@@ -302,6 +302,7 @@ function listAssetsMeta_(p) {
       products: parseList_(obj.Products),
       tags: parseList_(obj.Tags),
       notes: obj.Notes || '',
+      display_name: obj.DisplayName || '',
       virtual_folder: obj.VirtualFolder || '',
       trashed_at: trashedAt,
       trashed_by: obj.TrashedBy || '',
@@ -332,6 +333,7 @@ function upsertAssetMeta_(p) {
     const products = p.products !== undefined ? normalizeList_(p.products) : null;
     const tags = p.tags !== undefined ? normalizeList_(p.tags) : null;
     const notes = p.notes !== undefined ? String(p.notes || '') : null;
+    const displayName = p.display_name !== undefined ? String(p.display_name || '') : null;
     const virtualFolder = p.virtual_folder !== undefined ? String(p.virtual_folder || '') : null;
 
     const existingRow = findAssetRow_(sh, header, assetId);
@@ -345,6 +347,7 @@ function upsertAssetMeta_(p) {
         Products: products !== null ? products.join(',') : '',
         Tags: tags !== null ? tags.join(',') : '',
         Notes: notes !== null ? notes : '',
+        DisplayName: displayName !== null ? displayName : '',
         VirtualFolder: virtualFolder !== null ? virtualFolder : '',
         TrashedAt: '',
         TrashedBy: '',
@@ -362,6 +365,7 @@ function upsertAssetMeta_(p) {
         Products: products !== null ? products.join(',') : (existing.Products || ''),
         Tags: tags !== null ? tags.join(',') : (existing.Tags || ''),
         Notes: notes !== null ? notes : (existing.Notes || ''),
+        DisplayName: displayName !== null ? displayName : (existing.DisplayName || ''),
         VirtualFolder: virtualFolder !== null ? virtualFolder : (existing.VirtualFolder || ''),
         TrashedAt: existing.TrashedAt || '',
         TrashedBy: existing.TrashedBy || '',
@@ -735,8 +739,8 @@ function ensureAssetsSheet_(ss) {
   let sh = ss.getSheetByName(ASSETS_SHEET_NAME);
   if (!sh) {
     sh = ss.insertSheet(ASSETS_SHEET_NAME);
-    sh.getRange(1, 1, 1, 9).setValues([[
-      'AssetId', 'Path', 'Products', 'Tags', 'Notes', 'VirtualFolder', 'TrashedAt', 'TrashedBy', 'UpdatedAt'
+    sh.getRange(1, 1, 1, 10).setValues([[
+      'AssetId', 'Path', 'Products', 'Tags', 'Notes', 'DisplayName', 'VirtualFolder', 'TrashedAt', 'TrashedBy', 'UpdatedAt'
     ]]);
     sh.setFrozenRows(1);
   }

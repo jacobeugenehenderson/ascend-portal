@@ -1039,12 +1039,22 @@
 }
 
 /* Products below thumbnail (primary label) */
+.library-card-name {
+  padding: 0.5rem 0.5rem 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ascend-app-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .library-card-products {
   display: flex;
   flex-wrap: nowrap;
   gap: 0.25rem;
-  padding: 0.5rem;
-  height: 2rem;
+  padding: 0.25rem 0.5rem 0.5rem;
+  height: 1.75rem;
   overflow: hidden;
   align-items: center;
 }
@@ -1221,6 +1231,30 @@
   margin: 0 0 0.5rem;
   color: var(--ascend-app-text-main);
   word-break: break-word;
+}
+
+.library-modal-title input {
+  width: 100%;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  margin: -0.25rem -0.5rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.library-modal-title input:hover {
+  border-color: var(--ascend-app-border);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.library-modal-title input:focus {
+  outline: none;
+  border-color: var(--ascend-app-accent);
+  background: white;
 }
 
 .library-modal-meta {

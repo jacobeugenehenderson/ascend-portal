@@ -100,9 +100,9 @@
     },
 
     /**
-     * Update asset metadata (products, tags, notes)
+     * Update asset metadata (products, tags, notes, displayName)
      */
-    async upsertAssetMeta(assetId, path, products, tags, notes) {
+    async upsertAssetMeta(assetId, path, products, tags, notes, displayName) {
       const params = {
         asset_id: assetId,
         path: path || '',
@@ -111,6 +111,9 @@
       };
       if (notes !== undefined) {
         params.notes = notes;
+      }
+      if (displayName !== undefined) {
+        params.display_name = displayName;
       }
       return this._jsonp('upsertAssetMeta', params);
     },
@@ -646,7 +649,7 @@
     // Try API first
     if (LibraryAPI.baseUrl) {
       try {
-        const result = await LibraryAPI.upsertAssetMeta(assetId, path, meta.products, meta.tags, meta.notes);
+        const result = await LibraryAPI.upsertAssetMeta(assetId, path, meta.products, meta.tags, meta.notes, meta.displayName);
         console.log('[Library] Saved asset meta to API:', assetId, result);
         showToast('Saved', 'success');
         return;
@@ -732,6 +735,7 @@
               products: a.products || [],
               tags: a.tags || [],
               notes: a.notes || '',
+              displayName: a.display_name || '',
               virtualFolder: a.virtual_folder || null,
               trashed: !!a.trashed_at,
               trashedAt: a.trashed_at || '',
@@ -1158,7 +1162,7 @@
 
   function getAssetMeta(assetId) {
     if (!State.assetMeta[assetId]) {
-      State.assetMeta[assetId] = { products: [], tags: [], notes: '', virtualFolder: null };
+      State.assetMeta[assetId] = { products: [], tags: [], notes: '', virtualFolder: null, displayName: '' };
     }
     return State.assetMeta[assetId];
   }
@@ -1560,6 +1564,9 @@
       ? `<span class="library-card-source-seal" title="Has editable source file (${asset.projectFiles.map(p => p.ext.toUpperCase()).join(', ')})"></span>`
       : '';
 
+    // Show display name if set, otherwise filename
+    const displayName = meta.displayName || asset.name;
+
     return `
       <article class="library-card ${inCart ? 'is-in-cart' : ''} ${isPdf ? 'is-pdf' : ''}" data-id="${escapeHtml(asset.id)}" draggable="true">
         <div class="library-card-thumb">
@@ -1574,6 +1581,7 @@
             ${inCart ? '✓' : '+'}
           </button>
         </div>
+        <div class="library-card-name" title="${escapeHtml(asset.name)}">${escapeHtml(displayName)}</div>
         <div class="library-card-products">${productsHtml}</div>
       </article>
     `;
@@ -1696,7 +1704,10 @@
     const thumbUrl = getThumbUrl(asset);
     previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
 
-    title.textContent = asset.name;
+    // Show display name if set, otherwise use filename
+    const assetMeta = getAssetMeta(asset.id);
+    const displayName = assetMeta.displayName || asset.name;
+    title.innerHTML = `<input type="text" id="library-modal-name-input" value="${escapeHtml(displayName)}" placeholder="${escapeHtml(asset.name)}" title="Click to edit display name">`;
 
     const metaParts = [];
     if (asset.folder) metaParts.push(asset.folder);
@@ -1740,6 +1751,21 @@
 
     // Update trash button state
     updateModalTrashButton(asset.id);
+
+    // Bind display name input handler
+    const nameInput = document.getElementById('library-modal-name-input');
+    let nameDebounceTimer = null;
+    nameInput?.addEventListener('input', () => {
+      clearTimeout(nameDebounceTimer);
+      nameDebounceTimer = setTimeout(async () => {
+        const meta = getAssetMeta(asset.id);
+        const newName = nameInput.value.trim();
+        // Store empty string if same as original filename (to clear custom name)
+        meta.displayName = (newName === asset.name) ? '' : newName;
+        await saveAssetMeta(asset.id);
+        renderGrid(); // Update card display
+      }, 800);
+    });
 
     // Show modal
     modal.style.display = 'flex';
