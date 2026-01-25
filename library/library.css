@@ -519,6 +519,19 @@
   text-overflow: ellipsis;
 }
 
+.library-folder-name-input {
+  width: 100%;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ascend-app-text-main);
+  background: var(--ascend-control-bg);
+  border: 1px solid var(--ascend-app-accent);
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -3px -5px;
+  outline: none;
+}
+
 .library-folder-tile-count {
   font-size: 0.7rem;
   color: var(--ascend-app-text-muted);

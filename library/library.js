@@ -1989,10 +1989,69 @@
     document.getElementById('library-folder-grid')?.addEventListener('click', (e) => {
       const tile = e.target.closest('.library-folder-tile');
       if (!tile) return;
+      // Don't navigate if clicking on input (editing)
+      if (e.target.tagName === 'INPUT') return;
 
       const folderName = tile.dataset.folder;
       const newPath = [...State.browse.path, folderName];
       navigateToFolder(newPath);
+    });
+
+    // Folder rename (double-click on name)
+    document.getElementById('library-folder-grid')?.addEventListener('dblclick', (e) => {
+      const nameEl = e.target.closest('.library-folder-tile-name');
+      if (!nameEl) return;
+
+      const tile = nameEl.closest('.library-folder-tile');
+      if (!tile) return;
+
+      e.stopPropagation();
+      const oldName = tile.dataset.folder;
+
+      // Replace name with input
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'library-folder-name-input';
+      input.value = oldName;
+      nameEl.innerHTML = '';
+      nameEl.appendChild(input);
+      input.focus();
+      input.select();
+
+      const commitRename = async () => {
+        const newName = input.value.trim();
+        if (!newName || newName === oldName) {
+          nameEl.textContent = oldName;
+          return;
+        }
+
+        // Build full paths
+        const basePath = State.browse.path.join('/');
+        const oldPath = basePath ? `${basePath}/${oldName}` : oldName;
+        const newPath = basePath ? `${basePath}/${newName}` : newName;
+
+        try {
+          await LibraryAPI.renameFolder(oldPath, newPath, State.browse.source);
+          showToast(`Renamed "${oldName}" to "${newName}"`, 'success');
+          // Reload asset metadata to get updated virtual folder paths
+          await loadAssetMetadata();
+          renderBrowseView();
+        } catch (err) {
+          showToast(`Rename failed: ${err.message}`, 'error');
+          nameEl.textContent = oldName;
+        }
+      };
+
+      input.addEventListener('blur', commitRename, { once: true });
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          input.blur();
+        } else if (ev.key === 'Escape') {
+          input.value = oldName; // Reset to trigger no-change path
+          input.blur();
+        }
+      });
     });
 
     // Breadcrumb navigation
