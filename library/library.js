@@ -1534,10 +1534,15 @@
     const isPdf = ext === 'pdf';
     const hasSourceFile = asset.projectFiles && asset.projectFiles.length > 0;
 
-    // Show products on card (primary label)
-    const productsHtml = meta.products.length > 0
-      ? meta.products.slice(0, 3).map(p => `<span class="library-card-product">${escapeHtml(p)}</span>`).join('')
-      : '<span class="library-card-product is-untagged">untagged</span>';
+    // Show products on card (primary label), or "untagged" only if no products AND no tags
+    let productsHtml;
+    if (meta.products.length > 0) {
+      productsHtml = meta.products.slice(0, 3).map(p => `<span class="library-card-product">${escapeHtml(p)}</span>`).join('');
+    } else if (meta.tags.length > 0) {
+      productsHtml = ''; // Has tags but no products - don't show "untagged"
+    } else {
+      productsHtml = '<span class="library-card-product is-untagged">untagged</span>';
+    }
 
     // Use thumbnails for all types (actual files not hosted on GitHub Pages)
     const placeholder = getPlaceholderForType(ext);
