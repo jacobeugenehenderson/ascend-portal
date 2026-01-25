@@ -1038,23 +1038,13 @@
   color: #0b1025;
 }
 
-/* Products below thumbnail (primary label) */
-.library-card-name {
-  padding: 0.5rem 0.5rem 0;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--ascend-app-text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
+/* Products below thumbnail */
 .library-card-products {
   display: flex;
   flex-wrap: nowrap;
   gap: 0.25rem;
-  padding: 0.25rem 0.5rem 0.5rem;
-  height: 1.75rem;
+  padding: 0.5rem;
+  height: 2rem;
   overflow: hidden;
   align-items: center;
 }
@@ -1068,13 +1058,6 @@
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
-}
-
-.library-card-product.is-untagged {
-  background: rgba(249, 115, 22, 0.15);
-  color: #c2410c;
-  font-style: italic;
-  font-weight: 400;
 }
 
 /* Tags below thumbnail (secondary - legacy support) */
