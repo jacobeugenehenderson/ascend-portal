@@ -40,7 +40,7 @@ const TAXONOMY_SHEET_NAME = 'TAXONOMY';
 const ASSETS_SHEET_NAME = 'ASSETS';
 const FOLDERS_SHEET_NAME = 'FOLDERS';
 
-const LIBRARY_API_VERSION = 'library_v1.1_2026-01-24';
+const LIBRARY_API_VERSION = 'library_v1.2_2026-01-24_folder_names';
 
 const LIBRARY_ADMIN_EMAILS = [
   'jacob@jacobhenderson.studio',
@@ -845,6 +845,18 @@ function ensureFoldersSheet_(ss) {
     sh = ss.insertSheet(FOLDERS_SHEET_NAME);
     sh.getRange(1, 1, 1, requiredColumns.length).setValues([requiredColumns]);
     sh.setFrozenRows(1);
+  } else {
+    // Ensure all required columns exist
+    const lastCol = sh.getLastColumn();
+    const existingHeaders = lastCol > 0 ? sh.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+    const existingSet = new Set(existingHeaders.map(h => String(h).trim()));
+
+    for (const col of requiredColumns) {
+      if (!existingSet.has(col)) {
+        const newCol = sh.getLastColumn() + 1;
+        sh.getRange(1, newCol).setValue(col);
+      }
+    }
   }
   return sh;
 }

@@ -805,13 +805,15 @@
         // Load folder display names
         try {
           const folderResult = await LibraryAPI.listFolderDisplayNames();
+          console.log('[Library] Folder display names raw response:', folderResult);
           if (folderResult && folderResult.folders) {
             State.folderDisplayNames = {};
             folderResult.folders.forEach(f => {
               const key = `${f.source}:${f.path}`;
               State.folderDisplayNames[key] = f.display_name;
+              console.log('[Library] Loaded folder display name:', key, '=', f.display_name);
             });
-            console.log('[Library] Loaded folder display names:', folderResult.count);
+            console.log('[Library] Loaded folder display names:', folderResult.count, State.folderDisplayNames);
           }
         } catch (e) {
           console.warn('[Library] Could not load folder display names:', e.message);
@@ -859,6 +861,25 @@
         console.log('[Library] Merged localStorage metadata');
       } catch (e) {
         console.warn('[Library] Could not parse localStorage meta:', e);
+      }
+    }
+
+    // Load folder display names (even in fallback mode, try the API)
+    if (Config.libraryApiUrl) {
+      try {
+        const folderResult = await LibraryAPI.listFolderDisplayNames();
+        console.log('[Library] Folder display names raw response:', folderResult);
+        if (folderResult && folderResult.folders) {
+          State.folderDisplayNames = {};
+          folderResult.folders.forEach(f => {
+            const key = `${f.source}:${f.path}`;
+            State.folderDisplayNames[key] = f.display_name;
+            console.log('[Library] Loaded folder display name:', key, '=', f.display_name);
+          });
+          console.log('[Library] Loaded folder display names:', folderResult.count, State.folderDisplayNames);
+        }
+      } catch (e) {
+        console.warn('[Library] Could not load folder display names:', e.message);
       }
     }
   }
@@ -2193,9 +2214,10 @@
         renderBrowseView();
 
         // Save to API in background
+        console.log('[FolderRename] Saving:', { path: fullPath, source: source, displayName: effectiveDisplayName, key: key });
         LibraryAPI.setFolderDisplayName(fullPath, source, effectiveDisplayName)
           .then(result => {
-            console.log('[FolderRename] Saved:', result);
+            console.log('[FolderRename] Saved result:', result);
           })
           .catch(err => {
             console.error('[FolderRename] API error:', err);
@@ -2242,7 +2264,7 @@
           ev.preventDefault();
           committed = true; // Prevent save
           cleanup();
-          nameEl.textContent = oldName;
+          nameEl.textContent = currentDisplayName;
         }
       });
     });
