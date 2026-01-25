@@ -201,6 +201,71 @@ def auto_crop_whitespace(img: Image.Image, padding: int = 10, threshold: int = 2
 
     return img
 
+def create_checkerboard(size: int, square_size: int = 10) -> Image.Image:
+    """Create a checkerboard pattern for transparency visualization."""
+    img = Image.new('RGB', (size, size))
+    pixels = img.load()
+    light = (240, 240, 240)
+    dark = (200, 200, 200)
+
+    for y in range(size):
+        for x in range(size):
+            if ((x // square_size) + (y // square_size)) % 2 == 0:
+                pixels[x, y] = light
+            else:
+                pixels[x, y] = dark
+    return img
+
+def center_on_canvas(img: Image.Image, canvas_size: int, padding_pct: float = 0.1,
+                     transparent: bool = False, checkerboard: bool = False) -> Image.Image:
+    """Center image on a square canvas with padding.
+
+    Args:
+        img: Source image
+        canvas_size: Output canvas size (square)
+        padding_pct: Padding as percentage of canvas size
+        transparent: If True, use transparent background (RGBA)
+        checkerboard: If True, use checkerboard pattern background
+    """
+    # Ensure we have alpha channel for transparency detection
+    if img.mode != 'RGBA':
+        img = img.convert('RGBA')
+
+    # Calculate size to fit within canvas with padding
+    max_content_size = int(canvas_size * (1 - padding_pct * 2))
+
+    # Scale image to fit
+    w, h = img.size
+    if w > h:
+        new_w = max_content_size
+        new_h = int(h * (max_content_size / w))
+    else:
+        new_h = max_content_size
+        new_w = int(w * (max_content_size / h))
+
+    # Resize if needed
+    if new_w != w or new_h != h:
+        img = img.resize((new_w, new_h), Image.LANCZOS)
+
+    # Calculate centered position
+    x = (canvas_size - img.width) // 2
+    y = (canvas_size - img.height) // 2
+
+    if transparent:
+        # Transparent canvas
+        canvas = Image.new('RGBA', (canvas_size, canvas_size), (255, 255, 255, 0))
+        canvas.paste(img, (x, y), img)
+    elif checkerboard:
+        # Checkerboard background
+        canvas = create_checkerboard(canvas_size)
+        canvas.paste(img, (x, y), img)
+    else:
+        # White background
+        canvas = Image.new('RGB', (canvas_size, canvas_size), (255, 255, 255))
+        canvas.paste(img, (x, y), img if img.mode == 'RGBA' else None)
+
+    return canvas
+
 def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
     """Generate WebP thumbnails (small + large) from EPS file using Ghostscript directly."""
     thumb_id = get_thumb_id(rel_path)
@@ -216,11 +281,12 @@ def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_png = Path(tmp_dir) / "render.png"
 
-            # Render at 300 DPI with EPS crop for better quality
+            # Render at 300 DPI with EPS crop and transparency
             # -dEPSCrop crops to the EPS bounding box
+            # pngalpha device preserves transparency
             result = subprocess.run([
                 "gs", "-dNOPAUSE", "-dBATCH", "-dSAFER",
-                "-sDEVICE=png16m", "-r300", "-dEPSCrop",
+                "-sDEVICE=pngalpha", "-r300", "-dEPSCrop",
                 "-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
                 f"-sOutputFile={tmp_png}", str(src_path)
             ], capture_output=True, timeout=30)
@@ -228,11 +294,17 @@ def generate_eps_thumbnail(src_path: Path, rel_path: str) -> bool:
             if not tmp_png.exists():
                 raise ValueError(f"Ghostscript failed: {result.stderr.decode()[:100]}")
 
-            # Convert to WebP at both sizes, with auto-crop for whitespace
             with Image.open(tmp_png) as img:
-                # Auto-crop whitespace (some EPS files have large margins)
+                # Auto-crop any remaining whitespace from the render
                 img = auto_crop_whitespace(img)
-                save_both_sizes(img, thumb_id)
+
+                # Large thumbnail: transparent background for modal preview
+                img_lg = center_on_canvas(img, MAX_SIZE_LG, padding_pct=0.05, transparent=True)
+                img_lg.save(large_path, 'WebP', quality=WEBP_QUALITY)
+
+                # Small thumbnail: checkerboard background for grid visibility
+                img_sm = center_on_canvas(img, MAX_SIZE, padding_pct=0.05, checkerboard=True)
+                img_sm.save(small_path, 'WebP', quality=WEBP_QUALITY)
 
         return True
 
