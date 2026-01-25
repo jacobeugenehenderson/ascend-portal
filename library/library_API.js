@@ -28,6 +28,8 @@
  *  ?action=batchMoveAssets (POST only, JSON body: { asset_ids: [], virtual_folder: '' })
  *  ?action=renameFolder&old_path=xxx&new_path=xxx&source=xxx&callback=cb
  *  ?action=deleteFolder&path=xxx&source=xxx&user_email=xxx&callback=cb
+ *  ?action=setFolderDisplayName&path=xxx&source=xxx&display_name=xxx&callback=cb
+ *  ?action=listFolderDisplayNames&callback=cb
  */
 
 /** =========================
@@ -36,6 +38,7 @@
 const TAGS_MASTER_SPREADSHEET_ID = '1ZtR9Jv64Jogrvx77drQGNosCo0-sjDMTulC_Q__TpQQ';
 const TAXONOMY_SHEET_NAME = 'TAXONOMY';
 const ASSETS_SHEET_NAME = 'ASSETS';
+const FOLDERS_SHEET_NAME = 'FOLDERS';
 
 const LIBRARY_API_VERSION = 'library_v1.1_2026-01-24';
 
@@ -99,6 +102,14 @@ function doGet(e) {
 
       case 'deleteFolder':
         data = deleteFolder_(p);
+        break;
+
+      case 'setFolderDisplayName':
+        data = setFolderDisplayName_(p);
+        break;
+
+      case 'listFolderDisplayNames':
+        data = listFolderDisplayNames_();
         break;
 
       default:
@@ -734,6 +745,124 @@ function deleteFolder_(p) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * setFolderDisplayName
+ * Set or update a display name for a folder (filesystem or virtual).
+ */
+function setFolderDisplayName_(p) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const folderPath = String(p.path || '').trim();
+    const source = String(p.source || '').toLowerCase().trim();
+    const displayName = String(p.display_name || '').trim();
+
+    if (!folderPath) throw new Error('Missing path');
+    if (!source) throw new Error('Missing source');
+
+    const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+    const sh = ensureFoldersSheet_(ss);
+    const header = getHeaderMap_(sh);
+
+    const nowIso = new Date().toISOString();
+
+    // Find existing row for this folder
+    const lastRow = sh.getLastRow();
+    let existingRow = 0;
+
+    if (lastRow >= 2) {
+      const pathCol = header['Path'];
+      const sourceCol = header['Source'];
+      const data = sh.getRange(2, 1, lastRow - 1, Math.max(pathCol, sourceCol)).getValues();
+
+      for (let i = 0; i < data.length; i++) {
+        const rowPath = String(data[i][pathCol - 1] || '').trim();
+        const rowSource = String(data[i][sourceCol - 1] || '').toLowerCase().trim();
+        if (rowPath === folderPath && rowSource === source) {
+          existingRow = i + 2;
+          break;
+        }
+      }
+    }
+
+    if (existingRow > 0) {
+      // Update existing
+      if (displayName) {
+        sh.getRange(existingRow, header['DisplayName']).setValue(displayName);
+      } else {
+        // Empty display name - delete the row
+        sh.deleteRow(existingRow);
+        return { action: 'delete_folder_display_name', path: folderPath, source: source };
+      }
+      sh.getRange(existingRow, header['UpdatedAt']).setValue(nowIso);
+      return { action: 'update_folder_display_name', path: folderPath, source: source, display_name: displayName };
+    } else if (displayName) {
+      // Insert new row
+      const newRow = lastRow + 1;
+      sh.getRange(newRow, header['Path']).setValue(folderPath);
+      sh.getRange(newRow, header['Source']).setValue(source);
+      sh.getRange(newRow, header['DisplayName']).setValue(displayName);
+      sh.getRange(newRow, header['UpdatedAt']).setValue(nowIso);
+      return { action: 'create_folder_display_name', path: folderPath, source: source, display_name: displayName };
+    }
+
+    return { action: 'no_change', path: folderPath, source: source };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * listFolderDisplayNames
+ * Get all folder display names.
+ */
+function listFolderDisplayNames_() {
+  const ss = SpreadsheetApp.openById(TAGS_MASTER_SPREADSHEET_ID);
+  const sh = ss.getSheetByName(FOLDERS_SHEET_NAME);
+
+  if (!sh || sh.getLastRow() < 2) {
+    return { folders: [] };
+  }
+
+  const header = getHeaderMap_(sh);
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  const data = sh.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  const folders = [];
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const path = String(row[header['Path'] - 1] || '').trim();
+    const source = String(row[header['Source'] - 1] || '').toLowerCase().trim();
+    const displayName = String(row[header['DisplayName'] - 1] || '').trim();
+
+    if (path && displayName) {
+      folders.push({
+        path: path,
+        source: source,
+        display_name: displayName
+      });
+    }
+  }
+
+  return { folders: folders, count: folders.length };
+}
+
+/**
+ * Ensure FOLDERS sheet exists with required columns.
+ */
+function ensureFoldersSheet_(ss) {
+  const requiredColumns = ['Path', 'Source', 'DisplayName', 'UpdatedAt'];
+
+  let sh = ss.getSheetByName(FOLDERS_SHEET_NAME);
+  if (!sh) {
+    sh = ss.insertSheet(FOLDERS_SHEET_NAME);
+    sh.getRange(1, 1, 1, requiredColumns.length).setValues([requiredColumns]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
 }
 
 /** =========================

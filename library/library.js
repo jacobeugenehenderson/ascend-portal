@@ -185,6 +185,24 @@
         source: source || '',
         user_email: userEmail || ''
       });
+    },
+
+    /**
+     * Set or update a folder display name
+     */
+    async setFolderDisplayName(folderPath, source, displayName) {
+      return this._jsonp('setFolderDisplayName', {
+        path: folderPath,
+        source: source || '',
+        display_name: displayName || ''
+      });
+    },
+
+    /**
+     * Get all folder display names
+     */
+    async listFolderDisplayNames() {
+      return this._jsonp('listFolderDisplayNames');
     }
   };
 
@@ -207,6 +225,8 @@
     filteredAssets: [],
     // Asset metadata: { assetId: { products: [], tags: [], trashed: bool, trashedAt, trashedBy } }
     assetMeta: {},
+    // Folder display names: { 'source:path': displayName }
+    folderDisplayNames: {},
     // Master lists from API/Sheet
     productList: [],
     tagList: [],
@@ -514,8 +534,9 @@
       path.forEach((segment, idx) => {
         const isLast = idx === path.length - 1;
         const pathToHere = path.slice(0, idx + 1).join('/');
+        const displayName = getFolderDisplayName(source, pathToHere);
         html += `<span class="library-breadcrumb-sep">›</span>`;
-        html += `<span class="library-breadcrumb${isLast ? ' is-current' : ''}" data-source="${source}" data-path="${pathToHere}">${segment}</span>`;
+        html += `<span class="library-breadcrumb${isLast ? ' is-current' : ''}" data-source="${source}" data-path="${pathToHere}">${escapeHtml(displayName)}</span>`;
       });
     }
 
@@ -530,6 +551,9 @@
       container.innerHTML = '';
       return;
     }
+
+    const source = State.browse.source;
+    const basePath = State.browse.path.join('/');
 
     container.innerHTML = folders.map(folder => {
       // Filter to only valid preview URLs
@@ -563,13 +587,17 @@
         ).join('');
       }
 
+      // Get full folder path and display name
+      const fullPath = basePath ? `${basePath}/${folder.name}` : folder.name;
+      const displayName = getFolderDisplayName(source, fullPath);
+
       return `
-        <div class="library-folder-tile" data-folder="${escapeHtml(folder.name)}">
+        <div class="library-folder-tile" data-folder="${escapeHtml(folder.name)}" data-full-path="${escapeHtml(fullPath)}">
           <div class="library-folder-tile-preview ${layoutClass}">
             ${previewHtml}
           </div>
           <div class="library-folder-tile-info">
-            <div class="library-folder-tile-name">${escapeHtml(folder.name)}</div>
+            <div class="library-folder-tile-name">${escapeHtml(displayName)}</div>
             <div class="library-folder-tile-count">${folder.count} items</div>
           </div>
         </div>
@@ -756,6 +784,21 @@
           } catch (e) {
             console.warn('[Library] Could not cache to localStorage:', e);
           }
+        }
+
+        // Load folder display names
+        try {
+          const folderResult = await LibraryAPI.listFolderDisplayNames();
+          if (folderResult && folderResult.folders) {
+            State.folderDisplayNames = {};
+            folderResult.folders.forEach(f => {
+              const key = `${f.source}:${f.path}`;
+              State.folderDisplayNames[key] = f.display_name;
+            });
+            console.log('[Library] Loaded folder display names:', folderResult.count);
+          }
+        } catch (e) {
+          console.warn('[Library] Could not load folder display names:', e.message);
         }
 
         return; // API loaded successfully
@@ -1183,6 +1226,14 @@
       return meta.virtualFolder;
     }
     return asset.folder || '';
+  }
+
+  /**
+   * Get display name for a folder (or the folder name itself if no display name set)
+   */
+  function getFolderDisplayName(source, folderPath) {
+    const key = `${source}:${folderPath}`;
+    return State.folderDisplayNames[key] || folderPath.split('/').pop() || folderPath;
   }
 
   /**
@@ -2008,13 +2059,18 @@
       const nameEl = tile.querySelector('.library-folder-tile-name');
       if (!nameEl) return;
 
-      const oldName = tile.dataset.folder;
+      const folderName = tile.dataset.folder;
+      const fullPath = tile.dataset.fullPath || folderName;
+      const source = State.browse.source;
+
+      // Get current display name
+      const currentDisplayName = getFolderDisplayName(source, fullPath);
 
       // Replace name with input
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'library-folder-name-input';
-      input.value = oldName;
+      input.value = currentDisplayName;
       nameEl.innerHTML = '';
       nameEl.appendChild(input);
       input.focus();
@@ -2022,57 +2078,37 @@
 
       let committed = false;
       const commitRename = async () => {
-        console.log('[FolderRename] commitRename called, committed:', committed);
         if (committed) return;
         committed = true;
 
-        const newName = input.value.trim();
-        console.log('[FolderRename] oldName:', oldName, 'newName:', newName);
-        if (!newName || newName === oldName) {
-          nameEl.textContent = oldName;
+        const newDisplayName = input.value.trim();
+        // If empty or same as folder name, clear display name; if same as current, no change
+        const effectiveDisplayName = (newDisplayName === folderName) ? '' : newDisplayName;
+
+        if (newDisplayName === currentDisplayName) {
+          nameEl.textContent = currentDisplayName;
           return;
         }
 
-        // Build full paths
-        const basePath = State.browse.path.join('/');
-        const oldPath = basePath ? `${basePath}/${oldName}` : oldName;
-        const newPath = basePath ? `${basePath}/${newName}` : newName;
-        console.log('[FolderRename] Calling API:', oldPath, '->', newPath);
-
         try {
-          const result = await LibraryAPI.renameFolder(oldPath, newPath, State.browse.source);
+          const result = await LibraryAPI.setFolderDisplayName(fullPath, source, effectiveDisplayName);
           console.log('[FolderRename] API result:', result);
 
-          if (result.updated === 0) {
-            // No assets were in a virtual folder with this name
-            // This is a filesystem folder - we can't rename it, only create a display name
-            showToast(`No virtual folder "${oldName}" found to rename`, 'warning');
-            nameEl.textContent = oldName;
-            return;
-          }
-
-          showToast(`Renamed "${oldName}" to "${newName}" (${result.updated} assets)`, 'success');
-
-          // Update local asset metadata with new folder name
-          Object.values(State.assetMeta).forEach(meta => {
-            if (meta.virtualFolder === oldPath) {
-              meta.virtualFolder = newPath;
-            } else if (meta.virtualFolder && meta.virtualFolder.startsWith(oldPath + '/')) {
-              meta.virtualFolder = newPath + meta.virtualFolder.slice(oldPath.length);
-            }
-          });
-
-          // Update browse path if we renamed current folder
-          const pathIndex = State.browse.path.indexOf(oldName);
-          if (pathIndex !== -1) {
-            State.browse.path[pathIndex] = newName;
+          // Update local state
+          const key = `${source}:${fullPath}`;
+          if (effectiveDisplayName) {
+            State.folderDisplayNames[key] = effectiveDisplayName;
+            showToast(`Renamed to "${newDisplayName}"`, 'success');
+          } else {
+            delete State.folderDisplayNames[key];
+            showToast(`Reset to "${folderName}"`, 'success');
           }
 
           renderBrowseView();
         } catch (err) {
           console.error('[FolderRename] API error:', err);
           showToast(`Rename failed: ${err.message}`, 'error');
-          nameEl.textContent = oldName;
+          nameEl.textContent = currentDisplayName;
         }
       };
 
