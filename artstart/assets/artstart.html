@@ -91,9 +91,9 @@
         align-items: center;
         justify-content: center;
 
-        /* Fill remaining height inside the card */
+        /* Fill remaining height inside the card, but ensure card fits */
         flex: 1;
-        min-height: 0;
+        min-height: 232px; /* 200px card + 16px padding top + 16px padding bottom */
         width: 100%;
 
         border: 1px dashed rgba(15,23,42,0.18);
