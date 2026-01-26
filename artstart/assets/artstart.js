@@ -3305,42 +3305,27 @@ try {
 
     scroll.style.display = 'flex';
     if (addBtn) addBtn.style.display = 'none';
-    // Show count (names are shown under each image now)
-    if (listEl) listEl.textContent = assets.length + ' linked';
+    // Show file names in the Files area (like Payload shows URL)
+    var fileNames = assets.map(function(a) { return a.display_name || a.asset_id; });
+    if (listEl) listEl.textContent = fileNames.join(', ');
     if (clearBtn) clearBtn.style.display = '';
     if (stage) stage.classList.add('has-qr');
 
-    // Add class for multiple images (left-align for scroll)
-    scroll.classList.toggle('has-multiple', assets.length > 1);
+    // Create white card wrapper - same size as QR card
+    var card = document.createElement('div');
+    card.className = 'artstart-images-card';
 
     assets.forEach(function(asset) {
-      var card = document.createElement('div');
-      card.className = 'artstart-image-card';
-      card.dataset.assetId = asset.asset_id;
-
-      var imgWrap = document.createElement('div');
-      imgWrap.className = 'artstart-image-card-thumb';
-
       var img = document.createElement('img');
-      // Use Library thumbnail URL pattern
+      img.className = 'artstart-image-item';
       img.src = '../../library/thumbs/' + asset.asset_id + '.webp';
       img.alt = asset.display_name || asset.asset_id;
+      img.dataset.assetId = asset.asset_id;
       img.onerror = function() {
-        // Fallback to placeholder
         this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Crect fill="%23e2e8f0" width="80" height="80"/%3E%3Ctext x="40" y="45" text-anchor="middle" fill="%2394a3b8" font-size="10"%3ENo preview%3C/text%3E%3C/svg%3E';
       };
 
-      imgWrap.appendChild(img);
-      card.appendChild(imgWrap);
-
-      // Caption with display name
-      var caption = document.createElement('div');
-      caption.className = 'artstart-image-card-name';
-      caption.textContent = asset.display_name || asset.asset_id;
-      card.appendChild(caption);
-
-      card.addEventListener('click', function() {
-        // Open Library to manage job assets
+      img.addEventListener('click', function() {
         var jobId = getJobIdFromQuery();
         if (jobId) {
           var libraryUrl = '../../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
@@ -3348,8 +3333,10 @@ try {
         }
       });
 
-      scroll.appendChild(card);
+      card.appendChild(img);
     });
+
+    scroll.appendChild(card);
   }
 
   // Track currently previewed asset for unlink
