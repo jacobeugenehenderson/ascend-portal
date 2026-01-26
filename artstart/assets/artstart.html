@@ -253,33 +253,47 @@
         border-radius: 3px;
       }
 
-      /* Image card - matches QR link styling */
-      .artstart-image-thumb {
+      /* Image card - matches QR link styling with caption */
+      .artstart-image-card {
         flex-shrink: 0;
-        height: calc(100% - 32px);
-        border-radius: 10px;
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
         cursor: pointer;
-        background: rgba(255,255,255,0.85);
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        max-height: 100%;
       }
 
-      .artstart-image-thumb:hover {
+      .artstart-image-card-thumb {
+        background: rgba(255,255,255,0.98);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        transition: box-shadow 150ms ease;
+      }
+
+      .artstart-image-card:hover .artstart-image-card-thumb {
         box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
       }
 
-      .artstart-image-thumb img {
-        height: 100%;
+      .artstart-image-card-thumb img {
+        height: auto;
+        max-height: calc(100% - 24px);
         width: auto;
+        max-width: 200px;
         display: block;
         object-fit: contain;
-        border: 1px solid rgba(15,23,42,0.16);
-        font-family: inherit;
-        font-size: 13px;
-        font-weight: 700;
-        color: rgba(15,23,42,0.86);
-        cursor: pointer;
-        transition: background 150ms ease;
+      }
+
+      .artstart-image-card-name {
+        font-size: 10px;
+        font-weight: 600;
+        color: rgba(15,23,42,0.65);
+        text-align: center;
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .artstart-images-add-btn:hover {
