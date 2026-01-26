@@ -237,7 +237,6 @@
         justify-content: flex-start;
         overflow-x: auto;
         overflow-y: hidden;
-        padding: 0;
       }
 
       /* Centering spacers - collapse when content overflows */
@@ -276,6 +275,10 @@
         height: 200px;
         min-width: 200px;
         min-height: 200px;
+
+        /* Breathing room inside card, like QR has */
+        padding: 16px;
+        box-sizing: border-box;
       }
 
       /* X button to remove image from job */
