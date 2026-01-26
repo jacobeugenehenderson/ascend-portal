@@ -49,7 +49,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 16px;
-        align-items: start;
+        align-items: stretch;
       }
 
       .artstart-lower-grid .artstart-card--overview {
@@ -63,7 +63,6 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
-        height: 480px; /* Fixed height to prevent resize on panel toggle */
       }
 
       @media (max-width: 900px) {
