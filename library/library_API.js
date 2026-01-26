@@ -1077,20 +1077,20 @@ function listJobAssets_(p) {
     }
   }
 
-  // Fetch display names from Library Metadata sheet
+  // Fetch display names from ASSETS sheet
   if (assetIds.length > 0) {
-    const metaSh = ss.getSheetByName(LIBRARY_METADATA_SHEET_NAME);
-    if (metaSh && metaSh.getLastRow() >= 2) {
-      const metaHeader = getHeaderMap_(metaSh);
-      const metaLastRow = metaSh.getLastRow();
-      const metaLastCol = metaSh.getLastColumn();
-      const metaData = metaSh.getRange(2, 1, metaLastRow - 1, metaLastCol).getValues();
+    const assetsSh = ss.getSheetByName(ASSETS_SHEET_NAME);
+    if (assetsSh && assetsSh.getLastRow() >= 2) {
+      const assetsHeader = getHeaderMap_(assetsSh);
+      const assetsLastRow = assetsSh.getLastRow();
+      const assetsLastCol = assetsSh.getLastColumn();
+      const assetsRows = assetsSh.getRange(2, 1, assetsLastRow - 1, assetsLastCol).getValues();
 
-      for (let i = 0; i < metaData.length; i++) {
-        const row = metaData[i];
-        const metaAssetId = String(row[metaHeader['AssetId'] - 1] || '').trim();
-        if (assetData[metaAssetId]) {
-          assetData[metaAssetId].display_name = String(row[metaHeader['DisplayName'] - 1] || '').trim();
+      for (let i = 0; i < assetsRows.length; i++) {
+        const row = assetsRows[i];
+        const rowAssetId = String(row[assetsHeader['AssetId'] - 1] || '').trim();
+        if (assetData[rowAssetId]) {
+          assetData[rowAssetId].display_name = String(row[assetsHeader['DisplayName'] - 1] || '').trim();
         }
       }
     }
