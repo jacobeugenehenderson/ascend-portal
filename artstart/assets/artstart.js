@@ -3287,7 +3287,8 @@ try {
   function renderLinkedImages_(assets) {
     var scroll = document.getElementById('artstart-images-scroll');
     var addBtn = document.getElementById('artstart-images-add-btn');
-    var countEl = document.getElementById('artstart-images-count');
+    var listEl = document.getElementById('artstart-images-list');
+    var clearBtn = document.getElementById('artstart-images-clear');
     var stage = document.getElementById('artstart-images-stage');
     if (!scroll) return;
 
@@ -3296,14 +3297,17 @@ try {
     if (!assets || assets.length === 0) {
       scroll.style.display = 'none';
       if (addBtn) addBtn.style.display = '';
-      if (countEl) countEl.innerHTML = '&nbsp;'; // Empty but maintains height
+      if (listEl) listEl.innerHTML = '&nbsp;'; // Empty but maintains height
+      if (clearBtn) clearBtn.style.display = 'none';
       if (stage) stage.classList.remove('has-qr');
       return;
     }
 
     scroll.style.display = 'flex';
     if (addBtn) addBtn.style.display = 'none';
-    if (countEl) countEl.textContent = assets.length + ' image' + (assets.length === 1 ? '' : 's') + ' linked';
+    // Comma-separated list of display names
+    if (listEl) listEl.textContent = assets.map(function(a) { return a.asset_id; }).join(', ');
+    if (clearBtn) clearBtn.style.display = '';
     if (stage) stage.classList.add('has-qr');
 
     // Add class for multiple images (left-align for scroll)
@@ -3455,6 +3459,53 @@ try {
     });
   }
 
+  function initClearBtn_() {
+    var btn = document.getElementById('artstart-images-clear');
+    if (!btn) return;
+
+    btn.addEventListener('click', function() {
+      if (!linkedImages_ || linkedImages_.length === 0) return;
+      clearAllImages_();
+    });
+  }
+
+  function clearAllImages_() {
+    var jobId = getJobIdFromQuery();
+    if (!jobId || !linkedImages_ || linkedImages_.length === 0) return;
+
+    var assetIds = linkedImages_.map(function(a) { return a.asset_id; });
+    var callbackName = '__artstartClearCallback_' + Date.now();
+
+    window[callbackName] = function(response) {
+      try {
+        if (response && response.success) {
+          loadLinkedImages_();
+        } else {
+          console.error('[ArtStart] Failed to clear images:', response);
+          alert('Failed to clear images');
+        }
+      } catch (e) {
+        console.error('[ArtStart] Error clearing images:', e);
+      }
+      delete window[callbackName];
+    };
+
+    var url = new URL(LIBRARY_API_BASE);
+    url.searchParams.set('action', 'unlinkAssetsFromJob');
+    url.searchParams.set('job_id', 'ARTSTART:' + jobId);
+    url.searchParams.set('asset_ids', JSON.stringify(assetIds));
+    url.searchParams.set('callback', callbackName);
+    url.searchParams.set('_', Date.now());
+
+    var script = document.createElement('script');
+    script.src = url.toString();
+    script.onerror = function() {
+      delete window[callbackName];
+      alert('Network error clearing images');
+    };
+    document.head.appendChild(script);
+  }
+
   // Expose refresh function for popup callback
   window.refreshLinkedImages = function() {
     loadLinkedImages_();
@@ -3469,6 +3520,7 @@ try {
     initAssetsToggle_();
     initImageModal_();
     initAddFromLibraryBtn_();
+    initClearBtn_();
 
     // Cache language UI
     langSelect = document.getElementById('working-language');
