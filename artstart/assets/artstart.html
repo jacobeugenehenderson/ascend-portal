@@ -233,18 +233,25 @@
         background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
         display: flex;
         align-items: center;
+        justify-content: center;
         overflow: hidden;
       }
 
       .artstart-images-scroll {
         display: flex;
-        gap: 12px;
+        gap: 16px;
         overflow-x: auto;
         overflow-y: hidden;
-        height: 100%;
         width: 100%;
+        height: 100%;
         align-items: center;
+        justify-content: center;
         padding: 4px;
+      }
+
+      /* When multiple images, align left for scrolling */
+      .artstart-images-scroll.has-multiple {
+        justify-content: flex-start;
       }
 
       .artstart-images-scroll::-webkit-scrollbar {
@@ -258,15 +265,14 @@
 
       .artstart-image-thumb {
         flex-shrink: 0;
-        height: 100%;
+        height: 72%;
         border-radius: 10px;
         overflow: hidden;
         cursor: pointer;
         border: 2px solid transparent;
         transition: border-color 120ms ease, box-shadow 120ms ease;
-        background: #fff;
+        background: rgba(255,255,255,0.85);
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
-        padding: 6px;
       }
 
       .artstart-image-thumb:hover {
@@ -275,10 +281,12 @@
       }
 
       .artstart-image-thumb img {
-        height: 100%;
+        max-height: 100%;
+        max-width: 100%;
         width: auto;
+        height: auto;
         display: block;
-        border-radius: 6px;
+        object-fit: contain;
       }
 
       .artstart-images-empty {
