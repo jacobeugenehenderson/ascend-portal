@@ -1043,6 +1043,7 @@ function listLinkedJobs_(p) {
 /**
  * listJobAssets
  * Get all assets linked to a specific job.
+ * Includes display_name from Library Metadata sheet.
  * Params: job_id
  */
 function listJobAssets_(p) {
@@ -1058,19 +1059,44 @@ function listJobAssets_(p) {
   const lastCol = sh.getLastColumn();
   const data = sh.getRange(2, 1, lastRow - 1, lastCol).getValues();
 
-  const assets = [];
+  // Build list of asset IDs for this job
+  const assetIds = [];
+  const assetData = {};
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const rowJobId = String(row[header['JobId'] - 1] || '').trim();
     if (rowJobId === jobId) {
-      assets.push({
-        asset_id: String(row[header['AssetId'] - 1] || '').trim(),
+      const assetId = String(row[header['AssetId'] - 1] || '').trim();
+      assetIds.push(assetId);
+      assetData[assetId] = {
+        asset_id: assetId,
         linked_at: String(row[header['LinkedAt'] - 1] || '').trim(),
-        linked_by: String(row[header['LinkedBy'] - 1] || '').trim()
-      });
+        linked_by: String(row[header['LinkedBy'] - 1] || '').trim(),
+        display_name: '' // Will be filled from metadata
+      };
     }
   }
 
+  // Fetch display names from Library Metadata sheet
+  if (assetIds.length > 0) {
+    const metaSh = ss.getSheetByName(LIBRARY_METADATA_SHEET_NAME);
+    if (metaSh && metaSh.getLastRow() >= 2) {
+      const metaHeader = getHeaderMap_(metaSh);
+      const metaLastRow = metaSh.getLastRow();
+      const metaLastCol = metaSh.getLastColumn();
+      const metaData = metaSh.getRange(2, 1, metaLastRow - 1, metaLastCol).getValues();
+
+      for (let i = 0; i < metaData.length; i++) {
+        const row = metaData[i];
+        const metaAssetId = String(row[metaHeader['AssetId'] - 1] || '').trim();
+        if (assetData[metaAssetId]) {
+          assetData[metaAssetId].display_name = String(row[metaHeader['DisplayName'] - 1] || '').trim();
+        }
+      }
+    }
+  }
+
+  const assets = assetIds.map(id => assetData[id]);
   return { job_id: jobId, assets: assets };
 }
 

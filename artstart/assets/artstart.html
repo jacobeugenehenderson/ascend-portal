@@ -261,15 +261,20 @@
         align-items: center;
         gap: 6px;
         cursor: pointer;
-        max-height: 100%;
+        height: 100%;
       }
 
       .artstart-image-card-thumb {
+        flex: 1;
+        min-height: 0;
         background: rgba(255,255,255,0.98);
         border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
         transition: box-shadow 150ms ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .artstart-image-card:hover .artstart-image-card-thumb {
@@ -277,15 +282,16 @@
       }
 
       .artstart-image-card-thumb img {
-        height: auto;
-        max-height: calc(100% - 24px);
+        max-height: 100%;
+        max-width: 100%;
         width: auto;
-        max-width: 200px;
+        height: auto;
         display: block;
         object-fit: contain;
       }
 
       .artstart-image-card-name {
+        flex-shrink: 0;
         font-size: 10px;
         font-weight: 600;
         color: rgba(15,23,42,0.65);
