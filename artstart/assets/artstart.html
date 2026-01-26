@@ -221,6 +221,11 @@
         min-height: 0;
       }
 
+      /* Meta section - consistent height for both panels */
+      .artstart-qr-meta {
+        min-height: 32px;
+      }
+
       /* Images scroll - inside QR stage */
       .artstart-images-scroll {
         position: relative;
@@ -1710,12 +1715,12 @@
                 </div>
 
                 <div class="artstart-qr-meta" style="margin-top:10px;">
-                  <div style="font-size:11px; font-weight:600; margin-bottom:4px;">Linked Images</div>
-                  <div id="artstart-images-count" style="font-size:11px; color:#6b7280;">No images linked</div>
+                  <div style="font-size:11px; font-weight:600; margin-bottom:4px;">Linked</div>
+                  <div id="artstart-images-count" style="font-size:11px; color:#6b7280; white-space:pre-wrap; word-break:break-word;">&nbsp;</div>
                 </div>
 
                 <div class="artstart-qr-actions" style="margin-top:10px; display:flex; justify-content:flex-end;">
-                  <button type="button" class="artstart-save-button" id="artstart-images-clear" style="opacity:0.7; display:none;">Clear All</button>
+                  <button type="button" class="artstart-save-button" id="artstart-images-clear" style="opacity:0.7; display:none;">Clear</button>
                 </div>
               </div>
             </section>

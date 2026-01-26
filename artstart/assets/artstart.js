@@ -3296,7 +3296,7 @@ try {
     if (!assets || assets.length === 0) {
       scroll.style.display = 'none';
       if (addBtn) addBtn.style.display = '';
-      if (countEl) countEl.textContent = 'No images linked';
+      if (countEl) countEl.innerHTML = '&nbsp;'; // Empty but maintains height
       if (stage) stage.classList.remove('has-qr');
       return;
     }
