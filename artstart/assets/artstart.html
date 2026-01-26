@@ -259,14 +259,14 @@
       .artstart-image-thumb {
         flex-shrink: 0;
         height: 100%;
-        aspect-ratio: 1;
         border-radius: 10px;
         overflow: hidden;
         cursor: pointer;
         border: 2px solid transparent;
         transition: border-color 120ms ease, box-shadow 120ms ease;
-        background: rgba(255,255,255,0.85);
+        background: #fff;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        padding: 6px;
       }
 
       .artstart-image-thumb:hover {
@@ -275,9 +275,10 @@
       }
 
       .artstart-image-thumb img {
-        width: 100%;
         height: 100%;
-        object-fit: cover;
+        width: auto;
+        display: block;
+        border-radius: 6px;
       }
 
       .artstart-images-empty {
