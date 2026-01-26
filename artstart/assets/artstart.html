@@ -367,6 +367,36 @@
         margin-top: 4px;
       }
 
+      .artstart-image-modal-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .artstart-image-modal-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: rgba(255,255,255,0.15);
+        color: white;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 150ms ease;
+      }
+
+      .artstart-image-modal-btn:hover {
+        background: rgba(255,255,255,0.25);
+      }
+
+      .artstart-image-modal-btn.is-danger {
+        background: rgba(239, 68, 68, 0.8);
+      }
+
+      .artstart-image-modal-btn.is-danger:hover {
+        background: rgba(239, 68, 68, 1);
+      }
+
       /* Modal (minimal, ascend-apps-aligned) */
       .artstart-qr-modal{
         position: fixed;
@@ -1789,7 +1819,10 @@
         </div>
         <div class="artstart-image-modal-info">
           <div class="artstart-image-modal-title" id="artstart-image-modal-title"></div>
-          <div class="artstart-image-modal-path" id="artstart-image-modal-path"></div>
+          <div class="artstart-image-modal-actions">
+            <button type="button" class="artstart-image-modal-btn" id="artstart-image-add-more">+ Add More</button>
+            <button type="button" class="artstart-image-modal-btn is-danger" id="artstart-image-unlink">Unlink</button>
+          </div>
         </div>
       </div>
     </div>

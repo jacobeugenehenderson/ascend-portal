@@ -3332,18 +3332,21 @@ try {
     });
   }
 
+  // Track currently previewed asset for unlink
+  var currentPreviewAssetId_ = null;
+
   function openImagePreview_(assetId) {
     var modal = document.getElementById('artstart-image-modal');
     if (!modal) return;
 
+    currentPreviewAssetId_ = assetId;
+
     var img = document.getElementById('artstart-image-modal-img');
     var title = document.getElementById('artstart-image-modal-title');
-    var path = document.getElementById('artstart-image-modal-path');
 
     // Use large thumbnail
     img.src = '../../library/thumbs-lg/' + assetId + '.webp';
     title.textContent = assetId;
-    path.textContent = ''; // Could fetch full path from manifest
 
     modal.style.display = 'flex';
     modal.setAttribute('aria-hidden', 'false');
@@ -3377,6 +3380,65 @@ try {
         closeImagePreview_();
       }
     });
+
+    // "+ Add More" button
+    var addMoreBtn = document.getElementById('artstart-image-add-more');
+    if (addMoreBtn) {
+      addMoreBtn.addEventListener('click', function() {
+        closeImagePreview_();
+        var jobId = getJobIdFromQuery();
+        if (!jobId) return;
+        var libraryUrl = '../../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
+        window.open(libraryUrl, 'libraryPicker', 'width=1200,height=800');
+      });
+    }
+
+    // "Unlink" button
+    var unlinkBtn = document.getElementById('artstart-image-unlink');
+    if (unlinkBtn) {
+      unlinkBtn.addEventListener('click', function() {
+        if (!currentPreviewAssetId_) return;
+        unlinkImage_(currentPreviewAssetId_);
+      });
+    }
+  }
+
+  function unlinkImage_(assetId) {
+    var jobId = getJobIdFromQuery();
+    if (!jobId || !assetId) return;
+
+    var callbackName = '__artstartUnlinkCallback_' + Date.now();
+
+    window[callbackName] = function(response) {
+      try {
+        if (response && response.success) {
+          // Close modal and refresh images
+          closeImagePreview_();
+          loadLinkedImages_();
+        } else {
+          console.error('[ArtStart] Failed to unlink:', response);
+          alert('Failed to unlink image');
+        }
+      } catch (e) {
+        console.error('[ArtStart] Error unlinking image:', e);
+      }
+      delete window[callbackName];
+    };
+
+    var url = new URL(LIBRARY_API_BASE);
+    url.searchParams.set('action', 'unlinkAssetsFromJob');
+    url.searchParams.set('job_id', 'ARTSTART:' + jobId);
+    url.searchParams.set('asset_ids', JSON.stringify([assetId]));
+    url.searchParams.set('callback', callbackName);
+    url.searchParams.set('_', Date.now());
+
+    var script = document.createElement('script');
+    script.src = url.toString();
+    script.onerror = function() {
+      delete window[callbackName];
+      alert('Network error unlinking image');
+    };
+    document.head.appendChild(script);
   }
 
   function initAddFromLibraryBtn_() {
