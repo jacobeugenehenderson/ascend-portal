@@ -3219,6 +3219,42 @@ try {
   // Cache for linked images
   var linkedImages_ = [];
 
+  // Manifest cache for looking up filenames
+  var manifestCache_ = null;
+  var manifestLoading_ = false;
+
+  function loadManifest_(callback) {
+    if (manifestCache_) {
+      callback(manifestCache_);
+      return;
+    }
+    if (manifestLoading_) {
+      // Wait and retry
+      setTimeout(function() { loadManifest_(callback); }, 100);
+      return;
+    }
+    manifestLoading_ = true;
+    fetch('../../library/library-manifest.json')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        // Build lookup by asset id
+        manifestCache_ = {};
+        if (data && data.assets) {
+          data.assets.forEach(function(a) {
+            manifestCache_[a.id] = a;
+          });
+        }
+        manifestLoading_ = false;
+        callback(manifestCache_);
+      })
+      .catch(function(err) {
+        console.error('[ArtStart] Failed to load manifest:', err);
+        manifestLoading_ = false;
+        manifestCache_ = {};
+        callback(manifestCache_);
+      });
+  }
+
   function setAssetsMode_(mode) {
     assetsMode_ = mode;
 
@@ -3303,40 +3339,50 @@ try {
       return;
     }
 
-    scroll.style.display = 'flex';
-    if (addBtn) addBtn.style.display = 'none';
-    // Show file names in the Files area (like Payload shows URL)
-    var fileNames = assets.map(function(a) { return a.display_name || a.asset_id; });
-    if (listEl) listEl.textContent = fileNames.join(', ');
-    if (clearBtn) clearBtn.style.display = '';
-    if (stage) stage.classList.add('has-qr');
+    // Load manifest to get proper filenames
+    loadManifest_(function(manifest) {
+      scroll.style.display = 'flex';
+      if (addBtn) addBtn.style.display = 'none';
 
-    // Create white card wrapper - same size as QR card
-    var card = document.createElement('div');
-    card.className = 'artstart-images-card';
-
-    assets.forEach(function(asset) {
-      var img = document.createElement('img');
-      img.className = 'artstart-image-item';
-      img.src = '../../library/thumbs/' + asset.asset_id + '.webp';
-      img.alt = asset.display_name || asset.asset_id;
-      img.dataset.assetId = asset.asset_id;
-      img.onerror = function() {
-        this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Crect fill="%23e2e8f0" width="80" height="80"/%3E%3Ctext x="40" y="45" text-anchor="middle" fill="%2394a3b8" font-size="10"%3ENo preview%3C/text%3E%3C/svg%3E';
-      };
-
-      img.addEventListener('click', function() {
-        var jobId = getJobIdFromQuery();
-        if (jobId) {
-          var libraryUrl = '../../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
-          window.open(libraryUrl, 'libraryPicker', 'width=1200,height=800');
-        }
+      // Get filenames from manifest (fallback to asset_id)
+      var fileNames = assets.map(function(a) {
+        var m = manifest[a.asset_id];
+        return m ? m.filename : (a.display_name || a.asset_id);
       });
+      if (listEl) listEl.textContent = fileNames.join(', ');
+      if (clearBtn) clearBtn.style.display = '';
+      if (stage) stage.classList.add('has-qr');
 
-      card.appendChild(img);
+      // Create one white card per image - carousel of square cards
+      assets.forEach(function(asset) {
+        var m = manifest[asset.asset_id];
+        var displayName = m ? m.filename : (asset.display_name || asset.asset_id);
+
+        var card = document.createElement('div');
+        card.className = 'artstart-images-card';
+        card.dataset.assetId = asset.asset_id;
+
+        var img = document.createElement('img');
+        img.className = 'artstart-image-item';
+        img.src = '../../library/thumbs/' + asset.asset_id + '.webp';
+        img.alt = displayName;
+        img.onerror = function() {
+          this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Crect fill="%23e2e8f0" width="80" height="80"/%3E%3Ctext x="40" y="45" text-anchor="middle" fill="%2394a3b8" font-size="10"%3ENo preview%3C/text%3E%3C/svg%3E';
+        };
+
+        card.appendChild(img);
+
+        card.addEventListener('click', function() {
+          var jobId = getJobIdFromQuery();
+          if (jobId) {
+            var libraryUrl = '../../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
+            window.open(libraryUrl, 'libraryPicker', 'width=1200,height=800');
+          }
+        });
+
+        scroll.appendChild(card);
+      });
     });
-
-    scroll.appendChild(card);
   }
 
   // Track currently previewed asset for unlink
