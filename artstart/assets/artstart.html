@@ -63,6 +63,7 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
+        height: 380px; /* Fixed height to prevent resize on panel toggle */
       }
 
       @media (max-width: 900px) {
@@ -84,15 +85,16 @@
         height: 100%;
       }
 
-      /* QR placeholder stage: consistent height for both QR and Images */
+      /* QR placeholder stage: fills remaining vertical space */
       .artstart-qr-stage {
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
 
-        /* Fixed height to keep both panels the same size */
-        height: 200px;
+        /* Fill remaining height inside the card */
+        flex: 1;
+        min-height: 0;
         width: 100%;
 
         border: 1px dashed rgba(15,23,42,0.18);
@@ -232,6 +234,7 @@
         z-index: 2;
         display: flex;
         gap: 12px;
+        padding: 16px;
         overflow-x: auto;
         overflow-y: hidden;
         align-items: center;
