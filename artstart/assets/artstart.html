@@ -91,16 +91,16 @@
         align-items: center;
         justify-content: center;
 
-        /* Fill remaining height inside the card, but ensure card fits */
-        flex: 1;
-        min-height: 232px; /* 200px card + 16px padding top + 16px padding bottom */
+        /* Fill remaining height inside the card, but ensure 200px card fits with padding */
+        flex: 1 0 auto;
+        min-height: 264px; /* 200px card + 32px inset + 32px visual padding */
         width: 100%;
 
         border: 1px dashed rgba(15,23,42,0.18);
         border-radius: 12px;
         padding: 16px;
         background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
-        overflow: hidden;
+        overflow: visible;
       }
 
       .artstart-qr-stage::before {
