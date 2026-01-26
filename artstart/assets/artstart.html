@@ -250,7 +250,7 @@
         border-radius: 3px;
       }
 
-      /* White card per image - square like QR */
+      /* White card per image - SAME SIZE as QR link */
       .artstart-images-card {
         flex-shrink: 0;
         display: flex;
@@ -259,14 +259,14 @@
         overflow: hidden;
         cursor: pointer;
 
-        /* White card with shadow - matches QR link */
+        /* White card with shadow - matches QR link exactly */
         background: rgba(255,255,255,0.85);
         border-radius: 10px;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
 
-        /* Square card */
-        width: 180px;
-        height: 180px;
+        /* Same size as QR link */
+        width: min(260px, 72%);
+        aspect-ratio: 1 / 1;
       }
 
       /* Image fills the card */
