@@ -3288,19 +3288,28 @@ try {
 
   function renderLinkedImages_(assets) {
     var scroll = document.getElementById('artstart-images-scroll');
-    var empty = document.getElementById('artstart-images-empty');
-    if (!scroll || !empty) return;
+    var addBtn = document.getElementById('artstart-images-add-btn');
+    var countEl = document.getElementById('artstart-images-count');
+    var stage = document.getElementById('artstart-images-stage');
+    if (!scroll) return;
 
     scroll.innerHTML = '';
 
     if (!assets || assets.length === 0) {
       scroll.style.display = 'none';
-      empty.style.display = 'flex';
+      if (addBtn) addBtn.style.display = '';
+      if (countEl) countEl.textContent = 'No images linked';
+      if (stage) stage.classList.remove('has-qr');
       return;
     }
 
     scroll.style.display = 'flex';
-    empty.style.display = 'none';
+    if (addBtn) addBtn.style.display = 'none';
+    if (countEl) countEl.textContent = assets.length + ' image' + (assets.length === 1 ? '' : 's') + ' linked';
+    if (stage) stage.classList.add('has-qr');
+
+    // Add class for multiple images (left-align for scroll)
+    scroll.classList.toggle('has-multiple', assets.length > 1);
 
     assets.forEach(function(asset) {
       var thumb = document.createElement('div');

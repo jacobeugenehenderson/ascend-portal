@@ -221,35 +221,21 @@
         min-height: 0;
       }
 
-      /* Images Panel - must match QR stage exactly */
-      #artstart-images-panel .artstart-images-stage {
-        position: relative;
-        flex: 1;
-        min-height: 0;
-        width: 100%;
-        border: 1px dashed rgba(15,23,42,0.18);
-        border-radius: 12px;
-        padding: 16px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-      }
-
+      /* Images scroll - inside QR stage */
       .artstart-images-scroll {
+        position: relative;
+        z-index: 2;
         display: flex;
-        gap: 16px;
+        gap: 12px;
         overflow-x: auto;
         overflow-y: hidden;
-        width: 100%;
-        height: 100%;
+        max-width: 100%;
+        height: min(260px, 72%);
         align-items: center;
         justify-content: center;
         padding: 4px;
       }
 
-      /* When multiple images, align left for scrolling */
       .artstart-images-scroll.has-multiple {
         justify-content: flex-start;
       }
@@ -263,48 +249,26 @@
         border-radius: 3px;
       }
 
+      /* Image card - matches QR link styling */
       .artstart-image-thumb {
         flex-shrink: 0;
-        height: 72%;
+        height: 100%;
         border-radius: 10px;
         overflow: hidden;
         cursor: pointer;
-        border: 2px solid transparent;
-        transition: border-color 120ms ease, box-shadow 120ms ease;
         background: rgba(255,255,255,0.85);
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
       }
 
       .artstart-image-thumb:hover {
-        border-color: #4fd1c5;
         box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
       }
 
       .artstart-image-thumb img {
-        max-height: 100%;
-        max-width: 100%;
+        height: 100%;
         width: auto;
-        height: auto;
         display: block;
         object-fit: contain;
-      }
-
-      .artstart-images-empty {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        flex: 1;
-        width: 100%;
-        gap: 12px;
-        color: rgba(15,23,42,0.45);
-        font-size: 0.85rem;
-      }
-
-      .artstart-images-add-btn {
-        padding: 10px 16px;
-        border-radius: 999px;
-        background: rgba(255,255,255,0.92);
         border: 1px solid rgba(15,23,42,0.16);
         font-family: inherit;
         font-size: 13px;
@@ -1732,16 +1696,26 @@
                 </div>
               </div>
 
-              <!-- Images Panel (new) -->
+              <!-- Images Panel (new) - matches QR panel structure exactly -->
               <div class="artstart-assets-panel" id="artstart-images-panel" style="display:none;">
-                <div class="artstart-images-stage">
-                  <div class="artstart-images-scroll" id="artstart-images-scroll">
+                <div class="artstart-qr-stage" id="artstart-images-stage">
+                  <!-- Filled state: scrolling images -->
+                  <div class="artstart-images-scroll" id="artstart-images-scroll" style="display:none;">
                     <!-- thumbnails injected by JS -->
                   </div>
-                  <div class="artstart-images-empty" id="artstart-images-empty">
-                    <span>No images linked</span>
-                    <button type="button" class="artstart-images-add-btn" id="artstart-images-add-btn">+ Add from Library</button>
-                  </div>
+                  <!-- Empty state: centered Add button -->
+                  <button type="button" class="artstart-qr-place-btn" id="artstart-images-add-btn">
+                    + Add from Library
+                  </button>
+                </div>
+
+                <div class="artstart-qr-meta" style="margin-top:10px;">
+                  <div style="font-size:11px; font-weight:600; margin-bottom:4px;">Linked Images</div>
+                  <div id="artstart-images-count" style="font-size:11px; color:#6b7280;">No images linked</div>
+                </div>
+
+                <div class="artstart-qr-actions" style="margin-top:10px; display:flex; justify-content:flex-end;">
+                  <button type="button" class="artstart-save-button" id="artstart-images-clear" style="opacity:0.7; display:none;">Clear All</button>
                 </div>
               </div>
             </section>
