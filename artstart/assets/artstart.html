@@ -180,32 +180,36 @@
       /* Assets Toggle (QR/Images pill) */
       .artstart-assets-toggle {
         display: inline-flex;
-        background: var(--ascend-control-bg, rgba(255,255,255,0.6));
-        border: 1px solid var(--ascend-control-border, rgba(15,23,42,0.12));
+        background: rgba(255,255,255,0.7);
+        border: 1px solid rgba(15,23,42,0.12);
         border-radius: 999px;
-        padding: 0;
-        overflow: hidden;
+        padding: 2px;
+        gap: 2px;
       }
 
       .artstart-assets-btn {
-        padding: 0.35rem 0.85rem;
+        appearance: none;
+        -webkit-appearance: none;
+        padding: 6px 14px;
         border: none;
-        border-radius: 0 !important;
+        border-radius: 999px;
         background: transparent;
-        font-size: 0.75rem;
+        font-family: inherit;
+        font-size: 12px;
         font-weight: 600;
-        color: var(--ascend-app-text-muted, rgba(15,23,42,0.55));
+        color: rgba(15,23,42,0.55);
         cursor: pointer;
         transition: all 150ms ease;
+        line-height: 1;
       }
 
       .artstart-assets-btn:hover {
-        color: var(--ascend-app-text-main, rgba(15,23,42,0.86));
-        background: rgba(0, 0, 0, 0.03);
+        color: rgba(15,23,42,0.86);
+        background: rgba(0, 0, 0, 0.05);
       }
 
       .artstart-assets-btn.is-active {
-        background: var(--ascend-app-accent, #4fd1c5);
+        background: #4fd1c5;
         color: #0b1025;
       }
 
@@ -217,15 +221,38 @@
         min-height: 0;
       }
 
-      /* Images Panel */
+      /* Images Panel - matches QR stage styling */
+      #artstart-images-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .artstart-images-stage {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        border: 1px dashed rgba(15,23,42,0.18);
+        border-radius: 12px;
+        padding: 16px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
       .artstart-images-scroll {
         display: flex;
-        gap: 8px;
-        padding: 12px;
+        gap: 10px;
+        padding: 8px 4px;
         overflow-x: auto;
         overflow-y: hidden;
         flex: 1;
         align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
       }
 
       .artstart-images-scroll::-webkit-scrollbar {
@@ -239,18 +266,19 @@
 
       .artstart-image-thumb {
         flex-shrink: 0;
-        width: 80px;
-        height: 80px;
+        width: 72px;
+        height: 72px;
         border-radius: 8px;
         overflow: hidden;
         cursor: pointer;
         border: 2px solid transparent;
         transition: border-color 120ms ease, transform 80ms ease;
         background: rgba(15,23,42,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       }
 
       .artstart-image-thumb:hover {
-        border-color: var(--ascend-app-accent, #4fd1c5);
+        border-color: #4fd1c5;
         transform: scale(1.05);
       }
 
@@ -261,31 +289,33 @@
       }
 
       .artstart-images-empty {
-        display: flex;
+        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 12px;
-        padding: 24px;
-        color: var(--ascend-app-text-muted);
-        font-size: 0.85rem;
+        gap: 8px;
+        color: rgba(15,23,42,0.45);
+        font-size: 0.8rem;
         flex: 1;
       }
 
-      .artstart-images-footer {
+      /* Show empty state when scroll is hidden */
+      .artstart-images-scroll[style*="display: none"] + .artstart-images-empty {
         display: flex;
-        justify-content: center;
-        padding: 8px;
-        border-top: 1px solid rgba(15,23,42,0.08);
       }
 
       .artstart-images-add-btn {
-        padding: 0.5rem 1rem;
+        appearance: none;
+        -webkit-appearance: none;
+        margin-top: 8px;
+        padding: 10px 18px;
         border-radius: 999px;
-        background: var(--ascend-control-bg, rgba(255,255,255,0.6));
-        border: 1px solid var(--ascend-control-border, rgba(15,23,42,0.12));
-        font-size: 0.8rem;
-        font-weight: 600;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid rgba(15,23,42,0.16);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(15,23,42,0.86);
         cursor: pointer;
         transition: background 150ms ease;
       }
@@ -1710,13 +1740,13 @@
 
               <!-- Images Panel (new) -->
               <div class="artstart-assets-panel" id="artstart-images-panel" style="display:none;">
-                <div class="artstart-images-scroll" id="artstart-images-scroll">
-                  <!-- thumbnails injected by JS -->
-                </div>
-                <div class="artstart-images-empty" id="artstart-images-empty">
-                  <span>No images linked</span>
-                </div>
-                <div class="artstart-images-footer">
+                <div class="artstart-images-stage">
+                  <div class="artstart-images-scroll" id="artstart-images-scroll">
+                    <!-- thumbnails injected by JS -->
+                  </div>
+                  <div class="artstart-images-empty" id="artstart-images-empty">
+                    <span>No images linked</span>
+                  </div>
                   <button type="button" class="artstart-images-add-btn" id="artstart-images-add-btn">+ Add from Library</button>
                 </div>
               </div>

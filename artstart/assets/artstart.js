@@ -3309,7 +3309,7 @@ try {
 
       var img = document.createElement('img');
       // Use Library thumbnail URL pattern
-      img.src = '../library/thumbs/' + asset.asset_id + '.webp';
+      img.src = '../../library/thumbs/' + asset.asset_id + '.webp';
       img.alt = asset.asset_id;
       img.onerror = function() {
         // Fallback to placeholder
@@ -3334,7 +3334,7 @@ try {
     var path = document.getElementById('artstart-image-modal-path');
 
     // Use large thumbnail
-    img.src = '../library/thumbs-lg/' + assetId + '.webp';
+    img.src = '../../library/thumbs-lg/' + assetId + '.webp';
     title.textContent = assetId;
     path.textContent = ''; // Could fetch full path from manifest
 
@@ -3381,7 +3381,7 @@ try {
       if (!jobId) return;
 
       // Open Library in popup with addToJob param
-      var libraryUrl = '../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
+      var libraryUrl = '../../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
       window.open(libraryUrl, 'libraryPicker', 'width=1200,height=800');
     });
   }
