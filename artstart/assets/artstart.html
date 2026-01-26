@@ -252,6 +252,7 @@
 
       /* White card per image - SAME SIZE as QR link */
       .artstart-images-card {
+        position: relative;
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -267,6 +268,33 @@
         /* Same size as QR link */
         width: min(260px, 72%);
         aspect-ratio: 1 / 1;
+      }
+
+      /* X button to remove image from job */
+      .artstart-images-card-remove {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 22px;
+        height: 22px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.5);
+        color: white;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 150ms ease;
+        z-index: 5;
+      }
+
+      .artstart-images-card:hover .artstart-images-card-remove {
+        opacity: 1;
+      }
+
+      .artstart-images-card-remove:hover {
+        background: rgba(220,38,38,0.9);
       }
 
       /* Image fills the card */

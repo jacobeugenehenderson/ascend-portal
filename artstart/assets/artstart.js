@@ -3362,6 +3362,17 @@ try {
         card.className = 'artstart-images-card';
         card.dataset.assetId = asset.asset_id;
 
+        // X button to remove from job
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'artstart-images-card-remove';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Remove from job';
+        removeBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          unlinkImage_(asset.asset_id);
+        });
+        card.appendChild(removeBtn);
+
         var img = document.createElement('img');
         img.className = 'artstart-image-item';
         img.src = '../../library/thumbs/' + asset.asset_id + '.webp';
