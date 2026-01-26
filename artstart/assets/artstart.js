@@ -3329,7 +3329,12 @@ try {
 
       thumb.appendChild(img);
       thumb.addEventListener('click', function() {
-        openImagePreview_(asset.asset_id);
+        // Open Library to manage job assets
+        var jobId = getJobIdFromQuery();
+        if (jobId) {
+          var libraryUrl = '../../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
+          window.open(libraryUrl, 'libraryPicker', 'width=1200,height=800');
+        }
       });
 
       scroll.appendChild(thumb);

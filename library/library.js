@@ -1827,7 +1827,9 @@
       document.body.appendChild(toolbar);
     }
 
-    const jobBtnText = State.addToJobTarget ? 'Manage Job Assets' : 'Add to Job';
+    const jobBtnText = State.addToJobTarget
+      ? `Add to ${State.addToJobTarget.app} #${State.addToJobTarget.jobId}`
+      : 'Add to Job';
     toolbar.innerHTML = `
       <div class="library-batch-count">${State.selectedAssets.length} selected</div>
       <div class="library-batch-actions">
@@ -2114,19 +2116,58 @@
   }
 
   function batchAddToJob() {
+    // If in addToJob mode, add directly to the job (no picker)
+    if (State.addToJobTarget) {
+      addSelectedToTargetJob();
+      return;
+    }
     openJobModal();
+  }
+
+  /**
+   * Add selected assets directly to the target job (no picker)
+   */
+  async function addSelectedToTargetJob() {
+    const target = State.addToJobTarget;
+    if (!target) return;
+
+    const assetIds = State.selectedAssets.slice();
+    if (assetIds.length === 0) {
+      showToast('No assets selected');
+      return;
+    }
+
+    showToast(`Adding ${assetIds.length} asset(s) to ${target.app} #${target.jobId}...`);
+
+    try {
+      const userEmail = getCurrentUserEmail();
+      await LibraryAPI.linkAssetsToJob(assetIds, target.fullId, target.app, userEmail);
+
+      // Update local linked state
+      assetIds.forEach(id => {
+        if (!State.linkedAssetsForJob.includes(id)) {
+          State.linkedAssetsForJob.push(id);
+        }
+      });
+
+      showToast(`Added ${assetIds.length} asset(s)`, 'success');
+      clearSelection();
+      renderGrid();
+
+      // Notify opener window (ArtStart)
+      if (window.opener && typeof window.opener.refreshLinkedImages === 'function') {
+        window.opener.refreshLinkedImages();
+      }
+    } catch (e) {
+      console.error('[Library] Failed to add assets:', e);
+      showToast('Failed to add assets: ' + e.message, 'error');
+    }
   }
 
   function openJobModal() {
     const modal = document.getElementById('library-job-modal');
     if (!modal) {
       console.error('[Library] Job modal not found in DOM');
-      return;
-    }
-
-    // If in addToJob mode, show Manage Job Assets view
-    if (State.addToJobTarget) {
-      openManageJobAssetsModal();
       return;
     }
 
@@ -3053,10 +3094,12 @@
       meta.innerHTML += `<span class="library-project-badge" title="Has editable source file">Has source file</span>`;
     }
 
-    // Cart button state
-    const inCart = isInCart(asset.id);
-    cartBtn.classList.toggle('is-in-cart', inCart);
-    cartBtn.innerHTML = inCart
+    // Cart/Job button state - check linked state if in addToJob mode
+    const inJob = State.addToJobTarget
+      ? State.linkedAssetsForJob.includes(asset.id)
+      : isInCart(asset.id);
+    cartBtn.classList.toggle('is-in-cart', inJob);
+    cartBtn.innerHTML = inJob
       ? '<span class="icon">✓</span> In Job'
       : '<span class="icon">+</span> Add to Job';
 
@@ -3982,18 +4025,62 @@
       }
     });
 
-    // Asset modal cart button
-    document.getElementById('library-modal-cart-btn')?.addEventListener('click', () => {
+    // Asset modal cart button - adds to job when in addToJob mode
+    document.getElementById('library-modal-cart-btn')?.addEventListener('click', async () => {
       if (!State.currentAsset) return;
       const id = State.currentAsset.id;
+      const btn = document.getElementById('library-modal-cart-btn');
 
+      // If in addToJob mode, toggle link directly
+      if (State.addToJobTarget) {
+        const isLinked = State.linkedAssetsForJob.includes(id);
+
+        if (isLinked) {
+          // Unlink from job
+          try {
+            await LibraryAPI.unlinkAssetsFromJob([id], State.addToJobTarget.fullId);
+            State.linkedAssetsForJob = State.linkedAssetsForJob.filter(x => x !== id);
+            showToast('Removed from job', 'success');
+          } catch (e) {
+            showToast('Failed to remove: ' + e.message, 'error');
+            return;
+          }
+        } else {
+          // Link to job
+          try {
+            const userEmail = getCurrentUserEmail();
+            await LibraryAPI.linkAssetsToJob([id], State.addToJobTarget.fullId, State.addToJobTarget.app, userEmail);
+            State.linkedAssetsForJob.push(id);
+            showToast('Added to job', 'success');
+          } catch (e) {
+            showToast('Failed to add: ' + e.message, 'error');
+            return;
+          }
+        }
+
+        // Update button state
+        const nowLinked = State.linkedAssetsForJob.includes(id);
+        btn.classList.toggle('is-in-cart', nowLinked);
+        btn.innerHTML = nowLinked
+          ? '<span class="icon">✓</span> In Job'
+          : '<span class="icon">+</span> Add to Job';
+
+        renderGrid();
+
+        // Notify opener
+        if (window.opener && typeof window.opener.refreshLinkedImages === 'function') {
+          window.opener.refreshLinkedImages();
+        }
+        return;
+      }
+
+      // Regular cart mode
       if (isInCart(id)) {
         removeFromCart(id);
       } else {
         addToCart(id);
       }
 
-      const btn = document.getElementById('library-modal-cart-btn');
       const inCart = isInCart(id);
       btn.classList.toggle('is-in-cart', inCart);
       btn.innerHTML = inCart
