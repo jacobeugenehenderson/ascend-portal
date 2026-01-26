@@ -2565,6 +2565,11 @@
       showToast(`Linked ${assetIds.length} asset(s) to ${jobName}`, 'success');
       closeJobModal();
       clearSelection();
+
+      // Notify opener window if linking to ArtStart job
+      if (jobApp === 'ARTSTART' && window.opener && typeof window.opener.refreshLinkedImages === 'function') {
+        window.opener.refreshLinkedImages();
+      }
     } catch (e) {
       console.error('[Library] Failed to link assets:', e);
       showToast('Failed to link assets: ' + e.message, 'error');
