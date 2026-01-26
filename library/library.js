@@ -2150,14 +2150,13 @@
         }
       });
 
-      showToast(`Added ${assetIds.length} asset(s)`, 'success');
-      clearSelection();
-      renderGrid();
-
-      // Notify opener window (ArtStart)
+      // Notify opener window (ArtStart) and close
       if (window.opener && typeof window.opener.refreshLinkedImages === 'function') {
         window.opener.refreshLinkedImages();
       }
+
+      // Close the popup - user came from ArtStart, job done
+      window.close();
     } catch (e) {
       console.error('[Library] Failed to add assets:', e);
       showToast('Failed to add assets: ' + e.message, 'error');
