@@ -304,6 +304,7 @@
   /**
    * Check for addToJob URL param on page load
    * Format: ?addToJob=ARTSTART:12345
+   * Uses existing "Add to Job" drawer - just notifies opener when done
    */
   function checkAddToJobMode() {
     const params = new URLSearchParams(window.location.search);
@@ -320,72 +321,7 @@
       fullId: addToJob
     };
 
-    console.log('[Library] Add to job mode:', State.addToJobTarget);
-
-    // Show persistent banner after init completes
-    setTimeout(() => showAddToJobBanner(), 0);
-  }
-
-  /**
-   * Show banner indicating we're in "Add to Job" mode
-   */
-  function showAddToJobBanner() {
-    const target = State.addToJobTarget;
-    if (!target) return;
-
-    // Don't duplicate
-    if (document.querySelector('.library-addtojob-banner')) return;
-
-    const toolbar = document.querySelector('.library-toolbar');
-    if (!toolbar) return;
-
-    const banner = document.createElement('div');
-    banner.className = 'library-addtojob-banner';
-    banner.innerHTML = `
-      <span>Adding to <strong>${target.app} #${target.jobId}</strong></span>
-      <button type="button" class="library-addtojob-confirm" id="library-addtojob-confirm">Add Selected</button>
-      <button type="button" class="library-addtojob-cancel" id="library-addtojob-cancel">Cancel</button>
-    `;
-
-    toolbar.parentNode.insertBefore(banner, toolbar);
-
-    document.getElementById('library-addtojob-confirm').addEventListener('click', () => {
-      linkSelectedToTargetJob();
-    });
-
-    document.getElementById('library-addtojob-cancel').addEventListener('click', () => {
-      window.close();
-    });
-  }
-
-  /**
-   * Link selected assets to the target job and close popup
-   */
-  async function linkSelectedToTargetJob() {
-    const target = State.addToJobTarget;
-    if (!target || State.selectedAssets.length === 0) {
-      showToast('No assets selected');
-      return;
-    }
-
-    showToast(`Linking ${State.selectedAssets.length} asset(s) to ${target.app} #${target.jobId}...`);
-
-    try {
-      const userEmail = getCurrentUserEmail();
-      await LibraryAPI.linkAssetsToJob(State.selectedAssets, target.fullId, target.app, userEmail);
-      showToast(`Linked ${State.selectedAssets.length} asset(s) successfully`, 'success');
-
-      // Notify opener window if available
-      if (window.opener && typeof window.opener.refreshLinkedImages === 'function') {
-        window.opener.refreshLinkedImages();
-      }
-
-      // Close popup after brief delay to show success message
-      setTimeout(() => window.close(), 800);
-    } catch (e) {
-      console.error('[Library] Failed to link assets to job:', e);
-      showToast('Failed to link assets: ' + e.message, 'error');
-    }
+    console.log('[Library] Opened from', State.addToJobTarget.app, '- use Add to Job drawer to link');
   }
 
   // =========================================
