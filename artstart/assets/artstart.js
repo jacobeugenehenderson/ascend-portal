@@ -3233,13 +3233,11 @@ try {
     if (qrPanel) qrPanel.style.display = mode === 'qr' ? '' : 'none';
     if (imagesPanel) imagesPanel.style.display = mode === 'images' ? '' : 'none';
 
-    // Load images if switching to images mode
-    if (mode === 'images') {
-      loadLinkedImages_();
-    }
   }
 
   function initAssetsToggle_() {
+    // Load images immediately on init (no lag when switching tabs)
+    loadLinkedImages_();
     var toggle = document.getElementById('artstart-assets-toggle');
     if (!toggle) return;
 
