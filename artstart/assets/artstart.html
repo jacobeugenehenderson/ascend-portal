@@ -177,43 +177,43 @@
         margin: 0;
       }
 
-      /* Assets Toggle (QR/Images pill) */
+      /* Assets Toggle - copied from Library */
       .artstart-assets-toggle {
         display: inline-flex;
-        background: rgba(255,255,255,0.7);
-        border: 1px solid rgba(15,23,42,0.12);
-        border-radius: 999px;
-        padding: 2px;
-        gap: 2px;
+        background: var(--ascend-control-bg);
+        border: 1px solid var(--ascend-control-border);
+        border-radius: var(--ascend-app-radius-pill, 999px);
+        padding: 0;
+        overflow: hidden;
       }
 
-      .artstart-assets-btn {
-        appearance: none;
-        -webkit-appearance: none;
-        padding: 6px 14px;
+      .artstart-assets-toggle .artstart-assets-btn {
+        padding: 0.5rem 1.25rem;
         border: none;
-        border-radius: 999px;
+        border-radius: 0 !important;
         background: transparent;
-        font-family: inherit;
-        font-size: 12px;
+        font-size: 0.85rem;
         font-weight: 600;
-        color: rgba(15,23,42,0.55);
+        color: var(--ascend-app-text-muted);
         cursor: pointer;
         transition: all 150ms ease;
-        line-height: 1;
       }
 
-      .artstart-assets-btn:hover {
-        color: rgba(15,23,42,0.86);
-        background: rgba(0, 0, 0, 0.05);
+      .artstart-assets-toggle .artstart-assets-btn:hover {
+        color: var(--ascend-app-text-main);
+        background: rgba(0, 0, 0, 0.03);
       }
 
-      .artstart-assets-btn.is-active {
-        background: #4fd1c5;
+      .artstart-assets-toggle .artstart-assets-btn.is-active {
+        background: var(--ascend-app-accent);
         color: #0b1025;
       }
 
-      /* Assets Panel */
+      /* Assets Panel Container - prevents resize on toggle */
+      .artstart-card--qr {
+        position: relative;
+      }
+
       .artstart-assets-panel {
         flex: 1;
         display: flex;
@@ -221,38 +221,32 @@
         min-height: 0;
       }
 
-      /* Images Panel - matches QR stage styling */
-      #artstart-images-panel {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-
-      .artstart-images-stage {
+      /* Images Panel */
+      #artstart-images-panel .artstart-images-stage {
         position: relative;
         flex: 1;
         min-height: 0;
         width: 100%;
         border: 1px dashed rgba(15,23,42,0.18);
         border-radius: 12px;
-        padding: 16px;
+        padding: 12px;
         background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
-        overflow: hidden;
         display: flex;
         flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
 
       .artstart-images-scroll {
         display: flex;
         gap: 10px;
-        padding: 8px 4px;
+        padding: 4px;
         overflow-x: auto;
         overflow-y: hidden;
-        flex: 1;
+        width: 100%;
+        height: 100%;
         align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
+        justify-content: flex-start;
       }
 
       .artstart-images-scroll::-webkit-scrollbar {
@@ -266,8 +260,9 @@
 
       .artstart-image-thumb {
         flex-shrink: 0;
-        width: 72px;
-        height: 72px;
+        height: 100%;
+        aspect-ratio: 1;
+        max-height: 120px;
         border-radius: 8px;
         overflow: hidden;
         cursor: pointer;
@@ -279,7 +274,7 @@
 
       .artstart-image-thumb:hover {
         border-color: #4fd1c5;
-        transform: scale(1.05);
+        transform: scale(1.03);
       }
 
       .artstart-image-thumb img {
@@ -289,26 +284,21 @@
       }
 
       .artstart-images-empty {
-        display: none;
+        position: absolute;
+        inset: 0;
+        display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 12px;
         color: rgba(15,23,42,0.45);
-        font-size: 0.8rem;
-        flex: 1;
-      }
-
-      /* Show empty state when scroll is hidden */
-      .artstart-images-scroll[style*="display: none"] + .artstart-images-empty {
-        display: flex;
+        font-size: 0.85rem;
       }
 
       .artstart-images-add-btn {
-        appearance: none;
-        -webkit-appearance: none;
-        margin-top: 8px;
-        padding: 10px 18px;
+        position: relative;
+        z-index: 2;
+        padding: 10px 16px;
         border-radius: 999px;
         background: rgba(255,255,255,0.92);
         border: 1px solid rgba(15,23,42,0.16);
