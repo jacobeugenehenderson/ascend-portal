@@ -292,7 +292,9 @@
     draggedAssetId: null,  // For drag-drop folder management
     lastViewedIndex: -1,   // For returning to position after modal close
     selectedAssets: [],    // For batch operations
-    addToJobTarget: null   // { app: 'ARTSTART', jobId: '12345', fullId: 'ARTSTART:12345' }
+    addToJobTarget: null,  // { app: 'ARTSTART', jobId: '12345', fullId: 'ARTSTART:12345' }
+    linkedAssetsForJob: [], // Asset IDs already linked to addToJobTarget
+    manageJobState: null   // { original: Set, current: Set } for tracking toggle changes
   };
 
   const Config = window.LIBRARY_CONFIG || {};
@@ -304,7 +306,7 @@
   /**
    * Check for addToJob URL param on page load
    * Format: ?addToJob=ARTSTART:12345
-   * Uses existing "Add to Job" drawer - just notifies opener when done
+   * Fetches already-linked assets and enables "Manage Job Assets" mode
    */
   function checkAddToJobMode() {
     const params = new URLSearchParams(window.location.search);
@@ -321,7 +323,37 @@
       fullId: addToJob
     };
 
-    console.log('[Library] Opened from', State.addToJobTarget.app, '- use Add to Job drawer to link');
+    console.log('[Library] Manage Job Assets mode for', State.addToJobTarget.app, '#' + State.addToJobTarget.jobId);
+
+    // Fetch already-linked assets for this job
+    fetchLinkedAssetsForJob();
+  }
+
+  /**
+   * Fetch assets already linked to the target job
+   */
+  async function fetchLinkedAssetsForJob() {
+    if (!State.addToJobTarget) return;
+
+    try {
+      const response = await LibraryAPI.listJobAssets(State.addToJobTarget.fullId);
+      const assets = (response && response.assets) || [];
+      State.linkedAssetsForJob = assets.map(a => a.asset_id);
+      console.log('[Library] Found', State.linkedAssetsForJob.length, 'linked assets for job');
+
+      // Re-render grid to show linked borders
+      renderGrid();
+    } catch (e) {
+      console.error('[Library] Failed to fetch linked assets:', e);
+      State.linkedAssetsForJob = [];
+    }
+  }
+
+  /**
+   * Check if an asset is linked to the current addToJob target
+   */
+  function isAssetLinkedToJob(assetId) {
+    return State.addToJobTarget && State.linkedAssetsForJob.includes(assetId);
   }
 
   // =========================================
@@ -1795,11 +1827,12 @@
       document.body.appendChild(toolbar);
     }
 
+    const jobBtnText = State.addToJobTarget ? 'Manage Job Assets' : 'Add to Job';
     toolbar.innerHTML = `
       <div class="library-batch-count">${State.selectedAssets.length} selected</div>
       <div class="library-batch-actions">
         <button type="button" class="library-batch-btn" data-action="batch-tags">Tags</button>
-        <button type="button" class="library-batch-btn" data-action="batch-job">Add to Job</button>
+        <button type="button" class="library-batch-btn" data-action="batch-job">${jobBtnText}</button>
         <button type="button" class="library-batch-btn is-secondary" data-action="batch-clear">Clear</button>
       </div>
     `;
@@ -2091,11 +2124,25 @@
       return;
     }
 
-    // Update asset count
-    const countEl = document.getElementById('library-job-asset-count');
-    if (countEl) {
-      countEl.textContent = State.selectedAssets.length;
+    // If in addToJob mode, show Manage Job Assets view
+    if (State.addToJobTarget) {
+      openManageJobAssetsModal();
+      return;
     }
+
+    // Regular "Add to Job" mode - show job picker
+    const titleEl = document.getElementById('library-job-modal-title');
+    if (titleEl) titleEl.textContent = 'Add to Job';
+
+    const noteEl = document.getElementById('library-job-modal-note');
+    if (noteEl) {
+      noteEl.innerHTML = `Select a job to link <span id="library-job-asset-count">${State.selectedAssets.length}</span> selected asset(s).`;
+    }
+
+    // Show job lists, hide manage view
+    document.querySelectorAll('.library-job-section').forEach(el => el.style.display = '');
+    const manageView = document.getElementById('library-manage-job-view');
+    if (manageView) manageView.style.display = 'none';
 
     modal.style.display = '';
     modal.setAttribute('aria-hidden', 'false');
@@ -2108,6 +2155,244 @@
     initJobModalHandlers();
   }
 
+  /**
+   * Open "Manage Job Assets" view for the target job
+   */
+  function openManageJobAssetsModal() {
+    const modal = document.getElementById('library-job-modal');
+    if (!modal) return;
+
+    const target = State.addToJobTarget;
+
+    // Initialize manage state: combine linked assets + selected assets
+    const linkedSet = new Set(State.linkedAssetsForJob);
+    const selectedSet = new Set(State.selectedAssets);
+    const combined = new Set([...linkedSet, ...selectedSet]);
+
+    State.manageJobState = {
+      original: new Set(linkedSet), // What was linked before
+      current: combined             // Current toggle state
+    };
+
+    // Update modal title
+    const titleEl = document.getElementById('library-job-modal-title');
+    if (titleEl) titleEl.textContent = 'Manage Job Assets';
+
+    // Hide job lists, show manage view
+    document.querySelectorAll('.library-job-section').forEach(el => el.style.display = 'none');
+
+    // Create or update manage view
+    let manageView = document.getElementById('library-manage-job-view');
+    if (!manageView) {
+      manageView = document.createElement('div');
+      manageView.id = 'library-manage-job-view';
+      manageView.className = 'library-manage-job-view';
+      document.getElementById('library-job-modal-body')
+        || document.querySelector('.library-job-modal-body').appendChild(manageView);
+    }
+    manageView.style.display = '';
+
+    renderManageJobAssetsView();
+
+    modal.style.display = '';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    initJobModalHandlers();
+  }
+
+  /**
+   * Render the Manage Job Assets view content
+   */
+  function renderManageJobAssetsView() {
+    const manageView = document.getElementById('library-manage-job-view');
+    if (!manageView || !State.manageJobState) return;
+
+    const target = State.addToJobTarget;
+    const { original, current } = State.manageJobState;
+
+    // Calculate diff
+    const toAdd = [...current].filter(id => !original.has(id));
+    const toRemove = [...original].filter(id => !current.has(id));
+    const hasChanges = toAdd.length > 0 || toRemove.length > 0;
+
+    // Build summary text
+    let summaryParts = [];
+    if (toAdd.length > 0) summaryParts.push(`Adding ${toAdd.length}`);
+    if (toRemove.length > 0) summaryParts.push(`Removing ${toRemove.length}`);
+    const summaryText = summaryParts.length > 0 ? summaryParts.join(', ') : 'No changes';
+
+    // Build asset list HTML
+    const allAssetIds = [...current, ...original].filter((v, i, a) => a.indexOf(v) === i);
+    const assetsHtml = allAssetIds.map(assetId => {
+      const isOn = current.has(assetId);
+      const wasLinked = original.has(assetId);
+      const asset = State.assets.find(a => a.id === assetId);
+      const meta = State.assetMeta[assetId] || {};
+      const displayName = meta.displayName || (asset ? asset.name : assetId);
+      const thumbUrl = asset ? getThumbUrl(asset) : '';
+
+      let statusClass = isOn ? 'is-on' : 'is-off';
+      let badge = '';
+      if (wasLinked && isOn) badge = '<span class="library-manage-badge is-linked">linked</span>';
+      else if (!wasLinked && isOn) badge = '<span class="library-manage-badge is-adding">+ adding</span>';
+      else if (wasLinked && !isOn) badge = '<span class="library-manage-badge is-removing">- removing</span>';
+
+      return `
+        <div class="library-manage-asset ${statusClass}" data-asset-id="${escapeHtml(assetId)}">
+          <div class="library-manage-asset-thumb">
+            ${thumbUrl ? `<img src="${thumbUrl}" alt="">` : ''}
+          </div>
+          <div class="library-manage-asset-info">
+            <div class="library-manage-asset-name">${escapeHtml(displayName)}</div>
+            ${badge}
+          </div>
+          <button type="button" class="library-manage-asset-toggle" data-asset-id="${escapeHtml(assetId)}">
+            ${isOn ? '✓' : '○'}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    manageView.innerHTML = `
+      <div class="library-manage-header">
+        <div class="library-manage-job-name">${escapeHtml(target.app)} #${escapeHtml(target.jobId)}</div>
+        <div class="library-manage-summary ${hasChanges ? 'has-changes' : ''}">${summaryText}</div>
+      </div>
+      <div class="library-manage-assets">
+        ${assetsHtml || '<div class="library-manage-empty">No assets selected or linked</div>'}
+      </div>
+      <div class="library-manage-footer">
+        <button type="button" class="library-btn library-btn-secondary" id="library-manage-cancel">Cancel</button>
+        <button type="button" class="library-btn library-btn-primary" id="library-manage-save" ${!hasChanges ? 'disabled' : ''}>
+          Save Changes
+        </button>
+      </div>
+    `;
+
+    // Bind toggle clicks
+    manageView.querySelectorAll('.library-manage-asset-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const assetId = btn.dataset.assetId;
+        toggleManageAsset(assetId);
+      });
+    });
+
+    // Bind asset row clicks (also toggle)
+    manageView.querySelectorAll('.library-manage-asset').forEach(row => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('.library-manage-asset-toggle')) return; // Let button handle it
+        const assetId = row.dataset.assetId;
+        toggleManageAsset(assetId);
+      });
+    });
+
+    // Bind cancel
+    const cancelBtn = document.getElementById('library-manage-cancel');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        tryCloseJobModal();
+      });
+    }
+
+    // Bind save
+    const saveBtn = document.getElementById('library-manage-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        saveManageJobAssets();
+      });
+    }
+  }
+
+  /**
+   * Toggle an asset in the manage state
+   */
+  function toggleManageAsset(assetId) {
+    if (!State.manageJobState) return;
+
+    if (State.manageJobState.current.has(assetId)) {
+      State.manageJobState.current.delete(assetId);
+    } else {
+      State.manageJobState.current.add(assetId);
+    }
+
+    renderManageJobAssetsView();
+  }
+
+  /**
+   * Check if there are unsaved changes in manage mode
+   */
+  function hasUnsavedManageChanges() {
+    if (!State.manageJobState) return false;
+    const { original, current } = State.manageJobState;
+    const toAdd = [...current].filter(id => !original.has(id));
+    const toRemove = [...original].filter(id => !current.has(id));
+    return toAdd.length > 0 || toRemove.length > 0;
+  }
+
+  /**
+   * Try to close the job modal, warn if unsaved changes
+   */
+  function tryCloseJobModal() {
+    if (State.addToJobTarget && hasUnsavedManageChanges()) {
+      if (!confirm('You have unsaved changes. Discard them?')) {
+        return;
+      }
+    }
+    closeJobModal();
+  }
+
+  /**
+   * Save changes from Manage Job Assets
+   */
+  async function saveManageJobAssets() {
+    if (!State.manageJobState || !State.addToJobTarget) return;
+
+    const target = State.addToJobTarget;
+    const { original, current } = State.manageJobState;
+    const toAdd = [...current].filter(id => !original.has(id));
+    const toRemove = [...original].filter(id => !current.has(id));
+
+    if (toAdd.length === 0 && toRemove.length === 0) {
+      closeJobModal();
+      return;
+    }
+
+    showToast('Saving changes...');
+
+    try {
+      const userEmail = getCurrentUserEmail();
+
+      // Link new assets
+      if (toAdd.length > 0) {
+        await LibraryAPI.linkAssetsToJob(toAdd, target.fullId, target.app, userEmail);
+      }
+
+      // Unlink removed assets
+      if (toRemove.length > 0) {
+        await LibraryAPI.unlinkAssetsFromJob(toRemove, target.fullId);
+      }
+
+      // Update local state
+      State.linkedAssetsForJob = [...current];
+      State.manageJobState = null;
+
+      showToast(`Saved: ${toAdd.length > 0 ? '+' + toAdd.length : ''} ${toRemove.length > 0 ? '-' + toRemove.length : ''}`.trim(), 'success');
+
+      closeJobModal();
+      clearSelection();
+      renderGrid();
+
+      // Notify opener window (ArtStart)
+      if (window.opener && typeof window.opener.refreshLinkedImages === 'function') {
+        window.opener.refreshLinkedImages();
+      }
+    } catch (e) {
+      console.error('[Library] Failed to save changes:', e);
+      showToast('Failed to save changes: ' + e.message, 'error');
+    }
+  }
+
   function closeJobModal() {
     const modal = document.getElementById('library-job-modal');
     if (!modal) return;
@@ -2115,6 +2400,9 @@
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+
+    // Reset manage state
+    State.manageJobState = null;
   }
 
   function initJobModalHandlers() {
@@ -2122,23 +2410,23 @@
     if (!modal || modal._handlersInit) return;
     modal._handlersInit = true;
 
-    // Close button
+    // Close button - use tryClose to check for unsaved changes
     const closeBtn = document.getElementById('library-job-modal-close');
     if (closeBtn) {
-      closeBtn.addEventListener('click', closeJobModal);
+      closeBtn.addEventListener('click', tryCloseJobModal);
     }
 
     // Backdrop click
     modal.addEventListener('click', (e) => {
       if (e.target.getAttribute('data-modal-close') === '1') {
-        closeJobModal();
+        tryCloseJobModal();
       }
     });
 
     // ESC key (global, but check if modal is open)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && modal.style.display !== 'none') {
-        closeJobModal();
+        tryCloseJobModal();
       }
     });
   }
@@ -2553,6 +2841,7 @@
   function renderCard(asset) {
     const meta = State.assetMeta[asset.id] || { products: [], tags: [] };
     const isSelected = State.selectedAssets.includes(asset.id);
+    const isLinked = isAssetLinkedToJob(asset.id);
     const ext = (asset.ext || '').toLowerCase();
     const extLabel = ext.toUpperCase();
     const isPdf = ext === 'pdf';
@@ -2577,8 +2866,14 @@
 
     const needsCheckerboard = ['svg', 'eps', 'png'].includes(ext);
 
+    // Build class list
+    const classes = ['library-card'];
+    if (isPdf) classes.push('is-pdf');
+    if (isSelected) classes.push('is-selected');
+    if (isLinked) classes.push('is-linked-to-job');
+
     return `
-      <article class="library-card ${isPdf ? 'is-pdf' : ''} ${isSelected ? 'is-selected' : ''}" data-id="${escapeHtml(asset.id)}" data-ext="${ext}" draggable="true">
+      <article class="${classes.join(' ')}" data-id="${escapeHtml(asset.id)}" data-ext="${ext}" draggable="true">
         <div class="library-card-thumb${needsCheckerboard ? ' has-transparency' : ''}">
           ${thumbContent}
           ${extLabel ? `<span class="library-card-type">${extLabel}</span>` : ''}
