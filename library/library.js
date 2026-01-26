@@ -1997,9 +1997,16 @@
     const count = State.selectedAssets.length;
     showToast(`Applying metadata to ${count} assets...`);
 
+    let successCount = 0;
+    let failCount = 0;
+
     for (const assetId of State.selectedAssets) {
       const asset = State.assets.find(a => a.id === assetId);
-      if (!asset) continue;
+      if (!asset) {
+        console.warn('[Library] Asset not found in State.assets:', assetId);
+        failCount++;
+        continue;
+      }
 
       const meta = getAssetMeta(assetId);
 
@@ -2039,8 +2046,10 @@
           newNotes,
           meta.displayName
         );
+        successCount++;
       } catch (e) {
         console.error('[Library] Failed to save metadata for', assetId, e);
+        failCount++;
       }
     }
 
@@ -2052,9 +2061,18 @@
     if (lob) parts.push('LOB');
     if (tags.length > 0) parts.push(`${tags.length} tag(s)`);
     if (notes) parts.push('notes');
-    showToast(`Added ${parts.join(', ')} to ${count} assets`);
+
+    if (failCount > 0) {
+      showToast(`Added ${parts.join(', ')} to ${successCount} assets (${failCount} failed)`, 'warning');
+    } else {
+      showToast(`Added ${parts.join(', ')} to ${successCount} assets`, 'success');
+    }
 
     clearSelection();
+
+    // Refresh UI to show updated tags
+    buildTagCloud();
+    renderGrid();
   }
 
   // =========================================
