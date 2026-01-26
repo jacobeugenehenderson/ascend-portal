@@ -3384,11 +3384,7 @@ try {
         card.appendChild(img);
 
         card.addEventListener('click', function() {
-          var jobId = getJobIdFromQuery();
-          if (jobId) {
-            var libraryUrl = '../../library/?addToJob=ARTSTART:' + encodeURIComponent(jobId);
-            window.open(libraryUrl, 'libraryPicker', 'width=1200,height=800');
-          }
+          openImagePreview_(asset.asset_id);
         });
 
         scroll.appendChild(card);

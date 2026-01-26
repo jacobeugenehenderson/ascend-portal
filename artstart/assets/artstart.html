@@ -232,12 +232,19 @@
         inset: 16px;
         z-index: 2;
         display: flex;
-        gap: 12px;
+        gap: 16px;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         overflow-x: auto;
         overflow-y: hidden;
         padding: 0;
+      }
+
+      /* Centering spacers - collapse when content overflows */
+      .artstart-images-scroll::before,
+      .artstart-images-scroll::after {
+        content: '';
+        flex: 1 0 0;
       }
 
       .artstart-images-scroll::-webkit-scrollbar {
@@ -249,10 +256,10 @@
         border-radius: 2px;
       }
 
-      /* White card per image - SAME SIZE as QR link */
+      /* White card per image - IDENTICAL to QR link */
       .artstart-images-card {
         position: relative;
-        flex-shrink: 0;
+        flex: 0 0 200px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -264,9 +271,11 @@
         border-radius: 10px;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
 
-        /* Fixed size matching QR card - must not shrink */
+        /* Fixed size matching QR card exactly */
         width: 200px;
         height: 200px;
+        min-width: 200px;
+        min-height: 200px;
       }
 
       /* X button to remove image from job */
@@ -306,7 +315,7 @@
         object-fit: contain;
       }
 
-      /* Image Preview Modal */
+      /* Image Preview Modal - simple enlarged view */
       .artstart-image-modal {
         position: fixed;
         inset: 0;
@@ -319,101 +328,40 @@
       .artstart-image-modal-backdrop {
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.85);
         backdrop-filter: blur(4px);
-      }
-
-      .artstart-image-modal-panel {
-        position: relative;
-        max-width: 90vw;
-        max-height: 90vh;
-        background: #1a1a2e;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
       }
 
       .artstart-image-modal-close {
         position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 32px;
-        height: 32px;
+        top: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
         border: none;
-        border-radius: 8px;
-        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
         color: white;
-        font-size: 20px;
+        font-size: 24px;
         cursor: pointer;
         z-index: 10;
         display: flex;
         align-items: center;
         justify-content: center;
-      }
-
-      .artstart-image-modal-close:hover {
-        background: rgba(255,255,255,0.2);
-      }
-
-      .artstart-image-modal-preview {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        min-height: 300px;
-      }
-
-      .artstart-image-modal-preview img {
-        max-width: 100%;
-        max-height: 75vh;
-        object-fit: contain;
-      }
-
-      .artstart-image-modal-info {
-        padding: 12px 24px 24px;
-        background: rgba(0,0,0,0.3);
-        color: white;
-      }
-
-      .artstart-image-modal-title {
-        font-weight: 600;
-        font-size: 1rem;
-      }
-
-      .artstart-image-modal-path {
-        font-size: 0.75rem;
-        opacity: 0.7;
-        margin-top: 4px;
-      }
-
-      .artstart-image-modal-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 12px;
-      }
-
-      .artstart-image-modal-btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        background: rgba(255,255,255,0.15);
-        color: white;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
         transition: background 150ms ease;
       }
 
-      .artstart-image-modal-btn:hover {
-        background: rgba(255,255,255,0.25);
+      .artstart-image-modal-close:hover {
+        background: rgba(255,255,255,0.3);
       }
 
-      .artstart-image-modal-btn.is-danger {
-        background: rgba(239, 68, 68, 0.8);
-      }
-
-      .artstart-image-modal-btn.is-danger:hover {
-        background: rgba(239, 68, 68, 1);
+      .artstart-image-modal-img {
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
       }
 
       /* Modal (minimal, ascend-apps-aligned) */
@@ -1828,22 +1776,12 @@
       </div>
     </div>
 
-    <!-- Image preview modal -->
+    <!-- Image preview modal - simple enlarged view -->
     <div class="artstart-image-modal" id="artstart-image-modal" style="display:none;" aria-hidden="true">
       <div class="artstart-image-modal-backdrop" data-modal-close="1"></div>
-      <div class="artstart-image-modal-panel">
-        <button type="button" class="artstart-image-modal-close" data-modal-close="1">&times;</button>
-        <div class="artstart-image-modal-preview">
-          <img id="artstart-image-modal-img" src="" alt="">
-        </div>
-        <div class="artstart-image-modal-info">
-          <div class="artstart-image-modal-title" id="artstart-image-modal-title"></div>
-          <div class="artstart-image-modal-actions">
-            <button type="button" class="artstart-image-modal-btn" id="artstart-image-add-more">+ Add More</button>
-            <button type="button" class="artstart-image-modal-btn is-danger" id="artstart-image-unlink">Unlink</button>
-          </div>
-        </div>
-      </div>
+      <button type="button" class="artstart-image-modal-close" data-modal-close="1">&times;</button>
+      <img id="artstart-image-modal-img" class="artstart-image-modal-img" src="" alt="" data-modal-close="1">
+      <div id="artstart-image-modal-title" style="display:none;"></div>
     </div>
 
     <script src="../../assets/ascend.js"></script>
