@@ -318,9 +318,7 @@ textarea:focus {
 /* Shell */
 
 .ascend-shell {
-  width: 80%;
-  min-width: 950px;
-  max-width: 1400px;
+  width: calc(100% - 3rem);
   background: var(--ascend-shell-bg);
   background-repeat: no-repeat;
   background-size: cover;
@@ -379,6 +377,10 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
+  width: 80%;
+  min-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .ascend-header-left {
@@ -430,6 +432,10 @@ textarea:focus {
   grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   gap: 1.5rem;
   overflow: visible;
+  width: 80%;
+  min-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* When logged in, collapse the login column entirely */
@@ -468,10 +474,11 @@ textarea:focus {
   }
 }
 
-/* Below 1200px viewport, shell fills available space */
+/* Below 1200px viewport, content fills shell */
 @media (max-width: 1200px) {
-  .ascend-shell {
-    width: calc(100% - 2rem);
+  .ascend-header,
+  .ascend-main {
+    width: 100%;
     min-width: 0;
   }
 }
