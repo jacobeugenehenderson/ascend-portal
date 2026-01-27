@@ -497,6 +497,15 @@ function upsertJob_(p) {
       // Always bump UpdatedAt unless explicitly provided
       if (!p.updated_at) rowObj.UpdatedAt = nowIso;
 
+      // IMPORTANT: Preserve TrashedAt/TrashedBy unless explicitly provided.
+      // This prevents autosave/sync from accidentally un-trashing items.
+      if (!p.trashed_at && header['TrashedAt']) {
+        rowObj.TrashedAt = String(sh.getRange(foundRow, header['TrashedAt']).getValue() || '').trim();
+      }
+      if (!p.trashed_by && header['TrashedBy']) {
+        rowObj.TrashedBy = String(sh.getRange(foundRow, header['TrashedBy']).getValue() || '').trim();
+      }
+
       writeRowByHeader_(sh, header, foundRow, rowObj);
       return { upsert: 'update', AscendJobKey: ascendJobKey, row: foundRow };
     }
