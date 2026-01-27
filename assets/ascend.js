@@ -10,8 +10,8 @@
 
   // Auth + routing knobs (single source of truth)
   const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
-  // NOTE: token is currently baked into the static QR as "test". Need to update
-  const HANDSHAKE_TOKEN = "test";
+  // Token baked into the static QR image
+  const HANDSHAKE_TOKEN = "verify-account";
 
   // App destinations – always point to the live GitHub Pages workspace
   const ARTSTART_URL =

@@ -536,7 +536,7 @@ textarea:focus {
 .ascend-qr-placeholder {
   width: 210px;
   height: 210px;
-  background-image: url("qr-placeholder.png");
+  background-image: url("qr-auth.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
