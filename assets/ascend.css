@@ -1553,66 +1553,112 @@ html {
   font-size: clamp(0.875rem, 0.8rem + 0.25vw, 1rem);
 }
 
+/* Force all boxes to include padding in width calculations */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 /* Large laptops (1366px and below) */
 @media (max-width: 1366px) {
   :root {
-    --ascend-max-width: 1100px;
-    --ascend-shell-padding-x: 1.25rem;
-    --ascend-shell-padding-y: 2rem;
+    --ascend-max-width: calc(100vw - 2rem);
+    --ascend-shell-padding-x: 1rem;
+    --ascend-shell-padding-y: 1.5rem;
+  }
+
+  #ascend-root {
+    padding: 1rem;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   .ascend-shell {
-    padding: 1.5rem 1.25rem 1.25rem;
-    border-radius: 24px;
+    width: 100%;
+    max-width: 100%;
+    padding: 1.25rem 1rem 1rem;
+    border-radius: 20px;
+  }
+
+  .ascend-main {
+    gap: 1rem;
   }
 
   .ascend-row {
-    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+    gap: 0.6rem;
+  }
+
+  .ascend-row-primary {
+    min-width: 0;
+  }
+
+  .ascend-row-secondary {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .ascend-qr-frame {
-    width: 220px;
-    height: 220px;
+    width: min(220px, 100%);
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .ascend-panel {
+    max-width: 100%;
   }
 }
 
 /* Medium laptops (1024px - 1279px) */
 @media (max-width: 1279px) {
   :root {
-    --ascend-max-width: 960px;
-    --ascend-gap: 1rem;
+    --ascend-max-width: calc(100vw - 1.5rem);
+    --ascend-gap: 0.75rem;
+  }
+
+  #ascend-root {
+    padding: 0.75rem;
   }
 
   .ascend-shell {
-    padding: 1.25rem 1rem;
-    border-radius: 20px;
+    padding: 1rem 0.85rem;
+    border-radius: 16px;
   }
 
   .ascend-row {
-    grid-template-columns: 240px minmax(0, 1fr);
-    gap: 0.6rem;
+    grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+    gap: 0.5rem;
   }
 
   .ascend-row-primary {
-    padding: 0.6rem 0.75rem;
+    padding: 0.5rem 0.65rem;
   }
 
   .ascend-row-title {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
   }
 
   .ascend-row-description {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
   }
 
   .ascend-qr-frame {
-    width: 200px;
-    height: 200px;
+    width: min(180px, 100%);
+    height: auto;
+    aspect-ratio: 1;
   }
 
   .ascend-title-block h1 {
-    font-size: 1.15rem;
-    letter-spacing: 0.08em;
+    font-size: 1.05rem;
+    letter-spacing: 0.06em;
+  }
+
+  .ascend-dashboard,
+  #ascend-dashboard {
+    padding: 0.75rem 1rem;
+  }
+
+  .ascend-row-list {
+    gap: 0.5rem;
   }
 }
 
@@ -1743,9 +1789,29 @@ html {
 }
 
 /* Prevent horizontal overflow globally */
-html, body {
+html {
   overflow-x: hidden;
   max-width: 100vw;
+  width: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+  min-width: 0;
+}
+
+#ascend-root,
+.ascend-shell,
+.ascend-main,
+.ascend-dashboard,
+#ascend-dashboard,
+.ascend-row,
+.ascend-row-primary,
+.ascend-row-secondary {
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Ensure images and media scale */
