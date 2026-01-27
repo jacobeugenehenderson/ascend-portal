@@ -461,6 +461,13 @@ textarea:focus {
   }
 }
 
+/* On wide screens, keep the shell nicely constrained */
+@media (min-width: 1401px) {
+  :root {
+    --ascend-max-width: 1200px;
+  }
+}
+
 @media (max-width: 900px) {
   .ascend-header {
     flex-direction: column;
