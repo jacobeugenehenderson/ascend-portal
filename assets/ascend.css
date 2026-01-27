@@ -524,6 +524,43 @@ textarea:focus {
     letter-spacing: 0.1em;
     opacity: 0.75;
   }
+
+  /* Mobile accordion row headers */
+  .ascend-row-primary {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.25rem 0.75rem;
+    padding: 0.6rem 0.75rem;
+    align-items: center;
+  }
+
+  .ascend-row-label {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 0.65rem;
+    margin-bottom: 0;
+  }
+
+  .ascend-row-title {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+
+  .ascend-row-description {
+    display: none; /* Hide on mobile - too cramped */
+  }
+
+  .ascend-row-action-btn {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    margin: 0;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+  }
 }
 
 /* Left side: Login / session card */
