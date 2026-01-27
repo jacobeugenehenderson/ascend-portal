@@ -1544,7 +1544,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
           // Refresh all app hoppers
           try { requestCopydeskJobs(); } catch (e) {}
           try { requestArtStartJobs(); } catch (e) {}
-          try { renderCodeDeskHopper(); } catch (e) {}
+          // Must call requestFileRoomOutput() to refresh working items from server,
+          // not just renderCodeDeskHopper() which uses cached data
+          try { requestFileRoomOutput(); } catch (e) {}
         });
 
         // Also restore in Copydesk if it's a Copydesk job (clears DismissedByCsv)
