@@ -495,8 +495,8 @@
       return;
     }
 
-    if (chipLabel) chipLabel.textContent = label;
-    if (accountLabel) accountLabel.textContent = "";
+    if (chipLabel) chipLabel.textContent = "Logged in as " + label;
+    if (accountLabel) accountLabel.textContent = "Logged in as " + label;
   }
 
   function renderSessionStatus(message) {
