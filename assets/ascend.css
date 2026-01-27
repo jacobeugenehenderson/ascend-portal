@@ -69,7 +69,7 @@
 
   /* Shell & layout */
   --ascend-gap: 1.25rem;
-  --ascend-max-width: 1100px;
+  --ascend-max-width: 1170px;
   --ascend-shell-padding-y: 2.5rem;
   --ascend-shell-padding-x: 1.5rem;
 
@@ -304,15 +304,13 @@ textarea:focus {
 
 
 #ascend-root {
-  height: 100vh;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: flex-start;
   padding: var(--ascend-shell-padding-y) var(--ascend-shell-padding-x);
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 /* Shell */
@@ -320,8 +318,6 @@ textarea:focus {
 .ascend-shell {
   width: 100%;
   max-width: var(--ascend-max-width);
-  flex: 1;
-  min-height: 0;
   background: var(--ascend-shell-bg);
   background-repeat: no-repeat;
   background-size: cover;
@@ -335,10 +331,6 @@ textarea:focus {
 
   /* host for grid overlay */
   position: relative;
-
-  /* SINGLE SCROLL AUTHORITY */
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .ascend-shell::before {
