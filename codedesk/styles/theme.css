@@ -1819,3 +1819,184 @@ input[type="range"] {
   max-height: none !important;
   height: auto !important;
 }
+
+/* =========================================================
+ * RESPONSIVE SCALING — Laptop & Small Screen Support
+ * ======================================================= */
+
+/* Base: Fluid typography */
+html {
+  font-size: clamp(0.875rem, 0.82rem + 0.2vw, 1rem);
+}
+
+/* Large laptops (1366px and below) */
+@media (max-width: 1366px) {
+  :root {
+    --density-scale: 0.95;
+    --phone-radius: 18px;
+  }
+
+  #stepper {
+    max-width: 640px;
+  }
+
+  .preview-stage {
+    width: clamp(220px, 24vw, 300px);
+  }
+}
+
+/* Medium laptops (1024px - 1279px) — fills the gap */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  :root {
+    --density-scale: 0.9;
+    --phone-radius: 16px;
+    --header-h: 48px;
+  }
+
+  #stepper {
+    max-width: 580px;
+    gap: 0.5rem;
+  }
+
+  .preview-stage {
+    width: clamp(200px, 22vw, 280px);
+  }
+
+  .step-header {
+    min-height: 3rem;
+    font-size: 0.9rem;
+  }
+
+  .step-card [data-step-panel] {
+    padding: 0.6rem 1rem;
+  }
+
+  /* Smaller controls */
+  .ecc-btn {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    font-size: 0.75rem;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="url"],
+  input[type="number"],
+  select {
+    height: calc(var(--density-control-h) * 0.9);
+    font-size: 0.85rem;
+  }
+
+  label, .field-label {
+    font-size: 0.8rem;
+  }
+}
+
+/* Tablets (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --density-scale: 0.85;
+    --phone-radius: 14px;
+    --header-h: 44px;
+  }
+
+  #stepper {
+    max-width: 520px;
+    padding-inline: 0.75rem;
+  }
+
+  .preview-stage {
+    width: clamp(180px, 28vw, 240px);
+  }
+
+  .step-header {
+    min-height: 2.8rem;
+    font-size: 0.85rem;
+  }
+
+  .step-header-wrap {
+    padding-inline: 1rem;
+  }
+
+  #codedeskFilenameSection > label {
+    width: min(300px, calc(100% - 16px));
+  }
+}
+
+/* Small screens / large phones (< 768px) */
+@media (max-width: 767px) {
+  :root {
+    --density-scale: 0.8;
+    --phone-radius: 12px;
+    --edge-gutter: 12px;
+  }
+
+  #stepper {
+    max-width: 100%;
+    padding-inline: 0.5rem;
+  }
+
+  .preview-stage {
+    width: clamp(160px, 50vw, 220px);
+  }
+
+  .step-card {
+    border-radius: 12px;
+  }
+
+  .step-header {
+    min-height: 2.6rem;
+    font-size: 0.8rem;
+  }
+
+  .step-header-wrap {
+    padding-inline: 0.75rem;
+  }
+
+  .step-card [data-step-panel] {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Smaller nav arrows */
+  #prevSubtype, #nextSubtype {
+    width: 28px;
+    height: 28px;
+  }
+
+  #prevSubtype::after {
+    border-right-width: 7px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+  }
+
+  #nextSubtype::after {
+    border-left-width: 7px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+  }
+
+  /* Caption text scales */
+  #captionEl {
+    font-size: clamp(0.75rem, 2vw, 1.1rem);
+  }
+
+  #codedeskFilenameSection > label {
+    width: calc(100% - 12px);
+  }
+
+  #codedeskFilename {
+    font-size: 0.85rem;
+  }
+}
+
+/* Prevent horizontal overflow */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Ensure nothing breaks out of container */
+#stepper, .step-card, [data-step-panel] {
+  max-width: 100%;
+  box-sizing: border-box;
+}
