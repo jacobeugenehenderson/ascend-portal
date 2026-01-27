@@ -1656,7 +1656,6 @@ html {
 /* Large laptops (1366px and below) */
 @media (max-width: 1366px) {
   :root {
-    --ascend-max-width: calc(100vw - 2rem);
     --ascend-shell-padding-x: 1rem;
     --ascend-shell-padding-y: 1.5rem;
   }
@@ -1706,7 +1705,6 @@ html {
 /* Medium laptops (1024px - 1279px) */
 @media (max-width: 1279px) {
   :root {
-    --ascend-max-width: calc(100vw - 1.5rem);
     --ascend-gap: 0.75rem;
   }
 
@@ -1760,7 +1758,6 @@ html {
 /* Tablets and small laptops (768px - 1023px) */
 @media (max-width: 1023px) {
   :root {
-    --ascend-max-width: 100%;
     --ascend-shell-padding-x: 1rem;
   }
 
