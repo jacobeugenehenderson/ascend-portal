@@ -459,6 +459,17 @@ textarea:focus {
     max-width: 720px;
     margin: 0 auto;
   }
+
+  /* Rows also stack vertically */
+  .ascend-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .ascend-row-primary,
+  .ascend-row-secondary {
+    max-width: 100%;
+  }
 }
 
 /* On wide screens, keep the shell nicely constrained */
