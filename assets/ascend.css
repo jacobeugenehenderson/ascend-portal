@@ -441,11 +441,20 @@ textarea:focus {
   grid-template-columns: 1fr !important;
 }
 
-@media (max-width: 900px) {
+/* Collapse to single column earlier - laptops can't fit both panels */
+@media (max-width: 1400px) {
   .ascend-main {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
+  .ascend-panel {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 900px) {
   .ascend-header {
     flex-direction: column;
     align-items: flex-start;
