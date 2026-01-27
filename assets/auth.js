@@ -169,7 +169,7 @@ if (rememberedEmail) {
         ) {
           // Unauthorized user → redirect to love.html
           if (data && (data.error === "unauthorized_user" || data.status === "denied")) {
-            window.location.href = "codedesk/assets/love.html";
+            window.location.href = "https://jacobhenderson.studio/assets/love/love.html";
             return;
           }
 
