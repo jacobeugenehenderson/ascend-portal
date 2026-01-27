@@ -167,6 +167,12 @@ if (rememberedEmail) {
           data.ok === false ||
           data.status === "denied"
         ) {
+          // Unauthorized user → redirect to love.html
+          if (data && (data.error === "unauthorized_user" || data.status === "denied")) {
+            window.location.href = "codedesk/assets/love.html";
+            return;
+          }
+
           const msg =
             (data && data.error)
               ? data.error
