@@ -452,6 +452,13 @@ textarea:focus {
     max-width: 400px;
     margin: 0 auto;
   }
+
+  /* Cap dashboard width when single-column */
+  .ascend-dashboard,
+  #ascend-dashboard {
+    max-width: 720px;
+    margin: 0 auto;
+  }
 }
 
 @media (max-width: 900px) {
