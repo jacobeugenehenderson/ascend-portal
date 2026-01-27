@@ -32,8 +32,7 @@ const FILEROOM_API_VERSION = 'fileroom_v0_2025-12-19';
 
 // ADMIN: allowlist for nuclear delete actions
 const FILEROOM_ADMIN_EMAILS = [
-  'jacob@jacobhenderson.studio',
-  'jacobhenderson@gmail.com'
+  'jacob@jacobhenderson.studio'
 ];
 
 function authorizeDrive_() {
