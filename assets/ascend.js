@@ -487,7 +487,7 @@
     const fullName =
       session && session.userNameFull ? session.userNameFull : null;
 
-    const label = firstName || fullName || email;
+    const label = fullName || firstName || email;
 
     if (!label) {
       if (chipLabel) chipLabel.textContent = "Not logged in";
