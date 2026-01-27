@@ -703,39 +703,39 @@ body.kbd .ecc-btn[aria-pressed="true"] {
    CODEDESK HEADER BAR (Ascend styling)
 ========================= */
 
-/* Header bar: light surface, dark text */
+/* Header bar: dark surface, light text */
 .header-bar {
-  background: #ffffff !important;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.12);
-  color: #020617;
+  background: #0d1224 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f7fafc;
 }
 
-/* CODEDESK header mark: dark text on light header */
+/* CODEDESK header mark: light text on dark header */
 .header-bar .codedesk-mark,
 .header-bar .codedesk-mark a {
-  color: #020617 !important;
+  color: #f7fafc !important;
   text-decoration: none;
 }
 .header-bar .codedesk-mark a:hover { text-decoration: underline; }
 
-/* Types dropdown: clean Ascend button style */
+/* Types dropdown: Ascend control on dark header */
 .header-bar select#qrType {
   appearance: none;
   -webkit-appearance: none;
-  background: #ffffff !important;
-  color: #020617 !important;
-  border: 1px solid rgba(148, 163, 184, 0.85);
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f7fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 10px;
   height: auto;
   padding: 8px 32px 8px 12px;
   font: 600 0.84rem/1.2 var(--font-family, system-ui);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: none;
   cursor: pointer;
 
-  /* Custom chevron */
+  /* Custom chevron (light) */
   background-image:
-    linear-gradient(45deg, transparent 50%, #475569 50%),
-    linear-gradient(135deg, #475569 50%, transparent 50%) !important;
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.7) 50%),
+    linear-gradient(135deg, rgba(255,255,255,0.7) 50%, transparent 50%) !important;
   background-position:
     calc(100% - 14px) 50%,
     calc(100% - 8px) 50% !important;
@@ -744,14 +744,14 @@ body.kbd .ecc-btn[aria-pressed="true"] {
 }
 
 .header-bar select#qrType:hover {
-  background-color: #f8fafc !important;
-  border-color: rgba(79, 209, 197, 0.6);
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .header-bar select#qrType:focus {
   outline: none;
   border-color: #4fd1c5;
-  box-shadow: 0 0 0 2px rgba(79, 209, 197, 0.2);
+  box-shadow: 0 0 0 2px rgba(79, 209, 197, 0.35);
 }
 
 input[type="text"],
