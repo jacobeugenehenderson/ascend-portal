@@ -699,12 +699,64 @@ body.kbd .ecc-btn[aria-pressed="true"] {
    4. CONTROLS (inputs/selects/Menu)
 ========================= */
 
+/* =========================
+   CODEDESK HEADER BAR (Ascend styling)
+========================= */
+
+/* Header bar: Ascend app shell styling */
+.header-bar {
+  background: var(--ascend-app-surface, #ffffff);
+  border-bottom: 1px solid var(--ascend-app-border, rgba(15, 23, 42, 0.12));
+  color: var(--ascend-app-text-main, #020617);
+}
+
 /* CODEDESK header mark (contrast + crisp) */
 .codedesk-mark a{
-  color: var(--md-sys-color-on-surface);
+  color: var(--ascend-app-text-main, #020617);
   text-decoration: none;
 }
 .codedesk-mark a:hover{ text-decoration: underline; }
+
+/* Types dropdown: Ascend control styling */
+#qrType {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--ascend-control-bg, #ffffff);
+  color: var(--ascend-app-text-main, #020617);
+  border: 1px solid var(--ascend-control-border, rgba(148, 163, 184, 0.85));
+  border-radius: var(--ascend-control-radius, 10px);
+  padding: 8px 34px 8px 12px;
+  font: 600 0.84rem/1 var(--font-family, system-ui);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-1, 120ms) var(--motion-ease),
+    border-color var(--motion-duration-1, 120ms) var(--motion-ease),
+    box-shadow var(--motion-duration-1, 120ms) var(--motion-ease);
+
+  /* Custom chevron */
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(2, 6, 23, 0.65) 50%),
+    linear-gradient(135deg, rgba(2, 6, 23, 0.65) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 10px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+#qrType:hover {
+  background-color: var(--ascend-control-bg-hover, #f8fafc);
+  border-color: color-mix(in srgb, var(--ascend-control-border) 70%, var(--ascend-app-accent) 30%);
+}
+
+#qrType:focus {
+  outline: none;
+  border-color: var(--ascend-app-accent, #4fd1c5);
+  box-shadow:
+    0 0 0 2px var(--ascend-app-accent-soft, rgba(79, 209, 197, 0.12)),
+    0 1px 0 rgba(15, 23, 42, 0.04);
+}
 
 input[type="text"],
 input[type="email"],
