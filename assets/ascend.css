@@ -378,7 +378,6 @@ textarea:focus {
   justify-content: space-between;
   gap: 1.25rem;
   width: 80%;
-  min-width: 900px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -432,10 +431,6 @@ textarea:focus {
   grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   gap: 1.5rem;
   overflow: visible;
-  width: 80%;
-  min-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 /* When logged in, collapse the login column entirely */
@@ -443,8 +438,8 @@ textarea:focus {
   grid-template-columns: 1fr !important;
 }
 
-/* Collapse to single column on narrow viewports */
-@media (max-width: 1000px) {
+/* Stacked mode (≤900px): rows stack vertically */
+@media (max-width: 900px) {
   .ascend-main {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -455,14 +450,7 @@ textarea:focus {
     margin: 0 auto;
   }
 
-  /* Cap dashboard width when single-column */
-  .ascend-dashboard,
-  #ascend-dashboard {
-    max-width: 720px;
-    margin: 0 auto;
-  }
-
-  /* Rows also stack vertically */
+  /* Rows stack vertically */
   .ascend-row {
     grid-template-columns: 1fr;
     gap: 0.75rem;
@@ -474,12 +462,12 @@ textarea:focus {
   }
 }
 
-/* Below 1200px viewport, content fills shell */
+/* Narrow mode (900-1200px): dashboard fills shell */
 @media (max-width: 1200px) {
   .ascend-header,
-  .ascend-main {
+  .ascend-dashboard,
+  #ascend-dashboard {
     width: 100%;
-    min-width: 0;
   }
 }
 
@@ -715,6 +703,11 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   overflow: visible;
+
+  /* Wide mode: 80% of shell, centered */
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .ascend-dashboard-header {
@@ -791,7 +784,7 @@ textarea:focus {
 
 .ascend-row {
   display: grid;
-  grid-template-columns: 384px minmax(0, 1fr);
+  grid-template-columns: 35% 65%;
   gap: 0.75rem;
   align-items: stretch;
   min-height: 0;
@@ -1662,55 +1655,10 @@ html {
   box-sizing: border-box;
 }
 
-/* Large laptops (1366px and below) */
-@media (max-width: 1366px) {
-  .ascend-row {
-    grid-template-columns: minmax(240px, 310px) minmax(0, 1fr);
-    gap: 0.6rem;
-  }
 
-  .ascend-row-primary {
-    min-width: 0;
-  }
 
-  .ascend-row-secondary {
-    min-width: 0;
-    max-width: 100%;
-  }
-}
-
-/* Medium laptops (1024px - 1279px) */
-@media (max-width: 1279px) {
-  .ascend-row {
-    grid-template-columns: minmax(216px, 264px) minmax(0, 1fr);
-    gap: 0.5rem;
-  }
-
-  .ascend-row-primary {
-    padding: 0.5rem 0.65rem;
-  }
-
-  .ascend-row-title {
-    font-size: 0.95rem;
-  }
-
-  .ascend-row-description {
-    font-size: 0.72rem;
-  }
-}
-
-/* Tablets and small laptops (768px - 1023px) */
+/* Trash modal scales down on smaller screens */
 @media (max-width: 1023px) {
-  .ascend-row {
-    grid-template-columns: 240px minmax(0, 1fr);
-    gap: 0.5rem;
-  }
-
-  .ascend-row-list {
-    gap: 0.6rem;
-  }
-
-  /* Trash modal scales down */
   .ascend-trash-modal-panel {
     width: min(600px, calc(100vw - 20px));
     max-height: min(480px, calc(100vh - 20px));
