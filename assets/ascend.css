@@ -69,7 +69,7 @@
 
   /* Shell & layout */
   --ascend-gap: 1.25rem;
-  --ascend-max-width: 1170px;
+  --ascend-max-width: 936px;
   --ascend-shell-padding-y: 2.5rem;
   --ascend-shell-padding-x: 1.5rem;
 
@@ -470,7 +470,7 @@ textarea:focus {
 /* On wide screens, keep the shell nicely constrained */
 @media (min-width: 1401px) {
   :root {
-    --ascend-max-width: 1200px;
+    --ascend-max-width: 960px;
   }
 }
 
@@ -782,7 +782,7 @@ textarea:focus {
 
 .ascend-row {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 384px minmax(0, 1fr);
   gap: 0.75rem;
   align-items: stretch;
   min-height: 0;
@@ -1679,7 +1679,7 @@ html {
   }
 
   .ascend-row {
-    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+    grid-template-columns: minmax(240px, 310px) minmax(0, 1fr);
     gap: 0.6rem;
   }
 
@@ -1720,7 +1720,7 @@ html {
   }
 
   .ascend-row {
-    grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+    grid-template-columns: minmax(216px, 264px) minmax(0, 1fr);
     gap: 0.5rem;
   }
 
@@ -1779,7 +1779,7 @@ html {
   }
 
   .ascend-row {
-    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-columns: 240px minmax(0, 1fr);
     gap: 0.5rem;
   }
 
