@@ -426,8 +426,6 @@ textarea:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   gap: 1.5rem;
-  flex: 1;
-  min-height: 0;
   overflow: visible;
 }
 
@@ -705,8 +703,6 @@ textarea:focus {
 
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
   overflow: visible;
 }
 
@@ -885,9 +881,9 @@ textarea:focus {
   font-size: 0.78rem;
   color: var(--ascend-color-text-muted);
 
-  min-height: 0;
-  height: auto;
-  overflow: visible;
+  min-height: 120px;
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 /* Hopper lists (ArtStart / Copydesk / Codedesk) */
