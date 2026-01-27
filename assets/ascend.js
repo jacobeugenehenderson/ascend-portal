@@ -496,7 +496,7 @@
     }
 
     if (chipLabel) chipLabel.textContent = "Logged in as " + label;
-    if (accountLabel) accountLabel.textContent = "Logged in as " + label;
+    if (accountLabel) accountLabel.textContent = "";
   }
 
   function renderSessionStatus(message) {
