@@ -378,6 +378,9 @@
     // Load saved state from localStorage (cart only now)
     loadLocalState();
 
+    // Check admin status and hide admin UI if not admin
+    checkAdminAccess();
+
     // FAST: Load cached asset metadata from localStorage (instant)
     loadCachedAssetMeta();
 
@@ -2505,6 +2508,20 @@
     } catch (e) {}
 
     return '';
+  }
+
+  function checkAdminAccess() {
+    const email = getCurrentUserEmail().toLowerCase();
+    const adminList = (Config.adminEmails || []).map(e => String(e).toLowerCase().trim());
+    const isAdmin = email && adminList.includes(email);
+
+    // Hide admin UI if not admin
+    const adminActions = document.getElementById('library-admin-actions');
+    if (adminActions) {
+      adminActions.style.display = isAdmin ? '' : 'none';
+    }
+
+    console.log('[Library] Admin check:', email, isAdmin ? '(admin)' : '(regular user)');
   }
 
   async function loadAllJobs() {
