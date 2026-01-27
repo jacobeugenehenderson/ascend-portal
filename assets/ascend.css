@@ -500,8 +500,7 @@ textarea:focus {
 
   .ascend-title-block p {
     font-size: 0.72rem;
-    color: var(--ascend-color-accent-soft);
-    opacity: 0.95;
+    color: rgba(255, 255, 255, 0.85);
     margin-top: 0.25rem;
   }
 
