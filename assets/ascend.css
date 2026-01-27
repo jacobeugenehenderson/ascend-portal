@@ -193,6 +193,8 @@ body {
 body {
   font-family: var(--ascend-font-body);
   background: var(--ascend-body-bg);
+  background-attachment: fixed;
+  background-size: 100% 100vh;
   color: var(--ascend-color-text-main);
 }
 
