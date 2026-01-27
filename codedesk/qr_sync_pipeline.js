@@ -443,6 +443,8 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       }
     } catch(e){}
   }
+  // Expose globally for cross-module access (state engine needs this)
+  window.codedeskSetLocked = codedeskSetLocked;
 
   function codedeskUnlockAndOpenFinish(){
   // Unlock + reveal Finish (Create working file) without opening a drawer (Finish does not fold down).
@@ -527,10 +529,12 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
 
     syncFinishEnabled();
   }
+  // Expose globally for cross-module access (state engine needs this)
+  window.codedeskRefreshFilenameGate = codedeskRefreshFilenameGate;
 
   function codedeskSetSetupSparkleVisible(visible){
     // The setup affordance is the sparkle action button (icon-only ✨ in the UI).
-    // Do NOT hide “Finish setup” text buttons; only target the sparkle control.
+    // Do NOT hide "Finish setup" text buttons; only target the sparkle control.
     try {
       document.querySelectorAll('button').forEach((b) => {
         const t = String((b && b.textContent) ? b.textContent : '').trim();
@@ -539,6 +543,8 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
       });
     } catch(e){}
   }
+  // Expose globally for cross-module access (state engine needs this)
+  window.codedeskSetSetupSparkleVisible = codedeskSetSetupSparkleVisible;
 
   function codedeskRemoveSetupStep(){
     // Remove the entire setup accordion step (Finish) if it exists.
@@ -558,7 +564,15 @@ window.codedeskFinishSetup = function codedeskFinishSetup(){
         b.remove();
       });
     } catch(e){}
+
+    // Also remove the finishCard by ID (belt + suspenders)
+    try {
+      const finishCard = document.getElementById('finishCard');
+      if (finishCard) finishCard.remove();
+    } catch(e){}
   }
+  // Expose globally for cross-module access (state engine needs this)
+  window.codedeskRemoveSetupStep = codedeskRemoveSetupStep;
 
   // live sync (wire once, even if this script loads before the DOM nodes exist)
   (function wireFilenameGateOnce(){
