@@ -1667,8 +1667,6 @@ html {
   }
 
   .ascend-shell {
-    width: 100%;
-    max-width: 100%;
     padding: 1.25rem 1rem 1rem;
     border-radius: 20px;
   }
@@ -1897,14 +1895,12 @@ body {
 }
 
 #ascend-root,
-.ascend-shell,
 .ascend-main,
 .ascend-dashboard,
 #ascend-dashboard,
 .ascend-row,
 .ascend-row-primary,
 .ascend-row-secondary {
-  max-width: 100%;
   min-width: 0;
 }
 
