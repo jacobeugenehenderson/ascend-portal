@@ -1293,6 +1293,165 @@
         color: transparent;
       }
 
+      /* People row (Requested by, Collaborators) */
+      .artstart-people-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      /* Person pill (non-clickable, for Requested by) */
+      .artstart-person-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.85);
+        border: 1px solid rgba(15,23,42,0.12);
+        font-size: 12px;
+        font-weight: 500;
+        color: rgba(15,23,42,0.82);
+        white-space: nowrap;
+      }
+
+      /* Collaborator chips container */
+      .artstart-collaborator-chips {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+
+      /* Individual collaborator chip (clickable) */
+      .artstart-collaborator-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.85);
+        border: 1px solid rgba(15,23,42,0.12);
+        font-size: 12px;
+        font-weight: 500;
+        color: rgba(15,23,42,0.82);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      }
+
+      .artstart-collaborator-chip:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        background: rgba(255,255,255,1);
+      }
+
+      .artstart-collaborator-chip:active {
+        transform: translateY(0);
+      }
+
+      /* Add button chip */
+      .artstart-collaborator-chip.chip-add {
+        background: rgba(79, 209, 197, 0.12);
+        border-color: rgba(79, 209, 197, 0.40);
+        color: rgba(11, 16, 37, 0.78);
+        font-weight: 700;
+      }
+
+      .artstart-collaborator-chip.chip-add:hover {
+        background: rgba(79, 209, 197, 0.22);
+        border-color: rgba(79, 209, 197, 0.60);
+      }
+
+      /* Collaborator dialog styles */
+      .artstart-collab-dialog {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15,23,42,0.5);
+        z-index: 9999;
+      }
+
+      .artstart-collab-panel {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px 24px;
+        min-width: 300px;
+        max-width: 90vw;
+        box-shadow: 0 20px 40px rgba(15,23,42,0.25);
+      }
+
+      .artstart-collab-panel h3 {
+        margin: 0 0 12px;
+        font-size: 16px;
+        font-weight: 600;
+        color: rgba(15,23,42,0.88);
+      }
+
+      .artstart-collab-panel p {
+        margin: 0 0 16px;
+        font-size: 14px;
+        color: rgba(15,23,42,0.72);
+      }
+
+      .artstart-collab-panel input[type="email"] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid rgba(15,23,42,0.16);
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+
+      .artstart-collab-panel input[type="email"]:focus {
+        outline: none;
+        border-color: var(--ascend-app-accent, #4fd1c5);
+        box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.15);
+      }
+
+      .artstart-collab-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .artstart-collab-cancel {
+        padding: 8px 16px;
+        border: 1px solid rgba(15,23,42,0.16);
+        border-radius: 8px;
+        background: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(15,23,42,0.72);
+        cursor: pointer;
+      }
+
+      .artstart-collab-cancel:hover {
+        background: rgba(15,23,42,0.04);
+      }
+
+      .artstart-collab-send {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(79, 209, 197, 0.85);
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(11, 16, 37, 0.88);
+        cursor: pointer;
+      }
+
+      .artstart-collab-send:hover {
+        background: rgba(79, 209, 197, 1);
+      }
+
+      .artstart-collab-send:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+
       .artstart-canvas-noinfo {
         position: absolute;
         inset: 0;
@@ -1651,7 +1810,8 @@
             <section class="artstart-card artstart-card--overview">
               <h2>Job overview</h2>
               <p><span class="label">Filename:</span> <span id="job-overview-title">—</span></p>
-              <p><span class="label">Requested by:</span> <span id="job-overview-requester">—</span></p>
+              <p class="artstart-people-row"><span class="label">Requested by:</span> <span id="job-overview-requester" class="artstart-person-pill">—</span></p>
+              <p class="artstart-people-row"><span class="label">Collaborators:</span> <span id="collaborator-chips" class="artstart-collaborator-chips"></span></p>
               <p><span class="label">Created:</span> <span id="job-overview-created">—</span></p>
               <p><span class="label">Run / go-live:</span> <span id="job-overview-run">—</span></p>
               <p><span class="label">Materials deadline:</span> <span id="job-overview-deadline">—</span></p>

@@ -1862,8 +1862,13 @@ function autoscaleCanvasBands() {
 
     var requesterEl = document.getElementById('job-overview-requester');
     if (requesterEl) {
-      requesterEl.textContent = requesterBits.join(' ') || '—';
+      // Show just the email handle for the pill
+      var requesterHandle = requesterEmail ? getEmailHandle_(requesterEmail) : (requesterName || '—');
+      requesterEl.textContent = requesterHandle;
     }
+
+    // Render collaborator chips
+    renderCollaboratorChips_(job);
 
     // Dates
     var created =
@@ -3566,6 +3571,263 @@ try {
   window.refreshLinkedImages = function() {
     loadLinkedImages_();
   };
+
+  // -----------------------------
+  // Collaborator Chips UI
+  // -----------------------------
+
+  function getEmailHandle_(email) {
+    if (!email) return '';
+    var atIdx = email.indexOf('@');
+    return atIdx > 0 ? email.substring(0, atIdx) : email;
+  }
+
+  function escapeHtml_(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function escapeAttr_(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderCollaboratorChips_(job) {
+    var host = document.getElementById('collaborator-chips');
+    if (!host) return;
+
+    // Normalize collaborators (allow array or comma-string)
+    var c = job && job.collaborators;
+    var collabList = [];
+    if (Array.isArray(c)) {
+      collabList = c.map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+    } else if (typeof c === 'string' && c.trim()) {
+      collabList = c.split(',').map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+    }
+
+    var html = '';
+
+    // Render each collaborator as a chip
+    for (var i = 0; i < collabList.length; i++) {
+      var email = collabList[i];
+      var handle = getEmailHandle_(email);
+      html +=
+        '<button type="button" class="artstart-collaborator-chip" data-email="' + escapeAttr_(email) + '">' +
+          escapeHtml_(handle) +
+        '</button>';
+    }
+
+    // Add "+ Add" chip
+    html += '<button type="button" class="artstart-collaborator-chip chip-add">+ Add</button>';
+
+    host.innerHTML = html;
+
+    // Wire click handlers (delegated)
+    if (!host.dataset.wired) {
+      host.dataset.wired = '1';
+      host.addEventListener('click', function(e) {
+        var el = e.target;
+        while (el && el !== host && !el.classList.contains('artstart-collaborator-chip')) {
+          el = el.parentNode;
+        }
+        if (!el || el === host) return;
+
+        if (el.classList.contains('chip-add')) {
+          showAddCollaboratorDialog_(job);
+        } else {
+          var email = el.getAttribute('data-email') || '';
+          if (email) {
+            showResendConfirmDialog_(job, email);
+          }
+        }
+      });
+    }
+  }
+
+  function showResendConfirmDialog_(job, email) {
+    var handle = getEmailHandle_(email);
+
+    var overlay = document.createElement('div');
+    overlay.className = 'artstart-collab-dialog';
+    overlay.innerHTML =
+      '<div class="artstart-collab-panel">' +
+        '<h3>Resend ArtStart email?</h3>' +
+        '<p>Send the ArtStart email to <strong>' + escapeHtml_(handle) + '</strong>?</p>' +
+        '<div class="artstart-collab-actions">' +
+          '<button type="button" class="artstart-collab-cancel">Cancel</button>' +
+          '<button type="button" class="artstart-collab-send">Send</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var cancelBtn = overlay.querySelector('.artstart-collab-cancel');
+    var sendBtn = overlay.querySelector('.artstart-collab-send');
+
+    function close() {
+      overlay.remove();
+    }
+
+    cancelBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) close();
+    });
+
+    sendBtn.addEventListener('click', function() {
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+
+      var jobId = job && (job.jobId || job.ascendJobId);
+      if (!jobId) {
+        sendBtn.textContent = 'Failed';
+        setTimeout(close, 1500);
+        return;
+      }
+
+      artstartResendInvite_(jobId, email)
+        .then(function() {
+          sendBtn.textContent = 'Sent!';
+          setTimeout(close, 800);
+        })
+        .catch(function(err) {
+          sendBtn.textContent = 'Failed';
+          console.error('Resend failed:', err);
+          setTimeout(close, 1500);
+        });
+    });
+  }
+
+  function showAddCollaboratorDialog_(job) {
+    var overlay = document.createElement('div');
+    overlay.className = 'artstart-collab-dialog';
+    overlay.innerHTML =
+      '<div class="artstart-collab-panel">' +
+        '<h3>Add collaborator</h3>' +
+        '<input type="email" placeholder="email@example.com" autocomplete="email" />' +
+        '<div class="artstart-collab-actions">' +
+          '<button type="button" class="artstart-collab-cancel">Cancel</button>' +
+          '<button type="button" class="artstart-collab-send">Add</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var input = overlay.querySelector('input');
+    var cancelBtn = overlay.querySelector('.artstart-collab-cancel');
+    var addBtn = overlay.querySelector('.artstart-collab-send');
+
+    function close() {
+      overlay.remove();
+    }
+
+    cancelBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) close();
+    });
+
+    input.focus();
+
+    function doAdd() {
+      var email = String(input.value || '').trim();
+      if (!email || email.indexOf('@') < 1) {
+        input.focus();
+        return;
+      }
+
+      addBtn.disabled = true;
+      addBtn.textContent = 'Adding...';
+
+      // Get current collaborators
+      var currentCollabs = [];
+      var c = job && job.collaborators;
+      if (Array.isArray(c)) {
+        currentCollabs = c.map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+      } else if (typeof c === 'string' && c.trim()) {
+        currentCollabs = c.split(',').map(function(e) { return String(e || '').trim(); }).filter(Boolean);
+      }
+
+      // Check if already exists
+      var emailLower = email.toLowerCase();
+      var exists = currentCollabs.some(function(e) { return e.toLowerCase() === emailLower; });
+      if (exists) {
+        addBtn.textContent = 'Already added';
+        setTimeout(close, 1000);
+        return;
+      }
+
+      currentCollabs.push(email);
+      var newCollabStr = currentCollabs.join(', ');
+
+      var jobId = job && (job.jobId || job.ascendJobId);
+      if (!jobId) {
+        addBtn.textContent = 'Failed';
+        setTimeout(close, 1500);
+        return;
+      }
+
+      artstartUpdateJobMeta_(jobId, { collaborators: newCollabStr })
+        .then(function() {
+          // Update local job object
+          job.collaborators = currentCollabs;
+          addBtn.textContent = 'Added!';
+          setTimeout(function() {
+            close();
+            // Re-render chips
+            renderCollaboratorChips_(job);
+          }, 600);
+        })
+        .catch(function(err) {
+          addBtn.textContent = 'Failed';
+          console.error('Add collaborator failed:', err);
+          setTimeout(close, 1500);
+        });
+    }
+
+    addBtn.addEventListener('click', doAdd);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doAdd();
+      }
+    });
+  }
+
+  // API client functions for collaborators
+  function artstartUpdateJobMeta_(jobId, patch) {
+    return fetch(ARTSTART_API_BASE + '?action=updateJobMeta', {
+      method: 'POST',
+      body: JSON.stringify({ jobId: jobId, patch: patch })
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (!data.ok) throw new Error(data.error || 'Unknown error');
+      return data;
+    });
+  }
+
+  function artstartResendInvite_(jobId, email) {
+    return fetch(ARTSTART_API_BASE + '?action=resendArtStartInvite', {
+      method: 'POST',
+      body: JSON.stringify({ jobId: jobId, email: email })
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (!data.ok) throw new Error(data.error || 'Unknown error');
+      return data;
+    });
+  }
 
   var getJobIdFromQuery = window.getJobIdFromQuery;
 

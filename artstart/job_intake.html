@@ -68,6 +68,11 @@
       </label>
 
       <label class="notes-block">
+        Collaborators (comma-separated emails, optional)
+        <input type="text" id="collaborators" placeholder="colleague@example.com, designer@example.com">
+      </label>
+
+      <label class="notes-block">
         Notes
         <textarea id="notes"></textarea>
       </label>
@@ -420,6 +425,17 @@ const notesEl           = document.getElementById('notes');
       statusEl.className = 'status';
       linkAreaEl.textContent = '';
 
+      // Parse collaborators: comma-separated emails into array
+      const collaboratorsRaw = (document.getElementById('collaborators') || { value: '' }).value.trim();
+      let collaborators = collaboratorsRaw
+        ? collaboratorsRaw.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      // Always include the logged-in Ascend user as a collaborator
+      if (requesterEmail && collaborators.indexOf(requesterEmail) === -1) {
+        collaborators.unshift(requesterEmail);
+      }
+
       const payload = {
         nordsonJobId: (document.getElementById('nordsonJobId') || { value: '' }).value.trim(),
         publicationId: (document.getElementById('publicationId') || { value: '' }).value.trim(),
@@ -429,6 +445,7 @@ const notesEl           = document.getElementById('notes');
         mediaSpecId: (document.getElementById('mediaSpecId') || { value: '' }).value.trim(),
         topic: (document.getElementById('topic') || { value: '' }).value.trim(),
         notes: (document.getElementById('notes') || { value: '' }).value.trim(),
+        collaborators: collaborators,
         requestedByEmail: requesterEmail,
         requestedByNameFirst: requesterNameFirst,
         requestedByName: requesterNameFull

@@ -478,6 +478,13 @@ function createJob(intakePayload) {
       case 'Notes':
         projRow.push(intakePayload.notes || '');
         break;
+      case 'Collaborators':
+        // Store collaborators as comma-separated string
+        var collabArr = Array.isArray(intakePayload.collaborators)
+          ? intakePayload.collaborators
+          : [];
+        projRow.push(collabArr.join(', '));
+        break;
       default:
         projRow.push(''); // Unknown/extra column
     }
@@ -541,6 +548,25 @@ function createJob(intakePayload) {
     enqueueDaveCreateSeedsTask_(ascendJobId, intakePayload, artStartDate, runDateIso, createdByContactId);
   } catch (err) {
     Logger.log('Failed to enqueue Dave task for ' + ascendJobId + ': ' + err);
+  }
+
+  // Send ArtStart email to collaborators (except the creator)
+  var collabArr = Array.isArray(intakePayload.collaborators)
+    ? intakePayload.collaborators
+    : [];
+  var creatorLower = String(createdByContactId || '').trim().toLowerCase();
+  var jobTitle = intakePayload.nordsonJobId || ascendJobId;
+
+  for (var ci = 0; ci < collabArr.length; ci++) {
+    var collabEmail = String(collabArr[ci] || '').trim();
+    if (!collabEmail || collabEmail.indexOf('@') < 1) continue;
+    // Skip the creator - they will get the main ArtStart email from Dave
+    if (collabEmail.toLowerCase() === creatorLower) continue;
+    try {
+      sendCollaboratorArtStartEmail_(collabEmail, ascendJobId, jobTitle);
+    } catch (e) {
+      Logger.log('Failed to send collaborator ArtStart email to ' + collabEmail + ': ' + e);
+    }
   }
 
   return {
@@ -1042,7 +1068,10 @@ function getArtStartJob_(jobId) {
     workingTranslationsJson:
       p.WorkingTranslationsJson ||
       p['WorkingTranslationsJson'] ||
-      ''
+      '',
+
+    // Collaborators (comma-separated string or array)
+    collaborators: p.Collaborators || ''
   };
 }
 
@@ -1054,6 +1083,138 @@ function handleGetArtStartJob_(e) {
   try {
     const job = getArtStartJob_(jobId);
     return jsonResponse_({ ok: true, job: job });
+  } catch (err) {
+    return jsonResponse_({ ok: false, error: String(err) });
+  }
+}
+
+/**
+ * Update job metadata (collaborators).
+ * When collaborators are added, sends ArtStart email to newly added ones.
+ */
+function handleUpdateJobMeta_(e) {
+  var payload;
+
+  // Parse JSON body
+  if (e.postData && e.postData.contents) {
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch (err) {
+      return jsonResponse_({ ok: false, error: 'Invalid JSON payload' });
+    }
+  } else {
+    payload = e.parameter || {};
+  }
+
+  var jobId = payload.jobId || '';
+  if (!jobId) {
+    return jsonResponse_({ ok: false, error: 'Missing jobId' });
+  }
+
+  var patch = payload.patch || {};
+  var updated = [];
+
+  // Find the project row
+  var info = findProjectRowByAscendJobId_(jobId);
+  if (!info) {
+    return jsonResponse_({ ok: false, error: 'Job not found: ' + jobId });
+  }
+
+  var sheet = info.sheet;
+  var headers = info.headers;
+  var rowIndex = info.rowIndex;
+  var row = info.row;
+
+  // Get job title for email subject
+  var jobTitleIdx = headers.indexOf('NordsonJobId');
+  var jobTitle = jobTitleIdx >= 0 ? String(row[jobTitleIdx] || '') : jobId;
+
+  // Update collaborators if provided
+  if (patch.collaborators !== undefined) {
+    var collabIdx = headers.indexOf('Collaborators');
+    if (collabIdx < 0) {
+      return jsonResponse_({ ok: false, error: 'Collaborators column not found in sheet' });
+    }
+
+    // Get old collaborators
+    var oldCollabRaw = String(row[collabIdx] || '').trim();
+    var oldCollabs = oldCollabRaw
+      ? oldCollabRaw.split(',').map(function(e) { return e.trim().toLowerCase(); }).filter(Boolean)
+      : [];
+
+    // Parse new collaborators
+    var newCollabStr = String(patch.collaborators || '').trim();
+    var newCollabs = newCollabStr
+      ? newCollabStr.split(',').map(function(e) { return e.trim(); }).filter(Boolean)
+      : [];
+
+    // Update the cell
+    sheet.getRange(rowIndex, collabIdx + 1).setValue(newCollabStr);
+    updated.push('collaborators');
+
+    // Find newly added collaborators (case-insensitive comparison)
+    var newCollabsLower = newCollabs.map(function(e) { return e.toLowerCase(); });
+    var addedCollabs = [];
+    for (var i = 0; i < newCollabs.length; i++) {
+      if (oldCollabs.indexOf(newCollabsLower[i]) < 0) {
+        addedCollabs.push(newCollabs[i]);
+      }
+    }
+
+    // Send ArtStart email to newly added collaborators
+    for (var j = 0; j < addedCollabs.length; j++) {
+      try {
+        sendCollaboratorArtStartEmail_(addedCollabs[j], jobId, jobTitle);
+      } catch (emailErr) {
+        Logger.log('Failed to send collaborator email to ' + addedCollabs[j] + ': ' + emailErr);
+      }
+    }
+  }
+
+  return jsonResponse_({ ok: true, updated: updated });
+}
+
+/**
+ * Resend ArtStart email to a specific collaborator.
+ */
+function handleResendArtStartInvite_(e) {
+  var payload;
+
+  // Parse JSON body
+  if (e.postData && e.postData.contents) {
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch (err) {
+      return jsonResponse_({ ok: false, error: 'Invalid JSON payload' });
+    }
+  } else {
+    payload = e.parameter || {};
+  }
+
+  var jobId = payload.jobId || '';
+  var email = payload.email || '';
+
+  if (!jobId) {
+    return jsonResponse_({ ok: false, error: 'Missing jobId' });
+  }
+  if (!email) {
+    return jsonResponse_({ ok: false, error: 'Missing email' });
+  }
+
+  // Find the project row to get job title
+  var info = findProjectRowByAscendJobId_(jobId);
+  if (!info) {
+    return jsonResponse_({ ok: false, error: 'Job not found: ' + jobId });
+  }
+
+  var headers = info.headers;
+  var row = info.row;
+  var jobTitleIdx = headers.indexOf('NordsonJobId');
+  var jobTitle = jobTitleIdx >= 0 ? String(row[jobTitleIdx] || '') : jobId;
+
+  try {
+    var result = sendCollaboratorArtStartEmail_(email, jobId, jobTitle);
+    return jsonResponse_({ ok: true, sent: true, to: email });
   } catch (err) {
     return jsonResponse_({ ok: false, error: String(err) });
   }
@@ -1681,6 +1842,123 @@ function sendArtStartEmail(jobId) {
   return { success: true, to: to, subject: subject };
 }
 
+/**
+ * Send the ArtStart email to a specific collaborator.
+ * Reuses the same email template as sendArtStartEmail but sends to the specified recipient.
+ * @param {string} recipientEmail - The collaborator's email address
+ * @param {string} jobId - The AscendJobId
+ * @param {string} jobTitle - The job title for the subject line
+ * @returns {Object} - { success: boolean, to: string, subject: string }
+ */
+function sendCollaboratorArtStartEmail_(recipientEmail, jobId, jobTitle) {
+  if (!recipientEmail) return { success: false, error: 'No recipient email' };
+  recipientEmail = String(recipientEmail).trim();
+  if (!recipientEmail || recipientEmail.indexOf('@') < 1) {
+    return { success: false, error: 'Invalid email address' };
+  }
+
+  const data = getJob(jobId);
+  const p = data.project;
+  if (!p) {
+    throw new Error('Project not found: ' + jobId);
+  }
+  const ms = data.mediaSpec || {};
+  const pub = data.publication || {};
+  const ad = data.adSchedule || {};
+  const ed = data.editorialContext || {};
+
+  function prettyDate(dateOrValue) {
+    if (!dateOrValue) return '';
+    if (Object.prototype.toString.call(dateOrValue) === '[object Date]') {
+      return Utilities.formatDate(dateOrValue, Session.getScriptTimeZone(), 'MMM d, yyyy');
+    }
+    try {
+      const d = new Date(dateOrValue);
+      if (!isNaN(d.getTime())) {
+        return Utilities.formatDate(d, Session.getScriptTimeZone(), 'MMM d, yyyy');
+      }
+    } catch (e) {}
+    return String(dateOrValue);
+  }
+
+  // Job kind & color/export label
+  const mediaType = ms.MediaType || '';
+  const jobKind = /print/i.test(mediaType) ? 'PRINT' : 'DIGITAL';
+  let colorExportSummary;
+  if (jobKind === 'PRINT') {
+    colorExportSummary = 'Working: RGB \u2192 Delivery: PDF/X-4 (CMYK handled by vendor RIP).';
+  } else {
+    colorExportSummary = 'Working: RGB \u2192 Delivery: Digital (no CMYK).';
+  }
+
+  // Required elements
+  const requiredItems = getRequiredElementsForJob_(p.DeliverableType || '', ms.MediaType || '');
+  const requiredNames = requiredItems
+    .map(function (item) { return item.ElementName || ''; })
+    .filter(function (s) { return s; });
+
+  // Requester info
+  let requesterName = '';
+  let requesterEmail = '';
+  if (p.CreatedByContactId) {
+    requesterEmail = String(p.CreatedByContactId).trim();
+  }
+
+  const ascendJobId = p.AscendJobId || jobId;
+  const effectiveJobTitle = jobTitle || p.NordsonJobId || '';
+  const campaignName = p.DeliverableType || (ed.EditorialTopic || '');
+
+  const trimSizePretty = ms.Width && ms.Height ? ms.Width + ' × ' + ms.Height : '';
+  const bleedPretty = ms.Bleed || '';
+
+  const artStartUrl = ARTSTART_FRONTEND_BASE_URL + '?jobId=' + encodeURIComponent(ascendJobId);
+
+  // Use same template as main ArtStart email
+  const template = HtmlService.createTemplateFromFile('artstart_email');
+  template.data = {
+    jobTitle: effectiveJobTitle,
+    campaignName: campaignName,
+    ascendJobId: ascendJobId,
+    nordsonJobCode: p.NordsonJobId || '',
+    createdDate: prettyDate(p.CreatedAt),
+    requesterName: requesterName || 'Unknown requester',
+    requesterEmail: requesterEmail || '',
+
+    publication: pub.Name || pub.BaseName || p.PublicationOrChannel || '',
+    placement: ms.SoldAs || '',
+    trimSizePretty: trimSizePretty,
+    bleedPretty: bleedPretty,
+    orientation: ms.Orientation || '',
+    colorExportSummary: colorExportSummary,
+    materialsDeadlinePretty: prettyDate(p.MaterialsDueDate),
+    runDatePretty: prettyDate(ad.PublicationDate),
+
+    requiredElements: requiredNames,
+
+    deliveryRecipientName: '',
+    deliveryRecipientEmail: '',
+    deliveryInstructions: '',
+    deliveryDeadlinePretty: '',
+
+    artStartUrl: artStartUrl,
+    artStartQrUrl: null
+  };
+
+  const htmlBody = template.evaluate().getContent();
+  const subject = '[ArtStart] ' + (effectiveJobTitle || campaignName || ascendJobId);
+
+  MailApp.sendEmail({
+    to: recipientEmail,
+    cc: OWNER_EMAIL,
+    subject: subject,
+    htmlBody: htmlBody,
+    name: 'Ascend Visualization Studio',
+    replyTo: SYSTEM_EMAIL
+  });
+
+  return { success: true, to: recipientEmail, subject: subject };
+}
+
 // ---------- Minimal JSON endpoint for front-end ----------
 
 function listPublications_() {
@@ -2202,6 +2480,14 @@ function doPost(e) {
     } catch (err2) {
       return jsonResponse_({ success: false, error: String(err2) });
     }
+  }
+
+  if (action === 'updateJobMeta') {
+    return handleUpdateJobMeta_(e);
+  }
+
+  if (action === 'resendArtStartInvite') {
+    return handleResendArtStartInvite_(e);
   }
 
   // Fallback for unknown POST actions
