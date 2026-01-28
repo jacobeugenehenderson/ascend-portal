@@ -537,11 +537,20 @@ body.ascend-app-body {
     gap: 12px;
   }
 
-  .ascend-app-form .intake-right-column .ascend-app-primary-btn {
+  .ascend-app-form .intake-submit-frame {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(236, 72, 153, 0.5);
+    border-radius: var(--ascend-control-radius);
+    padding: 12px;
+  }
+
+  .ascend-app-form .intake-submit-frame .ascend-app-primary-btn {
     margin-top: 0 !important;
-    width: 100% !important;
-    align-self: stretch !important;
-    padding: 9px 20px !important;
+    width: auto;
+    align-self: auto;
   }
 }
 
