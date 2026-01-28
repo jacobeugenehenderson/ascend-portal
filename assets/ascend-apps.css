@@ -519,10 +519,12 @@ body.ascend-app-body {
 @media (min-width: 900px) {
   .notes-block--left {
     grid-row: span 2;
+    display: flex;
+    flex-direction: column;
   }
 
   .notes-block--left textarea {
-    height: 100%;
+    flex: 1;
     min-height: 140px;
   }
 
@@ -534,7 +536,7 @@ body.ascend-app-body {
 
   .intake-right-column .ascend-app-primary-btn {
     margin-top: auto;
-    align-self: flex-end;
+    width: 100%;
   }
 }
 
