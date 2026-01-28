@@ -550,7 +550,7 @@ body.ascend-app-body {
     border: 1px dashed rgba(236, 72, 153, 0.5);
     border-radius: var(--ascend-control-radius);
     padding: 12px;
-    background: linear-gradient(135deg, rgba(79, 209, 197, 0.06), rgba(45, 122, 123, 0.08));
+    background: linear-gradient(135deg, rgba(147, 112, 158, 0.08), rgba(120, 90, 140, 0.12));
   }
 
   .ascend-app-form .intake-submit-frame .ascend-app-primary-btn {
