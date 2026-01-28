@@ -108,57 +108,6 @@
         }
       }
 
-      /* Canvas preview (graphic only) */
-      .canvas-wrapper {
-        margin-top: 10px;
-      }
-
-      .canvas-frame {
-        border-radius: 10px;
-        border: 1px solid #d1d5db;
-        background-image:
-          linear-gradient(to right, rgba(148,163,184,.35) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(148,163,184,.35) 1px, transparent 1px),
-          linear-gradient(to right, rgba(148,163,184,.15) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(148,163,184,.15) 1px, transparent 1px);
-        background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
-        padding: 14px;
-      }
-
-      .canvas-outer {
-        width: 100%;
-        max-width: 440px;
-        margin: 0 auto;
-        padding-top: 62.5%; /* 16:10-ish aspect for email preview */
-        position: relative;
-      }
-
-      .canvas-bleed {
-        position: absolute;
-        inset: 0;
-        border: 2px dashed rgba(79, 209, 197, 0.9);
-        background-color: rgba(79, 209, 197, 0.06);
-        box-sizing: border-box;
-      }
-
-      .canvas-safe {
-        position: absolute;
-        inset: 6%;
-        border: 1px solid rgba(15, 23, 42, 0.25);
-        background-color: #ffffff;
-        box-sizing: border-box;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
-      }
-
-      /* Digital mode: no bleed, full canvas safe area
-         (backend can choose to toggle a data attribute if desired) */
-
-      .canvas-caption {
-        margin: 6px 0 0;
-        font-size: 11px;
-        color: #6b7280;
-      }
-
       /* Button */
       .button-row {
         margin-top: 12px;
@@ -262,7 +211,7 @@
                   <?= data.trimSizePretty ?>
                 </p>
               <? } ?>
-              <? if (data.bleedPretty) { ?>
+              <? if (data.bleedPretty && data.jobKind !== 'DIGITAL') { ?>
                 <p>
                   <span class="label">Bleed:</span>
                   <?= data.bleedPretty ?>
@@ -289,19 +238,6 @@
             </div>
           </div>
 
-          <!-- Static graphic preview: format-only, no job text -->
-          <div class="canvas-wrapper">
-            <div class="canvas-frame">
-              <div class="canvas-outer">
-                <div class="canvas-bleed">
-                  <div class="canvas-safe"></div>
-                </div>
-              </div>
-            </div>
-            <p class="canvas-caption">
-              Canvas preview reflects size &amp; format only. Final layout will be built in design tools.
-            </p>
-          </div>
         </div>
 
         <!-- Notes -->
@@ -321,7 +257,7 @@
             Use the ArtStart workspace to collaborate on this job and prepare working content before final layout.
           </p>
           <div class="button-row">
-            <a href="<?= data.artStartUrl ?>" class="btn-primary">Open this job in ArtStart</a>
+            <a href="<?= data.artStartUrl ?>" class="btn-primary" style="color: #ffffff !important;">Open this job in ArtStart</a>
           </div>
         </div>
 

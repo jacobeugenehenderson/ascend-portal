@@ -1719,6 +1719,63 @@ function escapeHtml_(str) {
     .replace(/>/g, '&gt;');
 }
 
+/**
+ * Generate HTML table canvas preview for email.
+ * @param {number} trimW - Trim width (job dimensions)
+ * @param {number} trimH - Trim height (job dimensions)
+ * @param {string} jobKind - 'PRINT' or 'DIGITAL'
+ * @param {number} bleed - Bleed amount (same units as trim, optional)
+ * @returns {string} HTML table markup
+ */
+function generateCanvasPreviewSvg_(trimW, trimH, jobKind, bleed) {
+  trimW = trimW || 1;
+  trimH = trimH || 1;
+  bleed = bleed || 0;
+  var isPrint = (jobKind !== 'DIGITAL');
+
+  // For print, total size includes bleed on all sides
+  var totalW = isPrint ? trimW + (bleed * 2) : trimW;
+  var totalH = isPrint ? trimH + (bleed * 2) : trimH;
+
+  // Scale to display width of 400px
+  var displayWidth = 400;
+  var scale = displayWidth / totalW;
+  var displayHeight = Math.round(totalH * scale);
+
+  // Clamp height
+  if (displayHeight < 100) displayHeight = 100;
+  if (displayHeight > 800) displayHeight = 800;
+
+  // Bleed inset in display pixels
+  var bleedPx = isPrint ? Math.round(bleed * scale) : 0;
+  var safeW = displayWidth - (bleedPx * 2);
+  var safeH = displayHeight - (bleedPx * 2);
+
+  // Build HTML table
+  var html = '';
+  html += '<table cellpadding="0" cellspacing="0" border="0" width="' + displayWidth + '" height="' + displayHeight + '" style="margin: 0 auto; border-radius: 8px; overflow: hidden; border: 1px solid #d1d5db; background-color: #f1f5f9;">';
+  html += '<tr><td align="center" valign="middle" style="padding: 0;">';
+
+  if (isPrint && bleedPx > 0) {
+    // Bleed zone (teal background)
+    html += '<table cellpadding="0" cellspacing="0" border="0" width="100%" height="100%" style="background-color: #cffafe;">';
+    html += '<tr><td align="center" valign="middle" style="padding: ' + bleedPx + 'px;">';
+  }
+
+  // Safe/canvas area (white with pink border)
+  html += '<table cellpadding="0" cellspacing="0" border="0" width="' + safeW + '" height="' + safeH + '" style="background-color: #ffffff; border: 2px dashed #ec4899;">';
+  html += '<tr><td>&nbsp;</td></tr>';
+  html += '</table>';
+
+  if (isPrint && bleedPx > 0) {
+    html += '</td></tr></table>';
+  }
+
+  html += '</td></tr></table>';
+
+  return html;
+}
+
 // ---------- Core: sendArtStartEmail ----------
 
 /**
@@ -1787,6 +1844,20 @@ function sendArtStartEmail(jobId) {
       ms.Width && ms.Height ? ms.Width + ' × ' + ms.Height : '';
   const bleedPretty = ms.Bleed || '';
 
+  // Parse canvas dimensions for aspect ratio in email preview
+  // Width/Height may be "7.00in", "300px", or plain numbers
+  function parseDimension(val) {
+    if (!val) return 0;
+    const num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+    return isFinite(num) ? num : 0;
+  }
+  const canvasWidth = parseDimension(ms.Width);
+  const canvasHeight = parseDimension(ms.Height);
+  const canvasBleed = parseDimension(ms.Bleed);
+
+  // Generate HTML table canvas preview
+  const canvasPreviewSvg = generateCanvasPreviewSvg_(canvasWidth, canvasHeight, jobKind, canvasBleed);
+
   const artStartUrl = ARTSTART_FRONTEND_BASE_URL + '?jobId=' + encodeURIComponent(ascendJobId);
 
   // Template lives as a file named "artstart_email.html" in the Apps Script project
@@ -1808,6 +1879,12 @@ function sendArtStartEmail(jobId) {
     colorExportSummary: colorExportSummary,
     materialsDeadlinePretty: prettyDate(p.MaterialsDueDate),
     runDatePretty: prettyDate(ad.PublicationDate),
+
+    // Canvas preview data
+    jobKind: jobKind,
+    canvasWidth: canvasWidth,
+    canvasHeight: canvasHeight,
+    canvasPreviewSvg: canvasPreviewSvg,
 
     requiredElements: requiredNames,
 
@@ -1911,6 +1988,19 @@ function sendCollaboratorArtStartEmail_(recipientEmail, jobId, jobTitle) {
   const trimSizePretty = ms.Width && ms.Height ? ms.Width + ' × ' + ms.Height : '';
   const bleedPretty = ms.Bleed || '';
 
+  // Parse canvas dimensions for aspect ratio in email preview
+  function parseDimension(val) {
+    if (!val) return 0;
+    const num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+    return isFinite(num) ? num : 0;
+  }
+  const canvasWidth = parseDimension(ms.Width);
+  const canvasHeight = parseDimension(ms.Height);
+  const canvasBleed = parseDimension(ms.Bleed);
+
+  // Generate HTML table canvas preview
+  const canvasPreviewSvg = generateCanvasPreviewSvg_(canvasWidth, canvasHeight, jobKind, canvasBleed);
+
   const artStartUrl = ARTSTART_FRONTEND_BASE_URL + '?jobId=' + encodeURIComponent(ascendJobId);
 
   // Use same template as main ArtStart email
@@ -1932,6 +2022,12 @@ function sendCollaboratorArtStartEmail_(recipientEmail, jobId, jobTitle) {
     colorExportSummary: colorExportSummary,
     materialsDeadlinePretty: prettyDate(p.MaterialsDueDate),
     runDatePretty: prettyDate(ad.PublicationDate),
+
+    // Canvas preview data
+    jobKind: jobKind,
+    canvasWidth: canvasWidth,
+    canvasHeight: canvasHeight,
+    canvasPreviewSvg: canvasPreviewSvg,
 
     requiredElements: requiredNames,
 
