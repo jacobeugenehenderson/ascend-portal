@@ -538,9 +538,11 @@ body.ascend-app-body {
   }
 
   .ascend-app-form .intake-right-column .ascend-app-primary-btn {
-    margin-top: auto;
+    margin-top: 0;
     width: 100%;
     align-self: stretch;
+    padding-top: 9px;
+    padding-bottom: 9px;
   }
 }
 
