@@ -517,15 +517,15 @@ body.ascend-app-body {
 
 /* Intake form: Notes on left spanning full height, Collaborators + Button on right */
 @media (min-width: 900px) {
-  .ascend-app-form .notes-block--left {
+  .ascend-app-form .notes-block.notes-block--left {
     grid-row: span 2;
     display: flex;
     flex-direction: column;
   }
 
-  .ascend-app-form .notes-block--left textarea {
+  .ascend-app-form .notes-block.notes-block--left textarea {
     flex: 1 1 auto;
-    height: auto;
+    height: auto !important;
     min-height: 140px;
   }
 
