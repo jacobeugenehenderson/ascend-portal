@@ -529,6 +529,7 @@ body.ascend-app-body {
     flex: 1 1 0;
     height: 0 !important;
     min-height: 100px;
+    resize: none;
   }
 
   .ascend-app-form .intake-right-column {
