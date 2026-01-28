@@ -170,6 +170,9 @@
             <? if (data.nordsonJobCode) { ?>&nbsp;•&nbsp;<? } ?>
             <span class="label">Created:</span> <?= data.createdDate ?>
           <? } ?>
+          <? if (data.sentDate) { ?>
+            &nbsp;•&nbsp;<span class="label">Sent:</span> <?= data.sentDate ?>
+          <? } ?>
         </p>
 
         <? if (data.requesterName || data.requesterEmail) { ?>

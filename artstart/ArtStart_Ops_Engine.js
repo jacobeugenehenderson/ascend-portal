@@ -1868,7 +1868,8 @@ function sendArtStartEmail(jobId) {
     ascendJobId: ascendJobId,
     nordsonJobCode: p.NordsonJobId || '',
     createdDate: prettyDate(p.CreatedAt),
-    requesterName: requesterName || 'Unknown requester',
+    sentDate: prettyDate(new Date()),
+    requesterName: requesterName || '',
     requesterEmail: requesterEmail || '',
 
     publication: pub.Name || pub.BaseName || p.PublicationOrChannel || '',
@@ -2011,7 +2012,8 @@ function sendCollaboratorArtStartEmail_(recipientEmail, jobId, jobTitle) {
     ascendJobId: ascendJobId,
     nordsonJobCode: p.NordsonJobId || '',
     createdDate: prettyDate(p.CreatedAt),
-    requesterName: requesterName || 'Unknown requester',
+    sentDate: prettyDate(new Date()),
+    requesterName: requesterName || '',
     requesterEmail: requesterEmail || '',
 
     publication: pub.Name || pub.BaseName || p.PublicationOrChannel || '',
