@@ -1899,15 +1899,6 @@ function autoscaleCanvasBands() {
     var deadlineEl = document.getElementById('job-overview-deadline');
     if (deadlineEl) deadlineEl.textContent = materials || '—';
 
-    // Editorial notes + intake notes
-    var topicEl = document.getElementById('job-overview-topic');
-    if (topicEl) {
-      topicEl.textContent =
-        job.topic ||
-        job.editorialNotes ||
-        '—';
-    }
-
     // Notes field: seed from intake notes if workingNotes is empty, otherwise use workingNotes
     var notesEl = document.getElementById('working-notes');
     if (notesEl) {

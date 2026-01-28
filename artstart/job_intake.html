@@ -63,11 +63,6 @@
       </label>
 
       <label class="notes-block">
-        Topic / Editorial Notes
-        <textarea id="topic"></textarea>
-      </label>
-
-      <label class="notes-block">
         Collaborators (comma-separated emails, optional)
         <input type="text" id="collaborators" placeholder="colleague@example.com, designer@example.com">
       </label>
@@ -125,7 +120,6 @@ const deliverableSelect = document.getElementById('deliverableType');
 const mediaSpecIdInput  = document.getElementById('mediaSpecId');
 const mediaSpecPreview  = document.getElementById('mediaSpecPreview');
 const runDateInput      = document.getElementById('runDate');
-const topicEl           = document.getElementById('topic');
 const notesEl           = document.getElementById('notes');
 
     let ascendPublications = [];
@@ -189,7 +183,7 @@ const notesEl           = document.getElementById('notes');
 
     // Look up editorial schedule text for this job
     function maybeFetchEditorialTopic() {
-      if (!publicationSelect || !runDateInput || !topicEl) return;
+      if (!publicationSelect || !runDateInput || !notesEl) return;
 
       const pubId   = publicationSelect.value;
       const runDate = runDateInput.value;
@@ -206,26 +200,29 @@ const notesEl           = document.getElementById('notes');
 
       window[callbackName] = function (data) {
         try {
-          if (!topicEl && !notesEl) return;
+          if (!notesEl) return;
 
           const topicText =
             data && typeof data.topicText === 'string' ? data.topicText : '';
           const showContext =
             data && typeof data.showContext === 'string' ? data.showContext : '';
 
-          // Always overwrite Topic / Editorial Notes with the latest helper text.
-          if (topicEl) {
-            topicEl.value = topicText;
+          // Build consolidated notes from editorial schedule data
+          const parts = [];
+          if (topicText) {
+            parts.push('Editorial: ' + topicText);
+          }
+          if (showContext) {
+            parts.push('Show context: ' + showContext);
           }
 
-          // Also surface Show Context in the Notes field, appended to whatever spec notes exist.
-          if (notesEl && showContext) {
-            const baseNotes = (notesEl.value || '').trim();
-            if (baseNotes) {
-              notesEl.value = baseNotes + '\n\nShow context: ' + showContext;
-            } else {
-              notesEl.value = 'Show context: ' + showContext;
-            }
+          // Prepend editorial content to any existing spec notes
+          const baseNotes = (notesEl.value || '').trim();
+          if (parts.length > 0) {
+            const editorialContent = parts.join('\n\n');
+            notesEl.value = baseNotes
+              ? editorialContent + '\n\n' + baseNotes
+              : editorialContent;
           }
         } catch (err) {
           console.error('Error in editorial topic callback', err);
@@ -443,7 +440,6 @@ const notesEl           = document.getElementById('notes');
         materialsDueDate: (document.getElementById('materialsDueDate') || { value: '' }).value || '',
         runDate: (document.getElementById('runDate') || { value: '' }).value || '',
         mediaSpecId: (document.getElementById('mediaSpecId') || { value: '' }).value.trim(),
-        topic: (document.getElementById('topic') || { value: '' }).value.trim(),
         notes: (document.getElementById('notes') || { value: '' }).value.trim(),
         collaborators: collaborators,
         requestedByEmail: requesterEmail,
