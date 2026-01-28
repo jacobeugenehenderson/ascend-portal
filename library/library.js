@@ -2084,7 +2084,7 @@
 
   // API URLs for job systems
   const JOB_API_URLS = {
-    artstart: 'https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec',
+    artstart: 'https://script.google.com/macros/s/AKfycbwMEAKtnijh5H4JTaPC7Wz75pwAkzHmEH2l9HoCUNLSza-EhyD4xS1sHudV0SpUxIY70A/exec',
     copydesk: 'https://script.google.com/macros/s/AKfycbwW7nb_iJiZJBKeUIQtpp_GOY4tnLQidefDyOHqZDpQkfMympH2Ip4kvgv8bE1or9O9/exec',
     fileroom: 'https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec'
   };

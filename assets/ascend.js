@@ -82,7 +82,7 @@
   
   // ArtStart API base – same as art_start.js
   const ARTSTART_API_BASE =
-    "https://script.google.com/macros/s/AKfycbw12g89k3qX8DywVn2rrGV2RZxgyS86QrLiqiUP9198J-HJaA7XUfLIoteCtXBEQIPxOQ/exec";
+    "https://script.google.com/macros/s/AKfycbwMEAKtnijh5H4JTaPC7Wz75pwAkzHmEH2l9HoCUNLSza-EhyD4xS1sHudV0SpUxIY70A/exec";
 
   // Copydesk API (hopper parity)
   const COPYDESK_API_BASE =
