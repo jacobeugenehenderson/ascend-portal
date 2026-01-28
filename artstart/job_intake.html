@@ -62,19 +62,21 @@
         <input type="date" id="runDate">
       </label>
 
-      <label class="notes-block">
-        Collaborators (comma-separated emails, optional)
-        <input type="text" id="collaborators" placeholder="colleague@example.com, designer@example.com">
-      </label>
-
-      <label class="notes-block">
+      <label class="notes-block notes-block--left">
         Notes
         <textarea id="notes"></textarea>
       </label>
 
-      <button type="submit" id="submit-btn" class="ascend-app-primary-btn">
-        Create job &amp; send ArtStart
-      </button>
+      <div class="intake-right-column">
+        <label class="notes-block">
+          Collaborators (comma-separated emails, optional)
+          <input type="text" id="collaborators" placeholder="colleague@example.com, designer@example.com">
+        </label>
+
+        <button type="submit" id="submit-btn" class="ascend-app-primary-btn">
+          Create job &amp; send ArtStart
+        </button>
+      </div>
     </form>
 
     <div class="status" id="status"></div>
