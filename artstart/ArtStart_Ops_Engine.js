@@ -2355,6 +2355,16 @@ function doGet(e) {
     }
   }
 
+  // Admin: Add Collaborators column (run once)
+  if (action === 'addCollaboratorsColumn') {
+    try {
+      var result = addCollaboratorsColumn();
+      return jsonResponse_(result, callback);
+    } catch (err) {
+      return jsonResponse_({ success: false, error: String(err) }, callback);
+    }
+  }
+
   // Dave triggers this after creating local files
   if (action === 'sendArtStartEmail') {
     try {
@@ -2498,4 +2508,27 @@ function testSendArtStartEmail() {
   var jobId = 'ASC-2025-12-07-014'; // <-- Replace with a real AscendJobId in your sheet
   var result = sendArtStartEmail(jobId);
   Logger.log(JSON.stringify(result, null, 2));
+}
+
+/**
+ * One-time utility: Add Collaborators column to Projects sheet if it doesn't exist.
+ * Run this function manually from the Apps Script editor.
+ */
+function addCollaboratorsColumn() {
+  var sheet = getSheet_(SHEET_NAME_PROJECTS);
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  // Check if Collaborators column already exists
+  var existingIdx = headers.indexOf('Collaborators');
+  if (existingIdx >= 0) {
+    Logger.log('Collaborators column already exists at column ' + (existingIdx + 1));
+    return { success: true, message: 'Column already exists', column: existingIdx + 1 };
+  }
+
+  // Add new column at the end
+  var newColIdx = sheet.getLastColumn() + 1;
+  sheet.getRange(1, newColIdx).setValue('Collaborators');
+
+  Logger.log('Added Collaborators column at column ' + newColIdx);
+  return { success: true, message: 'Column added', column: newColIdx };
 }

@@ -9,7 +9,7 @@
 // Allow hard override from window if ascend.js (or console) sets it.
 var ARTSTART_ENABLE_DAVE_STATUS = (window.ARTSTART_ENABLE_DAVE_STATUS === true) ? true : false;
 
-var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbz4KOyyRgGhIiy8e_vI6OBohfxaVgPvAk3A8QyfpkSTlxmqAVjrLq_m9fu2MkOMMjExow/exec';
+var ARTSTART_API_BASE = window.ARTSTART_API_BASE || 'https://script.google.com/macros/s/AKfycbwMEAKtnijh5H4JTaPC7Wz75pwAkzHmEH2l9HoCUNLSza-EhyD4xS1sHudV0SpUxIY70A/exec';
 
 function getJobIdFromQuery() {
   var params = new URLSearchParams(window.location.search || '');
