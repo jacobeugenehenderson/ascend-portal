@@ -353,12 +353,10 @@
   border-radius: 4px;
   cursor: pointer;
   pointer-events: auto;
-  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .ascend-calendar-show-stripe:hover {
   opacity: 0.85;
-  transform: scaleX(1.1);
 }
 
 /* Vertical stripe (week view) - continuous bar spanning multiple rows */
@@ -376,7 +374,6 @@
 
 .ascend-calendar-show-stripe--deadline:hover {
   background: rgba(123, 156, 214, 0.22) !important;
-  transform: scaleX(1.15);
 }
 
 /* Horizontal stripe (month view) - continuous bar spanning multiple cells */
