@@ -2119,6 +2119,16 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
   window.AscendDebug = window.AscendDebug || {};
   window.AscendDebug.requestArtStartJobs = requestArtStartJobs;
   window.AscendDebug.requestCopydeskJobs = requestCopydeskJobs;
+
+  // Expose APIs and helpers for calendar.js
+  window.AscendConfig = {
+    ARTSTART_API_BASE: ARTSTART_API_BASE,
+    COPYDESK_API_BASE: COPYDESK_API_BASE,
+    ARTSTART_JOB_URL: ARTSTART_JOB_URL,
+    COPYDESK_JOB_URL: COPYDESK_JOB_URL,
+    buildUrlWithUser: buildUrlWithUser,
+    loadSession: loadSession
+  };
   window.AscendDebug.requestFileRoomOutput = requestFileRoomOutput;
   window.AscendDebug.requestCodeDeskTemplates = requestCodeDeskTemplates;
   window.AscendDebug.requestAndRenderTrash = requestAndRenderTrash;

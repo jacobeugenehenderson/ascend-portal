@@ -72,14 +72,180 @@
 
   /**
    * Fetch ArtStart and Copydesk jobs, combine into calendarData.
-   * Each item has: { type, title, date, jobKey, meta }
+   * Each item has: { type, title, date, jobKey, meta, openUrl }
    */
   async function fetchCalendarData() {
-    // TODO: Integrate with existing JSONP calls or refactor to fetch here
-    // For now, use placeholder data to scaffold the UI
+    const config = window.AscendConfig;
+    if (!config) {
+      console.warn("[Calendar] AscendConfig not available, using placeholder data");
+      calendarData = getPlaceholderData();
+      return;
+    }
 
-    calendarData = getPlaceholderData();
+    const session = config.loadSession();
+    if (!session || !session.userEmail) {
+      console.warn("[Calendar] No session, using placeholder data");
+      calendarData = getPlaceholderData();
+      return;
+    }
+
+    // Fetch both in parallel
+    const [artStartJobs, copydeskJobs] = await Promise.all([
+      fetchArtStartJobs(config, session.userEmail),
+      fetchCopydeskJobs(config, session.userEmail)
+    ]);
+
+    // Combine and sort by date
+    calendarData = [...artStartJobs, ...copydeskJobs].sort((a, b) => a.date - b.date);
+
     console.log("[Calendar] Fetched data:", calendarData.length, "items");
+  }
+
+  function fetchArtStartJobs(config, userEmail) {
+    return new Promise((resolve) => {
+      const callbackName = "ascendCalendarArtStartCallback_" + Date.now();
+
+      window[callbackName] = function (payload) {
+        try {
+          const jobs = payload && payload.jobs ? payload.jobs : [];
+          const items = [];
+
+          for (const job of jobs) {
+            if (!job.MaterialsDueDate) continue;
+
+            const date = parseDate(job.MaterialsDueDate);
+            if (!date) continue;
+
+            const title = job.NordsonJobId || job.AscendJobId || "Untitled";
+            const subtitle = [job.PublicationName, job.DeliverableType]
+              .filter(Boolean)
+              .join(" · ");
+
+            const openUrlRaw = config.ARTSTART_JOB_URL + "?jobid=" + encodeURIComponent(job.AscendJobId || "");
+            const openUrl = config.buildUrlWithUser(openUrlRaw);
+
+            items.push({
+              type: "artstart",
+              title: title,
+              subtitle: subtitle,
+              date: date,
+              jobKey: job.AscendJobId || "",
+              meta: "Materials due",
+              openUrl: openUrl
+            });
+          }
+
+          resolve(items);
+        } catch (e) {
+          console.warn("[Calendar] Error parsing ArtStart jobs:", e);
+          resolve([]);
+        } finally {
+          delete window[callbackName];
+        }
+      };
+
+      const url = new URL(config.ARTSTART_API_BASE);
+      url.searchParams.set("action", "listArtStartJobsForUser");
+      url.searchParams.set("user_email", userEmail);
+      url.searchParams.set("limit", "100");
+      url.searchParams.set("callback", callbackName);
+
+      const script = document.createElement("script");
+      script.src = url.toString();
+      script.async = true;
+      script.onerror = () => {
+        console.warn("[Calendar] Failed to load ArtStart jobs");
+        delete window[callbackName];
+        resolve([]);
+      };
+      document.body.appendChild(script);
+    });
+  }
+
+  function fetchCopydeskJobs(config, userEmail) {
+    return new Promise((resolve) => {
+      const callbackName = "ascendCalendarCopydeskCallback_" + Date.now();
+
+      window[callbackName] = function (payload) {
+        try {
+          const jobs = payload && payload.jobs ? payload.jobs : [];
+          const items = [];
+
+          for (const job of jobs) {
+            if (!job.Cutoff) continue;
+
+            const date = parseDate(job.Cutoff);
+            if (!date) continue;
+
+            const title = job.JobName || job.Name || job.Title || job.DocumentName || "Untitled";
+            const subtitle = [job.PublicationName, job.SoldAs]
+              .filter(Boolean)
+              .join(" · ");
+
+            const openUrlRaw = config.COPYDESK_JOB_URL + "?jobid=" + encodeURIComponent(job.JobId || "");
+            const openUrl = config.buildUrlWithUser(openUrlRaw);
+
+            items.push({
+              type: "copydesk",
+              title: title,
+              subtitle: subtitle,
+              date: date,
+              jobKey: job.JobId || "",
+              meta: "Cutoff",
+              openUrl: openUrl
+            });
+          }
+
+          resolve(items);
+        } catch (e) {
+          console.warn("[Calendar] Error parsing Copydesk jobs:", e);
+          resolve([]);
+        } finally {
+          delete window[callbackName];
+        }
+      };
+
+      const url = new URL(config.COPYDESK_API_BASE);
+      url.searchParams.set("action", "listCopydeskJobsForUser");
+      url.searchParams.set("user_email", userEmail);
+      url.searchParams.set("limit", "100");
+      url.searchParams.set("callback", callbackName);
+
+      const script = document.createElement("script");
+      script.src = url.toString();
+      script.async = true;
+      script.onerror = () => {
+        console.warn("[Calendar] Failed to load Copydesk jobs");
+        delete window[callbackName];
+        resolve([]);
+      };
+      document.body.appendChild(script);
+    });
+  }
+
+  /**
+   * Parse various date formats into a Date object.
+   * Handles: "2026-01-28", "1/28/2026", "Jan 28, 2026", ISO strings, etc.
+   */
+  function parseDate(val) {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+
+    // Try direct parse
+    let d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      // Normalize to midnight local time
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    // Try MM/DD/YYYY
+    const slashMatch = String(val).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slashMatch) {
+      d = new Date(parseInt(slashMatch[3]), parseInt(slashMatch[1]) - 1, parseInt(slashMatch[2]));
+      if (!isNaN(d.getTime())) return d;
+    }
+
+    return null;
   }
 
   function getPlaceholderData() {
@@ -95,43 +261,53 @@
         items.push({
           type: "artstart",
           title: "Spring Campaign Hero Banner",
+          subtitle: "Print · Full Page",
           date: new Date(d),
           jobKey: "AS-001",
           meta: "Materials due",
+          openUrl: "#"
         });
       }
       if (i === 1) {
         items.push({
           type: "copydesk",
           title: "Product Launch Press Release",
+          subtitle: "PR · English",
           date: new Date(d),
           jobKey: "CD-042",
           meta: "Cutoff",
+          openUrl: "#"
         });
       }
       if (i === 3) {
         items.push({
           type: "artstart",
           title: "Trade Show Booth Graphics",
+          subtitle: "Event · Booth",
           date: new Date(d),
           jobKey: "AS-002",
           meta: "Materials due",
+          openUrl: "#"
         });
         items.push({
           type: "copydesk",
           title: "Q2 Newsletter Copy",
+          subtitle: "Newsletter · Multi-language",
           date: new Date(d),
           jobKey: "CD-043",
           meta: "Cutoff",
+          openUrl: "#"
         });
       }
       if (i === 5) {
         items.push({
           type: "artstart",
           title: "Social Media Ad Set",
+          subtitle: "Digital · Social",
           date: new Date(d),
           jobKey: "AS-003",
           meta: "Materials due",
+          openUrl: "#"
         });
       }
     }
@@ -244,7 +420,7 @@
 
   function renderWeekItem(item) {
     return `
-      <div class="ascend-calendar-item" data-calendar-item="${item.jobKey}">
+      <div class="ascend-calendar-item" data-calendar-item="${escapeAttr(item.jobKey)}">
         <span class="ascend-calendar-item-badge ascend-calendar-item-badge--${item.type}">${item.type === "artstart" ? "Art" : "Copy"}</span>
         <span class="ascend-calendar-item-title">${escapeHtml(item.title)}</span>
         <span class="ascend-calendar-item-meta">${escapeHtml(item.meta)}</span>
@@ -288,7 +464,7 @@
         <div class="ascend-calendar-month-cell ${isOutside ? "ascend-calendar-month-cell--outside" : ""} ${isToday ? "ascend-calendar-month-cell--today" : ""}">
           <div class="ascend-calendar-month-date">${isOutside ? "" : dayNum}</div>
           <div class="ascend-calendar-month-dots">
-            ${dayItems.map((item) => `<div class="ascend-calendar-month-dot ascend-calendar-month-dot--${item.type}"></div>`).join("")}
+            ${dayItems.map((item) => `<div class="ascend-calendar-month-dot ascend-calendar-month-dot--${item.type}" title="${escapeAttr(item.title)}"></div>`).join("")}
           </div>
         </div>
       `;
@@ -320,7 +496,10 @@
   // ---- Item Interaction ----
 
   function handleItemClick(jobKey) {
-    // TODO: Open the job in appropriate app (ArtStart or Copydesk)
+    const item = calendarData.find((i) => i.jobKey === jobKey);
+    if (item && item.openUrl) {
+      window.open(item.openUrl, "_blank", "noopener");
+    }
     console.log("[Calendar] Item clicked:", jobKey);
   }
 
@@ -343,6 +522,15 @@
     const div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 
   // ---- Expose init ----
