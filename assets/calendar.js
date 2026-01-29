@@ -900,7 +900,7 @@
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal"
              data-show-id="${escapeAttr(show.showId)}"
-             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topPct}% + 2px); background: ${gradient};"
+             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topPct}% + 1px); background: ${gradient};"
              title="${escapeAttr(title)}">
         </div>
       `;
@@ -945,7 +945,7 @@
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal ascend-calendar-show-stripe--deadline"
              data-deadline-range="${escapeAttr(range.showId + '-' + range.title)}"
-             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topPct}% + 2px);"
+             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topPct}% + 1px);"
              title="${escapeAttr(title)}">
         </div>
       `;
