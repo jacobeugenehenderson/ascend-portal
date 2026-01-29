@@ -10,6 +10,7 @@ const SHEET_NAME_PUBLICATIONS = 'Publications';
 const SHEET_NAME_EDITORIAL = 'EditorialSchedule';
 const SHEET_NAME_CONTACTS = 'Contacts';
 const SHEET_NAME_REQUIRED_ELEMENTS = 'RequiredElements';
+const SHEET_NAME_SHOWS = 'Shows';
 
 // ---------- Translation (ArtStart workspace) ----------
 // Keep this list small + explicit. Update whenever corp language support changes.
@@ -1513,6 +1514,44 @@ function listArtStartJobsForUser_(userEmail, limit) {
   return filtered;
 }
 
+// ---------- Shows (trade shows, events with date spans) ----------
+
+function listShows_(limit) {
+  var max = limit && limit > 0 ? limit : 100;
+
+  try {
+    var sheet = getSheet_(SHEET_NAME_SHOWS);
+  } catch (e) {
+    // Sheet doesn't exist yet
+    return [];
+  }
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+
+  var headers = data[0];
+  var shows = [];
+
+  for (var i = 1; i < data.length && shows.length < max; i++) {
+    var row = data[i];
+    var obj = {};
+
+    for (var j = 0; j < headers.length; j++) {
+      var key = String(headers[j]).trim();
+      if (key) {
+        obj[key] = row[j];
+      }
+    }
+
+    // Skip rows without a ShowId
+    if (!obj.ShowId) continue;
+
+    shows.push(obj);
+  }
+
+  return shows;
+}
+
 // ---------- Core: buildArtStartEmail ----------
 
 /**
@@ -2542,6 +2581,16 @@ function doGet(e) {
       }, callback);
     } catch (err3) {
       return jsonResponse_({ success: false, error: String(err3) }, callback);
+    }
+  }
+
+  if (action === 'listShows') {
+    try {
+      var limitShows = e.parameter.limit ? parseInt(e.parameter.limit, 10) : 100;
+      var shows = listShows_(limitShows);
+      return jsonResponse_({ shows: shows }, callback);
+    } catch (errShows) {
+      return jsonResponse_({ success: false, error: String(errShows) }, callback);
     }
   }
 

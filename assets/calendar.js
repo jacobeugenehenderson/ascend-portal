@@ -8,7 +8,8 @@
   // ---- State ----
   let currentView = "week"; // "week" | "month"
   let currentDate = new Date(); // The reference date for navigation
-  let calendarData = []; // Combined ArtStart + Copydesk items
+  let calendarData = []; // Combined ArtStart + Copydesk items (single-date deadlines)
+  let showsData = []; // Shows with date spans (ShowStartDate → ShowEndDate)
 
   // ---- DOM References ----
   let panelEl = null;
@@ -89,16 +90,18 @@
       return;
     }
 
-    // Fetch both in parallel
-    const [artStartJobs, copydeskJobs] = await Promise.all([
+    // Fetch all in parallel
+    const [artStartJobs, copydeskJobs, shows] = await Promise.all([
       fetchArtStartJobs(config, session.userEmail),
-      fetchCopydeskJobs(config, session.userEmail)
+      fetchCopydeskJobs(config, session.userEmail),
+      fetchShows(config)
     ]);
 
-    // Combine and sort by date
+    // Combine jobs and sort by date
     calendarData = [...artStartJobs, ...copydeskJobs].sort((a, b) => a.date - b.date);
+    showsData = shows;
 
-    console.log("[Calendar] Fetched data:", calendarData.length, "items");
+    console.log("[Calendar] Fetched data:", calendarData.length, "items,", showsData.length, "shows");
   }
 
   function fetchArtStartJobs(config, userEmail) {
@@ -218,6 +221,59 @@
       script.async = true;
       script.onerror = () => {
         console.warn("[Calendar] Failed to load Copydesk jobs");
+        delete window[callbackName];
+        resolve([]);
+      };
+      document.body.appendChild(script);
+    });
+  }
+
+  function fetchShows(config) {
+    return new Promise((resolve) => {
+      const callbackName = "ascendCalendarShowsCallback_" + Date.now();
+
+      window[callbackName] = function (payload) {
+        try {
+          const shows = payload && payload.shows ? payload.shows : [];
+          const items = [];
+
+          for (const show of shows) {
+            const startDate = parseDate(show.ShowStartDate);
+            const endDate = parseDate(show.ShowEndDate);
+            if (!startDate) continue;
+
+            items.push({
+              type: "show",
+              showId: show.ShowId || "",
+              name: show.Name || "Untitled Show",
+              location: show.Location || "",
+              startDate: startDate,
+              endDate: endDate || startDate,
+              lob: show.LOB || "",
+              theme: show.Theme || "",
+              rawShow: show
+            });
+          }
+
+          resolve(items);
+        } catch (e) {
+          console.warn("[Calendar] Error parsing Shows:", e);
+          resolve([]);
+        } finally {
+          delete window[callbackName];
+        }
+      };
+
+      const url = new URL(config.ARTSTART_API_BASE);
+      url.searchParams.set("action", "listShows");
+      url.searchParams.set("limit", "50");
+      url.searchParams.set("callback", callbackName);
+
+      const script = document.createElement("script");
+      script.src = url.toString();
+      script.async = true;
+      script.onerror = () => {
+        console.warn("[Calendar] Failed to load Shows");
         delete window[callbackName];
         resolve([]);
       };
@@ -395,10 +451,22 @@
 
   function renderWeekView() {
     const weekStart = getWeekStart(currentDate);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Find shows that overlap this week
+    const weekShows = getShowsForWeek(weekStart, weekEnd);
+
     let html = '<div class="ascend-calendar-week">';
+
+    // Render show banners at top
+    if (weekShows.length > 0) {
+      html += '<div class="ascend-calendar-shows">';
+      html += weekShows.map((show) => renderShowBanner(show, weekStart, weekEnd)).join("");
+      html += '</div>';
+    }
 
     for (let i = 0; i < 7; i++) {
       const day = new Date(weekStart);
@@ -422,6 +490,35 @@
 
     html += "</div>";
     return html;
+  }
+
+  function getShowsForWeek(weekStart, weekEnd) {
+    return showsData.filter((show) => {
+      // Show overlaps week if: show starts before week ends AND show ends after week starts
+      return show.startDate <= weekEnd && show.endDate >= weekStart;
+    });
+  }
+
+  function renderShowBanner(show, weekStart, weekEnd) {
+    // Calculate position and width based on show dates vs week
+    const showStart = show.startDate < weekStart ? weekStart : show.startDate;
+    const showEnd = show.endDate > weekEnd ? weekEnd : show.endDate;
+
+    const startDay = Math.floor((showStart - weekStart) / (1000 * 60 * 60 * 24));
+    const endDay = Math.floor((showEnd - weekStart) / (1000 * 60 * 60 * 24));
+    const spanDays = endDay - startDay + 1;
+
+    // Calculate left offset and width (day label is ~56px, then 7 equal day columns)
+    // We'll use CSS grid positioning instead of absolute for simplicity
+    const locationText = show.location ? ` · ${show.location}` : "";
+
+    return `
+      <div class="ascend-calendar-show-banner" data-start-day="${startDay}" data-span="${spanDays}">
+        <span class="ascend-calendar-show-letter">S</span>
+        <span class="ascend-calendar-show-name">${escapeHtml(show.name)}</span>
+        <span class="ascend-calendar-show-location">${escapeHtml(locationText)}</span>
+      </div>
+    `;
   }
 
   function renderWeekItem(item) {

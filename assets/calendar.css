@@ -284,6 +284,51 @@
 }
 
 /* =========================================================
+ * Shows – Banner spans for trade shows/events
+ * ======================================================= */
+
+.ascend-calendar-shows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  padding-left: 56px; /* Align with day content (matches day label width) */
+}
+
+.ascend-calendar-show-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  background: linear-gradient(
+    90deg,
+    rgba(78, 134, 223, 0.25),
+    rgba(78, 134, 223, 0.12) 60%,
+    rgba(78, 134, 223, 0.06)
+  );
+  border: 1px solid rgba(78, 134, 223, 0.3);
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.ascend-calendar-show-letter {
+  font-size: 1rem;
+  font-weight: var(--ascend-weight-bold);
+  color: var(--ascend-hopper-stage-3);
+  letter-spacing: 0.06em;
+}
+
+.ascend-calendar-show-name {
+  font-weight: var(--ascend-weight-semibold);
+  color: var(--ascend-color-text-main);
+}
+
+.ascend-calendar-show-location {
+  font-size: 0.75rem;
+  color: var(--ascend-color-text-muted);
+}
+
+/* =========================================================
  * Month View – Compact grid
  * ======================================================= */
 
