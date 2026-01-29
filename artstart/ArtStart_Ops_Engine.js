@@ -1552,6 +1552,74 @@ function listShows_(limit) {
   return shows;
 }
 
+/**
+ * addShow_(params) - Add a new show to the Shows sheet
+ * @param {Object} params - { name, startDate, endDate, location, lob, theme, deadlines }
+ * @returns {Object} - { success: true, showId: "..." } or { success: false, error: "..." }
+ */
+function addShow_(params) {
+  var name = (params.name || '').trim();
+  var startDate = (params.startDate || '').trim();
+  var endDate = (params.endDate || '').trim();
+  var location = (params.location || '').trim();
+  var lob = (params.lob || '').trim();
+  var theme = (params.theme || '').trim();
+  var deadlines = (params.deadlines || '').trim();
+
+  if (!name || !startDate || !endDate) {
+    return { success: false, error: 'Name, start date, and end date are required' };
+  }
+
+  // Generate a unique ShowId
+  var showId = 'SHOW-' + new Date().getTime();
+
+  try {
+    var sheet = getSheet_(SHEET_NAME_SHOWS);
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    // Build the row data based on headers
+    var rowData = [];
+    for (var i = 0; i < headers.length; i++) {
+      var header = String(headers[i]).trim();
+      switch (header) {
+        case 'ShowId':
+          rowData.push(showId);
+          break;
+        case 'Name':
+          rowData.push(name);
+          break;
+        case 'ShowStartDate':
+          rowData.push(startDate);
+          break;
+        case 'ShowEndDate':
+          rowData.push(endDate);
+          break;
+        case 'Location':
+          rowData.push(location);
+          break;
+        case 'LOB':
+          rowData.push(lob);
+          break;
+        case 'Theme':
+          rowData.push(theme);
+          break;
+        case 'Deadlines':
+          rowData.push(deadlines);
+          break;
+        default:
+          rowData.push('');
+      }
+    }
+
+    // Append the row
+    sheet.appendRow(rowData);
+
+    return { success: true, showId: showId };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
 // ---------- Core: buildArtStartEmail ----------
 
 /**
@@ -2591,6 +2659,24 @@ function doGet(e) {
       return jsonResponse_({ shows: shows }, callback);
     } catch (errShows) {
       return jsonResponse_({ success: false, error: String(errShows) }, callback);
+    }
+  }
+
+  if (action === 'addShow') {
+    try {
+      var showParams = {
+        name: e.parameter.name || '',
+        startDate: e.parameter.startDate || '',
+        endDate: e.parameter.endDate || '',
+        location: e.parameter.location || '',
+        lob: e.parameter.lob || '',
+        theme: e.parameter.theme || '',
+        deadlines: e.parameter.deadlines || ''
+      };
+      var addResult = addShow_(showParams);
+      return jsonResponse_(addResult, callback);
+    } catch (errAddShow) {
+      return jsonResponse_({ success: false, error: String(errAddShow) }, callback);
     }
   }
 

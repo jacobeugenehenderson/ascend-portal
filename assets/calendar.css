@@ -26,6 +26,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
   margin-bottom: 0.75rem;
 }
 
@@ -733,4 +735,168 @@
 .ascend-show-modal-date-sep {
   font-size: 0.7rem;
   color: var(--ascend-color-text-muted);
+}
+
+/* =========================================================
+ * Add Show Modal & Form
+ * ======================================================= */
+
+.ascend-add-show-panel {
+  min-width: 400px;
+  max-width: 520px;
+}
+
+.ascend-add-show-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.ascend-form-field {
+  margin-bottom: 1rem;
+}
+
+.ascend-form-field:last-child {
+  margin-bottom: 0;
+}
+
+.ascend-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ascend-form-row .ascend-form-field {
+  margin-bottom: 0;
+}
+
+.ascend-form-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: var(--ascend-weight-medium);
+  color: var(--ascend-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+}
+
+.ascend-form-input,
+.ascend-form-textarea {
+  width: 100%;
+  font-size: 0.9rem;
+  color: var(--ascend-color-text-main);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ascend-form-input:focus,
+.ascend-form-textarea:focus {
+  outline: none;
+  border-color: var(--ascend-color-accent);
+  box-shadow: 0 0 0 2px rgba(79, 209, 197, 0.2);
+}
+
+.ascend-form-input::placeholder,
+.ascend-form-textarea::placeholder {
+  color: var(--ascend-color-text-muted);
+  opacity: 0.6;
+}
+
+.ascend-form-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.ascend-form-hint {
+  font-size: 0.7rem;
+  color: var(--ascend-color-text-muted);
+  margin-top: 0.35rem;
+  opacity: 0.7;
+}
+
+.ascend-add-show-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.ascend-form-cancel {
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  font-weight: var(--ascend-weight-medium);
+  color: var(--ascend-color-text-muted);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ascend-form-cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--ascend-color-text-main);
+}
+
+.ascend-form-submit {
+  padding: 0.55rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: var(--ascend-weight-medium);
+  color: var(--ascend-color-surface);
+  background: var(--ascend-color-accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.ascend-form-submit:hover {
+  background: var(--ascend-color-accent-soft);
+}
+
+.ascend-form-submit:active {
+  transform: scale(0.98);
+}
+
+.ascend-form-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Add Show button in calendar header */
+.ascend-calendar-add-show-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: var(--ascend-weight-medium);
+  color: var(--ascend-color-text-main);
+  background: rgba(79, 209, 197, 0.12);
+  border: 1px solid rgba(79, 209, 197, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.ascend-calendar-add-show-btn:hover {
+  background: rgba(79, 209, 197, 0.2);
+  border-color: rgba(79, 209, 197, 0.6);
+}
+
+.ascend-calendar-add-show-btn .icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.ascend-calendar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }

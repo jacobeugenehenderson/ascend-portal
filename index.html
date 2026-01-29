@@ -20,7 +20,7 @@
       })();
     </script>
     <link rel="stylesheet" href="assets/ascend.css?v=28" />
-    <link rel="stylesheet" href="assets/calendar.css?v=17" />
+    <link rel="stylesheet" href="assets/calendar.css?v=18" />
   </head>
   <body>
     <div id="ascend-root">
@@ -262,7 +262,59 @@
       </div>
     </div>
 
+    <!-- Add Show modal -->
+    <div class="ascend-show-modal" id="ascend-add-show-modal" aria-hidden="true">
+      <div class="ascend-show-modal-backdrop" id="ascend-add-show-modal-backdrop"></div>
+      <div class="ascend-show-modal-panel ascend-add-show-panel" role="dialog" aria-modal="true" aria-labelledby="ascend-add-show-modal-title">
+        <div class="ascend-show-modal-header">
+          <div class="ascend-show-modal-title" id="ascend-add-show-modal-title">Add Show</div>
+          <button type="button" class="ascend-show-modal-close" id="ascend-add-show-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <form class="ascend-add-show-form" id="ascend-add-show-form">
+          <div class="ascend-show-modal-body">
+            <div class="ascend-form-field">
+              <label class="ascend-form-label" for="add-show-name">Show Name *</label>
+              <input type="text" class="ascend-form-input" id="add-show-name" name="name" required placeholder="e.g. PaintExpo Karlsruhe 2026">
+            </div>
+            <div class="ascend-form-row">
+              <div class="ascend-form-field">
+                <label class="ascend-form-label" for="add-show-start">Start Date *</label>
+                <input type="date" class="ascend-form-input" id="add-show-start" name="startDate" required>
+              </div>
+              <div class="ascend-form-field">
+                <label class="ascend-form-label" for="add-show-end">End Date *</label>
+                <input type="date" class="ascend-form-input" id="add-show-end" name="endDate" required>
+              </div>
+            </div>
+            <div class="ascend-form-field">
+              <label class="ascend-form-label" for="add-show-location">Location</label>
+              <input type="text" class="ascend-form-input" id="add-show-location" name="location" placeholder="e.g. Karlsruhe, Germany">
+            </div>
+            <div class="ascend-form-row">
+              <div class="ascend-form-field">
+                <label class="ascend-form-label" for="add-show-lob">Line of Business</label>
+                <input type="text" class="ascend-form-input" id="add-show-lob" name="lob" placeholder="e.g. ICS">
+              </div>
+              <div class="ascend-form-field">
+                <label class="ascend-form-label" for="add-show-theme">Theme</label>
+                <input type="text" class="ascend-form-input" id="add-show-theme" name="theme" placeholder="e.g. Industrial Coating">
+              </div>
+            </div>
+            <div class="ascend-form-field">
+              <label class="ascend-form-label" for="add-show-deadlines">Deadlines</label>
+              <textarea class="ascend-form-textarea" id="add-show-deadlines" name="deadlines" rows="3" placeholder="Format: Task Name|Date or Task Name|StartDate~EndDate&#10;Separate multiple with commas"></textarea>
+              <div class="ascend-form-hint">e.g. Art Due|2026-04-01, Review Period|2026-03-15~2026-03-20</div>
+            </div>
+          </div>
+          <div class="ascend-add-show-footer">
+            <button type="button" class="ascend-form-cancel" id="ascend-add-show-cancel">Cancel</button>
+            <button type="submit" class="ascend-form-submit" id="ascend-add-show-submit">Add Show</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script src="assets/ascend.js?v=20"></script>
-    <script src="assets/calendar.js?v=19"></script>
+    <script src="assets/calendar.js?v=21"></script>
   </body>
 </html>

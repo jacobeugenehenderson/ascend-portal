@@ -441,9 +441,15 @@
           <span class="ascend-calendar-period" id="ascend-calendar-period">${getPeriodLabel()}</span>
           <button type="button" class="ascend-calendar-nav-btn" data-calendar-nav="next">&rarr;</button>
         </div>
-        <div class="ascend-calendar-view-toggle">
-          <button type="button" class="ascend-calendar-view-btn" data-calendar-view="week" aria-pressed="${currentView === "week"}">Week</button>
-          <button type="button" class="ascend-calendar-view-btn" data-calendar-view="month" aria-pressed="${currentView === "month"}">Month</button>
+        <div class="ascend-calendar-header-actions">
+          <button type="button" class="ascend-calendar-add-show-btn" id="ascend-calendar-add-show-btn">
+            <span class="icon">+</span>
+            Add Show
+          </button>
+          <div class="ascend-calendar-view-toggle">
+            <button type="button" class="ascend-calendar-view-btn" data-calendar-view="week" aria-pressed="${currentView === "week"}">Week</button>
+            <button type="button" class="ascend-calendar-view-btn" data-calendar-view="month" aria-pressed="${currentView === "month"}">Month</button>
+          </div>
         </div>
       </div>
       <div class="ascend-calendar-body" id="ascend-calendar-body">
@@ -520,6 +526,12 @@
         handleItemClick(key);
       });
     });
+
+    // Add Show button
+    const addShowBtn = contentEl.querySelector("#ascend-calendar-add-show-btn");
+    if (addShowBtn) {
+      addShowBtn.addEventListener("click", openAddShowModal);
+    }
   }
 
   // ---- Dot Tooltip ----
@@ -1250,6 +1262,178 @@
       .replace(/'/g, "&#39;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+  }
+
+  // ---- Add Show Modal ----
+
+  let addShowModalEl = null;
+  let addShowFormEl = null;
+  let addShowModalInitialized = false;
+
+  function initAddShowModal() {
+    if (addShowModalInitialized) return;
+
+    addShowModalEl = document.getElementById("ascend-add-show-modal");
+    addShowFormEl = document.getElementById("ascend-add-show-form");
+
+    if (!addShowModalEl || !addShowFormEl) return;
+
+    // Close button
+    const closeBtn = document.getElementById("ascend-add-show-modal-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeAddShowModal);
+    }
+
+    // Cancel button
+    const cancelBtn = document.getElementById("ascend-add-show-cancel");
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", closeAddShowModal);
+    }
+
+    // Backdrop click
+    const backdrop = document.getElementById("ascend-add-show-modal-backdrop");
+    if (backdrop) {
+      backdrop.addEventListener("click", closeAddShowModal);
+    }
+
+    // Form submission
+    addShowFormEl.addEventListener("submit", handleAddShowSubmit);
+
+    addShowModalInitialized = true;
+  }
+
+  function openAddShowModal() {
+    initAddShowModal();
+    if (!addShowModalEl) return;
+
+    // Reset form
+    if (addShowFormEl) {
+      addShowFormEl.reset();
+    }
+
+    addShowModalEl.setAttribute("aria-hidden", "false");
+  }
+
+  function closeAddShowModal() {
+    if (!addShowModalEl) return;
+    addShowModalEl.setAttribute("aria-hidden", "true");
+  }
+
+  async function handleAddShowSubmit(evt) {
+    evt.preventDefault();
+
+    const config = window.AscendConfig;
+    if (!config) {
+      console.warn("[Calendar] AscendConfig not available");
+      alert("Configuration not available. Please refresh the page.");
+      return;
+    }
+
+    const form = evt.target;
+    const submitBtn = document.getElementById("ascend-add-show-submit");
+
+    // Gather form data
+    const name = form.name.value.trim();
+    const startDate = form.startDate.value;
+    const endDate = form.endDate.value;
+    const location = form.location.value.trim();
+    const lob = form.lob.value.trim();
+    const theme = form.theme.value.trim();
+    const deadlines = form.deadlines.value.trim();
+
+    if (!name || !startDate || !endDate) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    // Validate dates
+    if (new Date(endDate) < new Date(startDate)) {
+      alert("End date must be after start date.");
+      return;
+    }
+
+    // Disable form while submitting
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Adding...";
+    }
+
+    try {
+      await submitAddShow({
+        name,
+        startDate,
+        endDate,
+        location,
+        lob,
+        theme,
+        deadlines
+      }, config);
+
+      closeAddShowModal();
+
+      // Refresh calendar data
+      await fetchCalendarData();
+      render();
+
+    } catch (err) {
+      console.error("[Calendar] Error adding show:", err);
+      alert("Failed to add show. Please try again.");
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Add Show";
+      }
+    }
+  }
+
+  function submitAddShow(data, config) {
+    return new Promise((resolve, reject) => {
+      const callbackName = "ascendAddShowCallback_" + Date.now();
+
+      window[callbackName] = function (response) {
+        try {
+          if (response && response.success) {
+            console.log("[Calendar] Show added successfully:", response);
+            resolve(response);
+          } else {
+            const msg = response && response.error ? response.error : "Unknown error";
+            console.warn("[Calendar] Failed to add show:", msg);
+            reject(new Error(msg));
+          }
+        } finally {
+          delete window[callbackName];
+        }
+      };
+
+      const url = new URL(config.ARTSTART_API_BASE);
+      url.searchParams.set("action", "addShow");
+      url.searchParams.set("name", data.name);
+      url.searchParams.set("startDate", data.startDate);
+      url.searchParams.set("endDate", data.endDate);
+      if (data.location) url.searchParams.set("location", data.location);
+      if (data.lob) url.searchParams.set("lob", data.lob);
+      if (data.theme) url.searchParams.set("theme", data.theme);
+      if (data.deadlines) url.searchParams.set("deadlines", data.deadlines);
+      url.searchParams.set("callback", callbackName);
+
+      const script = document.createElement("script");
+      script.src = url.toString();
+      script.async = true;
+      script.onerror = () => {
+        console.warn("[Calendar] Failed to submit show");
+        delete window[callbackName];
+        reject(new Error("Network error"));
+      };
+      document.body.appendChild(script);
+
+      // Timeout after 15 seconds
+      setTimeout(() => {
+        if (window[callbackName]) {
+          delete window[callbackName];
+          reject(new Error("Request timed out"));
+        }
+      }, 15000);
+    });
   }
 
   // ---- Expose init ----
