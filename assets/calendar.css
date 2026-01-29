@@ -455,6 +455,10 @@
   background: var(--ascend-hopper-stage-2);
 }
 
+.ascend-calendar-month-dot--showdeadline {
+  background: var(--ascend-hopper-stage-3);
+}
+
 /* =========================================================
  * Empty state
  * ======================================================= */
@@ -581,6 +585,36 @@
 
 .ascend-show-modal-value a:hover {
   text-decoration: underline;
+}
+
+/* Deadline highlight (when opened from calendar deadline click) */
+.ascend-show-modal-highlight {
+  background: rgba(123, 156, 214, 0.15);
+  border: 1px solid rgba(123, 156, 214, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ascend-show-modal-highlight-label {
+  font-size: 0.6rem;
+  font-weight: var(--ascend-weight-medium);
+  color: var(--ascend-hopper-stage-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.25rem;
+}
+
+.ascend-show-modal-highlight-value {
+  font-size: 1rem;
+  font-weight: var(--ascend-weight-semibold);
+  color: var(--ascend-color-text-main);
+}
+
+.ascend-show-modal-highlight-date {
+  font-size: 0.8rem;
+  color: var(--ascend-color-text-muted);
+  margin-top: 0.15rem;
 }
 
 .ascend-show-modal-dates {

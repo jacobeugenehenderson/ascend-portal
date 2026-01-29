@@ -8,7 +8,7 @@
   // ---- State ----
   let currentView = "week"; // "week" | "month"
   let currentDate = new Date(); // The reference date for navigation
-  let calendarData = []; // Combined ArtStart + Copydesk items (single-date deadlines)
+  let calendarData = []; // Combined ArtStart + Copydesk + show deadline items
   let showsData = []; // Shows with date spans (ShowStartDate → ShowEndDate)
 
   // ---- DOM References ----
@@ -91,15 +91,18 @@
     }
 
     // Fetch all in parallel
-    const [artStartJobs, copydeskJobs, shows] = await Promise.all([
+    const [artStartJobs, copydeskJobs, showsResult] = await Promise.all([
       fetchArtStartJobs(config, session.userEmail),
       fetchCopydeskJobs(config, session.userEmail),
       fetchShows(config)
     ]);
 
-    // Combine jobs and sort by date
-    calendarData = [...artStartJobs, ...copydeskJobs].sort((a, b) => a.date - b.date);
-    showsData = shows;
+    // Extract shows and their deadlines
+    showsData = showsResult.shows;
+    const showDeadlines = showsResult.deadlines;
+
+    // Combine all items and sort by date
+    calendarData = [...artStartJobs, ...copydeskJobs, ...showDeadlines].sort((a, b) => a.date - b.date);
 
     console.log("[Calendar] Fetched data:", calendarData.length, "items,", showsData.length, "shows");
   }
@@ -235,14 +238,15 @@
       window[callbackName] = function (payload) {
         try {
           const shows = payload && payload.shows ? payload.shows : [];
-          const items = [];
+          const showItems = [];
+          const deadlineItems = [];
 
           for (const show of shows) {
             const startDate = parseDate(show.ShowStartDate);
             const endDate = parseDate(show.ShowEndDate);
             if (!startDate) continue;
 
-            items.push({
+            const showItem = {
               type: "show",
               showId: show.ShowId || "",
               name: show.Name || "Untitled Show",
@@ -252,13 +256,36 @@
               lob: show.LOB || "",
               theme: show.Theme || "",
               rawShow: show
-            });
+            };
+            showItems.push(showItem);
+
+            // Parse Deadlines column: "Name1|Date1,Name2|Date2,..."
+            if (show.Deadlines) {
+              const pairs = show.Deadlines.split(",").map(s => s.trim()).filter(Boolean);
+              for (const pair of pairs) {
+                const [name, dateStr] = pair.split("|").map(s => s.trim());
+                if (!name || !dateStr) continue;
+                const date = parseDate(dateStr);
+                if (!date) continue;
+
+                deadlineItems.push({
+                  type: "showdeadline",
+                  title: name,
+                  date: date,
+                  jobKey: `${show.ShowId}-${name}-${dateStr}`,
+                  meta: show.Name || "Show deadline",
+                  showId: show.ShowId || "",
+                  showName: show.Name || "Untitled Show",
+                  rawShow: show
+                });
+              }
+            }
           }
 
-          resolve(items);
+          resolve({ shows: showItems, deadlines: deadlineItems });
         } catch (e) {
           console.warn("[Calendar] Error parsing Shows:", e);
-          resolve([]);
+          resolve({ shows: [], deadlines: [] });
         } finally {
           delete window[callbackName];
         }
@@ -621,7 +648,12 @@
       }
     }
 
-    const letter = item.type === "artstart" ? "A" : "C";
+    // Show deadlines always show as stage 3 (blue)
+    if (item.type === "showdeadline") {
+      stage = 3;
+    }
+
+    const letter = item.type === "artstart" ? "A" : item.type === "copydesk" ? "C" : "S";
 
     return `
       <button class="ascend-calendar-item ascend-calendar-item--${item.type}" data-calendar-item="${escapeAttr(item.jobKey)}">
@@ -780,7 +812,22 @@
 
   function handleItemClick(jobKey) {
     const item = calendarData.find((i) => i.jobKey === jobKey);
-    if (item && item.openUrl) {
+    if (!item) {
+      console.log("[Calendar] Item not found:", jobKey);
+      return;
+    }
+
+    // Show deadlines open the show modal with deadline highlighted
+    if (item.type === "showdeadline") {
+      const show = showsData.find((s) => s.showId === item.showId);
+      if (show) {
+        openShowModal(show, item.title, item.date);
+      }
+      return;
+    }
+
+    // ArtStart/Copydesk items open their respective URLs
+    if (item.openUrl) {
       window.open(item.openUrl, "_blank", "noopener");
     }
     console.log("[Calendar] Item clicked:", jobKey);
@@ -797,7 +844,7 @@
     openShowModal(show);
   }
 
-  function openShowModal(show) {
+  function openShowModal(show, highlightDeadline, highlightDate) {
     const modalEl = document.getElementById("ascend-show-modal");
     const titleEl = document.getElementById("ascend-show-modal-title");
     const bodyEl = document.getElementById("ascend-show-modal-body");
@@ -814,7 +861,20 @@
     const startStr = formatDate(show.startDate);
     const endStr = formatDate(show.endDate);
 
-    let bodyHtml = `
+    let bodyHtml = "";
+
+    // If opened from a deadline click, show that deadline prominently
+    if (highlightDeadline) {
+      bodyHtml += `
+        <div class="ascend-show-modal-highlight">
+          <div class="ascend-show-modal-highlight-label">Deadline</div>
+          <div class="ascend-show-modal-highlight-value">${escapeHtml(highlightDeadline)}</div>
+          <div class="ascend-show-modal-highlight-date">${escapeHtml(formatDate(highlightDate))}</div>
+        </div>
+      `;
+    }
+
+    bodyHtml += `
       <div class="ascend-show-modal-dates">
         <div class="ascend-show-modal-date-gradient"></div>
         <div class="ascend-show-modal-date-range">
