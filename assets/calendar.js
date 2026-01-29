@@ -851,21 +851,43 @@
     }
 
     // Stripes layer (rendered per row for proper positioning)
-    // Track stack index per row for stacking multiple stripes
-    const rowStripeCount = new Array(numRows).fill(0);
+    // Track column occupancy per row for smart stacking
+    // Each row has an array of stack levels, each level tracks which columns are occupied
+    const rowStacks = Array.from({ length: numRows }, () => []);
+
+    // Helper: find stack level for a stripe and mark columns as occupied
+    function getStackLevel(row, startCol, endCol) {
+      const levels = rowStacks[row];
+      // Find lowest level where columns startCol to endCol are free
+      for (let level = 0; level <= levels.length; level++) {
+        if (!levels[level]) levels[level] = new Set();
+        let free = true;
+        for (let c = startCol; c <= endCol; c++) {
+          if (levels[level].has(c)) { free = false; break; }
+        }
+        if (free) {
+          // Mark columns as occupied at this level
+          for (let c = startCol; c <= endCol; c++) {
+            levels[level].add(c);
+          }
+          return level;
+        }
+      }
+      return 0; // Fallback
+    }
 
     // Get single-day show deadlines
     const singleDayShowDeadlines = calendarData.filter(item => item.type === 'showdeadline');
 
     html += '<div class="ascend-calendar-month-shows">';
     for (const show of monthShows) {
-      html += renderMonthShowStripes(show, year, month, startOffset, lastDay.getDate(), numRows, rowStripeCount);
+      html += renderMonthShowStripes(show, year, month, startOffset, lastDay.getDate(), numRows, getStackLevel);
     }
     for (const range of monthDeadlineRanges) {
-      html += renderMonthDeadlineRangeStripes(range, year, month, startOffset, lastDay.getDate(), numRows, rowStripeCount);
+      html += renderMonthDeadlineRangeStripes(range, year, month, startOffset, lastDay.getDate(), numRows, getStackLevel);
     }
     for (const deadline of singleDayShowDeadlines) {
-      html += renderMonthSingleDeadlineStripe(deadline, year, month, startOffset, lastDay.getDate(), numRows, rowStripeCount);
+      html += renderMonthSingleDeadlineStripe(deadline, year, month, startOffset, lastDay.getDate(), numRows, getStackLevel);
     }
     html += '</div>';
 
@@ -873,7 +895,7 @@
     return html;
   }
 
-  function renderMonthShowStripes(show, year, month, startOffset, daysInMonth, numRows, rowStripeCount) {
+  function renderMonthShowStripes(show, year, month, startOffset, daysInMonth, numRows, getStackLevel) {
     const totalShowDays = Math.floor((show.endDate - show.startDate) / (1000 * 60 * 60 * 24)) + 1;
     let html = "";
 
@@ -916,9 +938,9 @@
       const widthPct = (spanCols / 7) * 100;
       const rowHeightPct = 100 / numRows;
       const topOfNextRow = (row + 1) * rowHeightPct;
-      const stackOffset = rowStripeCount[row] * 7; // 7px per stripe for stacking
-
-      rowStripeCount[row]++;
+      const endCol = startCol + spanCols - 1;
+      const stackLevel = getStackLevel(row, startCol, endCol);
+      const stackOffset = stackLevel * 7; // 7px per stack level
 
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal"
@@ -932,7 +954,7 @@
     return html;
   }
 
-  function renderMonthSingleDeadlineStripe(deadline, year, month, startOffset, daysInMonth, numRows, rowStripeCount) {
+  function renderMonthSingleDeadlineStripe(deadline, year, month, startOffset, daysInMonth, numRows, getStackLevel) {
     // Check if deadline is in this month
     if (deadline.date.getMonth() !== month || deadline.date.getFullYear() !== year) {
       return "";
@@ -952,9 +974,8 @@
     const widthPct = (1 / 7) * 100;
     const rowHeightPct = 100 / numRows;
     const topOfNextRow = (row + 1) * rowHeightPct;
-    const stackOffset = rowStripeCount[row] * 7;
-
-    rowStripeCount[row]++;
+    const stackLevel = getStackLevel(row, col, col); // Single column
+    const stackOffset = stackLevel * 7;
 
     return `
       <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal ascend-calendar-show-stripe--deadline"
@@ -965,7 +986,7 @@
     `;
   }
 
-  function renderMonthDeadlineRangeStripes(range, year, month, startOffset, daysInMonth, numRows, rowStripeCount) {
+  function renderMonthDeadlineRangeStripes(range, year, month, startOffset, daysInMonth, numRows, getStackLevel) {
     let html = "";
 
     // Process each week row
@@ -998,9 +1019,9 @@
       const widthPct = (spanCols / 7) * 100;
       const rowHeightPct = 100 / numRows;
       const topOfNextRow = (row + 1) * rowHeightPct;
-      const stackOffset = rowStripeCount[row] * 7; // 7px per stripe for stacking
-
-      rowStripeCount[row]++;
+      const endCol = startCol + spanCols - 1;
+      const stackLevel = getStackLevel(row, startCol, endCol);
+      const stackOffset = stackLevel * 7; // 7px per stack level
 
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal ascend-calendar-show-stripe--deadline"
