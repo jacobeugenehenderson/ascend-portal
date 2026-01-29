@@ -8,8 +8,9 @@
   // ---- State ----
   let currentView = "week"; // "week" | "month"
   let currentDate = new Date(); // The reference date for navigation
-  let calendarData = []; // Combined ArtStart + Copydesk + show deadline items
+  let calendarData = []; // Combined ArtStart + Copydesk + show deadline items (single-date)
   let showsData = []; // Shows with date spans (ShowStartDate → ShowEndDate)
+  let deadlineRangesData = []; // Deadline date ranges (rendered as stripes like shows)
 
   // ---- DOM References ----
   let panelEl = null;
@@ -97,11 +98,12 @@
       fetchShows(config)
     ]);
 
-    // Extract shows and their deadlines
+    // Extract shows, deadlines, and ranges
     showsData = showsResult.shows;
+    deadlineRangesData = showsResult.ranges;
     const showDeadlines = showsResult.deadlines;
 
-    // Combine all items and sort by date
+    // Combine single-date items and sort by date
     calendarData = [...artStartJobs, ...copydeskJobs, ...showDeadlines].sort((a, b) => a.date - b.date);
 
     console.log("[Calendar] Fetched data:", calendarData.length, "items,", showsData.length, "shows");
@@ -240,6 +242,7 @@
           const shows = payload && payload.shows ? payload.shows : [];
           const showItems = [];
           const deadlineItems = [];
+          const rangeItems = [];
 
           for (const show of shows) {
             const startDate = parseDate(show.ShowStartDate);
@@ -259,33 +262,54 @@
             };
             showItems.push(showItem);
 
-            // Parse Deadlines column: "Name1|Date1,Name2|Date2,..."
+            // Parse Deadlines column: "Name1|Date1,Name2|Date2,..." or "Name|StartDate~EndDate" for ranges
             if (show.Deadlines) {
               const pairs = show.Deadlines.split(",").map(s => s.trim()).filter(Boolean);
               for (const pair of pairs) {
                 const [name, dateStr] = pair.split("|").map(s => s.trim());
                 if (!name || !dateStr) continue;
-                const date = parseDate(dateStr);
-                if (!date) continue;
 
-                deadlineItems.push({
-                  type: "showdeadline",
-                  title: name,
-                  date: date,
-                  jobKey: `${show.ShowId}-${name}-${dateStr}`,
-                  meta: show.Name || "Show deadline",
-                  showId: show.ShowId || "",
-                  showName: show.Name || "Untitled Show",
-                  rawShow: show
-                });
+                // Check for date range (using ~ as separator)
+                if (dateStr.includes("~")) {
+                  const [startStr, endStr] = dateStr.split("~").map(s => s.trim());
+                  const startDate = parseDate(startStr);
+                  const endDate = parseDate(endStr);
+                  if (!startDate || !endDate) continue;
+
+                  // Store as a range item (rendered as stripe)
+                  rangeItems.push({
+                    type: "deadlinerange",
+                    title: name,
+                    startDate: startDate,
+                    endDate: endDate,
+                    showId: show.ShowId || "",
+                    showName: show.Name || "Untitled Show",
+                    rawShow: show
+                  });
+                } else {
+                  // Single date deadline
+                  const date = parseDate(dateStr);
+                  if (!date) continue;
+
+                  deadlineItems.push({
+                    type: "showdeadline",
+                    title: name,
+                    date: date,
+                    jobKey: `${show.ShowId}-${name}-${dateStr}`,
+                    meta: show.Name || "Show deadline",
+                    showId: show.ShowId || "",
+                    showName: show.Name || "Untitled Show",
+                    rawShow: show
+                  });
+                }
               }
             }
           }
 
-          resolve({ shows: showItems, deadlines: deadlineItems });
+          resolve({ shows: showItems, deadlines: deadlineItems, ranges: rangeItems });
         } catch (e) {
           console.warn("[Calendar] Error parsing Shows:", e);
-          resolve({ shows: [], deadlines: [] });
+          resolve({ shows: [], deadlines: [], ranges: [] });
         } finally {
           delete window[callbackName];
         }
@@ -466,6 +490,15 @@
         handleShowClick(showId);
       });
     });
+
+    // Deadline range stripe clicks
+    contentEl.querySelectorAll("[data-deadline-range]").forEach((el) => {
+      el.addEventListener("click", (evt) => {
+        evt.stopPropagation();
+        const rangeKey = evt.currentTarget.dataset.deadlineRange;
+        handleDeadlineRangeClick(rangeKey);
+      });
+    });
   }
 
   function getPeriodLabel() {
@@ -492,11 +525,12 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Find shows that overlap this week
+    // Find shows and deadline ranges that overlap this week
     const weekShows = getShowsForWeek(weekStart, weekEnd);
-    const hasShows = weekShows.length > 0;
+    const weekDeadlineRanges = getDeadlineRangesForWeek(weekStart, weekEnd);
+    const hasStripes = weekShows.length > 0 || weekDeadlineRanges.length > 0;
 
-    let html = `<div class="ascend-calendar-week ${hasShows ? '' : 'ascend-calendar-week--no-shows'}">`;
+    let html = `<div class="ascend-calendar-week ${hasStripes ? '' : 'ascend-calendar-week--no-shows'}">`;
 
     // Render each day's components directly into the grid
     for (let i = 0; i < 7; i++) {
@@ -525,10 +559,11 @@
       }
     }
 
-    // Show stripes layer (column 2) - renders after days to appear on top visually
-    if (hasShows) {
+    // Stripes layer (column 2) - renders after days to appear on top visually
+    if (hasStripes) {
       html += '<div class="ascend-calendar-show-layer">';
       html += weekShows.map((show) => renderWeekShowStripe(show, weekStart, weekEnd)).join("");
+      html += weekDeadlineRanges.map((range) => renderWeekDeadlineRangeStripe(range, weekStart, weekEnd)).join("");
       html += '</div>';
     }
 
@@ -540,6 +575,32 @@
     return showsData.filter((show) => {
       return show.startDate <= weekEnd && show.endDate >= weekStart;
     });
+  }
+
+  function getDeadlineRangesForWeek(weekStart, weekEnd) {
+    return deadlineRangesData.filter((range) => {
+      return range.startDate <= weekEnd && range.endDate >= weekStart;
+    });
+  }
+
+  function renderWeekDeadlineRangeStripe(range, weekStart, weekEnd) {
+    // Calculate which days of the week this range spans
+    const rangeStartInWeek = range.startDate < weekStart ? weekStart : range.startDate;
+    const rangeEndInWeek = range.endDate > weekEnd ? weekEnd : range.endDate;
+
+    const startDayIndex = Math.floor((rangeStartInWeek - weekStart) / (1000 * 60 * 60 * 24));
+    const endDayIndex = Math.floor((rangeEndInWeek - weekStart) / (1000 * 60 * 60 * 24));
+    const daysInThisWeek = endDayIndex - startDayIndex + 1;
+
+    const title = `${range.title} · ${range.showName}`;
+
+    return `
+      <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--vertical ascend-calendar-show-stripe--deadline"
+           data-deadline-range="${escapeAttr(range.showId + '-' + range.title)}"
+           style="--show-start-day: ${startDayIndex}; --show-span-days: ${daysInThisWeek};"
+           title="${escapeAttr(title)}">
+      </div>
+    `;
   }
 
   function renderWeekShowStripe(show, weekStart, weekEnd) {
@@ -685,11 +746,14 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Find shows that overlap this month
+    // Find shows and deadline ranges that overlap this month
     const monthStart = firstDay;
     const monthEnd = lastDay;
     const monthShows = showsData.filter((show) => {
       return show.startDate <= monthEnd && show.endDate >= monthStart;
+    });
+    const monthDeadlineRanges = deadlineRangesData.filter((range) => {
+      return range.startDate <= monthEnd && range.endDate >= monthStart;
     });
 
     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -722,10 +786,13 @@
       `;
     }
 
-    // Show stripes layer (rendered per row for proper positioning)
+    // Stripes layer (rendered per row for proper positioning)
     html += '<div class="ascend-calendar-month-shows">';
     for (const show of monthShows) {
       html += renderMonthShowStripes(show, year, month, startOffset, lastDay.getDate(), numRows);
+    }
+    for (const range of monthDeadlineRanges) {
+      html += renderMonthDeadlineRangeStripes(range, year, month, startOffset, lastDay.getDate(), numRows);
     }
     html += '</div>';
 
@@ -789,6 +856,51 @@
     return html;
   }
 
+  function renderMonthDeadlineRangeStripes(range, year, month, startOffset, daysInMonth, numRows) {
+    let html = "";
+
+    // Process each week row
+    for (let row = 0; row < numRows; row++) {
+      const rowStartCell = row * 7;
+      const rowEndCell = rowStartCell + 6;
+
+      // Convert cell indices to actual dates
+      const rowStartDayNum = rowStartCell - startOffset + 1;
+      const rowEndDayNum = rowEndCell - startOffset + 1;
+
+      const rowStartDate = new Date(year, month, Math.max(1, rowStartDayNum));
+      const rowEndDate = new Date(year, month, Math.min(daysInMonth, rowEndDayNum));
+
+      // Check if range overlaps this row
+      if (range.endDate < rowStartDate || range.startDate > rowEndDate) continue;
+
+      // Calculate where the range starts/ends in this row
+      const rangeStartInRow = range.startDate > rowStartDate ? range.startDate : rowStartDate;
+      const rangeEndInRow = range.endDate < rowEndDate ? range.endDate : rowEndDate;
+
+      const startCol = rangeStartInRow.getDate() - rowStartDayNum + (rowStartDayNum < 1 ? startOffset : 0);
+      const endCol = rangeEndInRow.getDate() - rowStartDayNum + (rowStartDayNum < 1 ? startOffset : 0);
+      const spanCols = endCol - startCol + 1;
+
+      const title = `${range.title} · ${range.showName}`;
+
+      // Calculate position using percentages for the overlay grid
+      const leftPct = (startCol / 7) * 100;
+      const widthPct = (spanCols / 7) * 100;
+      const topPct = (row / numRows) * 100;
+
+      html += `
+        <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal ascend-calendar-show-stripe--deadline"
+             data-deadline-range="${escapeAttr(range.showId + '-' + range.title)}"
+             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topPct}% + 2px);"
+             title="${escapeAttr(title)}">
+        </div>
+      `;
+    }
+
+    return html;
+  }
+
   // ---- Navigation ----
 
   function navigate(direction) {
@@ -821,7 +933,7 @@
     if (item.type === "showdeadline") {
       const show = showsData.find((s) => s.showId === item.showId);
       if (show) {
-        openShowModal(show, item.title, item.date);
+        openShowModal(show, item.title, item.date, item.date);
       }
       return;
     }
@@ -844,7 +956,21 @@
     openShowModal(show);
   }
 
-  function openShowModal(show, highlightDeadline, highlightDate) {
+  function handleDeadlineRangeClick(rangeKey) {
+    // rangeKey is "showId-title"
+    const range = deadlineRangesData.find((r) => (r.showId + '-' + r.title) === rangeKey);
+    if (!range) {
+      console.warn("[Calendar] Deadline range not found:", rangeKey);
+      return;
+    }
+    const show = showsData.find((s) => s.showId === range.showId);
+    if (show) {
+      // Open show modal with this deadline range highlighted
+      openShowModal(show, range.title, range.startDate, range.endDate);
+    }
+  }
+
+  function openShowModal(show, highlightDeadline, highlightDateStart, highlightDateEnd) {
     const modalEl = document.getElementById("ascend-show-modal");
     const titleEl = document.getElementById("ascend-show-modal-title");
     const bodyEl = document.getElementById("ascend-show-modal-body");
@@ -865,11 +991,15 @@
 
     // If opened from a deadline click, show that deadline prominently
     if (highlightDeadline) {
+      const dateDisplay = highlightDateEnd && highlightDateEnd.getTime() !== highlightDateStart.getTime()
+        ? `${formatDate(highlightDateStart)} – ${formatDate(highlightDateEnd)}`
+        : formatDate(highlightDateStart);
+
       bodyHtml += `
         <div class="ascend-show-modal-highlight">
           <div class="ascend-show-modal-highlight-label">Deadline</div>
           <div class="ascend-show-modal-highlight-value">${escapeHtml(highlightDeadline)}</div>
-          <div class="ascend-show-modal-highlight-date">${escapeHtml(formatDate(highlightDate))}</div>
+          <div class="ascend-show-modal-highlight-date">${escapeHtml(dateDisplay)}</div>
         </div>
       `;
     }

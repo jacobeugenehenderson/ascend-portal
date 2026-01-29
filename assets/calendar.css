@@ -359,6 +359,18 @@
   /* background is set inline with interpolated gradient colors */
 }
 
+/* Deadline range stripe - empty blue outline */
+.ascend-calendar-show-stripe--deadline {
+  background: transparent !important;
+  border: 2px solid var(--ascend-hopper-stage-3);
+  box-shadow: inset 0 0 0 1px rgba(123, 156, 214, 0.2);
+}
+
+.ascend-calendar-show-stripe--deadline:hover {
+  background: rgba(123, 156, 214, 0.15) !important;
+  transform: scaleX(1.15);
+}
+
 /* Horizontal stripe (month view) - continuous bar spanning multiple cells */
 .ascend-calendar-show-stripe--horizontal {
   position: absolute;
