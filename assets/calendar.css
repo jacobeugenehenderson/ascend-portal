@@ -191,6 +191,22 @@
   background: rgba(79, 209, 197, 0.10);
 }
 
+/* Provenance cell: progress dots + lettermark */
+.ascend-calendar-item-provenance {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.ascend-calendar-item-letter {
+  font-size: 1.1rem;
+  font-weight: var(--ascend-weight-bold);
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--ascend-color-text-main) 92%, white 8%);
+  line-height: 1;
+}
+
 /* Stacked progress indicator – matches ascend-hopper-progress exactly */
 .ascend-calendar-item-progress {
   display: flex;

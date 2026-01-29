@@ -436,12 +436,17 @@
       }
     }
 
+    const letter = item.type === "artstart" ? "A" : "C";
+
     return `
       <button class="ascend-calendar-item ascend-calendar-item--${item.type}" data-calendar-item="${escapeAttr(item.jobKey)}">
-        <div class="ascend-calendar-item-progress" data-stage="${stage}">
-          <div class="ascend-calendar-item-dot" data-step="1"></div>
-          <div class="ascend-calendar-item-dot" data-step="2"></div>
-          <div class="ascend-calendar-item-dot" data-step="3"></div>
+        <div class="ascend-calendar-item-provenance">
+          <div class="ascend-calendar-item-progress" data-stage="${stage}">
+            <div class="ascend-calendar-item-dot" data-step="1"></div>
+            <div class="ascend-calendar-item-dot" data-step="2"></div>
+            <div class="ascend-calendar-item-dot" data-step="3"></div>
+          </div>
+          <span class="ascend-calendar-item-letter">${letter}</span>
         </div>
         <div class="ascend-calendar-item-stack">
           <div class="ascend-calendar-item-title">${escapeHtml(item.title)}</div>
