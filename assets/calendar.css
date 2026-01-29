@@ -138,19 +138,17 @@
   color: var(--ascend-color-accent);
 }
 
+/* Empty days - minimal styling */
+.ascend-calendar-day--empty {
+  opacity: 0.4;
+}
+
 /* Drawer container for day items */
 .ascend-calendar-day-drawer {
   background: rgba(5, 9, 23, 0.9);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   overflow: hidden;
-}
-
-.ascend-calendar-day-empty {
-  font-size: 0.74rem;
-  color: var(--ascend-color-text-muted);
-  padding: 0.7rem 0.75rem;
-  background: rgba(255, 255, 255, 0.04);
 }
 
 /* Calendar item – matches ascend-job-card-main exactly */

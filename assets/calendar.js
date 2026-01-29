@@ -408,15 +408,14 @@
       const isToday = day.getTime() === today.getTime();
       const dayItems = getItemsForDate(day);
 
+      const hasItems = dayItems.length > 0;
       html += `
-        <div class="ascend-calendar-day ${isToday ? "ascend-calendar-day--today" : ""}">
+        <div class="ascend-calendar-day ${isToday ? "ascend-calendar-day--today" : ""} ${!hasItems ? "ascend-calendar-day--empty" : ""}">
           <div class="ascend-calendar-day-label">
             <div class="ascend-calendar-day-label-date">${day.getDate()}</div>
             <div class="ascend-calendar-day-label-weekday">${day.toLocaleDateString("en-US", { weekday: "short" })}</div>
           </div>
-          <div class="ascend-calendar-day-drawer">
-            ${dayItems.length > 0 ? dayItems.map(renderWeekItem).join("") : '<div class="ascend-calendar-day-empty">No deadlines</div>'}
-          </div>
+          ${hasItems ? `<div class="ascend-calendar-day-drawer">${dayItems.map(renderWeekItem).join("")}</div>` : ""}
         </div>
       `;
     }
