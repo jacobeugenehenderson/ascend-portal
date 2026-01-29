@@ -704,26 +704,27 @@
     if (config && item.rawJob) {
       if (item.type === "artstart" && config.artStartStageForJob) {
         stage = config.artStartStageForJob(item.rawJob);
-      } else if (item.type === "copydesk" && config.copydeskStageForJob) {
+      } else if (item.type === "copydeadline" && config.copydeskStageForJob) {
         stage = config.copydeskStageForJob(item.rawJob);
       }
     }
 
-    // Show deadlines always show as stage 3 (blue)
-    if (item.type === "showdeadline") {
-      stage = 3;
-    }
-
     const letter = item.type === "artstart" ? "A" : item.type === "copydesk" ? "C" : "S";
+
+    // Show deadlines use a single rectangle indicator instead of 3 stacked squares
+    const isShowDeadline = item.type === "showdeadline";
+    const progressHtml = isShowDeadline
+      ? `<div class="ascend-calendar-item-rect"></div>`
+      : `<div class="ascend-calendar-item-progress" data-stage="${stage}">
+            <div class="ascend-calendar-item-dot" data-step="1"></div>
+            <div class="ascend-calendar-item-dot" data-step="2"></div>
+            <div class="ascend-calendar-item-dot" data-step="3"></div>
+          </div>`;
 
     return `
       <button class="ascend-calendar-item ascend-calendar-item--${item.type}" data-calendar-item="${escapeAttr(item.jobKey)}">
         <div class="ascend-calendar-item-provenance">
-          <div class="ascend-calendar-item-progress" data-stage="${stage}">
-            <div class="ascend-calendar-item-dot" data-step="1"></div>
-            <div class="ascend-calendar-item-dot" data-step="2"></div>
-            <div class="ascend-calendar-item-dot" data-step="3"></div>
-          </div>
+          ${progressHtml}
           <span class="ascend-calendar-item-letter">${letter}</span>
         </div>
         <div class="ascend-calendar-item-stack">
