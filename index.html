@@ -20,6 +20,7 @@
       })();
     </script>
     <link rel="stylesheet" href="assets/ascend.css?v=25" />
+    <link rel="stylesheet" href="assets/calendar.css?v=1" />
   </head>
   <body>
     <div id="ascend-root">
@@ -147,10 +148,19 @@
                 </article>
 
                 <!-- Calendar trigger -->
-                <button type="button" class="ascend-calendar-trigger" id="ascend-calendar-trigger">
+                <button type="button" class="ascend-calendar-trigger" id="ascend-calendar-trigger" aria-expanded="false" aria-controls="ascend-calendar-panel">
                   <span class="ascend-calendar-trigger-icon">📅</span>
                   <span class="ascend-calendar-trigger-label">Calendar View</span>
                 </button>
+
+                <!-- Collapsible calendar panel -->
+                <div class="ascend-calendar-panel" id="ascend-calendar-panel" aria-expanded="false">
+                  <div class="ascend-calendar-panel-inner">
+                    <div class="ascend-calendar-content" id="ascend-calendar-content">
+                      <!-- Rendered by calendar.js -->
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Codedesk -->
@@ -240,6 +250,7 @@
       </div>
     </div>
 
-    <script src="assets/ascend.js?v=17"></script>
+    <script src="assets/ascend.js?v=18"></script>
+    <script src="assets/calendar.js?v=1"></script>
   </body>
 </html>

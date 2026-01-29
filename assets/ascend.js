@@ -2167,36 +2167,13 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     }
   }
 
-  /* =========================================================
-   * Calendar View (ArtStart + Copydesk deadlines)
-   * ======================================================= */
-
-  function openCalendarView_() {
-    // TODO: Implement calendar modal or view
-    // This will show combined ArtStart (Materials Due) and Copydesk (Cutoff) deadlines
-    console.log("[Ascend] Calendar view requested");
-    alert("Calendar view coming soon!");
-  }
-
-  function initCalendarTrigger() {
-    const trigger = document.getElementById("ascend-calendar-trigger");
-    if (trigger) {
-      trigger.addEventListener("click", function (evt) {
-        evt.preventDefault();
-        evt.stopPropagation();
-        console.log("[Ascend] Calendar trigger clicked");
-        openCalendarView_();
-      });
-    }
-  }
-
     // ---- bootstrap ----
 
   function bootstrap() {
     initLogoutButton();
     initPrimaryButtons();
     initTrashModal();
-    initCalendarTrigger();
+    // Calendar trigger handled by calendar.js
 
     const existing = loadSession();
     if (isSessionValid(existing)) {
