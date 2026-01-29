@@ -511,6 +511,15 @@
         handleItemClick(key);
       });
     });
+
+    // Single-day deadline stripe clicks (in month view)
+    contentEl.querySelectorAll(".ascend-calendar-show-stripe[data-calendar-item]").forEach((el) => {
+      el.addEventListener("click", (evt) => {
+        evt.stopPropagation();
+        const key = evt.currentTarget.dataset.calendarItem;
+        handleItemClick(key);
+      });
+    });
   }
 
   // ---- Dot Tooltip ----
@@ -828,12 +837,14 @@
       cellDate.setHours(0, 0, 0, 0);
       const isToday = !isOutside && cellDate.getTime() === today.getTime();
       const dayItems = isOutside ? [] : getItemsForDate(cellDate);
+      // Separate ArtStart/Copydesk from show deadlines
+      const jobItems = dayItems.filter(item => item.type === 'artstart' || item.type === 'copydesk');
 
       html += `
         <div class="ascend-calendar-month-cell ${isOutside ? "ascend-calendar-month-cell--outside" : ""} ${isToday ? "ascend-calendar-month-cell--today" : ""}">
           <div class="ascend-calendar-month-date">${isOutside ? "" : dayNum}</div>
           <div class="ascend-calendar-month-dots">
-            ${dayItems.map((item) => `<button class="ascend-calendar-month-dot ascend-calendar-month-dot--${item.type}" data-calendar-item="${escapeAttr(item.jobKey)}" data-tooltip-title="${escapeAttr(item.title)}" data-tooltip-type="${escapeAttr(item.type === 'artstart' ? 'ArtStart' : item.type === 'copydesk' ? 'Copydesk' : 'Show')}" data-tooltip-meta="${escapeAttr(item.meta || '')}"></button>`).join("")}
+            ${jobItems.map((item) => `<button class="ascend-calendar-month-dot ascend-calendar-month-dot--${item.type}" data-calendar-item="${escapeAttr(item.jobKey)}" data-tooltip-title="${escapeAttr(item.title)}" data-tooltip-type="${escapeAttr(item.type === 'artstart' ? 'ArtStart' : 'Copydesk')}" data-tooltip-meta="${escapeAttr(item.meta || '')}"></button>`).join("")}
           </div>
         </div>
       `;
@@ -843,12 +854,18 @@
     // Track stack index per row for stacking multiple stripes
     const rowStripeCount = new Array(numRows).fill(0);
 
+    // Get single-day show deadlines
+    const singleDayShowDeadlines = calendarData.filter(item => item.type === 'showdeadline');
+
     html += '<div class="ascend-calendar-month-shows">';
     for (const show of monthShows) {
       html += renderMonthShowStripes(show, year, month, startOffset, lastDay.getDate(), numRows, rowStripeCount);
     }
     for (const range of monthDeadlineRanges) {
       html += renderMonthDeadlineRangeStripes(range, year, month, startOffset, lastDay.getDate(), numRows, rowStripeCount);
+    }
+    for (const deadline of singleDayShowDeadlines) {
+      html += renderMonthSingleDeadlineStripe(deadline, year, month, startOffset, lastDay.getDate(), numRows, rowStripeCount);
     }
     html += '</div>';
 
@@ -913,6 +930,39 @@
     }
 
     return html;
+  }
+
+  function renderMonthSingleDeadlineStripe(deadline, year, month, startOffset, daysInMonth, numRows, rowStripeCount) {
+    // Check if deadline is in this month
+    if (deadline.date.getMonth() !== month || deadline.date.getFullYear() !== year) {
+      return "";
+    }
+
+    const dayNum = deadline.date.getDate();
+    const cellIndex = dayNum + startOffset - 1;
+    const row = Math.floor(cellIndex / 7);
+    const col = cellIndex % 7;
+
+    if (row >= numRows) return "";
+
+    const title = `${deadline.title} · ${deadline.showName || deadline.meta}`;
+
+    // Calculate position - bottom of row with stacking
+    const leftPct = (col / 7) * 100;
+    const widthPct = (1 / 7) * 100;
+    const rowHeightPct = 100 / numRows;
+    const bottomOfRow = (numRows - row - 1) * rowHeightPct;
+    const stackOffset = rowStripeCount[row] * 7;
+
+    rowStripeCount[row]++;
+
+    return `
+      <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal ascend-calendar-show-stripe--deadline"
+           data-calendar-item="${escapeAttr(deadline.jobKey)}"
+           style="left: ${leftPct}%; width: ${widthPct}%; bottom: calc(${bottomOfRow}% + ${stackOffset + 2}px);"
+           title="${escapeAttr(title)}">
+      </div>
+    `;
   }
 
   function renderMonthDeadlineRangeStripes(range, year, month, startOffset, daysInMonth, numRows, rowStripeCount) {
