@@ -857,7 +857,9 @@
 
     // Helper: find stack level for a stripe and mark columns as occupied
     function getStackLevel(row, startCol, endCol) {
+      if (row < 0 || row >= rowStacks.length) return 0;
       const levels = rowStacks[row];
+      if (!levels) return 0;
       // Find lowest level where columns startCol to endCol are free
       for (let level = 0; level <= levels.length; level++) {
         if (!levels[level]) levels[level] = new Set();
@@ -938,7 +940,6 @@
       const widthPct = (spanCols / 7) * 100;
       const rowHeightPct = 100 / numRows;
       const topOfNextRow = (row + 1) * rowHeightPct;
-      const endCol = startCol + spanCols - 1;
       const stackLevel = getStackLevel(row, startCol, endCol);
       const stackOffset = stackLevel * 7; // 7px per stack level
 
@@ -1019,7 +1020,6 @@
       const widthPct = (spanCols / 7) * 100;
       const rowHeightPct = 100 / numRows;
       const topOfNextRow = (row + 1) * rowHeightPct;
-      const endCol = startCol + spanCols - 1;
       const stackLevel = getStackLevel(row, startCol, endCol);
       const stackOffset = stackLevel * 7; // 7px per stack level
 
