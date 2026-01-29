@@ -165,12 +165,6 @@
   opacity: 0.4;
 }
 
-.ascend-calendar-day-drawer--empty {
-  background: transparent;
-  border-color: transparent;
-  min-height: 20px;
-}
-
 /* Drawer container for day items */
 .ascend-calendar-day-drawer {
   grid-column: 3;
@@ -179,6 +173,12 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   overflow: hidden;
   min-height: 40px;
+}
+
+/* Empty day placeholder - maintains grid structure without visual presence */
+.ascend-calendar-day-empty {
+  grid-column: 3;
+  min-height: 20px;
 }
 
 /* Calendar item – matches ascend-job-card-main exactly */
@@ -356,30 +356,15 @@
 .ascend-calendar-show-stripe--vertical {
   /* Grid positioning: start at day N, span M days */
   grid-row: calc(var(--show-start-day) + 1) / span var(--show-span-days);
-
-  /* The gradient is sized to represent the full show, then we show only this week's portion */
-  background: var(--show-gradient-v);
-  background-size: 100% calc(100% / (var(--show-gradient-span) / 100));
-  background-position: 0 calc(-1 * var(--show-gradient-start));
-  background-repeat: no-repeat;
+  /* background is set inline with interpolated gradient colors */
 }
 
 /* Horizontal stripe (month view) - continuous bar spanning multiple cells */
 .ascend-calendar-show-stripe--horizontal {
   position: absolute;
-  /* Position based on grid row and column */
-  grid-row: calc(var(--show-row) + 1); /* +1 for header row */
-  grid-column: var(--show-start-col) / span var(--show-span-cols);
-
   height: 5px;
-  margin: 2px 1px;
-  align-self: start;
-
-  /* The gradient is sized to represent the full show, then we show only this portion */
-  background: var(--show-gradient-h);
-  background-size: calc(100% / (var(--show-gradient-span) / 100)) 100%;
-  background-position: calc(-1 * var(--show-gradient-start)) 0;
-  background-repeat: no-repeat;
+  border-radius: 2px;
+  /* left, width, top, and background are set inline */
 }
 
 /* Month cell needs relative positioning for horizontal stripes */
@@ -401,17 +386,14 @@
   position: relative;
 }
 
-/* Shows layer in month view - overlays the grid */
+/* Shows layer in month view - overlays the day cells (not header) */
 .ascend-calendar-month-shows {
   position: absolute;
-  top: 0;
+  /* Skip the header row - approximate height */
+  top: 28px;
   left: 0;
   right: 0;
   bottom: 0;
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: auto repeat(6, 1fr);
-  gap: 1px;
   pointer-events: none;
 }
 

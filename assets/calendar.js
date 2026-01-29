@@ -489,11 +489,12 @@
         </div>
       `;
 
-      // Day drawer (column 3) - only if has items
+      // Day drawer (column 3)
       if (hasItems) {
         html += `<div class="ascend-calendar-day-drawer">${dayItems.map(renderWeekItem).join("")}</div>`;
       } else {
-        html += `<div class="ascend-calendar-day-drawer ascend-calendar-day-drawer--empty"></div>`;
+        // Empty placeholder to maintain grid structure
+        html += `<div class="ascend-calendar-day-empty"></div>`;
       }
     }
 
@@ -527,19 +528,85 @@
     const daysBeforeThisWeek = Math.floor((showStartInWeek - show.startDate) / (1000 * 60 * 60 * 24));
     const daysInThisWeek = endDayIndex - startDayIndex + 1;
 
-    // Gradient position: what percentage of the full gradient starts at this week's portion
-    const gradientStartPct = (daysBeforeThisWeek / totalShowDays) * 100;
-    const gradientSpanPct = (daysInThisWeek / totalShowDays) * 100;
+    // Calculate the portion of the gradient to show (0 = bottom/orange, 1 = top/blue)
+    const gradientStart = daysBeforeThisWeek / totalShowDays;
+    const gradientEnd = (daysBeforeThisWeek + daysInThisWeek) / totalShowDays;
+
+    // Generate gradient with interpolated colors for this portion
+    const gradient = generateGradientSlice(gradientStart, gradientEnd, 'vertical');
 
     const title = `${show.name}${show.location ? " · " + show.location : ""}`;
 
     return `
       <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--vertical"
            data-show-id="${escapeAttr(show.showId)}"
-           style="--show-start-day: ${startDayIndex}; --show-span-days: ${daysInThisWeek}; --show-gradient-start: ${gradientStartPct}%; --show-gradient-span: ${gradientSpanPct}%;"
+           style="--show-start-day: ${startDayIndex}; --show-span-days: ${daysInThisWeek}; background: ${gradient};"
            title="${escapeAttr(title)}">
       </div>
     `;
+  }
+
+  /**
+   * Generate a gradient that represents a slice of the full show gradient.
+   * Full gradient: orange (0%) -> teal (50%) -> blue (100%)
+   * @param {number} start - Start position (0-1)
+   * @param {number} end - End position (0-1)
+   * @param {string} direction - 'vertical' or 'horizontal'
+   */
+  function generateGradientSlice(start, end, direction) {
+    // Color stops: orange at 0, teal at 0.5, blue at 1
+    const colors = [
+      { pos: 0, r: 230, g: 149, b: 106 },    // orange (#e6956a)
+      { pos: 0.5, r: 111, g: 185, b: 173 },  // teal (#6fb9ad)
+      { pos: 1, r: 123, g: 156, b: 214 }     // blue (#7b9cd6)
+    ];
+
+    // Interpolate color at a position
+    function colorAt(pos) {
+      if (pos <= 0) return colors[0];
+      if (pos >= 1) return colors[colors.length - 1];
+
+      for (let i = 0; i < colors.length - 1; i++) {
+        if (pos >= colors[i].pos && pos <= colors[i + 1].pos) {
+          const t = (pos - colors[i].pos) / (colors[i + 1].pos - colors[i].pos);
+          return {
+            r: Math.round(colors[i].r + t * (colors[i + 1].r - colors[i].r)),
+            g: Math.round(colors[i].g + t * (colors[i + 1].g - colors[i].g)),
+            b: Math.round(colors[i].b + t * (colors[i + 1].b - colors[i].b))
+          };
+        }
+      }
+      return colors[colors.length - 1];
+    }
+
+    const startColor = colorAt(start);
+    const endColor = colorAt(end);
+
+    // For vertical: blue on top (0%), orange on bottom (100%)
+    // For horizontal: orange on left (0%), blue on right (100%)
+    const angle = direction === 'vertical' ? '180deg' : '90deg';
+
+    // Check if we span the middle (teal) color
+    const midPos = 0.5;
+    if (start < midPos && end > midPos) {
+      const midColor = colorAt(midPos);
+      const midPct = ((midPos - start) / (end - start)) * 100;
+
+      if (direction === 'vertical') {
+        // Vertical: top to bottom = end to start (blue top, orange bottom)
+        return `linear-gradient(${angle}, rgb(${endColor.r},${endColor.g},${endColor.b}) 0%, rgb(${midColor.r},${midColor.g},${midColor.b}) ${100 - midPct}%, rgb(${startColor.r},${startColor.g},${startColor.b}) 100%)`;
+      } else {
+        // Horizontal: left to right = start to end (orange left, blue right)
+        return `linear-gradient(${angle}, rgb(${startColor.r},${startColor.g},${startColor.b}) 0%, rgb(${midColor.r},${midColor.g},${midColor.b}) ${midPct}%, rgb(${endColor.r},${endColor.g},${endColor.b}) 100%)`;
+      }
+    }
+
+    // Simple two-color gradient
+    if (direction === 'vertical') {
+      return `linear-gradient(${angle}, rgb(${endColor.r},${endColor.g},${endColor.b}) 0%, rgb(${startColor.r},${startColor.g},${startColor.b}) 100%)`;
+    } else {
+      return `linear-gradient(${angle}, rgb(${startColor.r},${startColor.g},${startColor.b}) 0%, rgb(${endColor.r},${endColor.g},${endColor.b}) 100%)`;
+    }
   }
 
   function getShowsForDay(day) {
@@ -671,15 +738,24 @@
       // Calculate gradient continuity
       const daysBeforeThisRow = Math.max(0, Math.floor((showStartInRow - show.startDate) / (1000 * 60 * 60 * 24)));
       const daysInThisRow = Math.floor((showEndInRow - showStartInRow) / (1000 * 60 * 60 * 24)) + 1;
-      const gradientStartPct = (daysBeforeThisRow / totalShowDays) * 100;
-      const gradientSpanPct = (daysInThisRow / totalShowDays) * 100;
+
+      // Calculate the portion of the gradient to show
+      const gradientStart = daysBeforeThisRow / totalShowDays;
+      const gradientEnd = (daysBeforeThisRow + daysInThisRow) / totalShowDays;
+      const gradient = generateGradientSlice(gradientStart, gradientEnd, 'horizontal');
 
       const title = `${show.name}${show.location ? " · " + show.location : ""}`;
+
+      // Calculate position using percentages for the overlay grid
+      const leftPct = (startCol / 7) * 100;
+      const widthPct = (spanCols / 7) * 100;
+      const topPct = (row / numRows) * 100;
+      const heightPct = (1 / numRows) * 100;
 
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal"
              data-show-id="${escapeAttr(show.showId)}"
-             style="--show-row: ${row + 1}; --show-start-col: ${startCol + 1}; --show-span-cols: ${spanCols}; --show-gradient-start: ${gradientStartPct}%; --show-gradient-span: ${gradientSpanPct}%;"
+             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topPct}% + 2px); background: ${gradient};"
              title="${escapeAttr(title)}">
         </div>
       `;
