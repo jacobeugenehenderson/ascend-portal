@@ -99,19 +99,41 @@
  * ======================================================= */
 
 .ascend-calendar-week {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  display: grid;
+  /* Columns: date label | show stripes area | day content */
+  grid-template-columns: 56px auto 1fr;
+  gap: 0.5rem 0.5rem;
+  position: relative;
 }
 
-.ascend-calendar-day {
+/* Container for day rows */
+.ascend-calendar-days {
+  display: contents;
+}
+
+/* Show stripe layer - uses subgrid to span all 7 rows */
+.ascend-calendar-show-layer {
+  grid-column: 2;
+  grid-row: 1 / span 7;
   display: grid;
+  grid-template-rows: subgrid;
+  grid-auto-flow: column;
+  grid-auto-columns: 8px;
+  gap: 0 4px;
+  padding: 0 0.25rem;
+}
+
+/* When no shows, collapse the show column */
+.ascend-calendar-week--no-shows {
   grid-template-columns: 56px 1fr;
-  gap: 0.5rem;
-  align-items: start;
+}
+
+.ascend-calendar-week--no-shows .ascend-calendar-day-drawer {
+  grid-column: 2;
 }
 
 .ascend-calendar-day-label {
+  grid-column: 1;
   font-size: 0.75rem;
   color: var(--ascend-color-text-muted);
   padding-top: 0.5rem;
@@ -134,22 +156,29 @@
   color: var(--ascend-color-text-muted);
 }
 
-.ascend-calendar-day--today .ascend-calendar-day-label-date {
+.ascend-calendar-day-label--today .ascend-calendar-day-label-date {
   color: var(--ascend-color-accent);
 }
 
 /* Empty days - minimal styling */
-.ascend-calendar-day--empty {
+.ascend-calendar-day-label--empty {
   opacity: 0.4;
+}
+
+.ascend-calendar-day-drawer--empty {
+  background: transparent;
+  border-color: transparent;
+  min-height: 20px;
 }
 
 /* Drawer container for day items */
 .ascend-calendar-day-drawer {
-  flex: 1;
+  grid-column: 3;
   background: rgba(5, 9, 23, 0.9);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   overflow: hidden;
+  min-height: 40px;
 }
 
 /* Calendar item – matches ascend-job-card-main exactly */
@@ -300,48 +329,57 @@
 
 /* Show stripe base - the gradient bar */
 .ascend-calendar-show-stripe {
-  --show-gradient: linear-gradient(
+  --show-gradient-v: linear-gradient(
     180deg,
     var(--ascend-hopper-stage-3) 0%,
     var(--ascend-hopper-stage-2) 50%,
     var(--ascend-hopper-stage-1) 100%
   );
-  border-radius: 3px;
-  cursor: default;
-}
-
-/* Vertical stripe (week view) - runs alongside day content */
-.ascend-calendar-show-stripe--vertical {
-  width: 8px;
-  flex-shrink: 0;
-
-  /* The gradient is sized to the full show duration, then positioned */
-  background: var(--show-gradient);
-  background-size: 100% calc(100% * var(--show-total-days));
-  background-position: 0 calc(-1 * var(--show-gradient-pos) * 1%);
-  background-repeat: no-repeat;
-}
-
-/* Horizontal stripe (month view) - runs across top of cell */
-.ascend-calendar-show-stripe--horizontal {
   --show-gradient-h: linear-gradient(
     90deg,
     var(--ascend-hopper-stage-1) 0%,
     var(--ascend-hopper-stage-2) 50%,
     var(--ascend-hopper-stage-3) 100%
   );
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
 
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
+.ascend-calendar-show-stripe:hover {
+  opacity: 0.85;
+  transform: scaleX(1.1);
+}
 
-  background: var(--show-gradient-h);
-  background-size: calc(100% * var(--show-total-days)) 100%;
-  background-position: calc(-1 * var(--show-gradient-pos) * 1%) 0;
+/* Vertical stripe (week view) - continuous bar spanning multiple rows */
+.ascend-calendar-show-stripe--vertical {
+  /* Grid positioning: start at day N, span M days */
+  grid-row: calc(var(--show-start-day) + 1) / span var(--show-span-days);
+
+  /* The gradient is sized to represent the full show, then we show only this week's portion */
+  background: var(--show-gradient-v);
+  background-size: 100% calc(100% / (var(--show-gradient-span) / 100));
+  background-position: 0 calc(-1 * var(--show-gradient-start));
   background-repeat: no-repeat;
-  border-radius: 0;
+}
+
+/* Horizontal stripe (month view) - continuous bar spanning multiple cells */
+.ascend-calendar-show-stripe--horizontal {
+  position: absolute;
+  /* Position based on grid row and column */
+  grid-row: calc(var(--show-row) + 1); /* +1 for header row */
+  grid-column: var(--show-start-col) / span var(--show-span-cols);
+
+  height: 5px;
+  margin: 2px 1px;
+  align-self: start;
+
+  /* The gradient is sized to represent the full show, then we show only this portion */
+  background: var(--show-gradient-h);
+  background-size: calc(100% / (var(--show-gradient-span) / 100)) 100%;
+  background-position: calc(-1 * var(--show-gradient-start)) 0;
+  background-repeat: no-repeat;
 }
 
 /* Month cell needs relative positioning for horizontal stripes */
@@ -360,6 +398,21 @@
   background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   overflow: hidden;
+  position: relative;
+}
+
+/* Shows layer in month view - overlays the grid */
+.ascend-calendar-month-shows {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: auto repeat(6, 1fr);
+  gap: 1px;
+  pointer-events: none;
 }
 
 .ascend-calendar-month-header {
@@ -429,4 +482,161 @@
   padding: 2rem 1rem;
   color: var(--ascend-color-text-muted);
   font-size: 0.85rem;
+}
+
+/* =========================================================
+ * Show Modal
+ * ======================================================= */
+
+.ascend-show-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.ascend-show-modal[aria-hidden="false"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ascend-show-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.ascend-show-modal-panel {
+  position: relative;
+  background: var(--ascend-color-surface);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  min-width: 320px;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.95);
+  transition: transform 0.2s ease;
+}
+
+.ascend-show-modal[aria-hidden="false"] .ascend-show-modal-panel {
+  transform: scale(1);
+}
+
+.ascend-show-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 1rem;
+}
+
+.ascend-show-modal-title {
+  font-size: 1.1rem;
+  font-weight: var(--ascend-weight-semibold);
+  color: var(--ascend-color-text-main);
+  line-height: 1.3;
+}
+
+.ascend-show-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--ascend-color-text-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.ascend-show-modal-close:hover {
+  color: var(--ascend-color-text-main);
+}
+
+.ascend-show-modal-body {
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+}
+
+.ascend-show-modal-field {
+  margin-bottom: 0.85rem;
+}
+
+.ascend-show-modal-field:last-child {
+  margin-bottom: 0;
+}
+
+.ascend-show-modal-label {
+  font-size: 0.65rem;
+  font-weight: var(--ascend-weight-medium);
+  color: var(--ascend-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.2rem;
+}
+
+.ascend-show-modal-value {
+  font-size: 0.9rem;
+  color: var(--ascend-color-text-main);
+  line-height: 1.4;
+}
+
+.ascend-show-modal-value a {
+  color: var(--ascend-color-accent);
+  text-decoration: none;
+}
+
+.ascend-show-modal-value a:hover {
+  text-decoration: underline;
+}
+
+.ascend-show-modal-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.ascend-show-modal-date-gradient {
+  width: 6px;
+  height: 32px;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    var(--ascend-hopper-stage-1) 0%,
+    var(--ascend-hopper-stage-2) 50%,
+    var(--ascend-hopper-stage-3) 100%
+  );
+  flex-shrink: 0;
+}
+
+.ascend-show-modal-date-range {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ascend-show-modal-date-start,
+.ascend-show-modal-date-end {
+  font-size: 0.85rem;
+  color: var(--ascend-color-text-main);
+}
+
+.ascend-show-modal-date-sep {
+  font-size: 0.7rem;
+  color: var(--ascend-color-text-muted);
 }

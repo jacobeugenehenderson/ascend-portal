@@ -430,6 +430,15 @@
         handleItemClick(key);
       });
     });
+
+    // Show stripe clicks
+    contentEl.querySelectorAll("[data-show-id]").forEach((el) => {
+      el.addEventListener("click", (evt) => {
+        evt.stopPropagation();
+        const showId = evt.currentTarget.dataset.showId;
+        handleShowClick(showId);
+      });
+    });
   }
 
   function getPeriodLabel() {
@@ -456,8 +465,13 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let html = '<div class="ascend-calendar-week">';
+    // Find shows that overlap this week
+    const weekShows = getShowsForWeek(weekStart, weekEnd);
+    const hasShows = weekShows.length > 0;
 
+    let html = `<div class="ascend-calendar-week ${hasShows ? '' : 'ascend-calendar-week--no-shows'}">`;
+
+    // Render each day's components directly into the grid
     for (let i = 0; i < 7; i++) {
       const day = new Date(weekStart);
       day.setDate(day.getDate() + i);
@@ -465,27 +479,67 @@
 
       const isToday = day.getTime() === today.getTime();
       const dayItems = getItemsForDate(day);
-      const dayShows = getShowsForDay(day);
-
       const hasItems = dayItems.length > 0;
-      const hasShows = dayShows.length > 0;
 
+      // Day label (column 1)
       html += `
-        <div class="ascend-calendar-day ${isToday ? "ascend-calendar-day--today" : ""} ${!hasItems && !hasShows ? "ascend-calendar-day--empty" : ""}">
-          <div class="ascend-calendar-day-label">
-            <div class="ascend-calendar-day-label-date">${day.getDate()}</div>
-            <div class="ascend-calendar-day-label-weekday">${day.toLocaleDateString("en-US", { weekday: "short" })}</div>
-          </div>
-          <div class="ascend-calendar-day-content">
-            ${hasShows ? dayShows.map((show) => renderShowStripe(show, day, "vertical")).join("") : ""}
-            ${hasItems ? `<div class="ascend-calendar-day-drawer">${dayItems.map(renderWeekItem).join("")}</div>` : ""}
-          </div>
+        <div class="ascend-calendar-day-label ${isToday ? 'ascend-calendar-day-label--today' : ''} ${!hasItems ? 'ascend-calendar-day-label--empty' : ''}">
+          <div class="ascend-calendar-day-label-date">${day.getDate()}</div>
+          <div class="ascend-calendar-day-label-weekday">${day.toLocaleDateString("en-US", { weekday: "short" })}</div>
         </div>
       `;
+
+      // Day drawer (column 3) - only if has items
+      if (hasItems) {
+        html += `<div class="ascend-calendar-day-drawer">${dayItems.map(renderWeekItem).join("")}</div>`;
+      } else {
+        html += `<div class="ascend-calendar-day-drawer ascend-calendar-day-drawer--empty"></div>`;
+      }
+    }
+
+    // Show stripes layer (column 2) - renders after days to appear on top visually
+    if (hasShows) {
+      html += '<div class="ascend-calendar-show-layer">';
+      html += weekShows.map((show) => renderWeekShowStripe(show, weekStart, weekEnd)).join("");
+      html += '</div>';
     }
 
     html += "</div>";
     return html;
+  }
+
+  function getShowsForWeek(weekStart, weekEnd) {
+    return showsData.filter((show) => {
+      return show.startDate <= weekEnd && show.endDate >= weekStart;
+    });
+  }
+
+  function renderWeekShowStripe(show, weekStart, weekEnd) {
+    // Calculate which days of the week this show spans
+    const showStartInWeek = show.startDate < weekStart ? weekStart : show.startDate;
+    const showEndInWeek = show.endDate > weekEnd ? weekEnd : show.endDate;
+
+    const startDayIndex = Math.floor((showStartInWeek - weekStart) / (1000 * 60 * 60 * 24));
+    const endDayIndex = Math.floor((showEndInWeek - weekStart) / (1000 * 60 * 60 * 24));
+
+    // Calculate gradient position for visual continuity
+    const totalShowDays = Math.floor((show.endDate - show.startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const daysBeforeThisWeek = Math.floor((showStartInWeek - show.startDate) / (1000 * 60 * 60 * 24));
+    const daysInThisWeek = endDayIndex - startDayIndex + 1;
+
+    // Gradient position: what percentage of the full gradient starts at this week's portion
+    const gradientStartPct = (daysBeforeThisWeek / totalShowDays) * 100;
+    const gradientSpanPct = (daysInThisWeek / totalShowDays) * 100;
+
+    const title = `${show.name}${show.location ? " · " + show.location : ""}`;
+
+    return `
+      <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--vertical"
+           data-show-id="${escapeAttr(show.showId)}"
+           style="--show-start-day: ${startDayIndex}; --show-span-days: ${daysInThisWeek}; --show-gradient-start: ${gradientStartPct}%; --show-gradient-span: ${gradientSpanPct}%;"
+           title="${escapeAttr(title)}">
+      </div>
+    `;
   }
 
   function getShowsForDay(day) {
@@ -493,30 +547,6 @@
     return showsData.filter((show) => {
       return dayTime >= show.startDate.getTime() && dayTime <= show.endDate.getTime();
     });
-  }
-
-  function renderShowStripe(show, day, orientation) {
-    // Calculate gradient position based on where this day falls in the show's span
-    const totalDays = Math.floor((show.endDate - show.startDate) / (1000 * 60 * 60 * 24)) + 1;
-    const dayIndex = Math.floor((day - show.startDate) / (1000 * 60 * 60 * 24));
-
-    // Calculate the percentage range for this day's portion of the gradient
-    // Gradient goes: orange (0%) → teal (50%) → blue (100%)
-    const startPct = (dayIndex / totalDays) * 100;
-    const endPct = ((dayIndex + 1) / totalDays) * 100;
-
-    // For vertical stripes, we show the gradient slice for this day
-    // background-position-y shifts the gradient to show the correct portion
-    const gradientPos = startPct;
-
-    const title = `${show.name}${show.location ? " · " + show.location : ""}`;
-
-    return `
-      <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--${orientation}"
-           style="--show-gradient-pos: ${gradientPos}%; --show-total-days: ${totalDays};"
-           title="${escapeAttr(title)}">
-      </div>
-    `;
   }
 
   function renderWeekItem(item) {
@@ -563,7 +593,16 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Find shows that overlap this month
+    const monthStart = firstDay;
+    const monthEnd = lastDay;
+    const monthShows = showsData.filter((show) => {
+      return show.startDate <= monthEnd && show.endDate >= monthStart;
+    });
+
     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const totalCells = Math.ceil((startOffset + lastDay.getDate()) / 7) * 7;
+    const numRows = totalCells / 7;
 
     let html = '<div class="ascend-calendar-month">';
 
@@ -573,8 +612,6 @@
     });
 
     // Day cells
-    const totalCells = Math.ceil((startOffset + lastDay.getDate()) / 7) * 7;
-
     for (let i = 0; i < totalCells; i++) {
       const dayNum = i - startOffset + 1;
       const isOutside = dayNum < 1 || dayNum > lastDay.getDate();
@@ -582,11 +619,9 @@
       cellDate.setHours(0, 0, 0, 0);
       const isToday = !isOutside && cellDate.getTime() === today.getTime();
       const dayItems = isOutside ? [] : getItemsForDate(cellDate);
-      const dayShows = isOutside ? [] : getShowsForDay(cellDate);
 
       html += `
         <div class="ascend-calendar-month-cell ${isOutside ? "ascend-calendar-month-cell--outside" : ""} ${isToday ? "ascend-calendar-month-cell--today" : ""}">
-          ${dayShows.length > 0 ? dayShows.map((show) => renderShowStripe(show, cellDate, "horizontal")).join("") : ""}
           <div class="ascend-calendar-month-date">${isOutside ? "" : dayNum}</div>
           <div class="ascend-calendar-month-dots">
             ${dayItems.map((item) => `<div class="ascend-calendar-month-dot ascend-calendar-month-dot--${item.type}" title="${escapeAttr(item.title)}"></div>`).join("")}
@@ -595,7 +630,61 @@
       `;
     }
 
+    // Show stripes layer (rendered per row for proper positioning)
+    html += '<div class="ascend-calendar-month-shows">';
+    for (const show of monthShows) {
+      html += renderMonthShowStripes(show, year, month, startOffset, lastDay.getDate(), numRows);
+    }
+    html += '</div>';
+
     html += "</div>";
+    return html;
+  }
+
+  function renderMonthShowStripes(show, year, month, startOffset, daysInMonth, numRows) {
+    const totalShowDays = Math.floor((show.endDate - show.startDate) / (1000 * 60 * 60 * 24)) + 1;
+    let html = "";
+
+    // Process each week row
+    for (let row = 0; row < numRows; row++) {
+      const rowStartCell = row * 7;
+      const rowEndCell = rowStartCell + 6;
+
+      // Convert cell indices to actual dates
+      const rowStartDayNum = rowStartCell - startOffset + 1;
+      const rowEndDayNum = rowEndCell - startOffset + 1;
+
+      const rowStartDate = new Date(year, month, Math.max(1, rowStartDayNum));
+      const rowEndDate = new Date(year, month, Math.min(daysInMonth, rowEndDayNum));
+
+      // Check if show overlaps this row
+      if (show.endDate < rowStartDate || show.startDate > rowEndDate) continue;
+
+      // Calculate where the show starts/ends in this row
+      const showStartInRow = show.startDate > rowStartDate ? show.startDate : rowStartDate;
+      const showEndInRow = show.endDate < rowEndDate ? show.endDate : rowEndDate;
+
+      const startCol = showStartInRow.getDate() - rowStartDayNum + (rowStartDayNum < 1 ? startOffset : 0);
+      const endCol = showEndInRow.getDate() - rowStartDayNum + (rowStartDayNum < 1 ? startOffset : 0);
+      const spanCols = endCol - startCol + 1;
+
+      // Calculate gradient continuity
+      const daysBeforeThisRow = Math.max(0, Math.floor((showStartInRow - show.startDate) / (1000 * 60 * 60 * 24)));
+      const daysInThisRow = Math.floor((showEndInRow - showStartInRow) / (1000 * 60 * 60 * 24)) + 1;
+      const gradientStartPct = (daysBeforeThisRow / totalShowDays) * 100;
+      const gradientSpanPct = (daysInThisRow / totalShowDays) * 100;
+
+      const title = `${show.name}${show.location ? " · " + show.location : ""}`;
+
+      html += `
+        <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal"
+             data-show-id="${escapeAttr(show.showId)}"
+             style="--show-row: ${row + 1}; --show-start-col: ${startCol + 1}; --show-span-cols: ${spanCols}; --show-gradient-start: ${gradientStartPct}%; --show-gradient-span: ${gradientSpanPct}%;"
+             title="${escapeAttr(title)}">
+        </div>
+      `;
+    }
+
     return html;
   }
 
@@ -626,6 +715,118 @@
       window.open(item.openUrl, "_blank", "noopener");
     }
     console.log("[Calendar] Item clicked:", jobKey);
+  }
+
+  // ---- Show Modal ----
+
+  function handleShowClick(showId) {
+    const show = showsData.find((s) => s.showId === showId);
+    if (!show) {
+      console.warn("[Calendar] Show not found:", showId);
+      return;
+    }
+    openShowModal(show);
+  }
+
+  function openShowModal(show) {
+    const modalEl = document.getElementById("ascend-show-modal");
+    const titleEl = document.getElementById("ascend-show-modal-title");
+    const bodyEl = document.getElementById("ascend-show-modal-body");
+    const backdropEl = document.getElementById("ascend-show-modal-backdrop");
+    const closeEl = document.getElementById("ascend-show-modal-close");
+
+    if (!modalEl || !titleEl || !bodyEl) return;
+
+    // Set title
+    titleEl.textContent = show.name;
+
+    // Build body content
+    const raw = show.rawShow || {};
+    const startStr = formatDate(show.startDate);
+    const endStr = formatDate(show.endDate);
+
+    let bodyHtml = `
+      <div class="ascend-show-modal-dates">
+        <div class="ascend-show-modal-date-gradient"></div>
+        <div class="ascend-show-modal-date-range">
+          <div class="ascend-show-modal-date-start">${escapeHtml(startStr)}</div>
+          <div class="ascend-show-modal-date-sep">to</div>
+          <div class="ascend-show-modal-date-end">${escapeHtml(endStr)}</div>
+        </div>
+      </div>
+    `;
+
+    // Location
+    if (show.location) {
+      bodyHtml += renderModalField("Location", show.location);
+    }
+
+    // Theme
+    if (show.theme) {
+      bodyHtml += renderModalField("Theme", show.theme);
+    }
+
+    // Line of Business
+    if (show.lob) {
+      bodyHtml += renderModalField("Line of Business", show.lob);
+    }
+
+    // Branding Notes
+    if (raw.BrandingNotes) {
+      bodyHtml += renderModalField("Branding Notes", raw.BrandingNotes);
+    }
+
+    // Media Kit URL
+    if (raw.MediaKitUrl) {
+      bodyHtml += renderModalField("Media Kit", `<a href="${escapeAttr(raw.MediaKitUrl)}" target="_blank" rel="noopener">View Media Kit</a>`, true);
+    }
+
+    // Notes
+    if (raw.Notes) {
+      bodyHtml += renderModalField("Notes", raw.Notes);
+    }
+
+    bodyEl.innerHTML = bodyHtml;
+
+    // Show modal
+    modalEl.setAttribute("aria-hidden", "false");
+
+    // Bind close handlers
+    const closeModal = () => {
+      modalEl.setAttribute("aria-hidden", "true");
+      backdropEl.removeEventListener("click", closeModal);
+      closeEl.removeEventListener("click", closeModal);
+      document.removeEventListener("keydown", handleEsc);
+    };
+
+    const handleEsc = (evt) => {
+      if (evt.key === "Escape") closeModal();
+    };
+
+    backdropEl.addEventListener("click", closeModal);
+    closeEl.addEventListener("click", closeModal);
+    document.addEventListener("keydown", handleEsc);
+
+    console.log("[Calendar] Show modal opened:", show.showId);
+  }
+
+  function renderModalField(label, value, isHtml = false) {
+    return `
+      <div class="ascend-show-modal-field">
+        <div class="ascend-show-modal-label">${escapeHtml(label)}</div>
+        <div class="ascend-show-modal-value">${isHtml ? value : escapeHtml(value)}</div>
+      </div>
+    `;
+  }
+
+  function formatDate(date) {
+    if (!date) return "";
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
   }
 
   // ---- Helpers ----
