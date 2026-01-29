@@ -499,6 +499,58 @@
         handleDeadlineRangeClick(rangeKey);
       });
     });
+
+    // Month dot tooltips and clicks
+    contentEl.querySelectorAll(".ascend-calendar-month-dot[data-tooltip-title]").forEach((el) => {
+      el.addEventListener("mouseenter", showDotTooltip);
+      el.addEventListener("mouseleave", hideDotTooltip);
+      el.addEventListener("click", (evt) => {
+        evt.stopPropagation();
+        hideDotTooltip();
+        const key = evt.currentTarget.dataset.calendarItem;
+        handleItemClick(key);
+      });
+    });
+  }
+
+  // ---- Dot Tooltip ----
+
+  let tooltipEl = null;
+
+  function ensureTooltipEl() {
+    if (!tooltipEl) {
+      tooltipEl = document.createElement("div");
+      tooltipEl.className = "ascend-calendar-tooltip";
+      tooltipEl.setAttribute("aria-hidden", "true");
+      document.body.appendChild(tooltipEl);
+    }
+    return tooltipEl;
+  }
+
+  function showDotTooltip(evt) {
+    const dot = evt.currentTarget;
+    const title = dot.dataset.tooltipTitle || "";
+    const type = dot.dataset.tooltipType || "";
+    const meta = dot.dataset.tooltipMeta || "";
+
+    const tip = ensureTooltipEl();
+    tip.innerHTML = `
+      <div class="ascend-calendar-tooltip-type">${escapeHtml(type)}</div>
+      <div class="ascend-calendar-tooltip-title">${escapeHtml(title)}</div>
+      ${meta ? `<div class="ascend-calendar-tooltip-meta">${escapeHtml(meta)}</div>` : ""}
+    `;
+
+    // Position near the dot
+    const rect = dot.getBoundingClientRect();
+    tip.style.left = `${rect.left + rect.width / 2}px`;
+    tip.style.top = `${rect.top - 8}px`;
+    tip.setAttribute("aria-hidden", "false");
+  }
+
+  function hideDotTooltip() {
+    if (tooltipEl) {
+      tooltipEl.setAttribute("aria-hidden", "true");
+    }
   }
 
   function getPeriodLabel() {
@@ -781,7 +833,7 @@
         <div class="ascend-calendar-month-cell ${isOutside ? "ascend-calendar-month-cell--outside" : ""} ${isToday ? "ascend-calendar-month-cell--today" : ""}">
           <div class="ascend-calendar-month-date">${isOutside ? "" : dayNum}</div>
           <div class="ascend-calendar-month-dots">
-            ${dayItems.map((item) => `<div class="ascend-calendar-month-dot ascend-calendar-month-dot--${item.type}" title="${escapeAttr(item.title)}"></div>`).join("")}
+            ${dayItems.map((item) => `<button class="ascend-calendar-month-dot ascend-calendar-month-dot--${item.type}" data-calendar-item="${escapeAttr(item.jobKey)}" data-tooltip-title="${escapeAttr(item.title)}" data-tooltip-type="${escapeAttr(item.type === 'artstart' ? 'ArtStart' : item.type === 'copydesk' ? 'Copydesk' : 'Show')}" data-tooltip-meta="${escapeAttr(item.meta || '')}"></button>`).join("")}
           </div>
         </div>
       `;

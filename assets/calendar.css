@@ -479,6 +479,66 @@
   background: var(--ascend-hopper-stage-3);
 }
 
+/* Month dot as clickable button */
+.ascend-calendar-month-dot {
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.ascend-calendar-month-dot:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+/* =========================================================
+ * Tooltip for month view dots
+ * ======================================================= */
+
+.ascend-calendar-tooltip {
+  position: fixed;
+  z-index: 9500;
+  background: var(--ascend-color-surface);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  max-width: 220px;
+}
+
+.ascend-calendar-tooltip[aria-hidden="false"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ascend-calendar-tooltip-type {
+  font-size: 0.6rem;
+  font-weight: var(--ascend-weight-medium);
+  color: var(--ascend-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.2rem;
+}
+
+.ascend-calendar-tooltip-title {
+  font-size: 0.85rem;
+  font-weight: var(--ascend-weight-semibold);
+  color: var(--ascend-color-text-main);
+  line-height: 1.25;
+}
+
+.ascend-calendar-tooltip-meta {
+  font-size: 0.7rem;
+  color: var(--ascend-color-text-muted);
+  margin-top: 0.15rem;
+}
+
 /* =========================================================
  * Empty state
  * ======================================================= */
