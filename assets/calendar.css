@@ -442,17 +442,17 @@
 }
 
 .ascend-calendar-month-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
 }
 
 .ascend-calendar-month-dot--artstart {
-  background: #e6956a;
+  background: var(--ascend-hopper-stage-1);
 }
 
 .ascend-calendar-month-dot--copydesk {
-  background: #6fb9ad;
+  background: var(--ascend-hopper-stage-2);
 }
 
 /* =========================================================
