@@ -406,14 +406,12 @@
 /* Shows layer in month view - overlays the day cells (not header) */
 .ascend-calendar-month-shows {
   position: absolute;
-  /* Skip the header row - approximate height */
-  top: 28px;
+  /* Skip the header row */
+  top: 26px;
   left: 0;
   right: 0;
   bottom: 0;
   pointer-events: none;
-  display: flex;
-  flex-direction: column;
 }
 
 .ascend-calendar-month-header {

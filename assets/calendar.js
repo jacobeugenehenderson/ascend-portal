@@ -911,11 +911,11 @@
 
       const title = `${show.name}${show.location ? " · " + show.location : ""}`;
 
-      // Calculate position - bottom of row with stacking
+      // Calculate position - bottom of row with stacking (using top positioning)
       const leftPct = (startCol / 7) * 100;
       const widthPct = (spanCols / 7) * 100;
       const rowHeightPct = 100 / numRows;
-      const bottomOfRow = (numRows - row - 1) * rowHeightPct;
+      const topOfNextRow = (row + 1) * rowHeightPct;
       const stackOffset = rowStripeCount[row] * 7; // 7px per stripe for stacking
 
       rowStripeCount[row]++;
@@ -923,7 +923,7 @@
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal"
              data-show-id="${escapeAttr(show.showId)}"
-             style="left: ${leftPct}%; width: ${widthPct}%; bottom: calc(${bottomOfRow}% + ${stackOffset + 2}px); background: ${gradient};"
+             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topOfNextRow}% - ${stackOffset + 7}px); background: ${gradient};"
              title="${escapeAttr(title)}">
         </div>
       `;
@@ -947,11 +947,11 @@
 
     const title = `${deadline.title} · ${deadline.showName || deadline.meta}`;
 
-    // Calculate position - bottom of row with stacking
+    // Calculate position - bottom of row with stacking (using top positioning)
     const leftPct = (col / 7) * 100;
     const widthPct = (1 / 7) * 100;
     const rowHeightPct = 100 / numRows;
-    const bottomOfRow = (numRows - row - 1) * rowHeightPct;
+    const topOfNextRow = (row + 1) * rowHeightPct;
     const stackOffset = rowStripeCount[row] * 7;
 
     rowStripeCount[row]++;
@@ -959,7 +959,7 @@
     return `
       <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal ascend-calendar-show-stripe--deadline"
            data-calendar-item="${escapeAttr(deadline.jobKey)}"
-           style="left: ${leftPct}%; width: ${widthPct}%; bottom: calc(${bottomOfRow}% + ${stackOffset + 2}px);"
+           style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topOfNextRow}% - ${stackOffset + 7}px);"
            title="${escapeAttr(title)}">
       </div>
     `;
@@ -993,11 +993,11 @@
 
       const title = `${range.title} · ${range.showName}`;
 
-      // Calculate position - bottom of row with stacking
+      // Calculate position - bottom of row with stacking (using top positioning)
       const leftPct = (startCol / 7) * 100;
       const widthPct = (spanCols / 7) * 100;
       const rowHeightPct = 100 / numRows;
-      const bottomOfRow = (numRows - row - 1) * rowHeightPct;
+      const topOfNextRow = (row + 1) * rowHeightPct;
       const stackOffset = rowStripeCount[row] * 7; // 7px per stripe for stacking
 
       rowStripeCount[row]++;
@@ -1005,7 +1005,7 @@
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal ascend-calendar-show-stripe--deadline"
              data-deadline-range="${escapeAttr(range.showId + '-' + range.title)}"
-             style="left: ${leftPct}%; width: ${widthPct}%; bottom: calc(${bottomOfRow}% + ${stackOffset + 2}px);"
+             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topOfNextRow}% - ${stackOffset + 7}px);"
              title="${escapeAttr(title)}">
         </div>
       `;
