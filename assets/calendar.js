@@ -456,17 +456,7 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Find shows that overlap this week
-    const weekShows = getShowsForWeek(weekStart, weekEnd);
-
     let html = '<div class="ascend-calendar-week">';
-
-    // Render show banners at top
-    if (weekShows.length > 0) {
-      html += '<div class="ascend-calendar-shows">';
-      html += weekShows.map((show) => renderShowBanner(show, weekStart, weekEnd)).join("");
-      html += '</div>';
-    }
 
     for (let i = 0; i < 7; i++) {
       const day = new Date(weekStart);
@@ -475,15 +465,21 @@
 
       const isToday = day.getTime() === today.getTime();
       const dayItems = getItemsForDate(day);
+      const dayShows = getShowsForDay(day);
 
       const hasItems = dayItems.length > 0;
+      const hasShows = dayShows.length > 0;
+
       html += `
-        <div class="ascend-calendar-day ${isToday ? "ascend-calendar-day--today" : ""} ${!hasItems ? "ascend-calendar-day--empty" : ""}">
+        <div class="ascend-calendar-day ${isToday ? "ascend-calendar-day--today" : ""} ${!hasItems && !hasShows ? "ascend-calendar-day--empty" : ""}">
           <div class="ascend-calendar-day-label">
             <div class="ascend-calendar-day-label-date">${day.getDate()}</div>
             <div class="ascend-calendar-day-label-weekday">${day.toLocaleDateString("en-US", { weekday: "short" })}</div>
           </div>
-          ${hasItems ? `<div class="ascend-calendar-day-drawer">${dayItems.map(renderWeekItem).join("")}</div>` : ""}
+          <div class="ascend-calendar-day-content">
+            ${hasShows ? dayShows.map((show) => renderShowStripe(show, day, "vertical")).join("") : ""}
+            ${hasItems ? `<div class="ascend-calendar-day-drawer">${dayItems.map(renderWeekItem).join("")}</div>` : ""}
+          </div>
         </div>
       `;
     }
@@ -492,31 +488,33 @@
     return html;
   }
 
-  function getShowsForWeek(weekStart, weekEnd) {
+  function getShowsForDay(day) {
+    const dayTime = day.getTime();
     return showsData.filter((show) => {
-      // Show overlaps week if: show starts before week ends AND show ends after week starts
-      return show.startDate <= weekEnd && show.endDate >= weekStart;
+      return dayTime >= show.startDate.getTime() && dayTime <= show.endDate.getTime();
     });
   }
 
-  function renderShowBanner(show, weekStart, weekEnd) {
-    // Calculate position and width based on show dates vs week
-    const showStart = show.startDate < weekStart ? weekStart : show.startDate;
-    const showEnd = show.endDate > weekEnd ? weekEnd : show.endDate;
+  function renderShowStripe(show, day, orientation) {
+    // Calculate gradient position based on where this day falls in the show's span
+    const totalDays = Math.floor((show.endDate - show.startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const dayIndex = Math.floor((day - show.startDate) / (1000 * 60 * 60 * 24));
 
-    const startDay = Math.floor((showStart - weekStart) / (1000 * 60 * 60 * 24));
-    const endDay = Math.floor((showEnd - weekStart) / (1000 * 60 * 60 * 24));
-    const spanDays = endDay - startDay + 1;
+    // Calculate the percentage range for this day's portion of the gradient
+    // Gradient goes: orange (0%) → teal (50%) → blue (100%)
+    const startPct = (dayIndex / totalDays) * 100;
+    const endPct = ((dayIndex + 1) / totalDays) * 100;
 
-    // Calculate left offset and width (day label is ~56px, then 7 equal day columns)
-    // We'll use CSS grid positioning instead of absolute for simplicity
-    const locationText = show.location ? ` · ${show.location}` : "";
+    // For vertical stripes, we show the gradient slice for this day
+    // background-position-y shifts the gradient to show the correct portion
+    const gradientPos = startPct;
+
+    const title = `${show.name}${show.location ? " · " + show.location : ""}`;
 
     return `
-      <div class="ascend-calendar-show-banner" data-start-day="${startDay}" data-span="${spanDays}">
-        <span class="ascend-calendar-show-letter">S</span>
-        <span class="ascend-calendar-show-name">${escapeHtml(show.name)}</span>
-        <span class="ascend-calendar-show-location">${escapeHtml(locationText)}</span>
+      <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--${orientation}"
+           style="--show-gradient-pos: ${gradientPos}%; --show-total-days: ${totalDays};"
+           title="${escapeAttr(title)}">
       </div>
     `;
   }
@@ -584,9 +582,11 @@
       cellDate.setHours(0, 0, 0, 0);
       const isToday = !isOutside && cellDate.getTime() === today.getTime();
       const dayItems = isOutside ? [] : getItemsForDate(cellDate);
+      const dayShows = isOutside ? [] : getShowsForDay(cellDate);
 
       html += `
         <div class="ascend-calendar-month-cell ${isOutside ? "ascend-calendar-month-cell--outside" : ""} ${isToday ? "ascend-calendar-month-cell--today" : ""}">
+          ${dayShows.length > 0 ? dayShows.map((show) => renderShowStripe(show, cellDate, "horizontal")).join("") : ""}
           <div class="ascend-calendar-month-date">${isOutside ? "" : dayNum}</div>
           <div class="ascend-calendar-month-dots">
             ${dayItems.map((item) => `<div class="ascend-calendar-month-dot ascend-calendar-month-dot--${item.type}" title="${escapeAttr(item.title)}"></div>`).join("")}

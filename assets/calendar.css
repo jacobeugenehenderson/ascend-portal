@@ -145,6 +145,7 @@
 
 /* Drawer container for day items */
 .ascend-calendar-day-drawer {
+  flex: 1;
   background: rgba(5, 9, 23, 0.9);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -284,48 +285,68 @@
 }
 
 /* =========================================================
- * Shows – Banner spans for trade shows/events
+ * Shows – Gradient stripe indicators for trade shows/events
  * ======================================================= */
 
-.ascend-calendar-shows {
+/* Day content wrapper (holds show stripes + drawer) */
+.ascend-calendar-day-content {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  margin-bottom: 0.75rem;
-  padding-left: 56px; /* Align with day content (matches day label width) */
-}
-
-.ascend-calendar-show-banner {
-  display: flex;
-  align-items: center;
+  flex-direction: row;
+  align-items: stretch;
   gap: 0.5rem;
-  padding: 0.45rem 0.75rem;
-  background: linear-gradient(
-    90deg,
-    rgba(78, 134, 223, 0.25),
-    rgba(78, 134, 223, 0.12) 60%,
-    rgba(78, 134, 223, 0.06)
+  flex: 1;
+  min-height: 40px;
+}
+
+/* Show stripe base - the gradient bar */
+.ascend-calendar-show-stripe {
+  --show-gradient: linear-gradient(
+    180deg,
+    var(--ascend-hopper-stage-3) 0%,
+    var(--ascend-hopper-stage-2) 50%,
+    var(--ascend-hopper-stage-1) 100%
   );
-  border: 1px solid rgba(78, 134, 223, 0.3);
-  border-radius: 8px;
-  font-size: 0.8rem;
+  border-radius: 3px;
+  cursor: default;
 }
 
-.ascend-calendar-show-letter {
-  font-size: 1rem;
-  font-weight: var(--ascend-weight-bold);
-  color: var(--ascend-hopper-stage-3);
-  letter-spacing: 0.06em;
+/* Vertical stripe (week view) - runs alongside day content */
+.ascend-calendar-show-stripe--vertical {
+  width: 8px;
+  flex-shrink: 0;
+
+  /* The gradient is sized to the full show duration, then positioned */
+  background: var(--show-gradient);
+  background-size: 100% calc(100% * var(--show-total-days));
+  background-position: 0 calc(-1 * var(--show-gradient-pos) * 1%);
+  background-repeat: no-repeat;
 }
 
-.ascend-calendar-show-name {
-  font-weight: var(--ascend-weight-semibold);
-  color: var(--ascend-color-text-main);
+/* Horizontal stripe (month view) - runs across top of cell */
+.ascend-calendar-show-stripe--horizontal {
+  --show-gradient-h: linear-gradient(
+    90deg,
+    var(--ascend-hopper-stage-1) 0%,
+    var(--ascend-hopper-stage-2) 50%,
+    var(--ascend-hopper-stage-3) 100%
+  );
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+
+  background: var(--show-gradient-h);
+  background-size: calc(100% * var(--show-total-days)) 100%;
+  background-position: calc(-1 * var(--show-gradient-pos) * 1%) 0;
+  background-repeat: no-repeat;
+  border-radius: 0;
 }
 
-.ascend-calendar-show-location {
-  font-size: 0.75rem;
-  color: var(--ascend-color-text-muted);
+/* Month cell needs relative positioning for horizontal stripes */
+.ascend-calendar-month-cell {
+  position: relative;
 }
 
 /* =========================================================
