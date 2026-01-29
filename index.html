@@ -19,7 +19,7 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="assets/ascend.css?v=24" />
+    <link rel="stylesheet" href="assets/ascend.css?v=25" />
   </head>
   <body>
     <div id="ascend-root">
@@ -94,55 +94,64 @@
             </div>
 
             <div class="ascend-row-list">
-              <!-- Art Start -->
-              <article class="ascend-row">
-                <div class="ascend-row-primary">
-                  <div class="ascend-row-label">Art Start</div>
-                  <div class="ascend-row-title">
-                    New creative work
+              <!-- Content Pipeline Group: ArtStart + Copydesk -->
+              <div class="ascend-content-group">
+                <!-- Art Start -->
+                <article class="ascend-row">
+                  <div class="ascend-row-primary">
+                    <div class="ascend-row-label">Art Start</div>
+                    <div class="ascend-row-title">
+                      New creative work
+                    </div>
+                    <div class="ascend-row-description">
+                      Define specs, placements, and required elements.
+                    </div>
+                    <button
+                      class="ascend-row-action-btn"
+                      type="button"
+                      id="ascend-artstart-new"
+                    >
+                      <span class="icon">⟶</span>
+                      New
+                    </button>
                   </div>
-                  <div class="ascend-row-description">
-                    Define specs, placements, and required elements.
+                  <div class="ascend-row-secondary">
+                    <strong>Jobs</strong>
+                    <div id="ascend-artstart-list"></div>
                   </div>
-                  <button
-                    class="ascend-row-action-btn"
-                    type="button"
-                    id="ascend-artstart-new"
-                  >
-                    <span class="icon">⟶</span>
-                    New
-                  </button>
-                </div>
-                <div class="ascend-row-secondary">
-                  <strong>Jobs</strong>
-                  <div id="ascend-artstart-list"></div>
-                </div>
-              </article>
+                </article>
 
-              <!-- Copydesk -->
-              <article class="ascend-row">
-                <div class="ascend-row-primary">
-                  <div class="ascend-row-label">Copydesk</div>
-                  <div class="ascend-row-title">
-                    Edit and align copy
+                <!-- Copydesk -->
+                <article class="ascend-row">
+                  <div class="ascend-row-primary">
+                    <div class="ascend-row-label">Copydesk</div>
+                    <div class="ascend-row-title">
+                      Edit and align copy
+                    </div>
+                    <div class="ascend-row-description">
+                      Headlines, body copy, and translations.
+                    </div>
+                    <button
+                      class="ascend-row-action-btn"
+                      type="button"
+                      id="ascend-copydesk-open"
+                    >
+                      <span class="icon">⟶</span>
+                      New
+                    </button>
                   </div>
-                  <div class="ascend-row-description">
-                    Headlines, body copy, and translations.
+                  <div class="ascend-row-secondary">
+                    <strong>Docs</strong>
+                    <div id="ascend-copydesk-list"></div>
                   </div>
-                  <button
-                    class="ascend-row-action-btn"
-                    type="button"
-                    id="ascend-copydesk-open"
-                  >
-                    <span class="icon">⟶</span>
-                    New
-                  </button>
-                </div>
-                <div class="ascend-row-secondary">
-                  <strong>Docs</strong>
-                  <div id="ascend-copydesk-list"></div>
-                </div>
-              </article>
+                </article>
+
+                <!-- Calendar trigger -->
+                <button type="button" class="ascend-calendar-trigger" id="ascend-calendar-trigger">
+                  <span class="ascend-calendar-trigger-icon">📅</span>
+                  <span class="ascend-calendar-trigger-label">Calendar View</span>
+                </button>
+              </div>
 
               <!-- Codedesk -->
               <article class="ascend-row">
@@ -231,6 +240,6 @@
       </div>
     </div>
 
-    <script src="assets/ascend.js?v=16"></script>
+    <script src="assets/ascend.js?v=17"></script>
   </body>
 </html>

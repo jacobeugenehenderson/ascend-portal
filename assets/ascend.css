@@ -782,6 +782,50 @@ textarea:focus {
   overflow: visible;
 }
 
+/* Content Pipeline group (ArtStart + Copydesk) */
+.ascend-content-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.ascend-calendar-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ascend-color-text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background-color var(--ascend-transition-fast),
+    border-color var(--ascend-transition-fast),
+    color var(--ascend-transition-fast);
+}
+
+.ascend-calendar-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--ascend-color-text-main);
+}
+
+.ascend-calendar-trigger-icon {
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.ascend-calendar-trigger-label {
+  font-weight: var(--ascend-weight-medium);
+  letter-spacing: 0.02em;
+}
+
 .ascend-row {
   display: grid;
   grid-template-columns: 35% 65%;
