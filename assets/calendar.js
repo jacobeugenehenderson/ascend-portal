@@ -592,21 +592,14 @@
       const midColor = colorAt(midPos);
       const midPct = ((midPos - start) / (end - start)) * 100;
 
-      if (direction === 'vertical') {
-        // Vertical: top to bottom = end to start (blue top, orange bottom)
-        return `linear-gradient(${angle}, rgb(${endColor.r},${endColor.g},${endColor.b}) 0%, rgb(${midColor.r},${midColor.g},${midColor.b}) ${100 - midPct}%, rgb(${startColor.r},${startColor.g},${startColor.b}) 100%)`;
-      } else {
-        // Horizontal: left to right = start to end (orange left, blue right)
-        return `linear-gradient(${angle}, rgb(${startColor.r},${startColor.g},${startColor.b}) 0%, rgb(${midColor.r},${midColor.g},${midColor.b}) ${midPct}%, rgb(${endColor.r},${endColor.g},${endColor.b}) 100%)`;
-      }
+      // Both directions: start to end (orange at start, blue at end)
+      // Vertical: top = start of show portion, bottom = end
+      // Horizontal: left = start of show portion, right = end
+      return `linear-gradient(${angle}, rgb(${startColor.r},${startColor.g},${startColor.b}) 0%, rgb(${midColor.r},${midColor.g},${midColor.b}) ${midPct}%, rgb(${endColor.r},${endColor.g},${endColor.b}) 100%)`;
     }
 
     // Simple two-color gradient
-    if (direction === 'vertical') {
-      return `linear-gradient(${angle}, rgb(${endColor.r},${endColor.g},${endColor.b}) 0%, rgb(${startColor.r},${startColor.g},${startColor.b}) 100%)`;
-    } else {
-      return `linear-gradient(${angle}, rgb(${startColor.r},${startColor.g},${startColor.b}) 0%, rgb(${endColor.r},${endColor.g},${endColor.b}) 100%)`;
-    }
+    return `linear-gradient(${angle}, rgb(${startColor.r},${startColor.g},${startColor.b}) 0%, rgb(${endColor.r},${endColor.g},${endColor.b}) 100%)`;
   }
 
   function getShowsForDay(day) {
