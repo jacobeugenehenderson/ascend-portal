@@ -840,12 +840,15 @@
     }
 
     // Stripes layer (rendered per row for proper positioning)
+    // Track stack index per row for stacking multiple stripes
+    const rowStripeCount = new Array(numRows).fill(0);
+
     html += '<div class="ascend-calendar-month-shows">';
     for (const show of monthShows) {
-      html += renderMonthShowStripes(show, year, month, startOffset, lastDay.getDate(), numRows);
+      html += renderMonthShowStripes(show, year, month, startOffset, lastDay.getDate(), numRows, rowStripeCount);
     }
     for (const range of monthDeadlineRanges) {
-      html += renderMonthDeadlineRangeStripes(range, year, month, startOffset, lastDay.getDate(), numRows);
+      html += renderMonthDeadlineRangeStripes(range, year, month, startOffset, lastDay.getDate(), numRows, rowStripeCount);
     }
     html += '</div>';
 
@@ -853,7 +856,7 @@
     return html;
   }
 
-  function renderMonthShowStripes(show, year, month, startOffset, daysInMonth, numRows) {
+  function renderMonthShowStripes(show, year, month, startOffset, daysInMonth, numRows, rowStripeCount) {
     const totalShowDays = Math.floor((show.endDate - show.startDate) / (1000 * 60 * 60 * 24)) + 1;
     let html = "";
 
@@ -891,16 +894,19 @@
 
       const title = `${show.name}${show.location ? " · " + show.location : ""}`;
 
-      // Calculate position using percentages for the overlay grid
+      // Calculate position - bottom of row with stacking
       const leftPct = (startCol / 7) * 100;
       const widthPct = (spanCols / 7) * 100;
-      const topPct = (row / numRows) * 100;
-      const heightPct = (1 / numRows) * 100;
+      const rowHeightPct = 100 / numRows;
+      const bottomOfRow = (numRows - row - 1) * rowHeightPct;
+      const stackOffset = rowStripeCount[row] * 7; // 7px per stripe for stacking
+
+      rowStripeCount[row]++;
 
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal"
              data-show-id="${escapeAttr(show.showId)}"
-             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topPct}% + 1px); background: ${gradient};"
+             style="left: ${leftPct}%; width: ${widthPct}%; bottom: calc(${bottomOfRow}% + ${stackOffset + 2}px); background: ${gradient};"
              title="${escapeAttr(title)}">
         </div>
       `;
@@ -909,7 +915,7 @@
     return html;
   }
 
-  function renderMonthDeadlineRangeStripes(range, year, month, startOffset, daysInMonth, numRows) {
+  function renderMonthDeadlineRangeStripes(range, year, month, startOffset, daysInMonth, numRows, rowStripeCount) {
     let html = "";
 
     // Process each week row
@@ -937,15 +943,19 @@
 
       const title = `${range.title} · ${range.showName}`;
 
-      // Calculate position using percentages for the overlay grid
+      // Calculate position - bottom of row with stacking
       const leftPct = (startCol / 7) * 100;
       const widthPct = (spanCols / 7) * 100;
-      const topPct = (row / numRows) * 100;
+      const rowHeightPct = 100 / numRows;
+      const bottomOfRow = (numRows - row - 1) * rowHeightPct;
+      const stackOffset = rowStripeCount[row] * 7; // 7px per stripe for stacking
+
+      rowStripeCount[row]++;
 
       html += `
         <div class="ascend-calendar-show-stripe ascend-calendar-show-stripe--horizontal ascend-calendar-show-stripe--deadline"
              data-deadline-range="${escapeAttr(range.showId + '-' + range.title)}"
-             style="left: ${leftPct}%; width: ${widthPct}%; top: calc(${topPct}% + 1px);"
+             style="left: ${leftPct}%; width: ${widthPct}%; bottom: calc(${bottomOfRow}% + ${stackOffset + 2}px);"
              title="${escapeAttr(title)}">
         </div>
       `;

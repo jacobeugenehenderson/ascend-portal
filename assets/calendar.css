@@ -384,7 +384,7 @@
   position: absolute;
   height: 5px;
   border-radius: 2px;
-  /* left, width, top, and background are set inline */
+  /* left, width, bottom, and background are set inline */
 }
 
 /* Month cell needs relative positioning for horizontal stripes */
@@ -415,6 +415,8 @@
   right: 0;
   bottom: 0;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .ascend-calendar-month-header {
@@ -447,7 +449,7 @@
 .ascend-calendar-month-date {
   font-size: 0.7rem;
   color: var(--ascend-color-text-muted);
-  margin-top: auto; /* Push date to bottom of cell */
+  margin-bottom: 0.2rem;
 }
 
 .ascend-calendar-month-cell--today .ascend-calendar-month-date {
@@ -459,8 +461,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
-  order: -1; /* Move dots above the date number */
-  margin-bottom: 0.2rem;
 }
 
 .ascend-calendar-month-dot {
