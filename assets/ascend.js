@@ -2127,7 +2127,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     ARTSTART_JOB_URL: ARTSTART_JOB_URL,
     COPYDESK_JOB_URL: COPYDESK_JOB_URL,
     buildUrlWithUser: buildUrlWithUser,
-    loadSession: loadSession
+    loadSession: loadSession,
+    artStartStageForJob: artStartStageForJob_,
+    copydeskStageForJob: copydeskStageForJob_
   };
   window.AscendDebug.requestFileRoomOutput = requestFileRoomOutput;
   window.AscendDebug.requestCodeDeskTemplates = requestCodeDeskTemplates;

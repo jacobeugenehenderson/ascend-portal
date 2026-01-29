@@ -95,26 +95,28 @@
 }
 
 /* =========================================================
- * Week View – Hopper-style list
+ * Week View – Hopper-style drawer
  * ======================================================= */
 
 .ascend-calendar-week {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .ascend-calendar-day {
   display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 0.75rem;
+  grid-template-columns: 56px 1fr;
+  gap: 0.5rem;
   align-items: start;
 }
 
 .ascend-calendar-day-label {
   font-size: 0.75rem;
   color: var(--ascend-color-text-muted);
-  padding-top: 0.4rem;
+  padding-top: 0.5rem;
+  text-align: right;
+  padding-right: 0.5rem;
 }
 
 .ascend-calendar-day-label-date {
@@ -127,77 +129,144 @@
 .ascend-calendar-day-label-weekday {
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.65rem;
-  margin-top: 0.2rem;
+  font-size: 0.6rem;
+  margin-top: 0.15rem;
+  color: var(--ascend-color-text-muted);
 }
 
 .ascend-calendar-day--today .ascend-calendar-day-label-date {
   color: var(--ascend-color-accent);
 }
 
-.ascend-calendar-day-items {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+/* Drawer container for day items */
+.ascend-calendar-day-drawer {
+  background: rgba(5, 9, 23, 0.9);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  overflow: hidden;
 }
 
 .ascend-calendar-day-empty {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   color: var(--ascend-color-text-muted);
-  opacity: 0.5;
-  padding: 0.4rem 0;
+  padding: 0.7rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
 }
 
-/* Calendar item – styled like hopper job cards */
+/* Calendar item – matches ascend-job-card-main exactly */
 .ascend-calendar-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.6rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
   cursor: pointer;
-  transition: background-color var(--ascend-transition-fast),
-    border-color var(--ascend-transition-fast);
+  width: 100%;
+
+  border-radius: 0;
+  padding: 0.65rem 1rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  transition: background-color var(--ascend-transition-fast);
+}
+
+.ascend-calendar-item:last-child {
+  border-bottom: none;
+}
+
+/* Zebra striping */
+.ascend-calendar-item:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ascend-calendar-item:nth-child(even) {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .ascend-calendar-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(79, 209, 197, 0.10);
 }
 
-.ascend-calendar-item-badge {
-  font-size: 0.6rem;
-  font-weight: var(--ascend-weight-semibold);
-  padding: 0.15rem 0.35rem;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+/* Stacked progress indicator – matches ascend-hopper-progress exactly */
+.ascend-calendar-item-progress {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  align-items: flex-start;
+  justify-content: center;
 }
 
-.ascend-calendar-item-badge--artstart {
-  background: rgba(230, 149, 106, 0.2);
-  color: #e6956a;
+.ascend-calendar-item-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: transparent;
 }
 
-.ascend-calendar-item-badge--copydesk {
-  background: rgba(111, 185, 173, 0.2);
-  color: #6fb9ad;
+/* Default: unlit dots show faint borders */
+.ascend-calendar-item-dot[data-step="1"] {
+  border: 1px solid color-mix(in srgb, var(--ascend-hopper-stage-1) 55%, transparent);
+}
+.ascend-calendar-item-dot[data-step="2"] {
+  border: 1px solid color-mix(in srgb, var(--ascend-hopper-stage-2) 55%, transparent);
+}
+.ascend-calendar-item-dot[data-step="3"] {
+  border: 1px solid color-mix(in srgb, var(--ascend-hopper-stage-3) 55%, transparent);
+}
+
+/* Stage 1: orange lit */
+.ascend-calendar-item-progress[data-stage="1"] .ascend-calendar-item-dot[data-step="1"],
+.ascend-calendar-item-progress[data-stage="2"] .ascend-calendar-item-dot[data-step="1"],
+.ascend-calendar-item-progress[data-stage="3"] .ascend-calendar-item-dot[data-step="1"] {
+  background: var(--ascend-hopper-stage-1);
+  border-color: transparent;
+  box-shadow: 0 0 0 0.5px rgba(0,0,0,0.35);
+}
+
+/* Stage 2: teal lit */
+.ascend-calendar-item-progress[data-stage="2"] .ascend-calendar-item-dot[data-step="2"],
+.ascend-calendar-item-progress[data-stage="3"] .ascend-calendar-item-dot[data-step="2"] {
+  background: var(--ascend-hopper-stage-2);
+  border-color: transparent;
+}
+
+/* Stage 3: blue lit */
+.ascend-calendar-item-progress[data-stage="3"] .ascend-calendar-item-dot[data-step="3"] {
+  background: var(--ascend-hopper-stage-3);
+  border-color: transparent;
+}
+
+/* Title/meta stack – matches ascend-job-card-stack */
+.ascend-calendar-item-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
 }
 
 .ascend-calendar-item-title {
-  flex: 1;
-  font-size: 0.78rem;
-  color: var(--ascend-color-text-main);
-  white-space: nowrap;
+  font-weight: var(--ascend-weight-bold);
+  letter-spacing: 0.01em;
+  font-size: 0.90rem;
+  line-height: 1.15;
+  color: color-mix(in srgb, var(--ascend-color-text-main) 94%, white 6%);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ascend-calendar-item-meta {
-  font-size: 0.7rem;
-  color: var(--ascend-color-text-muted);
+  font-size: 0.66rem;
+  color: color-mix(in srgb, var(--ascend-color-text-muted) 65%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: var(--ascend-weight-regular);
 }
 
 /* =========================================================

@@ -131,7 +131,8 @@
               date: date,
               jobKey: job.AscendJobId || "",
               meta: "Materials due",
-              openUrl: openUrl
+              openUrl: openUrl,
+              rawJob: job
             });
           }
 
@@ -192,7 +193,8 @@
               date: date,
               jobKey: job.JobId || "",
               meta: "Cutoff",
-              openUrl: openUrl
+              openUrl: openUrl,
+              rawJob: job
             });
           }
 
@@ -252,7 +254,7 @@
     const today = new Date();
     const items = [];
 
-    // Generate some placeholder items for the current week
+    // Generate some placeholder items for the current week with varying stages
     for (let i = -2; i <= 5; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
@@ -265,7 +267,8 @@
           date: new Date(d),
           jobKey: "AS-001",
           meta: "Materials due",
-          openUrl: "#"
+          openUrl: "#",
+          rawJob: { TouchpointMeetingDate: "2026-01-15" } // Stage 2
         });
       }
       if (i === 1) {
@@ -276,7 +279,8 @@
           date: new Date(d),
           jobKey: "CD-042",
           meta: "Cutoff",
-          openUrl: "#"
+          openUrl: "#",
+          rawJob: { Edited: true } // Stage 2
         });
       }
       if (i === 3) {
@@ -287,7 +291,8 @@
           date: new Date(d),
           jobKey: "AS-002",
           meta: "Materials due",
-          openUrl: "#"
+          openUrl: "#",
+          rawJob: {} // Stage 1
         });
         items.push({
           type: "copydesk",
@@ -296,7 +301,8 @@
           date: new Date(d),
           jobKey: "CD-043",
           meta: "Cutoff",
-          openUrl: "#"
+          openUrl: "#",
+          rawJob: {} // Stage 1
         });
       }
       if (i === 5) {
@@ -307,7 +313,8 @@
           date: new Date(d),
           jobKey: "AS-003",
           meta: "Materials due",
-          openUrl: "#"
+          openUrl: "#",
+          rawJob: { TouchpointMeetingDate: "2026-01-20" } // Stage 2
         });
       }
     }
@@ -407,7 +414,7 @@
             <div class="ascend-calendar-day-label-date">${day.getDate()}</div>
             <div class="ascend-calendar-day-label-weekday">${day.toLocaleDateString("en-US", { weekday: "short" })}</div>
           </div>
-          <div class="ascend-calendar-day-items">
+          <div class="ascend-calendar-day-drawer">
             ${dayItems.length > 0 ? dayItems.map(renderWeekItem).join("") : '<div class="ascend-calendar-day-empty">No deadlines</div>'}
           </div>
         </div>
@@ -419,12 +426,29 @@
   }
 
   function renderWeekItem(item) {
+    // Calculate stage using exposed functions
+    const config = window.AscendConfig;
+    let stage = 1;
+    if (config && item.rawJob) {
+      if (item.type === "artstart" && config.artStartStageForJob) {
+        stage = config.artStartStageForJob(item.rawJob);
+      } else if (item.type === "copydesk" && config.copydeskStageForJob) {
+        stage = config.copydeskStageForJob(item.rawJob);
+      }
+    }
+
     return `
-      <div class="ascend-calendar-item" data-calendar-item="${escapeAttr(item.jobKey)}">
-        <span class="ascend-calendar-item-badge ascend-calendar-item-badge--${item.type}">${item.type === "artstart" ? "Art" : "Copy"}</span>
-        <span class="ascend-calendar-item-title">${escapeHtml(item.title)}</span>
-        <span class="ascend-calendar-item-meta">${escapeHtml(item.meta)}</span>
-      </div>
+      <button class="ascend-calendar-item ascend-calendar-item--${item.type}" data-calendar-item="${escapeAttr(item.jobKey)}">
+        <div class="ascend-calendar-item-progress" data-stage="${stage}">
+          <div class="ascend-calendar-item-dot" data-step="1"></div>
+          <div class="ascend-calendar-item-dot" data-step="2"></div>
+          <div class="ascend-calendar-item-dot" data-step="3"></div>
+        </div>
+        <div class="ascend-calendar-item-stack">
+          <div class="ascend-calendar-item-title">${escapeHtml(item.title)}</div>
+          <div class="ascend-calendar-item-meta">${escapeHtml(item.subtitle || item.meta)}</div>
+        </div>
+      </button>
     `;
   }
 
