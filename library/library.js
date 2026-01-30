@@ -686,17 +686,29 @@
     const container = document.getElementById('library-folder-grid');
     if (!container) return;
 
-    if (folders.length === 0) {
-      container.innerHTML = '';
-      return;
-    }
-
     const source = State.browse.source;
     const basePath = State.browse.path.join('/');
 
+    // New Folder tile (always first, Material Design pattern)
+    const newFolderTile = `
+      <div class="library-folder-tile is-new-folder" data-action="new-folder">
+        <div class="library-folder-tile-preview">
+          <div class="new-folder-icon">+</div>
+        </div>
+        <div class="library-folder-tile-info">
+          <div class="library-folder-tile-name">New Folder</div>
+        </div>
+      </div>
+    `;
+
+    if (folders.length === 0) {
+      container.innerHTML = newFolderTile;
+      return;
+    }
+
     const TRANSPARENT_TYPES = new Set(['svg', 'eps', 'png']);
 
-    container.innerHTML = folders.map(folder => {
+    container.innerHTML = newFolderTile + folders.map(folder => {
       // Filter to only valid previews
       const validPreviews = folder.previews.filter(p => p && p.url);
       const count = validPreviews.length;
@@ -3479,6 +3491,121 @@
   }
 
   // =========================================
+  // NEW FOLDER CREATION
+  // =========================================
+
+  function startNewFolderCreation(tile) {
+    // Transform the tile into editing mode
+    tile.classList.add('is-editing');
+
+    const nameEl = tile.querySelector('.library-folder-tile-name');
+    const previewEl = tile.querySelector('.library-folder-tile-preview');
+    if (!nameEl || !previewEl) return;
+
+    // Hide the + icon
+    previewEl.style.display = 'none';
+
+    // Replace name with input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'library-folder-name-input';
+    input.placeholder = 'Folder name';
+    input.value = '';
+    nameEl.innerHTML = '';
+    nameEl.appendChild(input);
+    input.focus();
+
+    let committed = false;
+
+    const cancelCreation = () => {
+      if (committed) return;
+      committed = true;
+      // Reset the tile
+      tile.classList.remove('is-editing');
+      previewEl.style.display = '';
+      nameEl.textContent = 'New Folder';
+    };
+
+    const commitCreation = async () => {
+      if (committed) return;
+      committed = true;
+
+      const folderName = input.value.trim();
+      if (!folderName) {
+        cancelCreation();
+        return;
+      }
+
+      const source = State.browse.source;
+      const basePath = State.browse.path.join('/');
+      const fullPath = basePath ? `${basePath}/${folderName}` : folderName;
+
+      // Create the folder by setting a display name (this registers it in the system)
+      try {
+        if (LibraryAPI.baseUrl) {
+          await LibraryAPI.setFolderDisplayName(fullPath, source, folderName);
+          console.log('[NewFolder] Created:', fullPath);
+        }
+
+        // Add to local state and re-render
+        State.folderDisplayNames[`${source}:${fullPath}`] = folderName;
+
+        // Add to manifest folders if not already there
+        if (!State.manifest.folders.includes(fullPath)) {
+          State.manifest.folders.push(fullPath);
+        }
+
+        showToast(`Folder "${folderName}" created`, 'success');
+        renderBrowseView();
+      } catch (err) {
+        console.error('[NewFolder] Failed:', err);
+        showToast(`Failed to create folder: ${err.message}`, 'error');
+        cancelCreation();
+      }
+    };
+
+    // Click outside cancels
+    const handleClickOutside = (ev) => {
+      if (!input.contains(ev.target)) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        document.removeEventListener('click', handleClickOutside, true);
+        if (input.value.trim()) {
+          commitCreation();
+        } else {
+          cancelCreation();
+        }
+      }
+    };
+    setTimeout(() => document.addEventListener('click', handleClickOutside, true), 0);
+
+    const cleanup = () => {
+      document.removeEventListener('click', handleClickOutside, true);
+    };
+
+    input.addEventListener('blur', () => {
+      cleanup();
+      if (input.value.trim()) {
+        commitCreation();
+      } else {
+        cancelCreation();
+      }
+    });
+
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        cleanup();
+        commitCreation();
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        cleanup();
+        cancelCreation();
+      }
+    });
+  }
+
+  // =========================================
   // EVENT HANDLING
   // =========================================
 
@@ -3503,6 +3630,12 @@
       if (!tile) return;
       // Don't navigate if clicking on input (editing)
       if (e.target.tagName === 'INPUT') return;
+
+      // Handle "New Folder" tile
+      if (tile.dataset.action === 'new-folder') {
+        startNewFolderCreation(tile);
+        return;
+      }
 
       const folderName = tile.dataset.folder;
       const newPath = [...State.browse.path, folderName];

@@ -550,6 +550,56 @@
   margin-top: 0.2rem;
 }
 
+/* New Folder tile (Google Drive style) */
+.library-folder-tile.is-new-folder {
+  border: 2px dashed var(--ascend-app-border);
+  background: transparent;
+}
+
+.library-folder-tile.is-new-folder:hover {
+  border-color: var(--ascend-app-accent);
+  background: rgba(79, 209, 197, 0.05);
+}
+
+.library-folder-tile.is-new-folder .library-folder-tile-preview {
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.library-folder-tile.is-new-folder .new-folder-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--ascend-app-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--ascend-app-text-muted);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.library-folder-tile.is-new-folder:hover .new-folder-icon {
+  background: var(--ascend-app-accent);
+  color: #0b1025;
+}
+
+.library-folder-tile.is-new-folder .library-folder-tile-name {
+  color: var(--ascend-app-text-muted);
+}
+
+.library-folder-tile.is-new-folder:hover .library-folder-tile-name {
+  color: var(--ascend-app-accent);
+}
+
+/* New folder input mode */
+.library-folder-tile.is-new-folder.is-editing {
+  border-color: var(--ascend-app-accent);
+  background: var(--ascend-app-surface);
+}
+
 /* =========================================
  * DRAG & DROP
  * Visual feedback for folder organization
