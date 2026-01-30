@@ -3495,6 +3495,7 @@
   // =========================================
 
   function startNewFolderCreation(tile) {
+    console.log('[NewFolder] Starting creation');
     // Transform the tile into editing mode
     tile.classList.add('is-editing');
 
@@ -3517,22 +3518,27 @@
 
     let committed = false;
 
-    const cancelCreation = () => {
-      if (committed) return;
-      committed = true;
-      // Reset the tile
+    const resetTile = () => {
       tile.classList.remove('is-editing');
       previewEl.style.display = '';
       nameEl.textContent = 'New Folder';
     };
 
+    const cleanup = () => {
+      document.removeEventListener('click', handleClickOutside, true);
+    };
+
     const commitCreation = async () => {
       if (committed) return;
       committed = true;
+      cleanup();
 
       const folderName = input.value.trim();
+      console.log('[NewFolder] Committing:', folderName);
+
       if (!folderName) {
-        cancelCreation();
+        console.log('[NewFolder] Empty name, cancelling');
+        resetTile();
         return;
       }
 
@@ -3560,16 +3566,24 @@
       } catch (err) {
         console.error('[NewFolder] Failed:', err);
         showToast(`Failed to create folder: ${err.message}`, 'error');
-        cancelCreation();
+        resetTile();
       }
     };
 
-    // Click outside cancels
+    const cancelCreation = () => {
+      if (committed) return;
+      committed = true;
+      cleanup();
+      console.log('[NewFolder] Cancelled');
+      resetTile();
+    };
+
+    // Click outside commits or cancels
     const handleClickOutside = (ev) => {
       if (!input.contains(ev.target)) {
+        console.log('[NewFolder] Click outside');
         ev.preventDefault();
         ev.stopPropagation();
-        document.removeEventListener('click', handleClickOutside, true);
         if (input.value.trim()) {
           commitCreation();
         } else {
@@ -3579,27 +3593,17 @@
     };
     setTimeout(() => document.addEventListener('click', handleClickOutside, true), 0);
 
-    const cleanup = () => {
-      document.removeEventListener('click', handleClickOutside, true);
-    };
-
-    input.addEventListener('blur', () => {
-      cleanup();
-      if (input.value.trim()) {
-        commitCreation();
-      } else {
-        cancelCreation();
-      }
-    });
-
     input.addEventListener('keydown', (ev) => {
+      console.log('[NewFolder] keydown:', ev.key);
       if (ev.key === 'Enter') {
+        console.log('[NewFolder] Enter pressed');
         ev.preventDefault();
-        cleanup();
+        ev.stopPropagation();
         commitCreation();
       } else if (ev.key === 'Escape') {
+        console.log('[NewFolder] Escape pressed');
         ev.preventDefault();
-        cleanup();
+        ev.stopPropagation();
         cancelCreation();
       }
     });
