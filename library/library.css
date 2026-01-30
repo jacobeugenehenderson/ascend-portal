@@ -1638,6 +1638,13 @@
   font-weight: 600;
 }
 
+.library-tag-toggle.is-remove {
+  background: rgba(220, 53, 69, 0.15);
+  border-color: #dc3545;
+  color: #dc3545;
+  text-decoration: line-through;
+}
+
 .library-tag-picker-add {
   display: flex;
   gap: 0.5rem;

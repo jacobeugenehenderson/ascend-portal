@@ -1875,11 +1875,13 @@
     const existing = document.getElementById('library-batch-modal');
     if (existing) existing.remove();
 
-    // Track selected state
+    // Track selected state (add/remove modes)
     const selected = {
       products: new Set(),
+      productsToRemove: new Set(),
       lob: null,
       tags: new Set(),
+      tagsToRemove: new Set(),
       notes: ''
     };
 
@@ -1952,10 +1954,19 @@
         const value = pill.dataset.value;
 
         if (type === 'product') {
+          // Cycle: neutral → add → remove → neutral
           if (selected.products.has(value)) {
+            // Was "add" → switch to "remove"
             selected.products.delete(value);
+            selected.productsToRemove.add(value);
             pill.classList.remove('is-active');
+            pill.classList.add('is-remove');
+          } else if (selected.productsToRemove.has(value)) {
+            // Was "remove" → switch to neutral
+            selected.productsToRemove.delete(value);
+            pill.classList.remove('is-remove');
           } else {
+            // Was neutral → switch to "add"
             selected.products.add(value);
             pill.classList.add('is-active');
           }
@@ -1969,10 +1980,19 @@
             pill.classList.add('is-active');
           }
         } else if (type === 'tag') {
+          // Cycle: neutral → add → remove → neutral
           if (selected.tags.has(value)) {
+            // Was "add" → switch to "remove"
             selected.tags.delete(value);
+            selected.tagsToRemove.add(value);
             pill.classList.remove('is-active');
+            pill.classList.add('is-remove');
+          } else if (selected.tagsToRemove.has(value)) {
+            // Was "remove" → switch to neutral
+            selected.tagsToRemove.delete(value);
+            pill.classList.remove('is-remove');
           } else {
+            // Was neutral → switch to "add"
             selected.tags.add(value);
             pill.classList.add('is-active');
           }
@@ -1989,8 +2009,10 @@
     // Apply handler
     modal.querySelector('.library-batch-apply-btn').onclick = async () => {
       const hasChanges = selected.products.size > 0 ||
+                         selected.productsToRemove.size > 0 ||
                          selected.lob !== null ||
                          selected.tags.size > 0 ||
+                         selected.tagsToRemove.size > 0 ||
                          selected.notes.length > 0;
 
       if (!hasChanges) {
@@ -2000,15 +2022,17 @@
 
       await batchApplyMetadata({
         products: Array.from(selected.products),
+        productsToRemove: Array.from(selected.productsToRemove),
         lob: selected.lob,
         tags: Array.from(selected.tags),
+        tagsToRemove: Array.from(selected.tagsToRemove),
         notes: selected.notes
       });
       modal.remove();
     };
   }
 
-  async function batchApplyMetadata({ products, lob, tags, notes }) {
+  async function batchApplyMetadata({ products, productsToRemove = [], lob, tags, tagsToRemove = [], notes }) {
     const count = State.selectedAssets.length;
     showToast(`Applying metadata to ${count} assets...`);
 
@@ -2025,14 +2049,21 @@
 
       const meta = getAssetMeta(assetId);
 
-      // Additive merge for products and tags
-      const newProducts = products.length > 0
+      // Add new products, then remove marked ones
+      let newProducts = products.length > 0
         ? [...new Set([...meta.products, ...products])]
-        : meta.products;
+        : [...meta.products];
+      if (productsToRemove.length > 0) {
+        newProducts = newProducts.filter(p => !productsToRemove.includes(p));
+      }
 
-      const newTags = tags.length > 0
+      // Add new tags, then remove marked ones
+      let newTags = tags.length > 0
         ? [...new Set([...meta.tags, ...tags])]
-        : meta.tags;
+        : [...meta.tags];
+      if (tagsToRemove.length > 0) {
+        newTags = newTags.filter(t => !tagsToRemove.includes(t));
+      }
 
       // LOB is single-select: only update if user selected one
       const newLob = lob !== null ? lob : meta.lob;
@@ -2071,16 +2102,27 @@
     saveLocalState();
 
     // Build summary message
-    const parts = [];
-    if (products.length > 0) parts.push(`${products.length} product(s)`);
-    if (lob) parts.push('LOB');
-    if (tags.length > 0) parts.push(`${tags.length} tag(s)`);
-    if (notes) parts.push('notes');
+    const addParts = [];
+    const removeParts = [];
+    if (products.length > 0) addParts.push(`${products.length} product(s)`);
+    if (productsToRemove.length > 0) removeParts.push(`${productsToRemove.length} product(s)`);
+    if (lob) addParts.push('LOB');
+    if (tags.length > 0) addParts.push(`${tags.length} tag(s)`);
+    if (tagsToRemove.length > 0) removeParts.push(`${tagsToRemove.length} tag(s)`);
+    if (notes) addParts.push('notes');
+
+    let message = '';
+    if (addParts.length > 0) message += `Added ${addParts.join(', ')}`;
+    if (removeParts.length > 0) {
+      if (message) message += ', ';
+      message += `removed ${removeParts.join(', ')}`;
+    }
+    message += ` on ${successCount} assets`;
 
     if (failCount > 0) {
-      showToast(`Added ${parts.join(', ')} to ${successCount} assets (${failCount} failed)`, 'warning');
+      showToast(`${message} (${failCount} failed)`, 'warning');
     } else {
-      showToast(`Added ${parts.join(', ')} to ${successCount} assets`, 'success');
+      showToast(message, 'success');
     }
 
     clearSelection();
