@@ -3557,8 +3557,8 @@
         State.folderDisplayNames[`${source}:${fullPath}`] = folderName;
 
         // Add to manifest folders if not already there
-        if (!State.manifest.folders.includes(fullPath)) {
-          State.manifest.folders.push(fullPath);
+        if (!State.folders.includes(fullPath)) {
+          State.folders.push(fullPath);
         }
 
         showToast(`Folder "${folderName}" created`, 'success');
