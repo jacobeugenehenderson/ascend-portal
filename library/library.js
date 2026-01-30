@@ -2068,7 +2068,7 @@
       }
     }
 
-    saveAssetMetaToLocal();
+    saveLocalState();
 
     // Build summary message
     const parts = [];
