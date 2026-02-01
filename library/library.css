@@ -3020,8 +3020,22 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   transition: background-color 120ms ease;
+  border-bottom: 1px solid var(--ascend-app-border);
+}
+
+.library-move-folder-row:last-child {
+  border-bottom: none;
+}
+
+/* Zebra stripes */
+.library-move-folder-row:nth-child(odd) {
+  background: transparent;
+}
+
+.library-move-folder-row:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .library-move-folder-row:hover {
@@ -3031,10 +3045,13 @@
 .library-move-folder-row.is-root {
   border-bottom: 1px solid var(--ascend-app-border);
   padding: 10px 12px;
+  background: var(--ascend-control-bg);
 }
 
 .library-move-folder-row.is-current {
   background: var(--ascend-app-accent-soft);
+  border-left: 3px solid var(--ascend-app-accent);
+  padding-left: 9px;
 }
 
 .library-move-folder-row.is-current::after {
@@ -3043,6 +3060,7 @@
   color: var(--ascend-app-accent);
   margin-left: auto;
   padding-right: 8px;
+  font-weight: 500;
 }
 
 /* Toggle button for expand/collapse */

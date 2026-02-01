@@ -2285,6 +2285,14 @@
     const treeContainer = modal.querySelector('#library-move-folder-tree');
     buildMoveTreeInteractive(treeContainer, source, currentPath);
 
+    // Scroll current folder into view (centered)
+    requestAnimationFrame(() => {
+      const currentRow = treeContainer.querySelector('.library-move-folder-row.is-current');
+      if (currentRow) {
+        currentRow.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+    });
+
     // Close handlers
     modal.querySelector('.library-move-modal-close').onclick = () => modal.remove();
     modal.querySelector('.library-move-modal-backdrop').onclick = () => modal.remove();
