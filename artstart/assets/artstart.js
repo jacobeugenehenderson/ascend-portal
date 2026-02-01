@@ -3011,6 +3011,15 @@ try {
           xhr.open('GET', url, false);
           xhr.send(null);
         }
+
+        // Reset to English on refresh: clear language selection so reload starts with base language.
+        // The non-EN content was just saved, so user can switch back to it after reload.
+        // This eliminates race conditions between sendBeacon completing and fetchJob returning stale data.
+        if (!isBase) {
+          try {
+            window.localStorage.removeItem(LANG_STORAGE_PREFIX + jobId);
+          } catch (_eClr) {}
+        }
       } catch (e) {
         // Nothing useful to do during unload.
       }
