@@ -52,17 +52,29 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  text-decoration: none;
+  font-family: inherit;
   font-size: 1.1rem;
   border-radius: var(--ascend-control-radius, 10px);
   background: var(--ascend-control-bg);
   border: 1px solid var(--ascend-control-border);
   color: var(--ascend-app-text-main);
+  cursor: pointer;
   transition: background 120ms ease;
 }
 
 .library-back:hover {
   background: var(--ascend-control-bg-hover);
+}
+
+/* Meta link (Back to Ascend) - matches ascend-app-meta-link */
+.library-meta-link {
+  font-size: 0.78rem;
+  color: var(--ascend-app-text-muted);
+  text-decoration: none;
+}
+
+.library-meta-link:hover {
+  text-decoration: underline;
 }
 
 /* Title block - mirrors ascend-app-title-block */
@@ -250,7 +262,7 @@
  * ======================================= */
 
 .library-sidebar-mode {
-  /* Each mode container */
+  padding: 0 1.25rem;
 }
 
 /* Source Buttons (Browse Mode) - inherits button base from ascend-apps.css */
@@ -696,7 +708,9 @@
  * ======================================= */
 
 .library-sidebar {
-  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0;
   border-right: 1px solid var(--ascend-app-border);
   background: rgba(255, 255, 255, 0.4);
   overflow-y: auto;
@@ -2657,4 +2671,391 @@
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--ascend-app-border);
+}
+
+/* =========================================================
+ * Recently Removed trigger button (bottom of sidebar)
+ * ======================================================= */
+
+.library-trash-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: auto 12px 12px;
+  padding: 0.5rem 0.85rem;
+  border: 1px dashed var(--ascend-app-border);
+  border-radius: 10px;
+  background: var(--ascend-control-bg);
+  color: var(--ascend-app-text-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.library-trash-trigger:hover {
+  background: var(--ascend-control-bg-hover);
+  border-color: var(--ascend-app-text-muted);
+  color: var(--ascend-app-text-main);
+}
+
+.library-trash-trigger-icon {
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.library-trash-trigger-label {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.library-trash-trigger-count {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--ascend-control-bg-hover);
+  color: var(--ascend-app-text-muted);
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+.library-trash-trigger-count:empty {
+  display: none;
+}
+
+/* =========================================================
+ * Recently Removed modal
+ * ======================================================= */
+
+.library-trash-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+.library-trash-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 20, 0.75);
+}
+
+.library-trash-modal-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, calc(100vw - 28px));
+  max-height: min(560px, calc(100vh - 28px));
+  background: var(--ascend-app-surface);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--ascend-app-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.library-trash-modal-header {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ascend-app-border);
+  background: var(--ascend-control-bg);
+}
+
+.library-trash-modal-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ascend-app-text-main);
+  letter-spacing: 0.02em;
+}
+
+.library-trash-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.library-trash-modal-x {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ascend-app-text-muted);
+  opacity: 0.7;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 120ms ease, opacity 120ms ease;
+}
+
+.library-trash-modal-x:hover {
+  background: var(--ascend-control-bg-hover);
+  opacity: 1;
+}
+
+.library-trash-modal-body {
+  padding: 14px 18px 18px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  background: var(--ascend-app-surface);
+}
+
+.library-trash-modal-note {
+  font-size: 0.75rem;
+  color: var(--ascend-app-text-muted);
+  margin-bottom: 12px;
+}
+
+/* Trash list inside modal */
+.library-trash-list {
+  display: block;
+  border: 1px solid var(--ascend-app-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--ascend-control-bg);
+}
+
+.library-trash-list-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--ascend-app-text-muted);
+  font-size: 0.85rem;
+}
+
+/* Trash item cards */
+.library-trash-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--ascend-app-border);
+}
+
+.library-trash-item:last-child {
+  border-bottom: none;
+}
+
+.library-trash-item-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: default;
+  min-width: 0;
+}
+
+.library-trash-item:nth-child(odd) .library-trash-item-main {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.library-trash-item:nth-child(even) .library-trash-item-main {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.library-trash-item-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--ascend-control-bg);
+  flex-shrink: 0;
+}
+
+.library-trash-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.library-trash-item-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ascend-app-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.library-trash-item-meta {
+  font-size: 0.72rem;
+  color: var(--ascend-app-text-muted);
+  margin-top: 2px;
+}
+
+.library-trash-item-restore {
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 1.1rem;
+  color: var(--ascend-app-text-muted);
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+  border-radius: 6px;
+  margin-right: 8px;
+}
+
+.library-trash-item-restore:hover {
+  background: var(--ascend-control-bg-hover);
+  color: var(--ascend-app-accent);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .library-trash-modal-panel {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    border-radius: 12px;
+  }
+
+  .library-trash-modal-header {
+    padding: 10px 14px;
+  }
+
+  .library-trash-modal-body {
+    padding: 10px 14px 14px;
+  }
+
+  .library-trash-item-thumb {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* =========================================================
+ * Batch Move modal
+ * ======================================================= */
+
+.library-move-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.library-move-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 20, 0.75);
+}
+
+.library-move-modal-panel {
+  position: relative;
+  width: min(480px, calc(100vw - 32px));
+  max-height: min(500px, calc(100vh - 32px));
+  background: var(--ascend-app-surface);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--ascend-app-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.library-move-modal-header {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ascend-app-border);
+  background: var(--ascend-control-bg);
+}
+
+.library-move-modal-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ascend-app-text-main);
+}
+
+.library-move-modal-close {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ascend-app-text-muted);
+  opacity: 0.7;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 120ms ease, opacity 120ms ease;
+}
+
+.library-move-modal-close:hover {
+  background: var(--ascend-control-bg-hover);
+  opacity: 1;
+}
+
+.library-move-modal-body {
+  padding: 14px 18px 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.library-move-modal-note {
+  font-size: 0.75rem;
+  color: var(--ascend-app-text-muted);
+  margin-bottom: 12px;
+}
+
+.library-move-folder-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--ascend-app-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--ascend-control-bg);
+}
+
+.library-move-folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--ascend-app-text-main);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.library-move-folder:hover {
+  background: var(--ascend-control-bg-hover);
+}
+
+.library-move-folder.is-root {
+  font-weight: 600;
+  border-bottom: 1px solid var(--ascend-app-border);
+}
+
+.library-move-folder-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.library-move-folder-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.library-move-folder-count {
+  font-size: 0.72rem;
+  color: var(--ascend-app-text-muted);
+  flex-shrink: 0;
 }

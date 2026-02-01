@@ -15,7 +15,7 @@
       <!-- Header -->
       <header class="library-header">
         <div class="library-header-left">
-          <a href="../" class="library-back" title="Back to Ascend">←</a>
+          <button type="button" class="library-back" title="Go back" onclick="window.history.length > 1 ? window.history.back() : window.location.href = '../'">←</button>
           <div class="library-title-block">
             <div class="library-label">Ascend</div>
             <h1 class="library-title">Library</h1>
@@ -37,6 +37,7 @@
           <div class="library-user" id="library-user">
             <span class="library-user-label" id="library-user-label">Admin</span>
           </div>
+          <a href="../" class="library-meta-link">← Back to Ascend</a>
         </div>
       </header>
 
@@ -160,6 +161,13 @@
               </div>
             </div>
           </div>
+
+          <!-- Recently Removed trigger (visible in both modes) -->
+          <button type="button" class="library-trash-trigger" id="library-trash-trigger">
+            <span class="library-trash-trigger-icon">🗑</span>
+            <span class="library-trash-trigger-label">Recently Removed</span>
+            <span class="library-trash-trigger-count" id="library-trash-trigger-count"></span>
+          </button>
 
         </aside>
 
@@ -302,6 +310,27 @@
           <div class="library-job-list" id="library-job-list-archival">
             <!-- rows injected by JS -->
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recently Removed Modal -->
+  <div class="library-trash-modal" id="library-trash-modal" style="display:none;" aria-hidden="true">
+    <div class="library-trash-modal-backdrop" id="library-trash-modal-backdrop" data-modal-close="1"></div>
+    <div class="library-trash-modal-panel" role="dialog" aria-modal="true" aria-labelledby="library-trash-modal-title">
+      <div class="library-trash-modal-header">
+        <div class="library-trash-modal-title" id="library-trash-modal-title">Recently Removed</div>
+        <div class="library-trash-modal-actions">
+          <button type="button" class="library-trash-modal-x" id="library-trash-modal-close" aria-label="Close">×</button>
+        </div>
+      </div>
+      <div class="library-trash-modal-body">
+        <div class="library-trash-modal-note">
+          Items here can be restored to the library.
+        </div>
+        <div class="library-trash-list" id="library-trash-list">
+          <!-- rows injected by JS -->
         </div>
       </div>
     </div>

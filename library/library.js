@@ -386,6 +386,7 @@
 
     // Bind event listeners
     bindEvents();
+    initTrashModal();
 
     // Load manifest (required for asset list)
     await loadManifest();
@@ -586,6 +587,7 @@
 
     const subfolderSet = new Set();
 
+    // 1. Find folders from assets
     State.assets.forEach(asset => {
       // Skip trashed assets
       if (isAssetTrashed(asset.id)) return;
@@ -616,6 +618,33 @@
       const nextSeg = remainder.split('/')[0];
       if (nextSeg) {
         subfolderSet.add(nextSeg);
+      }
+    });
+
+    // 2. Also include empty folders from folderDisplayNames registry
+    Object.keys(State.folderDisplayNames).forEach(key => {
+      // Keys are formatted as 'source:path' - split only on first colon
+      const colonIdx = key.indexOf(':');
+      if (colonIdx === -1) return;
+      const folderSource = key.slice(0, colonIdx);
+      const folderPath = key.slice(colonIdx + 1);
+      if (folderSource !== source || !folderPath) return;
+
+      // Check if this folder is a direct child of current path
+      if (prefix) {
+        // Must start with prefix/ and have exactly one more segment
+        if (!folderPath.startsWith(prefixWithSlash)) return;
+        const remainder = folderPath.slice(prefixWithSlash.length);
+        const segments = remainder.split('/').filter(s => s);
+        if (segments.length === 1) {
+          subfolderSet.add(segments[0]);
+        }
+      } else {
+        // Root level - get first segment only if it's a single segment path
+        const segments = folderPath.split('/').filter(s => s);
+        if (segments.length >= 1) {
+          subfolderSet.add(segments[0]);
+        }
       }
     });
 
@@ -1719,9 +1748,15 @@
 
   function updateTrashCount() {
     const count = Object.values(State.assetMeta).filter(m => m.trashed).length;
+    // Update sidebar checkbox count
     const el = document.getElementById('library-trash-count');
     if (el) {
       el.textContent = count > 0 ? count : '';
+    }
+    // Update trigger button count
+    const triggerCount = document.getElementById('library-trash-trigger-count');
+    if (triggerCount) {
+      triggerCount.textContent = count > 0 ? String(count) : '';
     }
   }
 
@@ -1732,6 +1767,168 @@
     const isTrashed = isAssetTrashed(assetId);
     btn.classList.toggle('is-trashed', isTrashed);
     btn.textContent = isTrashed ? 'Restore from Trash' : 'Move to Trash';
+  }
+
+  // =========================================
+  // TRASH MODAL (Recently Removed)
+  // =========================================
+
+  function openTrashModal() {
+    const modal = document.getElementById('library-trash-modal');
+    if (!modal) return;
+
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+    renderTrashList();
+  }
+
+  function closeTrashModal() {
+    const modal = document.getElementById('library-trash-modal');
+    if (!modal) return;
+
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderTrashList() {
+    const list = document.getElementById('library-trash-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    // Get all trashed assets
+    const trashedAssets = Object.entries(State.assetMeta)
+      .filter(([id, meta]) => meta.trashed)
+      .map(([id, meta]) => {
+        const asset = State.assets.find(a => a.id === id);
+        return { id, meta, asset };
+      })
+      .filter(item => item.asset) // Only show assets we have data for
+      .sort((a, b) => {
+        // Sort by trashed date, newest first
+        const dateA = a.meta.trashedAt || '';
+        const dateB = b.meta.trashedAt || '';
+        return dateB.localeCompare(dateA);
+      });
+
+    if (trashedAssets.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'library-trash-list-empty';
+      empty.textContent = 'Trash is empty';
+      list.appendChild(empty);
+      return;
+    }
+
+    trashedAssets.forEach(({ id, meta, asset }) => {
+      const item = document.createElement('div');
+      item.className = 'library-trash-item';
+
+      const main = document.createElement('div');
+      main.className = 'library-trash-item-main';
+
+      // Thumbnail
+      const thumb = document.createElement('img');
+      thumb.className = 'library-trash-item-thumb';
+      thumb.src = asset.thumbnailUrl || asset.url || '';
+      thumb.alt = '';
+      thumb.loading = 'lazy';
+
+      // Info
+      const info = document.createElement('div');
+      info.className = 'library-trash-item-info';
+
+      const name = document.createElement('div');
+      name.className = 'library-trash-item-name';
+      name.textContent = asset.name || id;
+
+      const metaEl = document.createElement('div');
+      metaEl.className = 'library-trash-item-meta';
+      const trashedDate = meta.trashedAt ? formatDate(meta.trashedAt) : '';
+      metaEl.textContent = trashedDate ? 'Removed ' + trashedDate : '';
+
+      info.appendChild(name);
+      if (trashedDate) info.appendChild(metaEl);
+
+      main.appendChild(thumb);
+      main.appendChild(info);
+
+      // Restore button
+      const restoreBtn = document.createElement('button');
+      restoreBtn.type = 'button';
+      restoreBtn.className = 'library-trash-item-restore';
+      restoreBtn.textContent = '↩';
+      restoreBtn.title = 'Restore';
+      restoreBtn.setAttribute('aria-label', 'Restore from trash');
+
+      restoreBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Immediate UI removal
+        item.remove();
+
+        // Restore the asset
+        restoreAsset(id);
+
+        // Check if list is now empty
+        if (list.children.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'library-trash-list-empty';
+          empty.textContent = 'Trash is empty';
+          list.appendChild(empty);
+        }
+      });
+
+      item.appendChild(main);
+      item.appendChild(restoreBtn);
+      list.appendChild(item);
+    });
+  }
+
+  function formatDate(isoString) {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) return 'today';
+      if (diffDays === 1) return 'yesterday';
+      if (diffDays < 7) return diffDays + ' days ago';
+
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function initTrashModal() {
+    const trigger = document.getElementById('library-trash-trigger');
+    const closeBtn = document.getElementById('library-trash-modal-close');
+    const backdrop = document.getElementById('library-trash-modal-backdrop');
+
+    if (trigger) {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openTrashModal();
+      });
+    }
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        closeTrashModal();
+      });
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target.getAttribute('data-modal-close') === '1') {
+          closeTrashModal();
+        }
+      });
+    }
   }
 
   // =========================================
@@ -1845,10 +2042,18 @@
     const jobBtnText = State.addToJobTarget
       ? `Add to ${State.addToJobTarget.app} #${State.addToJobTarget.jobId}`
       : 'Add to Job';
+
+    // Only show Move button in Browse mode
+    const showMoveBtn = State.mode === 'browse' && State.browse.source;
+    const moveBtnHtml = showMoveBtn
+      ? '<button type="button" class="library-batch-btn" data-action="batch-move">Move</button>'
+      : '';
+
     toolbar.innerHTML = `
       <div class="library-batch-count">${State.selectedAssets.length} selected</div>
       <div class="library-batch-actions">
         <button type="button" class="library-batch-btn" data-action="batch-tags">Tags</button>
+        ${moveBtnHtml}
         <button type="button" class="library-batch-btn" data-action="batch-job">${jobBtnText}</button>
         <button type="button" class="library-batch-btn is-secondary" data-action="batch-clear">Clear</button>
       </div>
@@ -1866,6 +2071,8 @@
         openBatchTagsModal();
       } else if (action === 'batch-job') {
         batchAddToJob();
+      } else if (action === 'batch-move') {
+        openBatchMoveModal();
       }
     };
   }
@@ -2030,6 +2237,115 @@
       });
       modal.remove();
     };
+  }
+
+  // =========================================
+  // BATCH MOVE MODAL
+  // =========================================
+
+  function openBatchMoveModal() {
+    const existing = document.getElementById('library-move-modal');
+    if (existing) existing.remove();
+
+    const source = State.browse.source;
+    if (!source) {
+      showToast('Select a source first');
+      return;
+    }
+
+    // Build folder tree for modal
+    const folderTree = buildFolderTreeForModal(source);
+
+    const modal = document.createElement('div');
+    modal.id = 'library-move-modal';
+    modal.className = 'library-move-modal';
+    modal.innerHTML = `
+      <div class="library-move-modal-backdrop" data-modal-close="1"></div>
+      <div class="library-move-modal-panel">
+        <div class="library-move-modal-header">
+          <div class="library-move-modal-title">Move ${State.selectedAssets.length} Items</div>
+          <button type="button" class="library-move-modal-close" data-modal-close="1">×</button>
+        </div>
+        <div class="library-move-modal-body">
+          <div class="library-move-modal-note">Select a destination folder</div>
+          <div class="library-move-folder-tree" id="library-move-folder-tree">
+            <button type="button" class="library-move-folder is-root" data-path="">
+              <span class="library-move-folder-icon">📁</span>
+              <span class="library-move-folder-name">${source === 'stock' ? 'Stock' : 'Publications'} (root)</span>
+            </button>
+            ${folderTree}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close handlers
+    modal.querySelector('.library-move-modal-close').onclick = () => modal.remove();
+    modal.querySelector('.library-move-modal-backdrop').onclick = () => modal.remove();
+
+    // Folder selection
+    modal.querySelectorAll('.library-move-folder').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const targetPath = btn.dataset.path;
+        modal.remove();
+
+        // Get current path to check if already there
+        const currentPath = State.browse.path.join('/');
+        if (targetPath === currentPath) {
+          showToast('Items are already in this folder');
+          return;
+        }
+
+        await executeBatchMove(targetPath);
+      });
+    });
+  }
+
+  function buildFolderTreeForModal(source, parentPath = '', depth = 0) {
+    if (depth > 3) return ''; // Limit depth for performance
+
+    const pathSegments = parentPath ? parentPath.split('/') : [];
+    const subfolders = getSubfoldersAt(source, pathSegments);
+
+    if (subfolders.length === 0) return '';
+
+    return subfolders.map(folder => {
+      const fullPath = folder.fullPath;
+      const indent = depth * 20;
+      const displayName = getFolderDisplayName(source, fullPath);
+      const children = buildFolderTreeForModal(source, fullPath, depth + 1);
+
+      return `
+        <button type="button" class="library-move-folder" data-path="${escapeHtml(fullPath)}" style="padding-left: ${24 + indent}px;">
+          <span class="library-move-folder-icon">📁</span>
+          <span class="library-move-folder-name">${escapeHtml(displayName)}</span>
+          <span class="library-move-folder-count">${folder.count}</span>
+        </button>
+        ${children}
+      `;
+    }).join('');
+  }
+
+  async function executeBatchMove(targetPath) {
+    const count = State.selectedAssets.length;
+    showToast(`Moving ${count} items...`);
+
+    try {
+      await batchMoveAssetsToFolder([...State.selectedAssets], targetPath);
+      showToast(`Moved ${count} items`, 'success');
+
+      // Clear selection
+      clearSelection();
+
+      // Refresh view
+      if (State.mode === 'browse') {
+        renderBrowseView();
+      }
+    } catch (e) {
+      showToast('Move failed: ' + e.message, 'error');
+    }
   }
 
   async function batchApplyMetadata({ products, productsToRemove = [], lob, tags, tagsToRemove = [], notes }) {
@@ -3566,14 +3882,9 @@
       nameEl.textContent = 'New Folder';
     };
 
-    const cleanup = () => {
-      document.removeEventListener('click', handleClickOutside, true);
-    };
-
     const commitCreation = async () => {
       if (committed) return;
       committed = true;
-      cleanup();
 
       const folderName = input.value.trim();
       console.log('[NewFolder] Committing:', folderName);
@@ -3615,39 +3926,33 @@
     const cancelCreation = () => {
       if (committed) return;
       committed = true;
-      cleanup();
-      console.log('[NewFolder] Cancelled');
       resetTile();
     };
 
-    // Click outside commits or cancels
-    const handleClickOutside = (ev) => {
-      if (!input.contains(ev.target)) {
-        console.log('[NewFolder] Click outside');
+    // Handle Enter and Escape keys
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
         ev.preventDefault();
         ev.stopPropagation();
+        commitCreation();
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        ev.stopPropagation();
+        cancelCreation();
+      }
+    });
+
+    // Handle blur (clicking away, tabbing, etc.)
+    input.addEventListener('blur', () => {
+      // Small delay to allow click events to fire first
+      setTimeout(() => {
+        if (committed) return;
         if (input.value.trim()) {
           commitCreation();
         } else {
           cancelCreation();
         }
-      }
-    };
-    setTimeout(() => document.addEventListener('click', handleClickOutside, true), 0);
-
-    input.addEventListener('keydown', (ev) => {
-      console.log('[NewFolder] keydown:', ev.key);
-      if (ev.key === 'Enter') {
-        console.log('[NewFolder] Enter pressed');
-        ev.preventDefault();
-        ev.stopPropagation();
-        commitCreation();
-      } else if (ev.key === 'Escape') {
-        console.log('[NewFolder] Escape pressed');
-        ev.preventDefault();
-        ev.stopPropagation();
-        cancelCreation();
-      }
+      }, 100);
     });
   }
 
