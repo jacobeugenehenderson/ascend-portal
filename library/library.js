@@ -1829,9 +1829,13 @@
       // Thumbnail
       const thumb = document.createElement('img');
       thumb.className = 'library-trash-item-thumb';
-      thumb.src = asset.thumbnailUrl || asset.url || '';
+      thumb.src = getThumbUrl(asset);
       thumb.alt = '';
       thumb.loading = 'lazy';
+      thumb.onerror = function() {
+        this.onerror = null;
+        this.src = getPlaceholderForType(asset.ext || '');
+      };
 
       // Info
       const info = document.createElement('div');
