@@ -3009,21 +3009,81 @@
 .library-move-folder-tree {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   border: 1px solid var(--ascend-app-border);
   border-radius: 10px;
   overflow: hidden;
   background: var(--ascend-control-bg);
 }
 
+/* Folder row container */
+.library-move-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  transition: background-color 120ms ease;
+}
+
+.library-move-folder-row:hover {
+  background: var(--ascend-control-bg-hover);
+}
+
+.library-move-folder-row.is-root {
+  border-bottom: 1px solid var(--ascend-app-border);
+  padding: 10px 12px;
+}
+
+.library-move-folder-row.is-current {
+  background: var(--ascend-app-accent-soft);
+}
+
+.library-move-folder-row.is-current::after {
+  content: '(current)';
+  font-size: 0.7rem;
+  color: var(--ascend-app-accent);
+  margin-left: auto;
+  padding-right: 8px;
+}
+
+/* Toggle button for expand/collapse */
+.library-move-folder-toggle {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 0.65rem;
+  color: var(--ascend-app-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.library-move-folder-toggle:hover {
+  background: var(--ascend-app-border);
+  color: var(--ascend-app-text-main);
+}
+
+.library-move-folder-toggle-spacer {
+  width: 20px;
+  flex-shrink: 0;
+}
+
+/* Folder button */
 .library-move-folder {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  padding: 10px 14px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
   background: transparent;
   border: none;
+  border-radius: 6px;
   font-family: inherit;
   font-size: 0.85rem;
   color: var(--ascend-app-text-main);
@@ -3033,12 +3093,11 @@
 }
 
 .library-move-folder:hover {
-  background: var(--ascend-control-bg-hover);
+  background: var(--ascend-control-hover-wash);
 }
 
-.library-move-folder.is-root {
+.library-move-folder-row.is-root .library-move-folder {
   font-weight: 600;
-  border-bottom: 1px solid var(--ascend-app-border);
 }
 
 .library-move-folder-icon {
@@ -3058,4 +3117,10 @@
   font-size: 0.72rem;
   color: var(--ascend-app-text-muted);
   flex-shrink: 0;
+}
+
+/* Children container */
+.library-move-folder-children {
+  display: flex;
+  flex-direction: column;
 }

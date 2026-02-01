@@ -2257,8 +2257,8 @@
       return;
     }
 
-    // Build folder tree for modal
-    const folderTree = buildFolderTreeForModal(source);
+    // Current path - we'll expand folders along this path
+    const currentPath = State.browse.path.join('/');
 
     const modal = document.createElement('div');
     modal.id = 'library-move-modal';
@@ -2273,11 +2273,7 @@
         <div class="library-move-modal-body">
           <div class="library-move-modal-note">Select a destination folder</div>
           <div class="library-move-folder-tree" id="library-move-folder-tree">
-            <button type="button" class="library-move-folder is-root" data-path="">
-              <span class="library-move-folder-icon">📁</span>
-              <span class="library-move-folder-name">${source === 'stock' ? 'Stock' : 'Publications'} (root)</span>
-            </button>
-            ${folderTree}
+            <!-- Tree built dynamically -->
           </div>
         </div>
       </div>
@@ -2285,42 +2281,169 @@
 
     document.body.appendChild(modal);
 
+    // Build the tree dynamically
+    const treeContainer = modal.querySelector('#library-move-folder-tree');
+    buildMoveTreeInteractive(treeContainer, source, currentPath);
+
     // Close handlers
     modal.querySelector('.library-move-modal-close').onclick = () => modal.remove();
     modal.querySelector('.library-move-modal-backdrop').onclick = () => modal.remove();
+  }
 
-    // Folder selection
-    modal.querySelectorAll('.library-move-folder').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const targetPath = btn.dataset.path;
-        modal.remove();
+  function buildMoveTreeInteractive(container, source, currentPath) {
+    const currentSegments = currentPath ? currentPath.split('/') : [];
 
-        // Get current path to check if already there
-        const currentPath = State.browse.path.join('/');
+    // Build the tree starting from root
+    function renderLevel(parentPath, depth) {
+      const pathSegments = parentPath ? parentPath.split('/') : [];
+      const subfolders = getSubfoldersAt(source, pathSegments);
+
+      if (subfolders.length === 0) return null;
+
+      const fragment = document.createDocumentFragment();
+
+      subfolders.forEach(folder => {
+        const fullPath = folder.fullPath;
+        const displayName = getFolderDisplayName(source, fullPath);
+        const hasChildren = getSubfoldersAt(source, fullPath.split('/')).length > 0;
+
+        // Check if this folder is on the path to current location
+        const isOnCurrentPath = currentPath.startsWith(fullPath + '/') || currentPath === fullPath;
+        const isCurrentFolder = currentPath === fullPath;
+
+        // Create folder row
+        const row = document.createElement('div');
+        row.className = 'library-move-folder-row';
+        if (isCurrentFolder) row.classList.add('is-current');
+        row.dataset.path = fullPath;
+        row.dataset.depth = depth;
+        row.style.paddingLeft = `${12 + depth * 20}px`;
+
+        // Toggle button (for folders with children)
+        if (hasChildren) {
+          const toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.className = 'library-move-folder-toggle';
+          toggle.innerHTML = isOnCurrentPath ? '▼' : '▶';
+          toggle.dataset.expanded = isOnCurrentPath ? 'true' : 'false';
+          row.appendChild(toggle);
+        } else {
+          const spacer = document.createElement('span');
+          spacer.className = 'library-move-folder-toggle-spacer';
+          row.appendChild(spacer);
+        }
+
+        // Folder button
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'library-move-folder';
+        btn.dataset.path = fullPath;
+        btn.innerHTML = `
+          <span class="library-move-folder-icon">📁</span>
+          <span class="library-move-folder-name">${escapeHtml(displayName)}</span>
+          <span class="library-move-folder-count">${folder.count}</span>
+        `;
+        row.appendChild(btn);
+
+        fragment.appendChild(row);
+
+        // Children container
+        if (hasChildren) {
+          const childrenContainer = document.createElement('div');
+          childrenContainer.className = 'library-move-folder-children';
+          childrenContainer.dataset.parent = fullPath;
+          // Only show children if on current path
+          if (!isOnCurrentPath) {
+            childrenContainer.style.display = 'none';
+          } else {
+            // Render children immediately if expanded
+            const childContent = renderLevel(fullPath, depth + 1);
+            if (childContent) childrenContainer.appendChild(childContent);
+          }
+          fragment.appendChild(childrenContainer);
+        }
+      });
+
+      return fragment;
+    }
+
+    // Root folder button
+    const rootRow = document.createElement('div');
+    rootRow.className = 'library-move-folder-row is-root';
+    rootRow.innerHTML = `
+      <span class="library-move-folder-toggle-spacer"></span>
+      <button type="button" class="library-move-folder" data-path="">
+        <span class="library-move-folder-icon">📁</span>
+        <span class="library-move-folder-name">${source === 'stock' ? 'Stock' : 'Publications'} (root)</span>
+      </button>
+    `;
+    container.appendChild(rootRow);
+
+    // Build first level
+    const tree = renderLevel('', 0);
+    if (tree) container.appendChild(tree);
+
+    // Event delegation for the tree
+    container.addEventListener('click', async (e) => {
+      // Handle toggle clicks
+      const toggle = e.target.closest('.library-move-folder-toggle');
+      if (toggle) {
+        e.stopPropagation();
+        const row = toggle.closest('.library-move-folder-row');
+        const path = row.dataset.path;
+        const isExpanded = toggle.dataset.expanded === 'true';
+        const childrenContainer = container.querySelector(`.library-move-folder-children[data-parent="${path}"]`);
+
+        if (isExpanded) {
+          // Collapse
+          toggle.innerHTML = '▶';
+          toggle.dataset.expanded = 'false';
+          if (childrenContainer) childrenContainer.style.display = 'none';
+        } else {
+          // Expand
+          toggle.innerHTML = '▼';
+          toggle.dataset.expanded = 'true';
+          if (childrenContainer) {
+            // Lazy load children if not already loaded
+            if (childrenContainer.children.length === 0) {
+              const depth = parseInt(row.dataset.depth) + 1;
+              const children = renderLevel(path, depth);
+              if (children) childrenContainer.appendChild(children);
+            }
+            childrenContainer.style.display = 'block';
+          }
+        }
+        return;
+      }
+
+      // Handle folder selection
+      const folderBtn = e.target.closest('.library-move-folder');
+      if (folderBtn) {
+        const targetPath = folderBtn.dataset.path;
+        const modal = container.closest('.library-move-modal');
+
         if (targetPath === currentPath) {
           showToast('Items are already in this folder');
           return;
         }
 
+        modal.remove();
         await executeBatchMove(targetPath);
-      });
+      }
     });
   }
 
+  // Keep for backwards compatibility but not used
   function buildFolderTreeForModal(source, parentPath = '', depth = 0) {
-    if (depth > 3) return ''; // Limit depth for performance
-
+    if (depth > 3) return '';
     const pathSegments = parentPath ? parentPath.split('/') : [];
     const subfolders = getSubfoldersAt(source, pathSegments);
-
     if (subfolders.length === 0) return '';
-
     return subfolders.map(folder => {
       const fullPath = folder.fullPath;
       const indent = depth * 20;
       const displayName = getFolderDisplayName(source, fullPath);
       const children = buildFolderTreeForModal(source, fullPath, depth + 1);
-
       return `
         <button type="button" class="library-move-folder" data-path="${escapeHtml(fullPath)}" style="padding-left: ${24 + indent}px;">
           <span class="library-move-folder-icon">📁</span>
