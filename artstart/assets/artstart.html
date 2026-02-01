@@ -1092,12 +1092,14 @@
         gap: 6px;
       }
 
+      /* Ascend squares: 7×7px, 2px radius, consistent with stacked-squares motif */
       .artstart-toolbar-lang .artstart-language-square {
-        width: 6px;
-        height: 6px;
-        border-radius: 9999px;
+        width: 7px;
+        height: 7px;
+        border-radius: 2px;
         background: #2563eb;
         border: none;
+        box-shadow: 0 0 0 0.5px rgba(0,0,0,0.35);
         cursor: default;
       }
 
@@ -1108,21 +1110,21 @@
       .artstart-toolbar-lang .artstart-language-square.is-empty {
         background: transparent;
         border: 1px solid #f97316;
+        box-shadow: none;
       }
 
-      /* Re-translate button (dynamically added) */
+      /* Re-translate button: same Ascend square style */
       .artstart-toolbar-lang .artstart-retranslate-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 24px;
-        height: 24px;
+        width: 7px;
+        height: 7px;
         padding: 0;
         border: none;
-        border-radius: 4px;
+        border-radius: 2px;
         background: #dc2626;
-        color: #ffffff;
-        font-size: 12px;
+        box-shadow: 0 0 0 0.5px rgba(0,0,0,0.35);
         cursor: pointer;
         transition: background 0.15s;
       }
