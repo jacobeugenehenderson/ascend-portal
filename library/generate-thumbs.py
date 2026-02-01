@@ -115,6 +115,14 @@ def generate_psd_thumbnail(src_path: Path, rel_path: str) -> bool:
 
 def generate_ai_thumbnail(src_path: Path, rel_path: str) -> bool:
     """Generate WebP thumbnails (small + large) from AI file using PyMuPDF."""
+    return generate_pdf_based_thumbnail(src_path, rel_path)
+
+def generate_pdf_thumbnail(src_path: Path, rel_path: str) -> bool:
+    """Generate WebP thumbnails (small + large) from PDF file using PyMuPDF."""
+    return generate_pdf_based_thumbnail(src_path, rel_path)
+
+def generate_pdf_based_thumbnail(src_path: Path, rel_path: str) -> bool:
+    """Generate WebP thumbnails from PDF-based files (AI, PDF) using PyMuPDF."""
     thumb_id = get_thumb_id(rel_path)
     small_path = THUMBS_PATH / f"{thumb_id}.webp"
     large_path = THUMBS_LG_PATH / f"{thumb_id}.webp"
@@ -124,7 +132,7 @@ def generate_ai_thumbnail(src_path: Path, rel_path: str) -> bool:
         return True
 
     try:
-        # Open AI file (PDF-based format)
+        # Open PDF-based file (AI files are PDF format internally)
         doc = fitz.open(src_path)
         page = doc[0]  # First page
 
@@ -408,6 +416,9 @@ def main():
     elif file_type == "ai":
         files = find_files(["ai"], "AI")
         process_files(files, generate_ai_thumbnail, "AI")
+    elif file_type == "pdf":
+        files = find_files(["pdf"], "PDF")
+        process_files(files, generate_pdf_thumbnail, "PDF")
     elif file_type == "eps":
         files = find_files(["eps"], "EPS")
         process_files(files, generate_eps_thumbnail, "EPS")
@@ -428,6 +439,9 @@ def main():
         ai_files = find_files(["ai"], "AI")
         process_files(ai_files, generate_ai_thumbnail, "AI")
         print()
+        pdf_files = find_files(["pdf"], "PDF")
+        process_files(pdf_files, generate_pdf_thumbnail, "PDF")
+        print()
         eps_files = find_files(["eps"], "EPS")
         process_files(eps_files, generate_eps_thumbnail, "EPS")
         print()
@@ -440,9 +454,10 @@ def main():
         else:
             print("Skipping SVG (cairosvg not installed)")
     else:
-        print(f"Usage: {sys.argv[0]} [psd|ai|eps|raster|svg|all]")
+        print(f"Usage: {sys.argv[0]} [psd|ai|pdf|eps|raster|svg|all]")
         print("  psd    - Generate thumbnails for PSD files (default)")
         print("  ai     - Generate thumbnails for AI files")
+        print("  pdf    - Generate thumbnails for PDF files")
         print("  eps    - Generate thumbnails for EPS files")
         print("  raster - Generate thumbnails for PNG, JPG, GIF, WebP files")
         print("  svg    - Generate thumbnails for SVG files (requires cairosvg)")

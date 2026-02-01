@@ -3592,8 +3592,8 @@
     previewContainer.classList.toggle('is-pdf-viewer', isMediaKitsPdf);
 
     if (isMediaKitsPdf) {
-      // Media Kits PDFs: show thumbnail with option to open full PDF
-      // Build file path for "Open PDF" button
+      // Media Kits PDFs: show thumbnail with button to open full multi-page viewer
+      // Build file path for PDF viewing
       let pdfPath;
       if (asset.path.startsWith('library/')) {
         pdfPath = `${Config.basePath}/${asset.path.slice(8)}`;
@@ -3603,23 +3603,30 @@
         pdfPath = `${Config.basePath}/${asset.path}`;
       }
 
-      // Show thumbnail (or placeholder) with overlay button to open PDF
+      const pdfUrl = `http://localhost:8081/pdf?path=${encodeURIComponent(pdfPath)}`;
+
+      // Show thumbnail with "View PDF" button
       previewContainer.innerHTML = `
         <div class="library-pdf-preview-wrapper">
           <img src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">
           <div class="library-pdf-open-overlay">
-            <button type="button" class="library-pdf-open-btn" data-path="${escapeHtml(pdfPath)}">
-              Open PDF
+            <button type="button" class="library-pdf-open-btn" data-url="${escapeHtml(pdfUrl)}">
+              View PDF
             </button>
-            <div class="library-pdf-hint">Opens in Preview or your default PDF viewer</div>
+            <div class="library-pdf-hint">Opens multi-page viewer in new window</div>
           </div>
         </div>
       `;
 
-      // Bind the open button
+      // Bind the open button - opens PDF in a large new window for reading
       previewContainer.querySelector('.library-pdf-open-btn')?.addEventListener('click', () => {
-        // Use reveal server if running, otherwise try to open via Finder
-        window.open(`http://localhost:8081/reveal?path=${encodeURIComponent(pdfPath)}`, '_blank');
+        const url = previewContainer.querySelector('.library-pdf-open-btn').dataset.url;
+        // Open in a large window (90% of screen)
+        const width = Math.round(window.screen.width * 0.9);
+        const height = Math.round(window.screen.height * 0.9);
+        const left = Math.round((window.screen.width - width) / 2);
+        const top = Math.round((window.screen.height - height) / 2);
+        window.open(url, 'pdfviewer', `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`);
       });
     } else {
       // All other assets: use large thumbnail
