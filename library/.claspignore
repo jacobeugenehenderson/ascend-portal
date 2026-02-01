@@ -1,4 +1,5 @@
 # Ignore frontend files
+._*
 library.js
 library.css
 library.html
