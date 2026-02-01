@@ -3581,9 +3581,9 @@
     const hasTransparency = ['svg', 'eps', 'png'].includes(ext);
     const assetUrl = getAssetUrl(asset);
 
-    // Check if this is a Media Kits PDF - use full PDF viewer instead of thumbnail
+    // Check if this is a Media Kits PDF - show PDF preview with open button
     const assetFolder = getEffectiveFolder(asset);
-    const isMediaKitsPdf = isPdf && assetFolder === 'MEDIA-KITS';
+    const isMediaKitsPdf = isPdf && (assetFolder === 'MEDIA-KITS' || assetFolder.startsWith('MEDIA-KITS/'));
 
     // Set preview content
     const placeholder = getPlaceholderForType(ext);
@@ -3592,8 +3592,8 @@
     previewContainer.classList.toggle('is-pdf-viewer', isMediaKitsPdf);
 
     if (isMediaKitsPdf) {
-      // Media Kits PDFs: use iframe with browser's native PDF viewer (multi-page navigation, zoom)
-      // Serve via reveal server on localhost:8081 (file:// URLs blocked by browser security)
+      // Media Kits PDFs: show thumbnail with option to open full PDF
+      // Build file path for "Open PDF" button
       let pdfPath;
       if (asset.path.startsWith('library/')) {
         pdfPath = `${Config.basePath}/${asset.path.slice(8)}`;
@@ -3602,8 +3602,25 @@
       } else {
         pdfPath = `${Config.basePath}/${asset.path}`;
       }
-      const pdfUrl = `http://localhost:8081/pdf?path=${encodeURIComponent(pdfPath)}`;
-      previewContainer.innerHTML = `<iframe class="library-pdf-viewer" src="${pdfUrl}" title="${escapeHtml(asset.name)}"></iframe>`;
+
+      // Show thumbnail (or placeholder) with overlay button to open PDF
+      previewContainer.innerHTML = `
+        <div class="library-pdf-preview-wrapper">
+          <img src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">
+          <div class="library-pdf-open-overlay">
+            <button type="button" class="library-pdf-open-btn" data-path="${escapeHtml(pdfPath)}">
+              Open PDF
+            </button>
+            <div class="library-pdf-hint">Opens in Preview or your default PDF viewer</div>
+          </div>
+        </div>
+      `;
+
+      // Bind the open button
+      previewContainer.querySelector('.library-pdf-open-btn')?.addEventListener('click', () => {
+        // Use reveal server if running, otherwise try to open via Finder
+        window.open(`http://localhost:8081/reveal?path=${encodeURIComponent(pdfPath)}`, '_blank');
+      });
     } else {
       // All other assets: use large thumbnail
       previewContainer.innerHTML = `<img id="library-modal-image" src="${thumbUrl}" alt="" onerror="this.onerror=null;this.src='${placeholder}'">`;
