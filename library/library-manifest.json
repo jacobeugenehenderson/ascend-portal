@@ -1,13 +1,13 @@
 {
-  "generated": "2026-02-02T11:14:37.417198",
+  "generated": "2026-02-02T17:45:18.815669",
   "sources": {
     "library": "/Volumes/Today/Nordson/LIBRARY",
     "publications": "/Volumes/Today/Nordson/PUBLICATIONS"
   },
   "stockFolder": "STOCK",
-  "totalAssets": 2486,
+  "totalAssets": 2487,
   "collections": {
-    "stock": 1810,
+    "stock": 1811,
     "publications": 676
   },
   "folders": [
@@ -264,6 +264,8 @@
     "Products-Finishing/Products Finishing",
     "Products-Finishing/Products Finishing/070824",
     "Products-Finishing/Products Finishing/aep",
+    "SHOW-COLLATERAL",
+    "SHOW-COLLATERAL/PCT-Powder-Coating-Week-2026",
     "SORTMESS",
     "SORTMESS/Digital Edition Sponsorship",
     "SORTMESS/Digital Edition Sponsorship/Leaderboard",
@@ -319,8 +321,7 @@
     "Source-Group/Source_Group",
     "Source-Group/Source_Group/Block",
     "YT_Forum",
-    "YT_Forum/YTFORUM-failedtolaunch",
-    "show-collateral/PCT-Powder-Coating-Week-2026"
+    "YT_Forum/YTFORUM-failedtolaunch"
   ],
   "assets": [
     {
@@ -10471,27 +10472,26 @@
       "thumbUrl": "thumbs/bbbe4464e4f9.webp"
     },
     {
-      "id": "0d47ca26e063",
-      "name": "PCW_2026_NORDSON ICS_email",
-      "filename": "PCW_2026_NORDSON ICS_email.png",
-      "path": "library/show-collateral/PCT-Powder-Coating-Week-2026/PCW_2026_NORDSON ICS_email.png",
-      "folder": "show-collateral/PCT-Powder-Coating-Week-2026",
+      "id": "d6a61e5953ac",
+      "name": "Fabtech-Mexico-2026",
+      "filename": "Fabtech-Mexico-2026.png",
+      "path": "library/SHOW-COLLATERAL/Fabtech-Mexico-2026.png",
+      "folder": "SHOW-COLLATERAL",
       "ext": "png",
-      "size": 103876,
-      "modified": "2026-01-30T10:59:32",
+      "size": 15972,
+      "modified": "2026-02-02T17:28:16.520000",
       "collection": "stock",
       "isImage": true,
-      "width": 519,
-      "height": 519,
-      "dpi": 300,
-      "thumbUrl": "thumbs/0d47ca26e063.webp"
+      "width": 382,
+      "height": 144,
+      "dpi": 96
     },
     {
-      "id": "8255416a3516",
-      "name": "PCI_PCW_2026_Exhibitor",
-      "filename": "PCI_PCW_2026_Exhibitor.png",
-      "path": "library/show-collateral/PCT-Powder-Coating-Week-2026/PCI_PCW_2026_Exhibitor.png",
-      "folder": "show-collateral/PCT-Powder-Coating-Week-2026",
+      "id": "74b143119d27",
+      "name": "PCW_2026_NORDSON ICS_email",
+      "filename": "PCW_2026_NORDSON ICS_email.png",
+      "path": "library/SHOW-COLLATERAL/PCT-Powder-Coating-Week-2026/PCW_2026_NORDSON ICS_email.png",
+      "folder": "SHOW-COLLATERAL/PCT-Powder-Coating-Week-2026",
       "ext": "png",
       "size": 103876,
       "modified": "2026-01-30T10:59:32",
@@ -10499,8 +10499,22 @@
       "isImage": true,
       "width": 519,
       "height": 519,
-      "dpi": 300,
-      "thumbUrl": "thumbs/8255416a3516.webp"
+      "dpi": 300
+    },
+    {
+      "id": "227565b7c653",
+      "name": "PCI_PCW_2026_Exhibitor",
+      "filename": "PCI_PCW_2026_Exhibitor.png",
+      "path": "library/SHOW-COLLATERAL/PCT-Powder-Coating-Week-2026/PCI_PCW_2026_Exhibitor.png",
+      "folder": "SHOW-COLLATERAL/PCT-Powder-Coating-Week-2026",
+      "ext": "png",
+      "size": 103876,
+      "modified": "2026-01-30T10:59:32",
+      "collection": "stock",
+      "isImage": true,
+      "width": 519,
+      "height": 519,
+      "dpi": 300
     },
     {
       "id": "55ca4b11f7b6",
