@@ -3241,28 +3241,30 @@
 /* =========================================
  * SHARE VIEW
  * Branded minimal view for external sharing
+ * Uses Ascend design system tokens
  * ======================================= */
 
 .library-share-view {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  color: #fff;
+  background: var(--ascend-body-bg);
+  color: var(--ascend-color-text-main);
+  font-family: var(--ascend-font-sans);
 }
 
 .library-share-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--ascend-space-l) var(--ascend-space-xl);
+  border-bottom: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
 }
 
 .library-share-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #fff;
+  gap: var(--ascend-space-s);
+  font-size: var(--ascend-text-l);
+  font-weight: var(--ascend-weight-bold);
+  color: var(--ascend-color-text-main);
 }
 
 .library-share-logo svg {
@@ -3275,18 +3277,19 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  gap: 2rem;
+  padding: var(--ascend-space-xl);
+  gap: var(--ascend-space-xl);
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
 }
 
 .library-share-preview {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: var(--ascend-color-surface);
+  border-radius: var(--ascend-radius-lg);
+  padding: var(--ascend-space-l);
+  box-shadow: var(--ascend-shadow-soft);
+  border: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
 }
 
 .library-share-preview img {
@@ -3301,73 +3304,77 @@
 }
 
 .library-share-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
-  color: #fff;
+  font-size: var(--ascend-text-xxl);
+  font-weight: var(--ascend-weight-bold);
+  margin: 0 0 var(--ascend-space-xs) 0;
+  color: var(--ascend-color-text-main);
 }
 
 .library-share-specs {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 0.75rem;
+  font-size: var(--ascend-text-m);
+  color: var(--ascend-color-text-muted);
+  margin-bottom: var(--ascend-space-s);
 }
 
 .library-share-enlargements {
-  font-size: 0.85rem;
-  color: #4ade80;
-  margin-bottom: 0.5rem;
+  font-size: var(--ascend-text-s);
+  color: var(--ascend-color-success);
+  margin-bottom: var(--ascend-space-xs);
 }
 
 .library-share-notes {
-  font-size: 0.9rem;
+  font-size: var(--ascend-text-m);
   font-style: italic;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ascend-color-text-muted);
+  opacity: 0.8;
   max-width: 500px;
   margin: 0 auto;
 }
 
 .library-share-actions {
   display: flex;
-  gap: 1rem;
+  gap: var(--ascend-space-m);
 }
 
 .library-share-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  gap: var(--ascend-space-xs);
+  padding: var(--ascend-space-s) var(--ascend-space-l);
   border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: var(--ascend-text-m);
+  font-weight: var(--ascend-weight-medium);
   text-decoration: none;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  transition: var(--ascend-transition-medium);
+  border: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
+  background: var(--ascend-color-surface-soft);
+  color: var(--ascend-color-text-main);
+  cursor: pointer;
 }
 
 .library-share-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--ascend-color-surface);
+  border-color: var(--ascend-color-accent);
 }
 
 .library-share-btn-primary {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: var(--ascend-color-accent);
+  border-color: var(--ascend-color-accent);
+  color: var(--ascend-color-bg);
 }
 
 .library-share-btn-primary:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--ascend-color-accent-soft);
+  border-color: var(--ascend-color-accent-soft);
 }
 
 .library-share-footer {
-  padding: 1.5rem 2rem;
+  padding: var(--ascend-space-l) var(--ascend-space-xl);
   text-align: center;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: var(--ascend-text-s);
+  color: var(--ascend-color-text-muted);
+  opacity: 0.6;
+  border-top: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
 }
 
 .library-share-error {
@@ -3376,36 +3383,38 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  color: #fff;
+  gap: var(--ascend-space-m);
+  background: var(--ascend-body-bg);
+  color: var(--ascend-color-text-main);
   text-align: center;
+  font-family: var(--ascend-font-sans);
 }
 
 .library-share-error h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--ascend-text-xl);
 }
 
 .library-share-error p {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ascend-color-text-muted);
   margin: 0;
 }
 
 /* Toast notification */
 .library-toast {
   position: fixed;
-  bottom: 2rem;
+  bottom: var(--ascend-space-xl);
   left: 50%;
   transform: translateX(-50%) translateY(100%);
-  padding: 0.75rem 1.5rem;
-  background: #1e293b;
-  color: #fff;
+  padding: var(--ascend-space-s) var(--ascend-space-l);
+  background: var(--ascend-color-surface);
+  color: var(--ascend-color-text-main);
   border-radius: 8px;
-  font-size: 0.9rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  font-size: var(--ascend-text-m);
+  box-shadow: var(--ascend-shadow-soft);
+  border: var(--ascend-border-width) solid var(--ascend-color-border-subtle);
   opacity: 0;
-  transition: all 0.3s ease;
+  transition: var(--ascend-transition-slow);
   z-index: 10000;
 }
 
@@ -3416,13 +3425,13 @@
 
 /* Share button in modal */
 .library-btn-share {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #fff;
+  background: var(--ascend-color-accent);
+  color: var(--ascend-color-bg);
   border: none;
 }
 
 .library-btn-share:hover {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: var(--ascend-color-accent-soft);
 }
 
 .library-btn-share .icon {
