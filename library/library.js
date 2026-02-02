@@ -3544,11 +3544,23 @@
     const visible = State.filteredAssets.slice(0, State.page * pageSize);
 
     if (visible.length === 0) {
+      // In browse mode, don't show "No assets found" if there are subfolders
+      // (the folder tiles already show the content)
+      if (State.mode === 'browse') {
+        const folderGrid = document.getElementById('library-folder-grid');
+        const hasFolders = folderGrid && folderGrid.querySelectorAll('.library-folder-tile:not(.is-new-folder)').length > 0;
+        if (hasFolders) {
+          container.innerHTML = '';
+          hideLoadMore();
+          return;
+        }
+      }
+
       container.innerHTML = `
         <div class="library-empty">
           <div class="library-empty-icon">📂</div>
           <div class="library-empty-text">No assets found</div>
-          <div class="library-empty-hint">Try adjusting your filters or search</div>
+          <div class="library-empty-hint">${State.mode === 'browse' ? 'This folder is empty' : 'Try adjusting your filters or search'}</div>
         </div>
       `;
       hideLoadMore();
