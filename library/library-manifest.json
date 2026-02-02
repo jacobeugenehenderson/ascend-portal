@@ -1,13 +1,13 @@
 {
-  "generated": "2026-02-02T10:56:07.166188",
+  "generated": "2026-02-02T11:14:37.417198",
   "sources": {
     "library": "/Volumes/Today/Nordson/LIBRARY",
     "publications": "/Volumes/Today/Nordson/PUBLICATIONS"
   },
   "stockFolder": "STOCK",
-  "totalAssets": 2488,
+  "totalAssets": 2486,
   "collections": {
-    "stock": 1812,
+    "stock": 1810,
     "publications": 676
   },
   "folders": [
@@ -10169,38 +10169,6 @@
       "collection": "stock",
       "isImage": true,
       "thumbUrl": "thumbs/9acdfd2055c5.webp"
-    },
-    {
-      "id": "193ec599097d",
-      "name": "LG-Image (8)",
-      "filename": "LG-Image (8).jpeg",
-      "path": "library/STOCK/LG/LG-Image (8).jpeg",
-      "folder": "STOCK/LG",
-      "ext": "jpeg",
-      "size": 1836477,
-      "modified": "2024-09-13T16:20:19.330000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1536,
-      "height": 2048,
-      "dpi": 150,
-      "thumbUrl": "thumbs/193ec599097d.webp"
-    },
-    {
-      "id": "3281c1a82dd3",
-      "name": "LG-Shaft",
-      "filename": "LG-Shaft.png",
-      "path": "library/STOCK/LG/LG-Shaft.png",
-      "folder": "STOCK/LG",
-      "ext": "png",
-      "size": 1233169,
-      "modified": "2024-09-11T21:22:52.750000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 2026,
-      "height": 666,
-      "dpi": 300,
-      "thumbUrl": "thumbs/3281c1a82dd3.webp"
     },
     {
       "id": "206c6a2a9fe4",
