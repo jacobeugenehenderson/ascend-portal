@@ -3249,8 +3249,13 @@
   display: flex;
   flex-direction: column;
   background: var(--ascend-body-bg);
+  background-image: var(--ascend-shell-bg);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   color: var(--ascend-color-text-main);
   font-family: var(--ascend-font-sans);
+  /* No grid for show space */
+  --ascend-grid-visible: 0;
 }
 
 .library-share-header {
@@ -3376,9 +3381,13 @@
   justify-content: center;
   gap: var(--ascend-space-m);
   background: var(--ascend-body-bg);
+  background-image: var(--ascend-shell-bg);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   color: var(--ascend-color-text-main);
   text-align: center;
   font-family: var(--ascend-font-sans);
+  --ascend-grid-visible: 0;
 }
 
 .library-share-error h1 {
