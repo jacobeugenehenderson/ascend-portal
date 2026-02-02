@@ -2629,13 +2629,15 @@
   }
 
   async function batchApplyMetadata({ products, productsToRemove = [], lob, tags, tagsToRemove = [], notes }) {
-    const count = State.selectedAssets.length;
+    // Copy selected assets at start to avoid race conditions if user selects new items during async operation
+    const assetIds = [...State.selectedAssets];
+    const count = assetIds.length;
     showToast(`Applying metadata to ${count} assets...`);
 
     let successCount = 0;
     let failCount = 0;
 
-    for (const assetId of State.selectedAssets) {
+    for (const assetId of assetIds) {
       const asset = State.assets.find(a => a.id === assetId);
       if (!asset) {
         console.warn('[Library] Asset not found in State.assets:', assetId);
