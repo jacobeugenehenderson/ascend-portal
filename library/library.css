@@ -3237,3 +3237,194 @@
   display: flex;
   flex-direction: column;
 }
+
+/* =========================================
+ * SHARE VIEW
+ * Branded minimal view for external sharing
+ * ======================================= */
+
+.library-share-view {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+}
+
+.library-share-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.library-share-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.library-share-logo svg {
+  flex-shrink: 0;
+}
+
+.library-share-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.library-share-preview {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.library-share-preview img {
+  max-width: 100%;
+  max-height: 60vh;
+  display: block;
+  border-radius: 4px;
+}
+
+.library-share-info {
+  text-align: center;
+}
+
+.library-share-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+}
+
+.library-share-specs {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.75rem;
+}
+
+.library-share-enlargements {
+  font-size: 0.85rem;
+  color: #4ade80;
+  margin-bottom: 0.5rem;
+}
+
+.library-share-notes {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.library-share-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.library-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.library-share-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.library-share-btn-primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.library-share-btn-primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.library-share-footer {
+  padding: 1.5rem 2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.library-share-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  text-align: center;
+}
+
+.library-share-error h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.library-share-error p {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* Toast notification */
+.library-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  padding: 0.75rem 1.5rem;
+  background: #1e293b;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 10000;
+}
+
+.library-toast.is-visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* Share button in modal */
+.library-btn-share {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+}
+
+.library-btn-share:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.library-btn-share .icon {
+  font-size: 1.1em;
+}

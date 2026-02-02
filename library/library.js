@@ -357,12 +357,152 @@
   }
 
   // =========================================
+  // SHARE MODE
+  // =========================================
+
+  /**
+   * Check for share URL param and render share view if present
+   * Format: ?share=assetId
+   */
+  function checkShareMode() {
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get('share');
+    if (!shareId) return false;
+
+    State.shareMode = shareId;
+    return true;
+  }
+
+  /**
+   * Render the branded share view for external contacts
+   */
+  async function renderShareView(assetId) {
+    // Wait for manifest to load
+    await loadManifest();
+    await loadTaxonomyAndMeta();
+
+    const asset = State.assets.find(a => a.id === assetId);
+    if (!asset) {
+      document.body.innerHTML = `
+        <div class="library-share-error">
+          <h1>Asset Not Found</h1>
+          <p>This asset may have been moved or deleted.</p>
+          <a href="index.html" class="library-share-btn">Go to Library</a>
+        </div>
+      `;
+      return;
+    }
+
+    const meta = getAssetMeta(assetId);
+    const displayName = meta.displayName || asset.name;
+    const thumbUrl = getThumbUrl(asset, 'lg');
+    const placeholder = getPlaceholderForType(asset.ext);
+
+    // Build specs
+    const specs = [];
+    if (asset.ext) specs.push(asset.ext.toUpperCase());
+    if (asset.width && asset.height) specs.push(`${asset.width} × ${asset.height}`);
+    if (asset.dpi) specs.push(`${asset.dpi} DPI`);
+    if (asset.size) specs.push(formatFileSize(asset.size));
+    const specsText = specs.join(' · ');
+
+    // Build enlargements list if any
+    let enlargementsHtml = '';
+    if (asset.enlargements && asset.enlargements.length > 0) {
+      const sizes = asset.enlargements.map(e => e.size).join(', ');
+      enlargementsHtml = `<div class="library-share-enlargements">Enlargements available: ${sizes}</div>`;
+    }
+
+    // Build notes if any
+    let notesHtml = '';
+    if (meta.notes) {
+      notesHtml = `<div class="library-share-notes">"${escapeHtml(meta.notes)}"</div>`;
+    }
+
+    // Hide the normal library UI
+    document.body.innerHTML = `
+      <div class="library-share-view">
+        <header class="library-share-header">
+          <div class="library-share-logo">
+            <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="5" y="5" width="40" height="40" rx="4" fill="#3b82f6"/>
+              <rect x="55" y="5" width="40" height="40" rx="4" fill="#3b82f6" opacity="0.7"/>
+              <rect x="5" y="55" width="40" height="40" rx="4" fill="#3b82f6" opacity="0.7"/>
+              <rect x="55" y="55" width="40" height="40" rx="4" fill="#3b82f6" opacity="0.4"/>
+            </svg>
+            <span>Ascend Library</span>
+          </div>
+        </header>
+
+        <main class="library-share-content">
+          <div class="library-share-preview">
+            <img src="${thumbUrl}" alt="${escapeHtml(displayName)}" onerror="this.onerror=null;this.src='${placeholder}'">
+          </div>
+
+          <div class="library-share-info">
+            <h1 class="library-share-title">${escapeHtml(displayName)}</h1>
+            <div class="library-share-specs">${specsText}</div>
+            ${enlargementsHtml}
+            ${notesHtml}
+          </div>
+
+          <div class="library-share-actions">
+            <a href="index.html?asset=${assetId}" class="library-share-btn library-share-btn-primary">View in Library</a>
+          </div>
+        </main>
+
+        <footer class="library-share-footer">
+          <span>Nordson Industrial Coating Systems</span>
+        </footer>
+      </div>
+    `;
+  }
+
+  /**
+   * Copy share URL to clipboard
+   */
+  function copyShareLink(assetId) {
+    const url = `${window.location.origin}${window.location.pathname}?share=${assetId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Share link copied to clipboard');
+    }).catch(() => {
+      // Fallback for older browsers
+      prompt('Copy this link:', url);
+    });
+  }
+
+  /**
+   * Show a brief toast notification
+   */
+  function showToast(message) {
+    const existing = document.querySelector('.library-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'library-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('is-visible'), 10);
+    setTimeout(() => {
+      toast.classList.remove('is-visible');
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  }
+
+  // =========================================
   // INITIALIZATION
   // =========================================
 
   async function init() {
     console.log('[Library] Initializing...');
     const startTime = performance.now();
+
+    // Check for share mode first - renders minimal view and exits
+    if (checkShareMode()) {
+      renderShareView(State.shareMode);
+      return;
+    }
 
     // Check for addToJob mode (bidirectional linking from ArtStart/etc)
     checkAddToJobMode();
@@ -419,6 +559,14 @@
 
     // Auto-detect products from filenames/folders AFTER initial render (non-blocking)
     requestIdleCallback ? requestIdleCallback(() => autoTagAssets()) : setTimeout(autoTagAssets, 100);
+
+    // Check for deep link to specific asset (?asset=id)
+    const params = new URLSearchParams(window.location.search);
+    const assetId = params.get('asset');
+    if (assetId) {
+      // Small delay to ensure UI is ready
+      setTimeout(() => openAssetModal(assetId), 100);
+    }
   }
 
   /**
@@ -4729,6 +4877,12 @@
         closeAssetModal();
         closeCartModal();
       }
+    });
+
+    // Asset modal share button - copies share link
+    document.getElementById('library-modal-share-btn')?.addEventListener('click', () => {
+      if (!State.currentAsset) return;
+      copyShareLink(State.currentAsset.id);
     });
 
     // Asset modal cart button - adds to job when in addToJob mode
