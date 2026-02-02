@@ -424,19 +424,19 @@
       <div class="library-share-view">
         <header class="library-share-header">
           <div class="library-share-logo">
-            <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="5" y="5" width="40" height="40" rx="4" fill="#3b82f6"/>
-              <rect x="55" y="5" width="40" height="40" rx="4" fill="#3b82f6" opacity="0.7"/>
-              <rect x="5" y="55" width="40" height="40" rx="4" fill="#3b82f6" opacity="0.7"/>
-              <rect x="55" y="55" width="40" height="40" rx="4" fill="#3b82f6" opacity="0.4"/>
+            <svg width="28" height="32" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Stacked squares: blue top, teal middle, orange bottom -->
+              <rect x="0" y="0" width="28" height="8" rx="2" fill="#4e86df"/>
+              <rect x="0" y="12" width="28" height="8" rx="2" fill="#6fb9ad"/>
+              <rect x="0" y="24" width="28" height="8" rx="2" fill="#e6956a"/>
             </svg>
             <span>Ascend Library</span>
           </div>
         </header>
 
         <main class="library-share-content">
-          <div class="library-share-preview">
-            <img src="${thumbUrl}" alt="${escapeHtml(displayName)}" onerror="this.onerror=null;this.src='${placeholder}'">
+          <div class="library-share-preview" oncontextmenu="return false">
+            <img src="${thumbUrl}" alt="${escapeHtml(displayName)}" draggable="false" onerror="this.onerror=null;this.src='${placeholder}'">
           </div>
 
           <div class="library-share-info">
@@ -446,13 +446,10 @@
             ${notesHtml}
           </div>
 
-          <div class="library-share-actions">
-            <a href="index.html?asset=${assetId}" class="library-share-btn library-share-btn-primary">View in Library</a>
-          </div>
         </main>
 
         <footer class="library-share-footer">
-          <span>Nordson Industrial Coating Systems</span>
+          <span>Ascend Visualization Studio</span>
         </footer>
       </div>
     `;

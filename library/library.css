@@ -3249,6 +3249,9 @@
   display: flex;
   flex-direction: column;
   background: var(--ascend-body-bg);
+  background-image: var(--ascend-shell-bg);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   color: var(--ascend-color-text-main);
   font-family: var(--ascend-font-sans);
 }
@@ -3297,6 +3300,12 @@
   max-height: 60vh;
   display: block;
   border-radius: 4px;
+  /* Discourage casual saving */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
 }
 
 .library-share-info {
@@ -3331,11 +3340,7 @@
   margin: 0 auto;
 }
 
-.library-share-actions {
-  display: flex;
-  gap: var(--ascend-space-m);
-}
-
+/* Share view buttons (kept for error page link) */
 .library-share-btn {
   display: inline-flex;
   align-items: center;
@@ -3357,17 +3362,6 @@
   border-color: var(--ascend-color-accent);
 }
 
-.library-share-btn-primary {
-  background: var(--ascend-color-accent);
-  border-color: var(--ascend-color-accent);
-  color: var(--ascend-color-bg);
-}
-
-.library-share-btn-primary:hover {
-  background: var(--ascend-color-accent-soft);
-  border-color: var(--ascend-color-accent-soft);
-}
-
 .library-share-footer {
   padding: var(--ascend-space-l) var(--ascend-space-xl);
   text-align: center;
@@ -3385,6 +3379,9 @@
   justify-content: center;
   gap: var(--ascend-space-m);
   background: var(--ascend-body-bg);
+  background-image: var(--ascend-shell-bg);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   color: var(--ascend-color-text-main);
   text-align: center;
   font-family: var(--ascend-font-sans);
