@@ -3493,7 +3493,7 @@ try {
     var url = new URL(LIBRARY_API_BASE);
     url.searchParams.set('action', 'unlinkAssetsFromJob');
     url.searchParams.set('job_id', 'ARTSTART:' + jobId);
-    url.searchParams.set('asset_ids', JSON.stringify([assetId]));
+    url.searchParams.set('asset_ids', assetId);
     url.searchParams.set('callback', callbackName);
     url.searchParams.set('_', Date.now());
 
