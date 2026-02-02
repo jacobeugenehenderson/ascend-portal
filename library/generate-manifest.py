@@ -4,9 +4,13 @@ Library Manifest Generator
 Scans the library folder and produces library-manifest.json
 Generates thumbnails for non-web formats using Quick Look.
 
+Uses incremental scanning by default - only processes new/changed files
+based on a fingerprint cache (.library-fingerprint.json).
+
 Usage:
-    python3 generate-manifest.py           # Full scan with thumbnails
-    python3 generate-manifest.py --no-thumbs   # Skip thumbnail generation
+    python3 generate-manifest.py              # Incremental scan (fast)
+    python3 generate-manifest.py --full       # Force full rescan
+    python3 generate-manifest.py --no-thumbs  # Skip thumbnail generation
     python3 generate-manifest.py --thumbs-only # Only generate missing thumbnails
 """
 
@@ -26,6 +30,7 @@ LIBRARY_PATH = "/Volumes/Today/Nordson/LIBRARY"
 PUBLICATIONS_PATH = "/Volumes/Today/Nordson/PUBLICATIONS"
 STOCK_FOLDER = "STOCK"
 OUTPUT_FILE = "library-manifest.json"
+FINGERPRINT_FILE = ".library-fingerprint.json"  # Cache of file mtimes for incremental updates
 THUMBS_DIR = "thumbs"           # Small thumbnails for grid (400px)
 THUMBS_LG_DIR = "thumbs-lg"     # Large thumbnails for modal (1200px)
 THUMB_SIZE_SM = 400   # Small thumbnails for grid cards
@@ -40,6 +45,34 @@ PROJECT_FILE_EXTENSIONS = {'.indd'}  # Track these but don't list them
 ALL_EXTENSIONS = WEB_DISPLAYABLE | NEEDS_CONVERSION | PROJECT_FILE_EXTENSIONS
 # All displayable files need thumbnails for GitHub Pages hosting
 NEEDS_THUMBNAIL = WEB_DISPLAYABLE | NEEDS_CONVERSION
+
+
+def load_fingerprint(script_dir: Path) -> dict:
+    """Load the fingerprint cache of file mtimes/sizes."""
+    fp_path = script_dir / FINGERPRINT_FILE
+    if fp_path.exists():
+        try:
+            with open(fp_path) as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+
+def save_fingerprint(script_dir: Path, fingerprint: dict):
+    """Save the fingerprint cache."""
+    fp_path = script_dir / FINGERPRINT_FILE
+    with open(fp_path, 'w') as f:
+        json.dump(fingerprint, f)
+
+
+def get_file_fingerprint(filepath: Path) -> tuple:
+    """Get (mtime, size) tuple for a file - fast stat only."""
+    try:
+        stat = filepath.stat()
+        return (stat.st_mtime, stat.st_size)
+    except:
+        return None
 
 
 def generate_asset_id(path: str) -> str:
@@ -143,6 +176,81 @@ def scan_directory(base_path: Path, source: str) -> list[dict]:
                 assets.append(asset)
 
     return assets
+
+
+def scan_directory_incremental(base_path: Path, source: str, fingerprint: dict, existing_assets: dict) -> tuple[list[dict], dict, dict]:
+    """Incrementally scan directory, only processing changed files.
+
+    The fingerprint stores both mtime/size AND cached asset data, so even files
+    that get filtered out of the manifest (enlargements, project files) can be
+    reused on subsequent runs.
+
+    Returns: (assets, new_fingerprint, stats)
+    - assets: list of asset dicts
+    - new_fingerprint: updated fingerprint dict (includes cached asset data)
+    - stats: {"new": N, "changed": N, "unchanged": N}
+    """
+    assets = []
+    new_fingerprint = {}
+    stats = {"new": 0, "changed": 0, "unchanged": 0}
+
+    for root, dirs, files in os.walk(base_path):
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
+
+        root_path = Path(root)
+        for filename in files:
+            if filename.startswith('.'):
+                continue
+
+            filepath = root_path / filename
+            ext = filepath.suffix.lower()
+            if ext not in ALL_EXTENSIONS:
+                continue
+
+            # Build the path key (same format as asset["path"])
+            rel_path = filepath.relative_to(base_path)
+            if source == "library":
+                full_path = f"library/{rel_path}"
+            else:
+                full_path = f"publications/{rel_path}"
+
+            # Get current file fingerprint
+            fp = get_file_fingerprint(filepath)
+            if fp is None:
+                continue
+
+            mtime, size = fp
+
+            # Check if file is unchanged (compare mtime and size)
+            old_fp = fingerprint.get(full_path)
+            if old_fp and old_fp.get("mtime") == mtime and old_fp.get("size") == size:
+                # File unchanged - reuse cached asset data
+                # First try the fingerprint's cached asset, then existing_assets
+                cached_asset = old_fp.get("asset")
+                if cached_asset:
+                    assets.append(cached_asset)
+                    new_fingerprint[full_path] = old_fp  # Keep the cached data
+                    stats["unchanged"] += 1
+                    continue
+                elif full_path in existing_assets:
+                    asset = existing_assets[full_path]
+                    assets.append(asset)
+                    new_fingerprint[full_path] = {"mtime": mtime, "size": size, "asset": asset}
+                    stats["unchanged"] += 1
+                    continue
+
+            # File is new or changed - process it fully
+            asset = get_file_info(filepath, base_path, source)
+            if asset:
+                assets.append(asset)
+                # Cache the asset data in the fingerprint for future runs
+                new_fingerprint[full_path] = {"mtime": mtime, "size": size, "asset": asset}
+                if old_fp:
+                    stats["changed"] += 1
+                else:
+                    stats["new"] += 1
+
+    return assets, new_fingerprint, stats
 
 
 def generate_pdf_thumbnail(source_path: Path, thumb_path: Path) -> bool:
@@ -525,6 +633,7 @@ def main():
     args = set(sys.argv[1:])
     skip_thumbs = "--no-thumbs" in args
     thumbs_only = "--thumbs-only" in args
+    full_scan = "--full" in args  # Force full rescan, ignore fingerprint cache
 
     library_path = Path(LIBRARY_PATH)
     publications_path = Path(PUBLICATIONS_PATH)
@@ -547,20 +656,65 @@ def main():
     else:
         assets = []
 
+        # Load fingerprint cache and existing manifest for incremental scanning
+        fingerprint = {} if full_scan else load_fingerprint(script_dir)
+        existing_assets = {}
+        if not full_scan and manifest_path.exists():
+            try:
+                with open(manifest_path) as f:
+                    old_manifest = json.load(f)
+                # Build path -> asset lookup for reuse
+                existing_assets = {a["path"]: a for a in old_manifest.get("assets", [])}
+            except:
+                pass
+
+        new_fingerprint = {}
+        total_stats = {"new": 0, "changed": 0, "unchanged": 0}
+
         # Scan Library folder (contains Stock and other library assets)
         print(f"Scanning library: {LIBRARY_PATH}")
-        library_assets = scan_directory(library_path, "library")
+        if fingerprint or existing_assets:
+            library_assets, lib_fp, lib_stats = scan_directory_incremental(
+                library_path, "library", fingerprint, existing_assets
+            )
+            new_fingerprint.update(lib_fp)
+            for k, v in lib_stats.items():
+                total_stats[k] += v
+            print(f"  Found {len(library_assets)} assets ({lib_stats['new']} new, {lib_stats['changed']} changed, {lib_stats['unchanged']} unchanged)")
+        else:
+            library_assets = scan_directory(library_path, "library")
+            # Build fingerprint from full scan (include cached asset data)
+            for asset in library_assets:
+                fp = get_file_fingerprint(Path(LIBRARY_PATH) / asset["path"].split("/", 1)[1])
+                if fp:
+                    new_fingerprint[asset["path"]] = {"mtime": fp[0], "size": fp[1], "asset": asset}
+            print(f"  Found {len(library_assets)} assets in Library")
         assets.extend(library_assets)
-        print(f"  Found {len(library_assets)} assets in Library")
 
         # Scan Publications folder
         if publications_path.exists():
             print(f"Scanning publications: {PUBLICATIONS_PATH}")
-            pub_assets = scan_directory(publications_path, "publications")
+            if fingerprint or existing_assets:
+                pub_assets, pub_fp, pub_stats = scan_directory_incremental(
+                    publications_path, "publications", fingerprint, existing_assets
+                )
+                new_fingerprint.update(pub_fp)
+                for k, v in pub_stats.items():
+                    total_stats[k] += v
+                print(f"  Found {len(pub_assets)} assets ({pub_stats['new']} new, {pub_stats['changed']} changed, {pub_stats['unchanged']} unchanged)")
+            else:
+                pub_assets = scan_directory(publications_path, "publications")
+                for asset in pub_assets:
+                    fp = get_file_fingerprint(Path(PUBLICATIONS_PATH) / asset["path"].split("/", 1)[1])
+                    if fp:
+                        new_fingerprint[asset["path"]] = {"mtime": fp[0], "size": fp[1], "asset": asset}
+                print(f"  Found {len(pub_assets)} assets in Publications")
             assets.extend(pub_assets)
-            print(f"  Found {len(pub_assets)} assets in Publications")
         else:
             print(f"Note: Publications path not found: {PUBLICATIONS_PATH}")
+
+        # Save updated fingerprint
+        save_fingerprint(script_dir, new_fingerprint)
 
         print("-" * 50)
 

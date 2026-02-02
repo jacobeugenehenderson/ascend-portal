@@ -3,3 +3,4 @@ assets/
 
 # Local cache
 .DS_Store
+.library-fingerprint.json
