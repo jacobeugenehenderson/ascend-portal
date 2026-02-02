@@ -1164,6 +1164,28 @@
   content: "✦";
 }
 
+/* Green seal for assets with enlargements */
+.library-card-enlargement-seal {
+  position: absolute;
+  bottom: 8px;
+  left: 40px; /* Offset from source seal if both present */
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #81C784, #4CAF50);
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
+  font-size: 11px;
+  color: #1B5E20;
+  font-weight: bold;
+}
+
+.library-card-enlargement-seal::before {
+  content: "↗";
+}
+
 /* Selection checkbox - top right */
 .library-card-select-btn {
   position: absolute;
@@ -1549,6 +1571,31 @@
   font-weight: 600;
   border-radius: 4px;
   vertical-align: middle;
+}
+
+/* Enlargements display */
+.library-enlargements {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--ascend-app-text-muted);
+}
+
+.library-enlargement-link {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.2em 0.5em;
+  background: rgba(76, 175, 80, 0.15);
+  color: #4CAF50;
+  font-weight: 600;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.library-enlargement-link:hover {
+  background: rgba(76, 175, 80, 0.3);
+  text-decoration: none;
 }
 
 /* Notes textarea - inherits base textarea styles from ascend-apps.css */

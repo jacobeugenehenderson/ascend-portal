@@ -1,14 +1,14 @@
 {
-  "generated": "2026-02-02T10:31:58.939170",
+  "generated": "2026-02-02T10:52:06.427046",
   "sources": {
     "library": "/Volumes/Today/Nordson/LIBRARY",
     "publications": "/Volumes/Today/Nordson/PUBLICATIONS"
   },
   "stockFolder": "STOCK",
-  "totalAssets": 2542,
+  "totalAssets": 2513,
   "collections": {
-    "stock": 1865,
-    "publications": 677
+    "stock": 1837,
+    "publications": 676
   },
   "folders": [
     "Adhaision",
@@ -334,8 +334,7 @@
       "size": 1629,
       "modified": "2024-03-01T16:05:23",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/be58c2224e71.webp"
+      "isImage": true
     },
     {
       "id": "7086e1db7a4e",
@@ -347,8 +346,7 @@
       "size": 1450,
       "modified": "2024-03-01T16:10:18",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/7086e1db7a4e.webp"
+      "isImage": true
     },
     {
       "id": "5453a33125ab",
@@ -360,8 +358,7 @@
       "size": 1426,
       "modified": "2024-03-01T16:09:31",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/5453a33125ab.webp"
+      "isImage": true
     },
     {
       "id": "2fe110ca2ac7",
@@ -373,8 +370,7 @@
       "size": 1186,
       "modified": "2024-03-01T16:08:34",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/2fe110ca2ac7.webp"
+      "isImage": true
     },
     {
       "id": "44836bc4cf53",
@@ -386,8 +382,7 @@
       "size": 77279,
       "modified": "2024-03-01T16:07:52",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/44836bc4cf53.webp"
+      "isImage": true
     },
     {
       "id": "c0f134cf8ed2",
@@ -399,8 +394,7 @@
       "size": 1407,
       "modified": "2024-03-01T16:07:14",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/c0f134cf8ed2.webp"
+      "isImage": true
     },
     {
       "id": "0c5f82f361d8",
@@ -412,8 +406,7 @@
       "size": 1627,
       "modified": "2024-03-01T16:06:06",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/0c5f82f361d8.webp"
+      "isImage": true
     },
     {
       "id": "6993b2713319",
@@ -425,8 +418,7 @@
       "size": 2532,
       "modified": "2024-03-01T16:05:58",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/6993b2713319.webp"
+      "isImage": true
     },
     {
       "id": "e289805d7c11",
@@ -438,8 +430,7 @@
       "size": 799,
       "modified": "2024-03-01T15:59:58",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/e289805d7c11.webp"
+      "isImage": true
     },
     {
       "id": "224d9197a0ea",
@@ -451,8 +442,7 @@
       "size": 1344,
       "modified": "2024-03-26T16:59:45",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/224d9197a0ea.webp"
+      "isImage": true
     },
     {
       "id": "413150012bc7",
@@ -464,8 +454,7 @@
       "size": 7846,
       "modified": "2025-05-28T20:25:12.540000",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/413150012bc7.webp"
+      "isImage": true
     },
     {
       "id": "095ac8b8f5d4",
@@ -477,8 +466,7 @@
       "size": 68390,
       "modified": "2025-05-28T22:11:09.430000",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/095ac8b8f5d4.webp"
+      "isImage": true
     },
     {
       "id": "c37919ef752b",
@@ -1390,8 +1378,7 @@
       "size": 558,
       "modified": "2025-10-07T10:33:43.440000",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/62ec8c5d5acb.webp"
+      "isImage": true
     },
     {
       "id": "1e063e3c812b",
@@ -2759,8 +2746,7 @@
       "size": 4521,
       "modified": "2023-10-30T14:52:07",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/6ea0e45f0ab2.webp"
+      "isImage": true
     },
     {
       "id": "3ac5a1e2f7a8",
@@ -2889,8 +2875,7 @@
       "size": 3652,
       "modified": "2025-08-19T08:42:36.940000",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/c60235853de5.webp"
+      "isImage": true
     },
     {
       "id": "d21466f3f84f",
@@ -2915,8 +2900,7 @@
       "size": 9962,
       "modified": "2025-08-19T13:56:11.020000",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/146d208e4d4b.webp"
+      "isImage": true
     },
     {
       "id": "a5eea721ba5f",
@@ -2980,8 +2964,7 @@
       "size": 539,
       "modified": "2024-05-13T15:49:20",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/221dbb268593.webp"
+      "isImage": true
     },
     {
       "id": "2dc3d161d87c",
@@ -2993,8 +2976,7 @@
       "size": 243,
       "modified": "2024-05-13T15:42:18",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/2dc3d161d87c.webp"
+      "isImage": true
     },
     {
       "id": "cff9fe00b098",
@@ -3050,8 +3032,7 @@
       "size": 916,
       "modified": "2023-08-28T14:34:03",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/554cd04663ce.webp"
+      "isImage": true
     },
     {
       "id": "f63f2c74210a",
@@ -3186,8 +3167,7 @@
       "size": 1717,
       "modified": "2025-01-09T15:29:11",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/20d9e404f391.webp"
+      "isImage": true
     },
     {
       "id": "f05cdeaeb556",
@@ -3212,8 +3192,7 @@
       "size": 43701,
       "modified": "2023-02-12T12:48:43",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/c74cb45df7a1.webp"
+      "isImage": true
     },
     {
       "id": "4058acec9375",
@@ -3266,8 +3245,7 @@
       "size": 1537,
       "modified": "2025-01-09T16:02:29",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/558f82ce05b2.webp"
+      "isImage": true
     },
     {
       "id": "c5456bf6ba88",
@@ -3292,8 +3270,7 @@
       "size": 10048,
       "modified": "2024-07-11T15:37:40",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/2e53bbb3c5f9.webp"
+      "isImage": true
     },
     {
       "id": "b6f9f60a3bdb",
@@ -3756,6 +3733,16 @@
       "width": 1920,
       "height": 1080,
       "dpi": 72,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpg",
+          "path": "library/STOCK/RASTER/Lights-Off/LG-HDLV Tech Images (0-03-38-16) copy-topaz.jpg",
+          "fileSize": 2361618,
+          "width": 3840,
+          "height": 2160
+        }
+      ],
       "thumbUrl": "thumbs/a4e8cc39457a.webp"
     },
     {
@@ -3772,22 +3759,6 @@
       "width": 1920,
       "height": 1080,
       "thumbUrl": "thumbs/f25e3fa76d0d.webp"
-    },
-    {
-      "id": "4d18e333d6c8",
-      "name": "LG-HDLV Tech Images (0-03-38-16) copy-topaz",
-      "filename": "LG-HDLV Tech Images (0-03-38-16) copy-topaz.jpg",
-      "path": "library/STOCK/RASTER/Lights-Off/LG-HDLV Tech Images (0-03-38-16) copy-topaz.jpg",
-      "folder": "STOCK/RASTER/Lights-Off",
-      "ext": "jpg",
-      "size": 2361618,
-      "modified": "2024-04-24T09:00:32",
-      "collection": "stock",
-      "isImage": true,
-      "width": 3840,
-      "height": 2160,
-      "dpi": 72,
-      "thumbUrl": "thumbs/4d18e333d6c8.webp"
     },
     {
       "id": "0218694a1be5",
@@ -4107,22 +4078,6 @@
       "thumbUrl": "thumbs/56257faf9d60.webp"
     },
     {
-      "id": "c9e1a9ce4904",
-      "name": "LG-AdobeStock_138801149-Car-Green-Rendering-Battery-EV-1-topaz",
-      "filename": "LG-AdobeStock_138801149-Car-Green-Rendering-Battery-EV-1-topaz.jpg",
-      "path": "library/STOCK/RASTER/Invisible-Car/LG-AdobeStock_138801149-Car-Green-Rendering-Battery-EV-1-topaz.jpg",
-      "folder": "STOCK/RASTER/Invisible-Car",
-      "ext": "jpg",
-      "size": 4361337,
-      "modified": "2024-07-12T10:35:48",
-      "collection": "stock",
-      "isImage": true,
-      "width": 7200,
-      "height": 4770,
-      "dpi": 72,
-      "thumbUrl": "thumbs/c9e1a9ce4904.webp"
-    },
-    {
       "id": "2c4837754a72",
       "name": "AdobeStock_138801149-Car-Green-Rendering-Battery-EV-1",
       "filename": "AdobeStock_138801149-Car-Green-Rendering-Battery-EV-1.jpg",
@@ -4136,6 +4091,16 @@
       "width": 1200,
       "height": 795,
       "dpi": 72,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpg",
+          "path": "library/STOCK/RASTER/Invisible-Car/LG-AdobeStock_138801149-Car-Green-Rendering-Battery-EV-1-topaz.jpg",
+          "fileSize": 4361337,
+          "width": 7200,
+          "height": 4770
+        }
+      ],
       "thumbUrl": "thumbs/2c4837754a72.webp"
     },
     {
@@ -4830,6 +4795,16 @@
       "isImage": true,
       "width": 1024,
       "height": 1024,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/STOCK/RASTER/Powder-Bursts/LG-jacobeugenehenderson_colorful_powder_spray_029dd89f-69b3-462a-801c-fb72ef242cf6-19844x13228.jpeg",
+          "fileSize": 15572373,
+          "width": 6144,
+          "height": 6144
+        }
+      ],
       "thumbUrl": "thumbs/b4ab5c26b272.webp"
     },
     {
@@ -5043,38 +5018,6 @@
       "height": 6144,
       "dpi": 72,
       "thumbUrl": "thumbs/11ab1e303904.webp"
-    },
-    {
-      "id": "f8a5ab90a453",
-      "name": "LG-jacobeugenehenderson_colorful_powder_spray_029dd89f-69b3-462a-801c-fb72ef242cf6-19844x13228",
-      "filename": "LG-jacobeugenehenderson_colorful_powder_spray_029dd89f-69b3-462a-801c-fb72ef242cf6-19844x13228.jpeg",
-      "path": "library/STOCK/RASTER/Powder-Bursts/LG-jacobeugenehenderson_colorful_powder_spray_029dd89f-69b3-462a-801c-fb72ef242cf6-19844x13228.jpeg",
-      "folder": "STOCK/RASTER/Powder-Bursts",
-      "ext": "jpeg",
-      "size": 15572373,
-      "modified": "2026-01-08T10:30:16.870000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 6144,
-      "height": 6144,
-      "dpi": 300,
-      "thumbUrl": "thumbs/f8a5ab90a453.webp"
-    },
-    {
-      "id": "bf3e4439f70f",
-      "name": "LG-LG-jacobeugenehenderson_colorful_powder_spray_029dd89f-69b3-462a-801c-fb72ef242cf6-19844x13228-19844x13228",
-      "filename": "LG-LG-jacobeugenehenderson_colorful_powder_spray_029dd89f-69b3-462a-801c-fb72ef242cf6-19844x13228-19844x13228.jpeg",
-      "path": "library/STOCK/RASTER/Powder-Bursts/LG-LG-jacobeugenehenderson_colorful_powder_spray_029dd89f-69b3-462a-801c-fb72ef242cf6-19844x13228-19844x13228.jpeg",
-      "folder": "STOCK/RASTER/Powder-Bursts",
-      "ext": "jpeg",
-      "size": 82162609,
-      "modified": "2026-01-08T10:46:54.960000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 12288,
-      "height": 12288,
-      "dpi": 150,
-      "thumbUrl": "thumbs/bf3e4439f70f.webp"
     },
     {
       "id": "eb11c760f3d3",
@@ -5422,19 +5365,6 @@
       "thumbUrl": "thumbs/42d722290f5b.webp"
     },
     {
-      "id": "085bf43ed6da",
-      "name": "LG-White_Powder_Burst",
-      "filename": "LG-White_Powder_Burst.png",
-      "path": "library/STOCK/RASTER/Powder-Bursts/White_Powder_Bursts/LG-White_Powder_Burst.png",
-      "folder": "STOCK/RASTER/Powder-Bursts/White_Powder_Bursts",
-      "ext": "png",
-      "size": 312138060,
-      "modified": "2025-09-19T10:20:49.930000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/085bf43ed6da.webp"
-    },
-    {
       "id": "2c3fb372ddd9",
       "name": "White_Powder_Burst",
       "filename": "White_Powder_Burst.png",
@@ -5448,6 +5378,16 @@
       "width": 4096,
       "height": 4096,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/STOCK/RASTER/Powder-Bursts/White_Powder_Bursts/LG-White_Powder_Burst.png",
+          "fileSize": 312138060,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/2c3fb372ddd9.webp"
     },
     {
@@ -5871,38 +5811,6 @@
       "thumbUrl": "thumbs/29ac159323f7.webp"
     },
     {
-      "id": "264ed4e72735",
-      "name": "LG-ORV-Bulletholes-14883x9921",
-      "filename": "LG-ORV-Bulletholes-14883x9921.jpeg",
-      "path": "library/STOCK/RASTER/ORV/LG-ORV-Bulletholes-14883x9921.jpeg",
-      "folder": "STOCK/RASTER/ORV",
-      "ext": "jpeg",
-      "size": 34325423,
-      "modified": "2024-09-16T11:27:09.610000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 14883,
-      "height": 9921,
-      "dpi": 150,
-      "thumbUrl": "thumbs/264ed4e72735.webp"
-    },
-    {
-      "id": "fe3996cca844",
-      "name": "LG-ORV-Bulletholes-14883x9921",
-      "filename": "LG-ORV-Bulletholes-14883x9921.png",
-      "path": "library/STOCK/RASTER/ORV/LG-ORV-Bulletholes-14883x9921.png",
-      "folder": "STOCK/RASTER/ORV",
-      "ext": "png",
-      "size": 126884338,
-      "modified": "2024-09-16T11:55:17.580000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 14883,
-      "height": 9921,
-      "dpi": 150,
-      "thumbUrl": "thumbs/fe3996cca844.webp"
-    },
-    {
       "id": "573a3f700370",
       "name": "ORV-Bulletholes",
       "filename": "ORV-Bulletholes.png",
@@ -5916,6 +5824,24 @@
       "width": 4961,
       "height": 3307,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/STOCK/RASTER/ORV/LG-ORV-Bulletholes-14883x9921.jpeg",
+          "fileSize": 34325423,
+          "width": 14883,
+          "height": 9921
+        },
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/STOCK/RASTER/ORV/LG-ORV-Bulletholes-14883x9921.png",
+          "fileSize": 126884338,
+          "width": 14883,
+          "height": 9921
+        }
+      ],
       "thumbUrl": "thumbs/573a3f700370.webp"
     },
     {
@@ -12265,6 +12191,16 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Air-19844x13228.png",
+          "fileSize": 4011774,
+          "width": 1826,
+          "height": 2702
+        }
+      ],
       "thumbUrl": "thumbs/51552c59a112.webp"
     },
     {
@@ -12280,6 +12216,16 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Alerts-&-Maintenance-19844x13228.png",
+          "fileSize": 4250862,
+          "width": 1826,
+          "height": 2702
+        }
+      ],
       "thumbUrl": "thumbs/34de3d27c907.webp"
     },
     {
@@ -12295,6 +12241,16 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Hamburger-19844x13228.png",
+          "fileSize": 5467595,
+          "width": 1826,
+          "height": 2702
+        }
+      ],
       "thumbUrl": "thumbs/7b4b1f207ff0.webp"
     },
     {
@@ -12310,6 +12266,16 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Powder-19844x13228.png",
+          "fileSize": 2886067,
+          "width": 1826,
+          "height": 2702
+        }
+      ],
       "thumbUrl": "thumbs/dd268b17819b.webp"
     },
     {
@@ -12325,6 +12291,16 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Optimized-Recipes-19844x13228.png",
+          "fileSize": 4213336,
+          "width": 1826,
+          "height": 2702
+        }
+      ],
       "thumbUrl": "thumbs/651c7aad1fd3.webp"
     },
     {
@@ -12340,6 +12316,16 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Kilovolts-19844x13228.png",
+          "fileSize": 4072010,
+          "width": 1826,
+          "height": 2702
+        }
+      ],
       "thumbUrl": "thumbs/19b06dbf91da.webp"
     },
     {
@@ -12355,6 +12341,16 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Microamps-19844x13228.png",
+          "fileSize": 4104325,
+          "width": 1826,
+          "height": 2702
+        }
+      ],
       "thumbUrl": "thumbs/f905b01fbb7c.webp"
     },
     {
@@ -12370,135 +12366,17 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Activity_Log-19844x13228.png",
+          "fileSize": 15773486,
+          "width": 3652,
+          "height": 5404
+        }
+      ],
       "thumbUrl": "thumbs/dd673bc5c3e3.webp"
-    },
-    {
-      "id": "e5a2b746d6df",
-      "name": "LG-Air-19844x13228",
-      "filename": "LG-Air-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Air-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Screens/041625",
-      "ext": "png",
-      "size": 4011774,
-      "modified": "2025-09-23T12:35:52.090000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1826,
-      "height": 2702,
-      "dpi": 300,
-      "thumbUrl": "thumbs/e5a2b746d6df.webp"
-    },
-    {
-      "id": "e5a9224c4dfc",
-      "name": "LG-Alerts-&-Maintenance-19844x13228",
-      "filename": "LG-Alerts-&-Maintenance-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Alerts-&-Maintenance-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Screens/041625",
-      "ext": "png",
-      "size": 4250862,
-      "modified": "2025-09-23T12:35:56.730000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1826,
-      "height": 2702,
-      "dpi": 300,
-      "thumbUrl": "thumbs/e5a9224c4dfc.webp"
-    },
-    {
-      "id": "0cd7512e535a",
-      "name": "LG-Hamburger-19844x13228",
-      "filename": "LG-Hamburger-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Hamburger-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Screens/041625",
-      "ext": "png",
-      "size": 5467595,
-      "modified": "2025-09-23T12:36:01.610000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1826,
-      "height": 2702,
-      "dpi": 300,
-      "thumbUrl": "thumbs/0cd7512e535a.webp"
-    },
-    {
-      "id": "0c28386b1a04",
-      "name": "LG-Kilovolts-19844x13228",
-      "filename": "LG-Kilovolts-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Kilovolts-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Screens/041625",
-      "ext": "png",
-      "size": 4072010,
-      "modified": "2025-09-23T12:36:06.200000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1826,
-      "height": 2702,
-      "dpi": 300,
-      "thumbUrl": "thumbs/0c28386b1a04.webp"
-    },
-    {
-      "id": "2fce91a79c53",
-      "name": "LG-Microamps-19844x13228",
-      "filename": "LG-Microamps-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Microamps-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Screens/041625",
-      "ext": "png",
-      "size": 4104325,
-      "modified": "2025-09-23T12:36:11.030000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1826,
-      "height": 2702,
-      "dpi": 300,
-      "thumbUrl": "thumbs/2fce91a79c53.webp"
-    },
-    {
-      "id": "fbdad3629c41",
-      "name": "LG-Optimized-Recipes-19844x13228",
-      "filename": "LG-Optimized-Recipes-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Optimized-Recipes-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Screens/041625",
-      "ext": "png",
-      "size": 4213336,
-      "modified": "2025-09-23T12:36:15.790000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1826,
-      "height": 2702,
-      "dpi": 300,
-      "thumbUrl": "thumbs/fbdad3629c41.webp"
-    },
-    {
-      "id": "29ca1c86b7de",
-      "name": "LG-Powder-19844x13228",
-      "filename": "LG-Powder-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Powder-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Screens/041625",
-      "ext": "png",
-      "size": 2886067,
-      "modified": "2025-09-23T12:36:18.180000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1826,
-      "height": 2702,
-      "dpi": 300,
-      "thumbUrl": "thumbs/29ca1c86b7de.webp"
-    },
-    {
-      "id": "f0dcfe1c99cd",
-      "name": "LG-Activity_Log-19844x13228",
-      "filename": "LG-Activity_Log-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Activity_Log-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Screens/041625",
-      "ext": "png",
-      "size": 15773486,
-      "modified": "2025-09-23T12:36:28.890000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 3652,
-      "height": 5404,
-      "dpi": 300,
-      "thumbUrl": "thumbs/f0dcfe1c99cd.webp"
     },
     {
       "id": "367927a2c44d",
@@ -13271,8 +13149,7 @@
       "size": 1085,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/961167a6399d.webp"
+      "isImage": true
     },
     {
       "id": "880d10c49016",
@@ -13284,8 +13161,7 @@
       "size": 2736,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/880d10c49016.webp"
+      "isImage": true
     },
     {
       "id": "155c8ed1788c",
@@ -13297,8 +13173,7 @@
       "size": 1571,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/155c8ed1788c.webp"
+      "isImage": true
     },
     {
       "id": "87752c4d78ea",
@@ -13310,8 +13185,7 @@
       "size": 551,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/87752c4d78ea.webp"
+      "isImage": true
     },
     {
       "id": "101e83402cf0",
@@ -13323,8 +13197,7 @@
       "size": 1374,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/101e83402cf0.webp"
+      "isImage": true
     },
     {
       "id": "96a7326d2c40",
@@ -13336,8 +13209,7 @@
       "size": 1940,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/96a7326d2c40.webp"
+      "isImage": true
     },
     {
       "id": "6f90d3db6308",
@@ -13349,8 +13221,7 @@
       "size": 2744,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/6f90d3db6308.webp"
+      "isImage": true
     },
     {
       "id": "c33b5f2823ad",
@@ -13362,8 +13233,7 @@
       "size": 411,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/c33b5f2823ad.webp"
+      "isImage": true
     },
     {
       "id": "63d644f389e4",
@@ -13375,8 +13245,7 @@
       "size": 1505,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/63d644f389e4.webp"
+      "isImage": true
     },
     {
       "id": "9abf440c735e",
@@ -13388,8 +13257,7 @@
       "size": 1373,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/9abf440c735e.webp"
+      "isImage": true
     },
     {
       "id": "101c23229a08",
@@ -13401,8 +13269,7 @@
       "size": 597,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/101c23229a08.webp"
+      "isImage": true
     },
     {
       "id": "4695b8b322ac",
@@ -13414,8 +13281,7 @@
       "size": 2107,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/4695b8b322ac.webp"
+      "isImage": true
     },
     {
       "id": "0c6f19f54bfb",
@@ -13427,8 +13293,7 @@
       "size": 2236,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/0c6f19f54bfb.webp"
+      "isImage": true
     },
     {
       "id": "620afdaa498b",
@@ -13440,8 +13305,7 @@
       "size": 1872,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/620afdaa498b.webp"
+      "isImage": true
     },
     {
       "id": "44125ebf00a8",
@@ -13453,8 +13317,7 @@
       "size": 486,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/44125ebf00a8.webp"
+      "isImage": true
     },
     {
       "id": "32103fe9aad6",
@@ -13466,8 +13329,7 @@
       "size": 8039,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/32103fe9aad6.webp"
+      "isImage": true
     },
     {
       "id": "72533b458e36",
@@ -13479,8 +13341,7 @@
       "size": 1991,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/72533b458e36.webp"
+      "isImage": true
     },
     {
       "id": "936562301326",
@@ -13492,8 +13353,7 @@
       "size": 2290,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/936562301326.webp"
+      "isImage": true
     },
     {
       "id": "2563920e8087",
@@ -13505,8 +13365,7 @@
       "size": 940,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/2563920e8087.webp"
+      "isImage": true
     },
     {
       "id": "cc5c6a31fe63",
@@ -13518,8 +13377,7 @@
       "size": 2540,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/cc5c6a31fe63.webp"
+      "isImage": true
     },
     {
       "id": "8a8b35a3cd63",
@@ -13531,8 +13389,7 @@
       "size": 1259,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/8a8b35a3cd63.webp"
+      "isImage": true
     },
     {
       "id": "fd20ce348faf",
@@ -13544,8 +13401,7 @@
       "size": 1086,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/fd20ce348faf.webp"
+      "isImage": true
     },
     {
       "id": "fa21fa5e8047",
@@ -13557,8 +13413,7 @@
       "size": 2842,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/fa21fa5e8047.webp"
+      "isImage": true
     },
     {
       "id": "9d70baecb7fb",
@@ -13570,8 +13425,7 @@
       "size": 4463,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/9d70baecb7fb.webp"
+      "isImage": true
     },
     {
       "id": "38ffea942b76",
@@ -13583,8 +13437,7 @@
       "size": 1275,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/38ffea942b76.webp"
+      "isImage": true
     },
     {
       "id": "49d9ce925182",
@@ -13596,8 +13449,7 @@
       "size": 1761,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/49d9ce925182.webp"
+      "isImage": true
     },
     {
       "id": "4a9bba2952bb",
@@ -13609,8 +13461,7 @@
       "size": 2378,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/4a9bba2952bb.webp"
+      "isImage": true
     },
     {
       "id": "fcd0a269190c",
@@ -13622,8 +13473,7 @@
       "size": 1407,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/fcd0a269190c.webp"
+      "isImage": true
     },
     {
       "id": "351fd7222de8",
@@ -13635,8 +13485,7 @@
       "size": 4372,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/351fd7222de8.webp"
+      "isImage": true
     },
     {
       "id": "aa20f2f3845f",
@@ -13648,8 +13497,7 @@
       "size": 1621,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/aa20f2f3845f.webp"
+      "isImage": true
     },
     {
       "id": "7701fd52c408",
@@ -13661,8 +13509,7 @@
       "size": 1648,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/7701fd52c408.webp"
+      "isImage": true
     },
     {
       "id": "2c375216aa32",
@@ -13674,8 +13521,7 @@
       "size": 528,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/2c375216aa32.webp"
+      "isImage": true
     },
     {
       "id": "c33f43c4eea9",
@@ -13687,8 +13533,7 @@
       "size": 2011,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/c33f43c4eea9.webp"
+      "isImage": true
     },
     {
       "id": "19f4a4316d5d",
@@ -13700,8 +13545,7 @@
       "size": 3483,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/19f4a4316d5d.webp"
+      "isImage": true
     },
     {
       "id": "14147bc1ed90",
@@ -13713,8 +13557,7 @@
       "size": 1739,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/14147bc1ed90.webp"
+      "isImage": true
     },
     {
       "id": "ff671a547fed",
@@ -13726,8 +13569,7 @@
       "size": 2051,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/ff671a547fed.webp"
+      "isImage": true
     },
     {
       "id": "4f98a0f40306",
@@ -13739,8 +13581,7 @@
       "size": 1245,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/4f98a0f40306.webp"
+      "isImage": true
     },
     {
       "id": "121dd84d4f3d",
@@ -13752,8 +13593,7 @@
       "size": 3177,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/121dd84d4f3d.webp"
+      "isImage": true
     },
     {
       "id": "6cbca9e77ecd",
@@ -13765,8 +13605,7 @@
       "size": 480,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/6cbca9e77ecd.webp"
+      "isImage": true
     },
     {
       "id": "ead7d205f59c",
@@ -13778,8 +13617,7 @@
       "size": 2203,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/ead7d205f59c.webp"
+      "isImage": true
     },
     {
       "id": "c7f4bb669177",
@@ -13791,8 +13629,7 @@
       "size": 1065,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/c7f4bb669177.webp"
+      "isImage": true
     },
     {
       "id": "87ff6a5e81c1",
@@ -13804,8 +13641,7 @@
       "size": 1048,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/87ff6a5e81c1.webp"
+      "isImage": true
     },
     {
       "id": "aa64ae6fdfab",
@@ -13817,8 +13653,7 @@
       "size": 381,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/aa64ae6fdfab.webp"
+      "isImage": true
     },
     {
       "id": "1d749c6f1ade",
@@ -13830,8 +13665,7 @@
       "size": 2042,
       "modified": "2024-10-02T15:03:00",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/1d749c6f1ade.webp"
+      "isImage": true
     },
     {
       "id": "b9f04ba591a8",
@@ -14553,6 +14387,16 @@
       "width": 10800,
       "height": 7204,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Variio/Rail Mount/LG-Rail_Mount-19844x13228.png",
+          "fileSize": 339233906,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/2781ebee7932.webp"
     },
     {
@@ -14569,19 +14413,6 @@
       "width": 10800,
       "height": 7204,
       "thumbUrl": "thumbs/3e26d4e905e8.webp"
-    },
-    {
-      "id": "159c55fab800",
-      "name": "LG-Rail_Mount-19844x13228",
-      "filename": "LG-Rail_Mount-19844x13228.png",
-      "path": "library/LsoB/ICS/Variio/Rail Mount/LG-Rail_Mount-19844x13228.png",
-      "folder": "LsoB/ICS/Variio/Rail Mount",
-      "ext": "png",
-      "size": 339233906,
-      "modified": "2025-09-23T10:15:50.240000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/159c55fab800.webp"
     },
     {
       "id": "5cfacd3afa80",
@@ -14784,20 +14615,17 @@
       "width": 4000,
       "height": 4000,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/DCM/Elevation/LG-Nordson Dynamic Contouring Side RGB-19844x13228.png",
+          "fileSize": 162034700,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/6322bb5e302b.webp"
-    },
-    {
-      "id": "3e259c3e5358",
-      "name": "LG-Nordson Dynamic Contouring Side RGB-19844x13228",
-      "filename": "LG-Nordson Dynamic Contouring Side RGB-19844x13228.png",
-      "path": "library/LsoB/ICS/DCM/Elevation/LG-Nordson Dynamic Contouring Side RGB-19844x13228.png",
-      "folder": "LsoB/ICS/DCM/Elevation",
-      "ext": "png",
-      "size": 162034700,
-      "modified": "2026-01-08T00:00:27.850000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/3e259c3e5358.webp"
     },
     {
       "id": "71ce3b72f8fd",
@@ -14908,23 +14736,17 @@
       "width": 3000,
       "height": 2048,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpg",
+          "path": "library/LsoB/ICS/DCM/Color_Max-with-DCM/LG-Nordson Dynamic Contouring with Booth and Feed Center.jpg",
+          "fileSize": 20100404,
+          "width": 12000,
+          "height": 8192
+        }
+      ],
       "thumbUrl": "thumbs/40c3fa562499.webp"
-    },
-    {
-      "id": "9bc55b0ac14c",
-      "name": "LG-Nordson Dynamic Contouring with Booth and Feed Center",
-      "filename": "LG-Nordson Dynamic Contouring with Booth and Feed Center.jpg",
-      "path": "library/LsoB/ICS/DCM/Color_Max-with-DCM/LG-Nordson Dynamic Contouring with Booth and Feed Center.jpg",
-      "folder": "LsoB/ICS/DCM/Color_Max-with-DCM",
-      "ext": "jpg",
-      "size": 20100404,
-      "modified": "2024-06-10T16:08:23",
-      "collection": "stock",
-      "isImage": true,
-      "width": 12000,
-      "height": 8192,
-      "dpi": 300,
-      "thumbUrl": "thumbs/9bc55b0ac14c.webp"
     },
     {
       "id": "33dd88e97967",
@@ -15183,8 +15005,7 @@
       "size": 35402,
       "modified": "2024-02-29T10:20:23",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/f1e877614edb.webp"
+      "isImage": true
     },
     {
       "id": "ac78478d2ac3",
@@ -15424,22 +15245,6 @@
       "thumbUrl": "thumbs/f3ced0dd77f4.webp"
     },
     {
-      "id": "cf346706ed3f",
-      "name": "LG-Nordson_EconoCoat booth-19844x13228",
-      "filename": "LG-Nordson_EconoCoat booth-19844x13228.png",
-      "path": "library/LsoB/ICS/Econo-Coat-US/LG-Nordson_EconoCoat booth-19844x13228.png",
-      "folder": "LsoB/ICS/Econo-Coat-US",
-      "ext": "png",
-      "size": 7086826,
-      "modified": "2024-10-18T06:47:16",
-      "collection": "stock",
-      "isImage": true,
-      "width": 3602,
-      "height": 3600,
-      "dpi": 300,
-      "thumbUrl": "thumbs/cf346706ed3f.webp"
-    },
-    {
       "id": "353617a314eb",
       "name": "Nordson_EconoCoat booth",
       "filename": "Nordson_EconoCoat booth.jpg",
@@ -15453,6 +15258,16 @@
       "width": 1801,
       "height": 1800,
       "dpi": 96,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Econo-Coat-US/LG-Nordson_EconoCoat booth-19844x13228.png",
+          "fileSize": 7086826,
+          "width": 3602,
+          "height": 3600
+        }
+      ],
       "thumbUrl": "thumbs/353617a314eb.webp"
     },
     {
@@ -18314,6 +18129,16 @@
       "width": 2000,
       "height": 2136,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/thePUMPdump/LG-2024-Encore_Pump-19844x13228.png",
+          "fileSize": 101172975,
+          "width": 12000,
+          "height": 12816
+        }
+      ],
       "thumbUrl": "thumbs/b149dd819d41.webp"
     },
     {
@@ -18360,6 +18185,16 @@
       "width": 2244,
       "height": 2173,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "psd",
+          "path": "library/LsoB/ICS/thePUMPdump/LG-ENCORE-HD.psd",
+          "fileSize": 206852800,
+          "width": 13464,
+          "height": 13038
+        }
+      ],
       "thumbUrl": "thumbs/a58185ef0de0.webp"
     },
     {
@@ -18378,37 +18213,6 @@
       "thumbUrl": "thumbs/a9f56e88a284.webp"
     },
     {
-      "id": "f479e4986af0",
-      "name": "LG-2024-Encore_SHADOW-19844x13228",
-      "filename": "LG-2024-Encore_SHADOW-19844x13228.png",
-      "path": "library/LsoB/ICS/thePUMPdump/LG-2024-Encore_SHADOW-19844x13228.png",
-      "folder": "LsoB/ICS/thePUMPdump",
-      "ext": "png",
-      "size": 78615981,
-      "modified": "2025-05-22T17:57:35.050000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 12000,
-      "height": 12816,
-      "dpi": 300,
-      "thumbUrl": "thumbs/f479e4986af0.webp"
-    },
-    {
-      "id": "37f17ab31d05",
-      "name": "LG-ENCORE-HD",
-      "filename": "LG-ENCORE-HD.psd",
-      "path": "library/LsoB/ICS/thePUMPdump/LG-ENCORE-HD.psd",
-      "folder": "LsoB/ICS/thePUMPdump",
-      "ext": "psd",
-      "size": 206852800,
-      "modified": "2024-03-18T12:44:36",
-      "collection": "stock",
-      "isImage": false,
-      "width": 13464,
-      "height": 13038,
-      "thumbUrl": "thumbs/37f17ab31d05.webp"
-    },
-    {
       "id": "e8ffca3299cf",
       "name": "Mechanism",
       "filename": "Mechanism.psd",
@@ -18424,22 +18228,6 @@
       "thumbUrl": "thumbs/e8ffca3299cf.webp"
     },
     {
-      "id": "38316b4ecf5b",
-      "name": "LG-2024-Encore_Pump-19844x13228",
-      "filename": "LG-2024-Encore_Pump-19844x13228.png",
-      "path": "library/LsoB/ICS/thePUMPdump/LG-2024-Encore_Pump-19844x13228.png",
-      "folder": "LsoB/ICS/thePUMPdump",
-      "ext": "png",
-      "size": 101172975,
-      "modified": "2025-05-22T17:54:23.740000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 12000,
-      "height": 12816,
-      "dpi": 300,
-      "thumbUrl": "thumbs/38316b4ecf5b.webp"
-    },
-    {
       "id": "8eba7ca9d807",
       "name": "2024-Encore_SHADOW",
       "filename": "2024-Encore_SHADOW.png",
@@ -18453,6 +18241,16 @@
       "width": 2000,
       "height": 2136,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/thePUMPdump/LG-2024-Encore_SHADOW-19844x13228.png",
+          "fileSize": 78615981,
+          "width": 12000,
+          "height": 12816
+        }
+      ],
       "thumbUrl": "thumbs/8eba7ca9d807.webp"
     },
     {
@@ -21320,8 +21118,7 @@
       "size": 1717,
       "modified": "2025-01-09T15:29:11.580000",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/82ec147f522d.webp"
+      "isImage": true
     },
     {
       "id": "e4813077e862",
@@ -21333,8 +21130,7 @@
       "size": 1537,
       "modified": "2025-01-09T16:02:29.640000",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/e4813077e862.webp"
+      "isImage": true
     },
     {
       "id": "d47d4f2c4737",
@@ -24865,23 +24661,17 @@
       "width": 2126,
       "height": 1417,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpg",
+          "path": "library/LsoB/ICS/ColorMax/EU/Site/LG-CM-1572-008 (1)-topaz.jpg",
+          "fileSize": 15994628,
+          "width": 8504,
+          "height": 5668
+        }
+      ],
       "thumbUrl": "thumbs/6e4c59e045af.webp"
-    },
-    {
-      "id": "84d915fd2668",
-      "name": "LG-CM-1572-008 (1)-topaz",
-      "filename": "LG-CM-1572-008 (1)-topaz.jpg",
-      "path": "library/LsoB/ICS/ColorMax/EU/Site/LG-CM-1572-008 (1)-topaz.jpg",
-      "folder": "LsoB/ICS/ColorMax/EU/Site",
-      "ext": "jpg",
-      "size": 15994628,
-      "modified": "2024-05-31T11:30:25",
-      "collection": "stock",
-      "isImage": true,
-      "width": 8504,
-      "height": 5668,
-      "dpi": 300,
-      "thumbUrl": "thumbs/84d915fd2668.webp"
     },
     {
       "id": "7adf9e80fcdf",
@@ -25950,6 +25740,16 @@
       "width": 803,
       "height": 453,
       "dpi": 120,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/Cold Materials/hDRY/untitled folder/hDry Screens/LG-hDry Auto Screen Run Mode On-19844x13228.png",
+          "fileSize": 1190193,
+          "width": 1606,
+          "height": 906
+        }
+      ],
       "thumbUrl": "thumbs/7c603f9ced17.webp"
     },
     {
@@ -25983,22 +25783,6 @@
       "height": 458,
       "dpi": 120,
       "thumbUrl": "thumbs/6a8bdfe91b7c.webp"
-    },
-    {
-      "id": "6df60b22eab6",
-      "name": "LG-hDry Auto Screen Run Mode On-19844x13228",
-      "filename": "LG-hDry Auto Screen Run Mode On-19844x13228.png",
-      "path": "library/LsoB/Cold Materials/hDRY/untitled folder/hDry Screens/LG-hDry Auto Screen Run Mode On-19844x13228.png",
-      "folder": "LsoB/Cold Materials/hDRY/untitled folder/hDry Screens",
-      "ext": "png",
-      "size": 1190193,
-      "modified": "2025-02-20T13:22:47.540000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 1606,
-      "height": 906,
-      "dpi": 300,
-      "thumbUrl": "thumbs/6df60b22eab6.webp"
     },
     {
       "id": "a6b18229bb88",
@@ -26821,20 +26605,17 @@
       "width": 4032,
       "height": 3024,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/LsoB/Cold Materials/Rhino/Rhino Redux/LG-IMG_1770-topaz.jpeg",
+          "fileSize": 73436727,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/d266bd34891f.webp"
-    },
-    {
-      "id": "dc17d6002370",
-      "name": "LG-IMG_1770-topaz",
-      "filename": "LG-IMG_1770-topaz.jpeg",
-      "path": "library/LsoB/Cold Materials/Rhino/Rhino Redux/LG-IMG_1770-topaz.jpeg",
-      "folder": "LsoB/Cold Materials/Rhino/Rhino Redux",
-      "ext": "jpeg",
-      "size": 73436727,
-      "modified": "2024-06-05T19:03:32",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/dc17d6002370.webp"
     },
     {
       "id": "6519d8b42558",
@@ -26890,6 +26671,16 @@
       "isImage": false,
       "width": 10800,
       "height": 14400,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "psd",
+          "path": "library/LsoB/Cold Materials/Meg/LG-Meg-Gun.psd",
+          "fileSize": 1091844783,
+          "width": 10800,
+          "height": 14400
+        }
+      ],
       "thumbUrl": "thumbs/b445453eb016.webp"
     },
     {
@@ -26938,21 +26729,6 @@
       "height": 800,
       "dpi": 300,
       "thumbUrl": "thumbs/f781ee32f763.webp"
-    },
-    {
-      "id": "d9f5734b3aaf",
-      "name": "LG-Meg-Gun",
-      "filename": "LG-Meg-Gun.psd",
-      "path": "library/LsoB/Cold Materials/Meg/LG-Meg-Gun.psd",
-      "folder": "LsoB/Cold Materials/Meg",
-      "ext": "psd",
-      "size": 1091844783,
-      "modified": "2025-09-30T11:58:25.840000",
-      "collection": "stock",
-      "isImage": false,
-      "width": 10800,
-      "height": 14400,
-      "thumbUrl": "thumbs/d9f5734b3aaf.webp"
     },
     {
       "id": "bed2f784afeb",
@@ -27710,8 +27486,7 @@
       "size": 36197,
       "modified": "2023-06-26T16:31:02",
       "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/751ef69a852a.webp"
+      "isImage": true
     },
     {
       "id": "f3c991f2b7e0",
@@ -28015,6 +27790,24 @@
       "width": 1200,
       "height": 980,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpg",
+          "path": "library/LsoB/UV/LG-CoolWave 2+-05-final-03-08-14-EM-topaz.jpg",
+          "fileSize": 5117045,
+          "width": 7200,
+          "height": 5880
+        },
+        {
+          "size": "LG",
+          "ext": "psd",
+          "path": "library/LsoB/UV/LG-CoolWave 2+-05-final-03-08-14-EM-topaz.psd",
+          "fileSize": 97220177,
+          "width": 7200,
+          "height": 5880
+        }
+      ],
       "thumbUrl": "thumbs/5e72b5bcd93b.webp"
     },
     {
@@ -28094,37 +27887,6 @@
       "height": 5880,
       "dpi": 300,
       "thumbUrl": "thumbs/a02540319654.webp"
-    },
-    {
-      "id": "853ceb708167",
-      "name": "LG-CoolWave 2+-05-final-03-08-14-EM-topaz",
-      "filename": "LG-CoolWave 2+-05-final-03-08-14-EM-topaz.jpg",
-      "path": "library/LsoB/UV/LG-CoolWave 2+-05-final-03-08-14-EM-topaz.jpg",
-      "folder": "LsoB/UV",
-      "ext": "jpg",
-      "size": 5117045,
-      "modified": "2024-07-11T08:22:24",
-      "collection": "stock",
-      "isImage": true,
-      "width": 7200,
-      "height": 5880,
-      "dpi": 300,
-      "thumbUrl": "thumbs/853ceb708167.webp"
-    },
-    {
-      "id": "a83735e0b154",
-      "name": "LG-CoolWave 2+-05-final-03-08-14-EM-topaz",
-      "filename": "LG-CoolWave 2+-05-final-03-08-14-EM-topaz.psd",
-      "path": "library/LsoB/UV/LG-CoolWave 2+-05-final-03-08-14-EM-topaz.psd",
-      "folder": "LsoB/UV",
-      "ext": "psd",
-      "size": 97220177,
-      "modified": "2024-07-11T09:45:35",
-      "collection": "stock",
-      "isImage": false,
-      "width": 7200,
-      "height": 5880,
-      "thumbUrl": "thumbs/a83735e0b154.webp"
     },
     {
       "id": "6d87211ef01c",
@@ -32523,22 +32285,6 @@
       "thumbUrl": "thumbs/82ba6776e65c.webp"
     },
     {
-      "id": "aa0465628312",
-      "name": "LG-unnamed-2-19844x13228",
-      "filename": "LG-unnamed-2-19844x13228.jpeg",
-      "path": "publications/Garador/garadoradvertfullpage/LG-unnamed-2-19844x13228.jpeg",
-      "folder": "Garador/garadoradvertfullpage",
-      "ext": "jpeg",
-      "size": 1736038,
-      "modified": "2025-08-27T10:17:36.880000",
-      "collection": "publications",
-      "isImage": true,
-      "width": 1396,
-      "height": 1868,
-      "dpi": 300,
-      "thumbUrl": "thumbs/aa0465628312.webp"
-    },
-    {
       "id": "c47df9318ed9",
       "name": "0-1",
       "filename": "0-1.jpg",
@@ -32629,6 +32375,16 @@
       "isImage": true,
       "width": 698,
       "height": 934,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "publications/Garador/garadoradvertfullpage/LG-unnamed-2-19844x13228.jpeg",
+          "fileSize": 1736038,
+          "width": 1396,
+          "height": 1868
+        }
+      ],
       "thumbUrl": "thumbs/e74a549b3f73.webp"
     },
     {

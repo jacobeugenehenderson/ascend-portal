@@ -3426,6 +3426,7 @@
     const extLabel = ext.toUpperCase();
     const isPdf = ext === 'pdf';
     const hasSourceFile = asset.projectFiles && asset.projectFiles.length > 0;
+    const hasEnlargements = asset.enlargements && asset.enlargements.length > 0;
 
     // Show products on card if any
     const productsHtml = meta.products.length > 0
@@ -3439,6 +3440,11 @@
     // Gold seal for assets with source files
     const sourceSealHtml = hasSourceFile
       ? `<span class="library-card-source-seal" title="Has editable source file (${asset.projectFiles.map(p => p.ext.toUpperCase()).join(', ')})"></span>`
+      : '';
+
+    // Green seal for assets with enlargements
+    const enlargementSealHtml = hasEnlargements
+      ? `<span class="library-card-enlargement-seal" title="Enlargements available: ${asset.enlargements.map(e => e.size).join(', ')}"></span>`
       : '';
 
     // Display name (editable) or original filename
@@ -3458,6 +3464,7 @@
           ${thumbContent}
           ${extLabel ? `<span class="library-card-type">${extLabel}</span>` : ''}
           ${sourceSealHtml}
+          ${enlargementSealHtml}
           <button type="button"
                   class="library-card-select-btn"
                   data-action="select"
@@ -3655,6 +3662,28 @@
     // Show project file badge if available
     if (asset.projectFiles && asset.projectFiles.length > 0) {
       meta.innerHTML += `<span class="library-project-badge" title="Has editable source file">Has source file</span>`;
+    }
+
+    // Show enlargements if available
+    if (asset.enlargements && asset.enlargements.length > 0) {
+      const enlargementsList = asset.enlargements.map(e => {
+        const sizeLabel = e.size.toUpperCase();
+        const dims = (e.width && e.height) ? ` (${e.width}×${e.height})` : '';
+        const fileSize = e.fileSize ? ` · ${formatFileSize(e.fileSize)}` : '';
+        return `<a href="#" class="library-enlargement-link" data-path="${escapeHtml(e.path)}" title="Reveal ${sizeLabel} version in Finder">${sizeLabel}${dims}${fileSize}</a>`;
+      }).join('');
+      meta.innerHTML += `<div class="library-enlargements">Enlargements: ${enlargementsList}</div>`;
+
+      // Bind enlargement links (reveal in Finder)
+      setTimeout(() => {
+        document.querySelectorAll('.library-enlargement-link').forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const path = link.dataset.path;
+            revealInFinder(path);
+          });
+        });
+      }, 0);
     }
 
     // Cart/Job button state - check linked state if in addToJob mode

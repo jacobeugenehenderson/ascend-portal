@@ -386,6 +386,93 @@ def generate_thumbnails(assets: list[dict], library_path: Path, thumbs_path: Pat
     return success_count
 
 
+import re
+
+# Pattern to detect enlargements: LG_ or LG- prefix
+# Example: LG-MyImage_1568x1179-topaz.psd -> base name is MyImage_1568x1179-topaz
+ENLARGEMENT_PREFIX_PATTERN = re.compile(r'^LG[_-](.+)$', re.IGNORECASE)
+
+
+def link_enlargements(assets: list[dict]) -> tuple[list[dict], int]:
+    """
+    Find enlargement files and link them to their base assets.
+    Enlargements are detected by LG_ or LG- prefix.
+    Returns filtered assets (without enlargements) and count of linked enlargements.
+    """
+    # Build map of folder+basename -> asset (for finding base files)
+    by_location = {}
+    for asset in assets:
+        key = (asset["folder"], asset["name"].lower())
+        if key not in by_location:
+            by_location[key] = []
+        by_location[key].append(asset)
+
+    linked_count = 0
+    enlargement_ids = set()
+
+    for asset in assets:
+        match = ENLARGEMENT_PREFIX_PATTERN.match(asset["name"])
+        if not match:
+            continue
+
+        # Extract base name (everything after LG- or LG_)
+        base_name_full = match.group(1)
+
+        # Strip any Topaz suffixes or dimension info to find the original
+        # e.g., "MyImage_1568x1179-topaz" -> try "MyImage_1568x1179-topaz", "MyImage"
+        # We'll try progressively shorter versions to find a match
+        base_candidates = [base_name_full]
+
+        # Strip -topaz suffix if present
+        if '-topaz' in base_name_full.lower():
+            base_candidates.append(re.sub(r'-topaz$', '', base_name_full, flags=re.IGNORECASE))
+
+        # Strip trailing dimension patterns like _1568x1179 or -1568x1179
+        stripped = re.sub(r'[_-]\d+x\d+(-topaz)?$', '', base_name_full, flags=re.IGNORECASE)
+        if stripped != base_name_full:
+            base_candidates.append(stripped)
+
+        # Try each candidate to find the base file
+        base_file = None
+        for base_name in base_candidates:
+            key = (asset["folder"], base_name.lower())
+            candidates = by_location.get(key, [])
+
+            # Prefer same extension, but allow cross-extension matching
+            for c in candidates:
+                if c["id"] != asset["id"]:  # Don't match self
+                    if c["ext"] == asset["ext"]:
+                        base_file = c
+                        break
+                    elif not base_file:
+                        base_file = c
+
+            if base_file:
+                break  # Found a match, stop searching
+
+        if base_file:
+            # Link enlargement to base file
+            if "enlargements" not in base_file:
+                base_file["enlargements"] = []
+
+            base_file["enlargements"].append({
+                "size": "LG",
+                "ext": asset["ext"],
+                "path": asset["path"],
+                "fileSize": asset["size"],
+                "width": asset.get("width"),
+                "height": asset.get("height")
+            })
+
+            enlargement_ids.add(asset["id"])
+            linked_count += 1
+
+    # Filter out enlargements from main list
+    filtered = [a for a in assets if a["id"] not in enlargement_ids]
+
+    return filtered, linked_count
+
+
 def link_project_files(assets: list[dict]) -> tuple[list[dict], int]:
     """
     Find INDD files and link them to matching assets (same folder + base name).
@@ -479,6 +566,11 @@ def main():
         assets, linked_count = link_project_files(assets)
         if linked_count > 0:
             print(f"Linked {linked_count} project files to their deliverables")
+
+        # Link enlargements to their base files and filter them out
+        assets, enlargement_count = link_enlargements(assets)
+        if enlargement_count > 0:
+            print(f"Linked {enlargement_count} enlargements to their base files")
 
     # Count by collection
     stock_count = sum(1 for a in assets if a["collection"] == "stock")
