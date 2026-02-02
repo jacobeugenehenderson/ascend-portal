@@ -4,18 +4,22 @@ set -e
 
 cd "$(dirname "$0")"
 
-echo "Scanning library and generating thumbnails..."
-python3 generate-manifest.py
+echo "Scanning library (manifest only)..."
+python3 generate-manifest.py --no-thumbs
+
+echo ""
+echo "Generating thumbnails (both sizes)..."
+python3 generate-thumbs.py all
 
 echo ""
 echo "Checking for changes..."
-if git diff --quiet library-manifest.json thumbs/ && git diff --cached --quiet library-manifest.json thumbs/; then
+if git diff --quiet library-manifest.json thumbs/ thumbs-lg/ && git diff --cached --quiet library-manifest.json thumbs/ thumbs-lg/; then
     echo "No changes to publish."
     exit 0
 fi
 
 echo ""
-git status --short library-manifest.json thumbs/
+git status --short library-manifest.json thumbs/ thumbs-lg/
 
 # Use argument as message, or prompt if interactive, or use default
 if [ -n "$1" ]; then
@@ -30,7 +34,7 @@ else
     msg="Update library assets"
 fi
 
-git add library-manifest.json thumbs/
+git add library-manifest.json thumbs/ thumbs-lg/
 git commit -m "$msg"
 git push
 

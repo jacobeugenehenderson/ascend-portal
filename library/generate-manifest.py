@@ -26,8 +26,10 @@ LIBRARY_PATH = "/Volumes/Today/Nordson/LIBRARY"
 PUBLICATIONS_PATH = "/Volumes/Today/Nordson/PUBLICATIONS"
 STOCK_FOLDER = "STOCK"
 OUTPUT_FILE = "library-manifest.json"
-THUMBS_DIR = "thumbs"
-THUMB_SIZE = 1200  # pixels (max on longest edge, 2x retina for ~600px display)
+THUMBS_DIR = "thumbs"           # Small thumbnails for grid (400px)
+THUMBS_LG_DIR = "thumbs-lg"     # Large thumbnails for modal (1200px)
+THUMB_SIZE_SM = 400   # Small thumbnails for grid cards
+THUMB_SIZE_LG = 1200  # Large thumbnails for modal preview
 WEBP_QUALITY = 95  # Maximum practical quality
 PNG_COMPRESS = 6   # PNG compression level (0-9, 6 is default balance)
 

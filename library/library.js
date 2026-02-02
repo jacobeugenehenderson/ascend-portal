@@ -3490,9 +3490,8 @@
   const WEB_DISPLAYABLE = new Set(['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp']);
 
   function getThumbUrl(asset, size = 'sm') {
-    // All thumbnails are 1200px (works for both grid and modal)
-    // Grid cards scale down via CSS, modal shows full size
-    const thumbFolder = 'thumbs';
+    // size: 'sm' = 500px (grid cards), 'lg' = 1200px (modal preview)
+    const thumbFolder = size === 'lg' ? 'thumbs-lg' : 'thumbs';
     const ext = asset.ext.toLowerCase();
 
     // All image types use pre-generated WebP thumbnails by asset ID
