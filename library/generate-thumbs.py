@@ -18,9 +18,9 @@ import fitz  # PyMuPDF
 try:
     import cairosvg
     HAS_CAIROSVG = True
-except ImportError:
+except (ImportError, OSError):
     HAS_CAIROSVG = False
-    print("Warning: cairosvg not installed, SVG thumbnails will be skipped")
+    print("Warning: cairosvg/cairo not available, SVG thumbnails will be skipped")
 
 # Allow large images (some PSDs are huge)
 Image.MAX_IMAGE_PIXELS = 400_000_000
