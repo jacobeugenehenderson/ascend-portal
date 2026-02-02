@@ -1,13 +1,13 @@
 {
-  "generated": "2026-02-02T10:52:06.427046",
+  "generated": "2026-02-02T10:56:07.166188",
   "sources": {
     "library": "/Volumes/Today/Nordson/LIBRARY",
     "publications": "/Volumes/Today/Nordson/PUBLICATIONS"
   },
   "stockFolder": "STOCK",
-  "totalAssets": 2513,
+  "totalAssets": 2488,
   "collections": {
-    "stock": 1837,
+    "stock": 1812,
     "publications": 676
   },
   "folders": [
@@ -162,7 +162,6 @@
     "LsoB/ICS/Cordis-Feed_Center/SwankyBoltStudios_Nordson_V1/Encore VT Lifestyle Shots/Swanky Bolt Studios - Nordson - Encore VT - Lifestyle Shots-2",
     "LsoB/ICS/Cordis-Feed_Center/SwankyBoltStudios_Nordson_V1/Encore VT Lifestyle Shots/Swanky Bolt Studios - Nordson - Encore VT - Lifestyle Shots-3",
     "LsoB/ICS/DCM/Color_Max-with-DCM",
-    "LsoB/ICS/DCM/Color_Max-with-DCM/Enlarged",
     "LsoB/ICS/DCM/Elevation",
     "LsoB/ICS/DCM/Facility",
     "LsoB/ICS/DCM/Oblique",
@@ -5017,6 +5016,16 @@
       "width": 6144,
       "height": 6144,
       "dpi": 72,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/STOCK/RASTER/Powder-Bursts/LG-Powder-19844x13228.png",
+          "fileSize": 2886067,
+          "width": 1826,
+          "height": 2702
+        }
+      ],
       "thumbUrl": "thumbs/11ab1e303904.webp"
     },
     {
@@ -5479,6 +5488,16 @@
       "width": 1920,
       "height": 1080,
       "dpi": 72,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/STOCK/RASTER/Textures/LG-Racing-Streaks-19844x13228.png",
+          "fileSize": 43229072,
+          "width": 11520,
+          "height": 6480
+        }
+      ],
       "thumbUrl": "thumbs/2dcd04c7d294.webp"
     },
     {
@@ -5494,6 +5513,16 @@
       "isImage": false,
       "width": 1920,
       "height": 1080,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "psd",
+          "path": "library/STOCK/RASTER/Textures/LG-Racing-Streaks-19844x13228.psd",
+          "fileSize": 549300248,
+          "width": 11520,
+          "height": 6480
+        }
+      ],
       "thumbUrl": "thumbs/724f52f44815.webp"
     },
     {
@@ -5840,6 +5869,14 @@
           "fileSize": 126884338,
           "width": 14883,
           "height": 9921
+        },
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/STOCK/RASTER/ORV/LG-ORV-Bulletholes-19844x13228.png",
+          "fileSize": 176868209,
+          "width": null,
+          "height": null
         }
       ],
       "thumbUrl": "thumbs/573a3f700370.webp"
@@ -5873,6 +5910,16 @@
       "width": 2048,
       "height": 1365,
       "dpi": 72,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/STOCK/RASTER/Facilities/LG-Finishing_Plant-6144x4095.jpeg",
+          "fileSize": 16367384,
+          "width": 6144,
+          "height": 4095
+        }
+      ],
       "thumbUrl": "thumbs/9c6500297976.webp"
     },
     {
@@ -7223,6 +7270,16 @@
       "width": 14400,
       "height": 5400,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/STOCK/ELEMENTS/LG-Beam.png",
+          "fileSize": 34643340,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/d363913edb6e.webp"
     },
     {
@@ -8125,22 +8182,6 @@
       "thumbUrl": "thumbs/fef26a80ddd7.webp"
     },
     {
-      "id": "190dc809ec42",
-      "name": "LG-Racing-Streaks-19844x13228",
-      "filename": "LG-Racing-Streaks-19844x13228.png",
-      "path": "library/STOCK/ELEMENTS/Racing-Stripes/LG-Racing-Streaks-19844x13228.png",
-      "folder": "STOCK/ELEMENTS/Racing-Stripes",
-      "ext": "png",
-      "size": 43229072,
-      "modified": "2024-10-17T10:51:47.190000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 11520,
-      "height": 6480,
-      "dpi": 300,
-      "thumbUrl": "thumbs/190dc809ec42.webp"
-    },
-    {
       "id": "9eafbda7e0e7",
       "name": "LG-Racing-Streaks-R-19844x13228",
       "filename": "LG-Racing-Streaks-R-19844x13228.png",
@@ -8383,6 +8424,16 @@
       "modified": "2025-09-05T09:26:13.420000",
       "collection": "stock",
       "isImage": false,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpg",
+          "path": "library/STOCK/ELEMENTS/Feed Center/LG-Feed_Center.jpg",
+          "fileSize": 1819221,
+          "width": 2560,
+          "height": 3840
+        }
+      ],
       "thumbUrl": "thumbs/22b91be49dc7.webp"
     },
     {
@@ -10120,114 +10171,6 @@
       "thumbUrl": "thumbs/9acdfd2055c5.webp"
     },
     {
-      "id": "ce434d1db9eb",
-      "name": "LG-Racing-Streaks-19844x13228",
-      "filename": "LG-Racing-Streaks-19844x13228.psd",
-      "path": "library/STOCK/LG/LG-Racing-Streaks-19844x13228.psd",
-      "folder": "STOCK/LG",
-      "ext": "psd",
-      "size": 549300248,
-      "modified": "2024-10-17T12:45:31.810000",
-      "collection": "stock",
-      "isImage": false,
-      "width": 11520,
-      "height": 6480,
-      "thumbUrl": "thumbs/ce434d1db9eb.webp"
-    },
-    {
-      "id": "15ceb0ee6cc5",
-      "name": "LG-04A_0917a-08-01-05-6300x6612",
-      "filename": "LG-04A_0917a-08-01-05-6300x6612.jpeg",
-      "path": "library/STOCK/LG/LG-04A_0917a-08-01-05-6300x6612.jpeg",
-      "folder": "STOCK/LG",
-      "ext": "jpeg",
-      "size": 21964821,
-      "modified": "2024-09-16T10:32:24.730000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 6300,
-      "height": 6612,
-      "dpi": 150,
-      "thumbUrl": "thumbs/15ceb0ee6cc5.webp"
-    },
-    {
-      "id": "e82a47fb641c",
-      "name": "LG-Finishing_Plant-6144x4095",
-      "filename": "LG-Finishing_Plant-6144x4095.jpeg",
-      "path": "library/STOCK/LG/LG-Finishing_Plant-6144x4095.jpeg",
-      "folder": "STOCK/LG",
-      "ext": "jpeg",
-      "size": 16367384,
-      "modified": "2024-09-16T11:03:25.870000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 6144,
-      "height": 4095,
-      "dpi": 150,
-      "thumbUrl": "thumbs/e82a47fb641c.webp"
-    },
-    {
-      "id": "37d844ea11b3",
-      "name": "LG-ORV-Bulletholes-19844x13228",
-      "filename": "LG-ORV-Bulletholes-19844x13228.png",
-      "path": "library/STOCK/LG/LG-ORV-Bulletholes-19844x13228.png",
-      "folder": "STOCK/LG",
-      "ext": "png",
-      "size": 176868209,
-      "modified": "2024-09-19T16:52:02.710000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/37d844ea11b3.webp"
-    },
-    {
-      "id": "704710c2030b",
-      "name": "LG-RA-20-Iso-Flo-7200x5760",
-      "filename": "LG-RA-20-Iso-Flo-7200x5760.jpeg",
-      "path": "library/STOCK/LG/LG-RA-20-Iso-Flo-7200x5760.jpeg",
-      "folder": "STOCK/LG",
-      "ext": "jpeg",
-      "size": 32366866,
-      "modified": "2024-09-16T10:21:55.450000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 7200,
-      "height": 5760,
-      "dpi": 150,
-      "thumbUrl": "thumbs/704710c2030b.webp"
-    },
-    {
-      "id": "9a57ed88243d",
-      "name": "LG-Applicator",
-      "filename": "LG-Applicator.png",
-      "path": "library/STOCK/LG/LG-Applicator.png",
-      "folder": "STOCK/LG",
-      "ext": "png",
-      "size": 141186573,
-      "modified": "2024-09-11T21:22:07.450000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 16734,
-      "height": 3000,
-      "dpi": 300,
-      "thumbUrl": "thumbs/9a57ed88243d.webp"
-    },
-    {
-      "id": "b83bf31a7505",
-      "name": "LG-Feed_Center",
-      "filename": "LG-Feed_Center.jpg",
-      "path": "library/STOCK/LG/LG-Feed_Center.jpg",
-      "folder": "STOCK/LG",
-      "ext": "jpg",
-      "size": 1819221,
-      "modified": "2024-09-12T20:00:41.860000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 2560,
-      "height": 3840,
-      "dpi": 300,
-      "thumbUrl": "thumbs/b83bf31a7505.webp"
-    },
-    {
       "id": "193ec599097d",
       "name": "LG-Image (8)",
       "filename": "LG-Image (8).jpeg",
@@ -10300,58 +10243,6 @@
       "collection": "stock",
       "isImage": true,
       "thumbUrl": "thumbs/faf73dde0724.webp"
-    },
-    {
-      "id": "2e5478eb0ecb",
-      "name": "LG-DCM-RED-BG-19844x13228",
-      "filename": "LG-DCM-RED-BG-19844x13228.jpeg",
-      "path": "library/STOCK/LG/LG-DCM-RED-BG-19844x13228.jpeg",
-      "folder": "STOCK/LG",
-      "ext": "jpeg",
-      "size": 80297107,
-      "modified": "2025-05-22T23:11:18.580000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/2e5478eb0ecb.webp"
-    },
-    {
-      "id": "d5050cf553e2",
-      "name": "LG-DCM-RED-FG-19844x13228",
-      "filename": "LG-DCM-RED-FG-19844x13228.png",
-      "path": "library/STOCK/LG/LG-DCM-RED-FG-19844x13228.png",
-      "folder": "STOCK/LG",
-      "ext": "png",
-      "size": 173896918,
-      "modified": "2025-05-22T23:19:13.330000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/d5050cf553e2.webp"
-    },
-    {
-      "id": "ba882d3252d5",
-      "name": "LG-DCM-RED-INT-19844x13228",
-      "filename": "LG-DCM-RED-INT-19844x13228.jpeg",
-      "path": "library/STOCK/LG/LG-DCM-RED-INT-19844x13228.jpeg",
-      "folder": "STOCK/LG",
-      "ext": "jpeg",
-      "size": 61466142,
-      "modified": "2025-05-22T23:31:22.180000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/ba882d3252d5.webp"
-    },
-    {
-      "id": "19bfdaa79e83",
-      "name": "LG-DCM-RED-INT-19844x13228",
-      "filename": "LG-DCM-RED-INT-19844x13228.psd",
-      "path": "library/STOCK/LG/LG-DCM-RED-INT-19844x13228.psd",
-      "folder": "STOCK/LG",
-      "ext": "psd",
-      "size": 1759401029,
-      "modified": "2025-08-15T13:15:23.200000",
-      "collection": "stock",
-      "isImage": false,
-      "thumbUrl": "thumbs/19bfdaa79e83.webp"
     },
     {
       "id": "82b183727e04",
@@ -11424,6 +11315,16 @@
       "width": 8367,
       "height": 1500,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Auto Guns/LG-Applicator.png",
+          "fileSize": 141186573,
+          "width": 16734,
+          "height": 3000
+        }
+      ],
       "thumbUrl": "thumbs/c2386ad6f1d7.webp"
     },
     {
@@ -12266,16 +12167,6 @@
       "isImage": true,
       "width": 913,
       "height": 1351,
-      "enlargements": [
-        {
-          "size": "LG",
-          "ext": "png",
-          "path": "library/LsoB/ICS/Variio/Screens/041625/LG-Powder-19844x13228.png",
-          "fileSize": 2886067,
-          "width": 1826,
-          "height": 2702
-        }
-      ],
       "thumbUrl": "thumbs/dd268b17819b.webp"
     },
     {
@@ -14491,6 +14382,24 @@
       "width": 6000,
       "height": 3375,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/LsoB/ICS/DCM/RED/LG-DCM-RED-INT-19844x13228.jpeg",
+          "fileSize": 61466142,
+          "width": null,
+          "height": null
+        },
+        {
+          "size": "LG",
+          "ext": "psd",
+          "path": "library/LsoB/ICS/DCM/RED/LG-DCM-RED-INT-19844x13228.psd",
+          "fileSize": 1759401029,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/99a0f0e24fe8.webp"
     },
     {
@@ -14507,6 +14416,16 @@
       "width": 6000,
       "height": 3375,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/LsoB/ICS/DCM/RED/LG-DCM-RED-BG-19844x13228.jpeg",
+          "fileSize": 80297107,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/31c8544b8a9b.webp"
     },
     {
@@ -14523,6 +14442,16 @@
       "width": 6000,
       "height": 3375,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/DCM/RED/LG-DCM-RED-FG-19844x13228.png",
+          "fileSize": 173896918,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/8e65c5caba06.webp"
     },
     {
@@ -14744,40 +14673,25 @@
           "fileSize": 20100404,
           "width": 12000,
           "height": 8192
+        },
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/LsoB/ICS/DCM/Color_Max-with-DCM/LG-Nordson Dynamic Contouring with Booth and Feed Center-19844x13228.jpeg",
+          "fileSize": 59780148,
+          "width": 12000,
+          "height": 8192
+        },
+        {
+          "size": "LG",
+          "ext": "psd",
+          "path": "library/LsoB/ICS/DCM/Color_Max-with-DCM/LG-Nordson Dynamic Contouring with Booth and Feed Center.psd",
+          "fileSize": 420030833,
+          "width": 12000,
+          "height": 8192
         }
       ],
       "thumbUrl": "thumbs/40c3fa562499.webp"
-    },
-    {
-      "id": "33dd88e97967",
-      "name": "LG-Nordson Dynamic Contouring with Booth and Feed Center-19844x13228",
-      "filename": "LG-Nordson Dynamic Contouring with Booth and Feed Center-19844x13228.jpeg",
-      "path": "library/LsoB/ICS/DCM/Color_Max-with-DCM/Enlarged/LG-Nordson Dynamic Contouring with Booth and Feed Center-19844x13228.jpeg",
-      "folder": "LsoB/ICS/DCM/Color_Max-with-DCM/Enlarged",
-      "ext": "jpeg",
-      "size": 59780148,
-      "modified": "2025-09-17T10:14:53.870000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 12000,
-      "height": 8192,
-      "dpi": 300,
-      "thumbUrl": "thumbs/33dd88e97967.webp"
-    },
-    {
-      "id": "ace7e84b1702",
-      "name": "LG-Nordson Dynamic Contouring with Booth and Feed Center",
-      "filename": "LG-Nordson Dynamic Contouring with Booth and Feed Center.psd",
-      "path": "library/LsoB/ICS/DCM/Color_Max-with-DCM/Enlarged/LG-Nordson Dynamic Contouring with Booth and Feed Center.psd",
-      "folder": "LsoB/ICS/DCM/Color_Max-with-DCM/Enlarged",
-      "ext": "psd",
-      "size": 420030833,
-      "modified": "2025-09-17T10:18:56.070000",
-      "collection": "stock",
-      "isImage": false,
-      "width": 12000,
-      "height": 8192,
-      "thumbUrl": "thumbs/ace7e84b1702.webp"
     },
     {
       "id": "ada2a3cbc379",
@@ -17569,6 +17483,16 @@
       "width": 1555,
       "height": 2905,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Pump and Guns/LG-2024-Encore_Pump-19844x13228.png",
+          "fileSize": 101172975,
+          "width": 12000,
+          "height": 12816
+        }
+      ],
       "thumbUrl": "thumbs/024c29a95ce1.webp"
     },
     {
@@ -17709,19 +17633,6 @@
       "thumbUrl": "thumbs/2de084453d76.webp"
     },
     {
-      "id": "43f432a2bcf4",
-      "name": "LG-Beam",
-      "filename": "LG-Beam.png",
-      "path": "library/LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/6X/LG-Beam.png",
-      "folder": "LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/6X",
-      "ext": "png",
-      "size": 34643340,
-      "modified": "2024-03-19T14:18:23",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/43f432a2bcf4.webp"
-    },
-    {
       "id": "f5871f6ff55f",
       "name": "LG-Powder-Coating-Equipment-2D-topaz",
       "filename": "LG-Powder-Coating-Equipment-2D-topaz.jpg",
@@ -17736,45 +17647,6 @@
       "height": 1612,
       "dpi": 1,
       "thumbUrl": "thumbs/f5871f6ff55f.webp"
-    },
-    {
-      "id": "254dcd82cfc5",
-      "name": "LG-Pump_and_Guns-NOTEXT",
-      "filename": "LG-Pump_and_Guns-NOTEXT.png",
-      "path": "library/LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/6X/LG-Pump_and_Guns-NOTEXT.png",
-      "folder": "LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/6X",
-      "ext": "png",
-      "size": 63281176,
-      "modified": "2024-03-19T14:12:33",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/254dcd82cfc5.webp"
-    },
-    {
-      "id": "7d55c47b789f",
-      "name": "LG-Pump_and_Guns",
-      "filename": "LG-Pump_and_Guns.png",
-      "path": "library/LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/6X/LG-Pump_and_Guns.png",
-      "folder": "LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/6X",
-      "ext": "png",
-      "size": 65534773,
-      "modified": "2024-03-19T14:00:12",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/7d55c47b789f.webp"
-    },
-    {
-      "id": "78b9329d8ab0",
-      "name": "LG-Shadow",
-      "filename": "LG-Shadow.png",
-      "path": "library/LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/6X/LG-Shadow.png",
-      "folder": "LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/6X",
-      "ext": "png",
-      "size": 7554415,
-      "modified": "2024-03-19T14:20:09",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/78b9329d8ab0.webp"
     },
     {
       "id": "0e44c82d7699",
@@ -17806,6 +17678,16 @@
       "width": 5917,
       "height": 3942,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/PNG/LG-Pump_and_Guns-NOTEXT.png",
+          "fileSize": 63281176,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/5ea2c7292d1e.webp"
     },
     {
@@ -17822,6 +17704,16 @@
       "width": 5917,
       "height": 3942,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/PNG/LG-Pump_and_Guns.png",
+          "fileSize": 65534773,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/1c741283f8fc.webp"
     },
     {
@@ -17838,6 +17730,16 @@
       "width": 5917,
       "height": 3942,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Pump and Guns/Enlarged-Pump_and_Guns/PNG/LG-Shadow.png",
+          "fileSize": 7554415,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/c9ac5569c7a8.webp"
     },
     {
@@ -18129,16 +18031,6 @@
       "width": 2000,
       "height": 2136,
       "dpi": 300,
-      "enlargements": [
-        {
-          "size": "LG",
-          "ext": "png",
-          "path": "library/LsoB/ICS/thePUMPdump/LG-2024-Encore_Pump-19844x13228.png",
-          "fileSize": 101172975,
-          "width": 12000,
-          "height": 12816
-        }
-      ],
       "thumbUrl": "thumbs/b149dd819d41.webp"
     },
     {
@@ -18441,6 +18333,16 @@
       "isImage": false,
       "width": 3750,
       "height": 3000,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/LsoB/ICS/Paint/LG-RA-20-Iso-Flo-7200x5760.jpeg",
+          "fileSize": 32366866,
+          "width": 7200,
+          "height": 5760
+        }
+      ],
       "thumbUrl": "thumbs/70beafce3fe8.webp"
     },
     {
@@ -18473,6 +18375,16 @@
       "width": 2100,
       "height": 2204,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/LsoB/ICS/Paint/LG-04A_0917a-08-01-05-6300x6612.jpeg",
+          "fileSize": 21964821,
+          "width": 6300,
+          "height": 6612
+        }
+      ],
       "thumbUrl": "thumbs/fe73c5eecde5.webp"
     },
     {
@@ -21145,6 +21057,24 @@
       "isImage": true,
       "width": 3024,
       "height": 4032,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Dolly-Depot/Hero Dolly/LG-front-left-w-box-18144x24192.png",
+          "fileSize": 348972995,
+          "width": null,
+          "height": null
+        },
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Dolly-Depot/Hero Dolly/LG-front-left-w-box-19844x13228.png",
+          "fileSize": 504507113,
+          "width": null,
+          "height": null
+        }
+      ],
       "thumbUrl": "thumbs/d47d4f2c4737.webp"
     },
     {
@@ -21195,19 +21125,6 @@
       "thumbUrl": "thumbs/2dda980345a4.webp"
     },
     {
-      "id": "671a3171d06c",
-      "name": "LG-front-left-w-box-18144x24192",
-      "filename": "LG-front-left-w-box-18144x24192.png",
-      "path": "library/LsoB/ICS/Dolly-Depot/Enlarged Dolly/LG-front-left-w-box-18144x24192.png",
-      "folder": "LsoB/ICS/Dolly-Depot/Enlarged Dolly",
-      "ext": "png",
-      "size": 348972995,
-      "modified": "2025-03-04T11:28:39.570000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/671a3171d06c.webp"
-    },
-    {
       "id": "d7e95268039c",
       "name": "LG-front-left-w-box-19844x13228-2",
       "filename": "LG-front-left-w-box-19844x13228-2.png",
@@ -21256,66 +21173,6 @@
       "thumbUrl": "thumbs/e47cc155e9d5.webp"
     },
     {
-      "id": "8ed6b4de6007",
-      "name": "LG-front-left-w-box-19844x13228",
-      "filename": "LG-front-left-w-box-19844x13228.png",
-      "path": "library/LsoB/ICS/Dolly-Depot/Enlarged Dolly/LG-front-left-w-box-19844x13228.png",
-      "folder": "LsoB/ICS/Dolly-Depot/Enlarged Dolly",
-      "ext": "png",
-      "size": 504507113,
-      "modified": "2024-10-17T11:33:03.550000",
-      "collection": "stock",
-      "isImage": true,
-      "thumbUrl": "thumbs/8ed6b4de6007.webp"
-    },
-    {
-      "id": "6c452d41ba1a",
-      "name": "LG-Oblique-19844x13228",
-      "filename": "LG-Oblique-19844x13228.png",
-      "path": "library/LsoB/ICS/Dolly-Depot/Enlarged Dolly/LG-Oblique-19844x13228.png",
-      "folder": "LsoB/ICS/Dolly-Depot/Enlarged Dolly",
-      "ext": "png",
-      "size": 20844074,
-      "modified": "2025-02-11T10:31:30.950000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 4212,
-      "height": 5115,
-      "dpi": 762,
-      "thumbUrl": "thumbs/6c452d41ba1a.webp"
-    },
-    {
-      "id": "131b10819e46",
-      "name": "LG-Encore-VT-Dolly-19844x13228",
-      "filename": "LG-Encore-VT-Dolly-19844x13228.jpeg",
-      "path": "library/LsoB/ICS/Dolly-Depot/Enlarged Dolly/LG-Encore-VT-Dolly-19844x13228.jpeg",
-      "folder": "LsoB/ICS/Dolly-Depot/Enlarged Dolly",
-      "ext": "jpeg",
-      "size": 52978021,
-      "modified": "2025-09-17T09:35:02.150000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 9042,
-      "height": 11434,
-      "dpi": 300,
-      "thumbUrl": "thumbs/131b10819e46.webp"
-    },
-    {
-      "id": "0ca73118c8c8",
-      "name": "LG-Encore-VT-Dolly-19844x13228",
-      "filename": "LG-Encore-VT-Dolly-19844x13228.psd",
-      "path": "library/LsoB/ICS/Dolly-Depot/Enlarged Dolly/LG-Encore-VT-Dolly-19844x13228.psd",
-      "folder": "LsoB/ICS/Dolly-Depot/Enlarged Dolly",
-      "ext": "psd",
-      "size": 1040621633,
-      "modified": "2025-09-17T10:00:15.290000",
-      "collection": "stock",
-      "isImage": false,
-      "width": 9042,
-      "height": 11434,
-      "thumbUrl": "thumbs/0ca73118c8c8.webp"
-    },
-    {
       "id": "648dd8307d17",
       "name": "LG-Encore-VT-Dolly-SHADOW-19844x13228",
       "filename": "LG-Encore-VT-Dolly-SHADOW-19844x13228.png",
@@ -21330,22 +21187,6 @@
       "height": 11434,
       "dpi": 300,
       "thumbUrl": "thumbs/648dd8307d17.webp"
-    },
-    {
-      "id": "d1970035d030",
-      "name": "LG-Encore-VT-Dolly-19844x13228",
-      "filename": "LG-Encore-VT-Dolly-19844x13228.png",
-      "path": "library/LsoB/ICS/Dolly-Depot/Enlarged Dolly/LG-Encore-VT-Dolly-19844x13228.png",
-      "folder": "LsoB/ICS/Dolly-Depot/Enlarged Dolly",
-      "ext": "png",
-      "size": 86917412,
-      "modified": "2025-09-17T10:02:33.120000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 9042,
-      "height": 11434,
-      "dpi": 300,
-      "thumbUrl": "thumbs/d1970035d030.webp"
     },
     {
       "id": "1bede99b13c9",
@@ -21531,6 +21372,24 @@
       "width": 4521,
       "height": 5717,
       "dpi": 300,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "jpeg",
+          "path": "library/LsoB/ICS/Dolly-Depot/Beauties/LG-Encore-VT-Dolly-19844x13228.jpeg",
+          "fileSize": 52978021,
+          "width": 9042,
+          "height": 11434
+        },
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Dolly-Depot/Beauties/LG-Encore-VT-Dolly-19844x13228.png",
+          "fileSize": 86917412,
+          "width": 9042,
+          "height": 11434
+        }
+      ],
       "thumbUrl": "thumbs/82a0ff080b7d.webp"
     },
     {
@@ -21561,6 +21420,16 @@
       "isImage": false,
       "width": 4521,
       "height": 5717,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "psd",
+          "path": "library/LsoB/ICS/Dolly-Depot/Beauties/LG-Encore-VT-Dolly-19844x13228.psd",
+          "fileSize": 1040621633,
+          "width": 9042,
+          "height": 11434
+        }
+      ],
       "thumbUrl": "thumbs/c623d764d64f.webp"
     },
     {
@@ -21591,6 +21460,16 @@
       "isImage": true,
       "width": 1404,
       "height": 1705,
+      "enlargements": [
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/ICS/Dolly-Depot/Beauties/PNGs/LG-Oblique-19844x13228.png",
+          "fileSize": 20844074,
+          "width": 4212,
+          "height": 5115
+        }
+      ],
       "thumbUrl": "thumbs/9ec7c93d8a7f.webp"
     },
     {
@@ -26548,22 +26427,6 @@
       "thumbUrl": "thumbs/ec744520c3a5.webp"
     },
     {
-      "id": "eda54ee184cf",
-      "name": "LG-IMG_1770-19844x13228",
-      "filename": "LG-IMG_1770-19844x13228.png",
-      "path": "library/LsoB/Cold Materials/Rhino/LG-IMG_1770-19844x13228.png",
-      "folder": "LsoB/Cold Materials/Rhino",
-      "ext": "png",
-      "size": 18937268,
-      "modified": "2024-09-25T10:13:24.070000",
-      "collection": "stock",
-      "isImage": true,
-      "width": 3024,
-      "height": 4032,
-      "dpi": 150,
-      "thumbUrl": "thumbs/eda54ee184cf.webp"
-    },
-    {
       "id": "4b67696ecdd6",
       "name": "Rhino-EU",
       "filename": "Rhino-EU.jpg",
@@ -26613,6 +26476,14 @@
           "fileSize": 73436727,
           "width": null,
           "height": null
+        },
+        {
+          "size": "LG",
+          "ext": "png",
+          "path": "library/LsoB/Cold Materials/Rhino/Rhino Redux/LG-IMG_1770-19844x13228.png",
+          "fileSize": 18937268,
+          "width": 3024,
+          "height": 4032
         }
       ],
       "thumbUrl": "thumbs/d266bd34891f.webp"
