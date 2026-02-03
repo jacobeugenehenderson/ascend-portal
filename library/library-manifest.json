@@ -1,5 +1,5 @@
 {
-  "generated": "2026-02-02T17:45:18.815669",
+  "generated": "2026-02-02T17:55:32.199573",
   "sources": {
     "library": "/Volumes/Today/Nordson/LIBRARY",
     "publications": "/Volumes/Today/Nordson/PUBLICATIONS"
@@ -10484,7 +10484,8 @@
       "isImage": true,
       "width": 382,
       "height": 144,
-      "dpi": 96
+      "dpi": 96,
+      "thumbUrl": "thumbs/d6a61e5953ac.webp"
     },
     {
       "id": "74b143119d27",
@@ -10499,7 +10500,8 @@
       "isImage": true,
       "width": 519,
       "height": 519,
-      "dpi": 300
+      "dpi": 300,
+      "thumbUrl": "thumbs/74b143119d27.webp"
     },
     {
       "id": "227565b7c653",
@@ -10514,7 +10516,8 @@
       "isImage": true,
       "width": 519,
       "height": 519,
-      "dpi": 300
+      "dpi": 300,
+      "thumbUrl": "thumbs/227565b7c653.webp"
     },
     {
       "id": "55ca4b11f7b6",
