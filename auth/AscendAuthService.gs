@@ -111,12 +111,38 @@ function jsonResponse_(obj, statusCode) {
 }
 
 /**
+ * Reset a token row to pending status (called on logout).
+ * Clears the email and sets status back to 'pending'.
+ */
+function resetToken_(token) {
+  const sheet = getHandshakeSheet_();
+  const row = findTokenRow_(sheet, token);
+
+  if (row === 0) {
+    // Token doesn't exist, nothing to reset
+    return jsonResponse_({ ok: true, status: 'pending', token: token });
+  }
+
+  // Clear email (col B) and set status to pending (col E)
+  const now = new Date();
+  sheet.getRange(row, 2, 1, 4).setValues([[
+    '',       // Clear email
+    now,      // Update timestamp
+    now,      // Update timestamp
+    'pending' // Reset status
+  ]]);
+
+  return jsonResponse_({ ok: true, status: 'pending', token: token });
+}
+
+/**
  * Phone → POST { token, email } to complete handshake.
+ * Terminal → POST { token, action: "reset" } to reset on logout.
  * Supports both JSON body and form-urlencoded.
  */
 function doPost(e) {
   try {
-    let token, email;
+    let token, email, action;
 
     if (!e || !e.postData) {
       return jsonResponse_({ ok: false, error: 'No post data' });
@@ -136,11 +162,21 @@ function doPost(e) {
       });
       token = (params.token || '').toString().trim();
       email = (params.email || '').toString().trim().toLowerCase();
+      action = (params.action || '').toString().trim().toLowerCase();
     } else {
       // Assume JSON
       const payload = JSON.parse(contents);
       token = (payload.token || '').toString().trim();
       email = (payload.email || '').toString().trim().toLowerCase();
+      action = (payload.action || '').toString().trim().toLowerCase();
+    }
+
+    // Handle reset action (logout from terminal)
+    if (action === 'reset') {
+      if (!token) {
+        return jsonResponse_({ ok: false, error: 'Missing token' });
+      }
+      return resetToken_(token);
     }
 
     if (!token || !email) {

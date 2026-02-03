@@ -85,7 +85,40 @@ async function handleRequest(request) {
       return json({ ok: false, error: "Invalid JSON body" }, 400, request);
     }
 
+    const action = searchParams.get("action") || body.action || null;
     const token = searchParams.get("token") || body.token || null;
+
+    // Handle reset action (logout)
+    if (action === "reset") {
+      if (!token) {
+        return json({ ok: false, error: "Missing token" }, 400, request);
+      }
+
+      try {
+        const formBody = `token=${encodeURIComponent(token)}&action=reset`;
+        const scriptResp = await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formBody,
+          redirect: "follow",
+        });
+
+        const text = await scriptResp.text();
+        let result;
+        try {
+          result = JSON.parse(text);
+        } catch (e) {
+          console.error("Apps Script POST (reset) returned non-JSON:", text.substring(0, 500));
+          return json({ ok: false, error: "Auth service returned invalid response" }, 502, request);
+        }
+        return json(result, 200, request);
+      } catch (err) {
+        console.error("Apps Script POST (reset) failed:", err);
+        return json({ ok: false, error: "Auth service unavailable", detail: String(err) }, 502, request);
+      }
+    }
+
+    // Handle login action (default)
     const email = (body.email || "").trim();
 
     if (!token) {

@@ -10,8 +10,49 @@
 
   // Auth + routing knobs (single source of truth)
   const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
-  // Token baked into the static QR image
-  const HANDSHAKE_TOKEN = "verify-account";
+  // Auth page URL (phone scans QR to reach this)
+  const AUTH_PAGE_URL = "https://jacobhenderson.studio/ascend/auth.html";
+
+  // Generate unique token per terminal session to avoid cross-terminal collision
+  const TERMINAL_TOKEN_KEY = "ascend_terminal_token_v1";
+
+  function generateNewToken_() {
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    // Fallback for older browsers
+    return "t_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function getOrCreateTerminalToken() {
+    try {
+      // Check if we already have a token for this terminal (persists until logout)
+      let token = localStorage.getItem(TERMINAL_TOKEN_KEY);
+      if (token) return token;
+
+      token = generateNewToken_();
+      localStorage.setItem(TERMINAL_TOKEN_KEY, token);
+      return token;
+    } catch (e) {
+      // If localStorage fails, generate ephemeral token
+      return generateNewToken_();
+    }
+  }
+
+  function regenerateTerminalToken_() {
+    const token = generateNewToken_();
+    try {
+      localStorage.setItem(TERMINAL_TOKEN_KEY, token);
+    } catch (e) {}
+    currentHandshakeToken = token;
+    return token;
+  }
+
+  // Current handshake token (can be regenerated on logout)
+  let currentHandshakeToken = getOrCreateTerminalToken();
+
+  // For backward compatibility - but use currentHandshakeToken in polling
+  const HANDSHAKE_TOKEN = currentHandshakeToken;
 
   // App destinations – always point to the live GitHub Pages workspace
   const ARTSTART_URL =
@@ -555,9 +596,9 @@
       pollingTimer = null;
     }
 
-    // Prefer ?token=… from the URL, fall back to our baked-in default.
+    // Prefer ?token=… from the URL, fall back to current terminal token.
     const urlToken = new URLSearchParams(window.location.search).get("token");
-    const token = urlToken || HANDSHAKE_TOKEN;
+    const token = urlToken || currentHandshakeToken;
 
     console.log("[Ascend] Using handshake token:", token);
 
@@ -667,12 +708,30 @@
         // Clear any existing session
         saveSession(null);
 
+        // Reset the token row on backend to "pending" so polling doesn't auto-login
+        resetTokenOnBackend_();
+
         // Put the UI back into logged-out mode
         applyLoggedOutUI();
         updateUserChip(null);
 
         // IMPORTANT: start listening again for a new QR login
         startPollingForLogin();
+      });
+    }
+
+    // Reset the terminal's token row to pending status on the backend
+    function resetTokenOnBackend_() {
+      const token = currentHandshakeToken;
+      if (!token) return;
+
+      // Fire-and-forget POST to reset the token
+      fetch(AUTH_ENDPOINT + "?action=reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, action: "reset" })
+      }).catch(function(e) {
+        console.warn("[Ascend] Failed to reset token on backend:", e);
       });
     }
 
@@ -2179,6 +2238,41 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     }
   }
 
+    // ---- Dynamic QR code generation ----
+
+  function renderDynamicQrCode() {
+    const placeholder = document.getElementById("ascend-qr-placeholder");
+    if (!placeholder) return;
+
+    // Build the auth URL with this terminal's unique token
+    const authUrl = AUTH_PAGE_URL + "?token=" + encodeURIComponent(currentHandshakeToken);
+
+    // Use QR Server API to generate the QR code image
+    const qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=svg&data=" + encodeURIComponent(authUrl);
+
+    // Create the QR code image (don't clear placeholder until image loads)
+    const img = document.createElement("img");
+    img.alt = "Scan to log in";
+    img.style.cssText = "width: 100%; height: 100%; object-fit: contain;";
+
+    // Only replace content once image loads successfully
+    img.onload = function() {
+      placeholder.style.backgroundImage = "none";
+      placeholder.innerHTML = "";
+      placeholder.appendChild(img);
+      console.log("[Ascend] Dynamic QR loaded for token:", currentHandshakeToken);
+    };
+
+    // Handle load errors - keep CSS background as fallback
+    img.onerror = function() {
+      console.warn("[Ascend] QR API failed, keeping static fallback");
+      // Keep the CSS background image as fallback
+    };
+
+    // Start loading
+    img.src = qrApiUrl;
+  }
+
     // ---- bootstrap ----
 
   function bootstrap() {
@@ -2186,6 +2280,9 @@ function openCodeDeskFromTemplate_(tpl, parentAscendJobKey) {
     initPrimaryButtons();
     initTrashModal();
     // Calendar trigger handled by calendar.js
+
+    // Render dynamic QR code with unique terminal token
+    renderDynamicQrCode();
 
     const existing = loadSession();
     if (isSessionValid(existing)) {
