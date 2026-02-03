@@ -3629,6 +3629,8 @@ try {
     host.innerHTML = html;
 
     // Wire click handlers (delegated)
+    // Use window.__ARTSTART_CURRENT_JOB__ instead of closure-captured job
+    // so that refreshes don't cause stale data (the listener is only wired once)
     if (!host.dataset.wired) {
       host.dataset.wired = '1';
       host.addEventListener('click', function(e) {
@@ -3638,12 +3640,13 @@ try {
         }
         if (!el || el === host) return;
 
+        var currentJob = window.__ARTSTART_CURRENT_JOB__;
         if (el.classList.contains('chip-add')) {
-          showAddCollaboratorDialog_(job);
+          showAddCollaboratorDialog_(currentJob);
         } else {
           var email = el.getAttribute('data-email') || '';
           if (email) {
-            showResendConfirmDialog_(job, email);
+            showResendConfirmDialog_(currentJob, email);
           }
         }
       });
