@@ -3476,13 +3476,13 @@ try {
 
     window[callbackName] = function(response) {
       try {
-        if (response && response.success) {
+        if (response && response.ok) {
           // Close modal and refresh images
           closeImagePreview_();
           loadLinkedImages_();
         } else {
           console.error('[ArtStart] Failed to unlink:', response);
-          alert('Failed to unlink image');
+          alert('Failed to unlink image: ' + (response && response.error ? response.error : 'Unknown error'));
         }
       } catch (e) {
         console.error('[ArtStart] Error unlinking image:', e);
