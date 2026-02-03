@@ -11,7 +11,7 @@
   // Auth + routing knobs (single source of truth)
   const AUTH_ENDPOINT = "https://api.jacobhenderson.studio/auth";
   // Auth page URL (phone scans QR to reach this)
-  const AUTH_PAGE_URL = "https://jacobhenderson.studio/ascend/auth.html";
+  const AUTH_PAGE_URL = "https://ascend.jacobhenderson.studio/auth.html";
 
   // Generate unique token per terminal session to avoid cross-terminal collision
   const TERMINAL_TOKEN_KEY = "ascend_terminal_token_v1";
@@ -56,16 +56,16 @@
 
   // App destinations – always point to the live GitHub Pages workspace
   const ARTSTART_URL =
-    "https://jacobeugenehenderson.github.io/ascend-portal/artstart/job_intake.html"; // "New job" intake
+    "https://ascend.jacobhenderson.studio/artstart/job_intake.html"; // "New job" intake
   const ARTSTART_JOB_URL =
-    "https://jacobeugenehenderson.github.io/ascend-portal/artstart/assets/artstart.html"; // Existing job view
+    "https://ascend.jacobhenderson.studio/artstart/assets/artstart.html"; // Existing job view
   const COPYDESK_URL =
-    "https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/index.html";
+    "https://ascend.jacobhenderson.studio/copydesk/frontend/index.html";
   const COPYDESK_JOB_URL =
-    "https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/job.html";
+    "https://ascend.jacobhenderson.studio/copydesk/frontend/job.html";
     
   const CODEDESK_URL =
-    "https://jacobeugenehenderson.github.io/ascend-portal/codedesk/index.html";
+    "https://ascend.jacobhenderson.studio/codedesk/index.html";
   try { window.CODEDESK_URL = CODEDESK_URL; } catch(_e) {}
 
   // CodeDesk template manifest (static JSON; hopper templates must read from this)
@@ -115,7 +115,7 @@
 
   // FileRoom (output / delivery layer) - now points to Library
   const FILEROOM_URL =
-    "https://jacobeugenehenderson.github.io/ascend-portal/library/index.html";
+    "https://ascend.jacobhenderson.studio/library/index.html";
 
   const FILEROOM_API_BASE =
     "https://script.google.com/macros/s/AKfycbyZauMq2R6mIElFnAWVbWRDVgJqT713sT_PTdsixNi9IyZx-a3yiFT7bjk8XE_Fd709/exec";

@@ -45,7 +45,7 @@ function parseTranslationsJson_(val) {
 }
 
 // Canonical Ascend front-end (GitHub Pages; proxied later via CF)
-const FRONTEND_BASE_URL = 'https://jacobeugenehenderson.github.io/ascend-portal';
+const FRONTEND_BASE_URL = 'https://ascend.jacobhenderson.studio';
 const DEFAULT_CLIENT_NAME = 'Nordson';
 const OWNER_EMAIL = 'jacob@jacobhenderson.studio';   // Jacob's direct address
 const SYSTEM_EMAIL = 'ascend@jacobhenderson.studio'; // Ascend Studio system mailbox

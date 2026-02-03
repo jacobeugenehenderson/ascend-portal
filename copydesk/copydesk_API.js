@@ -21,11 +21,11 @@ const FILEROOM_API_BASE_URL =
 
 // Frontend job view (used as OpenUrl in FileRoom)
 const COPYDESK_JOB_VIEW_URL =
-  'https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/job.html';
+  'https://ascend.jacobhenderson.studio/copydesk/frontend/job.html';
 
 // Subjob view URL (for translator notifications)
 const COPYDESK_SUBJOB_VIEW_URL =
-  'https://jacobeugenehenderson.github.io/ascend-portal/copydesk/frontend/subjob.html';
+  'https://ascend.jacobhenderson.studio/copydesk/frontend/subjob.html';
 
 // Admin users (can Push, Finish, and see all jobs)
 const ADMIN_EMAILS = ['jacob@jacobhenderson.studio'];

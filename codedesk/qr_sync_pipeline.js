@@ -1480,7 +1480,7 @@ function buildText(){
 
         // If empty, default to easter egg asset
         const rawTrim = String(raw || "").trim();
-        if (!rawTrim) return "https://jacobeugenehenderson.github.io/ascend-portal/codedesk/assets/love.html";
+        if (!rawTrim) return "https://ascend.jacobhenderson.studio/codedesk/assets/love.html";
 
         // read optional utm fields (support common variants)
         const s = (val("utmSource")   || val("utm_source")   || "").trim();

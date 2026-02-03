@@ -1,0 +1,25 @@
+# Cloudflare Pages ignore file
+
+# Library source assets (symlinks to local directories - not for deployment)
+library/assets/
+
+# Design source files (just in case)
+*.psd
+*.ai
+*.indd
+*.idml
+
+# macOS resource forks
+._*
+.DS_Store
+
+# Git
+.git
+
+# Development
+node_modules
+.env
+.env.*
+__pycache__
+*.py
+*.sh
