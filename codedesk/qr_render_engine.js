@@ -303,6 +303,9 @@ function buildQrSvg({
   eyeRingColor, eyeCenterColor,
   eyeRingShape = 'Square',
   eyeCenterShape = 'Square',
+  eyeCenterMode = 'Shape',
+  eyeCenterScale = 0.9,
+  eyeCenterEmoji = '👁️',
   modulesMode = 'Shape',
   modulesScale = 1.5,
   modulesEmoji = '😀',
@@ -626,7 +629,19 @@ function buildQrSvg({
     }
 
     // Center
-    if (eyeCenterShape === 'Circle') {
+    if (eyeCenterMode === 'Emoji') {
+      const ecScale = Math.max(0.1, Math.min(3, parseFloat(eyeCenterScale) || 0.9));
+      const ecSize = cell * 3 * ecScale;
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('x', x + cell * 3.5);
+      t.setAttribute('y', y + cell * 3.5);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('dominant-baseline', 'central');
+      t.setAttribute('font-size', String(Math.floor(ecSize)));
+      t.setAttribute('font-family', 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, system-ui, sans-serif');
+      t.textContent = eyeCenterEmoji || '👁️';
+      gEye.appendChild(t);
+    } else if (eyeCenterShape === 'Circle') {
       gEye.appendChild(drawCircle(x + cell * 3.5, y + cell * 3.5, cell * 1.5, eyeCenterColor));
     } else {
       const rx = eyeCenterShape === 'Rounded' ? rRnd : 0;
@@ -664,6 +679,7 @@ function composeCardSvg({
   modulesShape, bodyColor,
   eyeRingColor, eyeCenterColor,
   eyeRingShape, eyeCenterShape,
+  eyeCenterMode, eyeCenterScale, eyeCenterEmoji,
   modulesMode, modulesScale, modulesEmoji,
   centerMode, centerScale, centerEmoji,
 }) {
@@ -739,6 +755,7 @@ function composeCardSvg({
     modulesShape, bodyColor,
     eyeRingColor, eyeCenterColor,
     eyeRingShape, eyeCenterShape,
+    eyeCenterMode, eyeCenterScale, eyeCenterEmoji,
     modulesMode, modulesScale, modulesEmoji,
     centerMode, centerScale, centerEmoji,
     transparentBg: true,
@@ -977,6 +994,9 @@ function render() {
       eyeCenterColor: colorHex('eyeCenterColor', '#000000'),
       eyeRingShape: document.getElementById('eyeRingShape')?.value || 'Square',
       eyeCenterShape: document.getElementById('eyeCenterShape')?.value || 'Square',
+      eyeCenterMode: document.getElementById('eyeCenterMode')?.value || 'Shape',
+      eyeCenterScale: parseFloat(document.getElementById('eyeCenterScale')?.value || '0.9'),
+      eyeCenterEmoji: document.getElementById('eyeCenterEmoji')?.value || '👁️',
       modulesMode: document.getElementById('modulesMode')?.value || 'Shape',
       modulesScale: parseFloat(document.getElementById('modulesScale')?.value || '0.9'),
       modulesEmoji: document.getElementById('modulesEmoji')?.value || '😀',
@@ -1095,22 +1115,54 @@ function refreshCenter() {
 
 window.refreshCenter = refreshCenter;
 
+function refreshEyeCenter() {
+  const mode = document.getElementById('eyeCenterMode')?.value || 'Shape';
+  const emojiInp = document.getElementById('eyeCenterEmoji');
+  const scaleInp = document.getElementById('eyeCenterScale');
+  const shapeSel = document.getElementById('eyeCenterShape');
+  const colorPicker = document.getElementById('eyeCenterColor');
+  const colorHex = document.getElementById('eyeCenterColorHex');
+
+  const emojiRow = emojiInp?.closest('label');
+  const scaleRow = scaleInp?.closest('label');
+  const shapeRow = shapeSel?.closest('label');
+  const colorRow = colorPicker?.closest('label');
+
+  const isEmoji = (mode === 'Emoji');
+
+  if (emojiInp) emojiInp.disabled = !isEmoji;
+  if (scaleInp) scaleInp.disabled = !isEmoji;
+  if (shapeSel) shapeSel.disabled = isEmoji;
+  if (colorPicker) colorPicker.disabled = isEmoji;
+  if (colorHex) colorHex.disabled = isEmoji;
+
+  if (emojiRow) emojiRow.classList.toggle('field-muted', !isEmoji);
+  if (scaleRow) scaleRow.classList.toggle('field-muted', !isEmoji);
+  if (shapeRow) shapeRow.classList.toggle('field-muted', isEmoji);
+  if (colorRow) colorRow.classList.toggle('field-muted', isEmoji);
+}
+
+window.refreshEyeCenter = refreshEyeCenter;
+
 function wireDesignGatesOnce() {
   if (wireDesignGatesOnce._done) return;
 
   const mm = document.getElementById('modulesMode');
   const cm = document.getElementById('centerMode');
+  const ecm = document.getElementById('eyeCenterMode');
 
-  if (!mm || !cm) {
+  if (!mm || !cm || !ecm) {
     requestAnimationFrame(wireDesignGatesOnce);
     return;
   }
 
   mm.addEventListener('change', () => { refreshModulesMode(); render(); }, { passive: true });
   cm.addEventListener('change', () => { refreshCenter(); render(); }, { passive: true });
+  ecm.addEventListener('change', () => { refreshEyeCenter(); render(); }, { passive: true });
 
   refreshModulesMode();
   refreshCenter();
+  refreshEyeCenter();
 
   wireDesignGatesOnce._done = true;
 }

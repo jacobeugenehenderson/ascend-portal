@@ -45,7 +45,8 @@ const CODEDESK_STYLE_IDS = [
   'moduleShape','eyeRingShape','eyeCenterShape',
 
   'modulesMode','modulesEmoji','modulesScale',
-  'centerMode','centerEmoji','centerScale'
+  'centerMode','centerEmoji','centerScale',
+  'eyeCenterMode','eyeCenterEmoji','eyeCenterScale'
 ];
 
 // Build a stable export payload (safe if some IDs don’t exist in DOM)
@@ -134,6 +135,7 @@ window.codedeskImportState = function codedeskImportState(state){
     try { typeof refreshBackground === 'function' && refreshBackground(); } catch(e){}
     try { typeof refreshModulesMode === 'function' && refreshModulesMode(); } catch(e){}
     try { typeof refreshCenter === 'function' && refreshCenter(); } catch(e){}
+    try { typeof refreshEyeCenter === 'function' && refreshEyeCenter(); } catch(e){}
 
     // 4) Restore ECC + font session if present (non-fatal)
     try {

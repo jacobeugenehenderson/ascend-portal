@@ -238,6 +238,29 @@
       </label>
     </div>
 
+    <!-- Eye Center fill -->
+    <div class="grid gap-3 sm:grid-cols-3">
+      <label class="text-sm">
+        <span class="block mb-1">Eye Center Fill</span>
+        <select id="eyeCenterMode" class="w-full rounded-md border px-3 py-2">
+          <option>Shape</option><option>Emoji</option>
+        </select>
+      </label>
+      <label class="text-sm" id="eyeCenterEmojiWrap">
+        <span class="block mb-1">Emoji</span>
+        <div class="flex gap-2">
+          <input id="eyeCenterEmoji" type="text" class="w-full rounded-md border px-3 py-2" value="👁️" />
+          <button type="button" data-emoji-target="eyeCenterEmoji" class="px-3 py-2 text-sm rounded-md border hover:bg-neutral-50">Pick…</button>
+        </div>
+      </label>
+      <label class="text-sm" id="eyeCenterScaleWrap">
+        <span class="block mb-1">Scale</span>
+        <div class="flex items-center gap-2">
+          <input id="eyeCenterScale" type="number" step="0.05" min="0.1" max="1.5" class="w-full rounded-md border px-3 py-2" value="0.9" />
+        </div>
+      </label>
+    </div>
+
     <!-- Module fill -->
     <div class="grid gap-3 sm:grid-cols-3">
       <label class="text-sm">
