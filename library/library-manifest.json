@@ -1,13 +1,13 @@
 {
-  "generated": "2026-02-05T12:36:17.210162",
+  "generated": "2026-02-05T12:42:09.027442",
   "sources": {
     "library": "/Volumes/Today/Nordson/LIBRARY",
     "publications": "/Volumes/Today/Nordson/PUBLICATIONS"
   },
   "stockFolder": "STOCK",
-  "totalAssets": 2516,
+  "totalAssets": 2517,
   "collections": {
-    "stock": 1831,
+    "stock": 1832,
     "publications": 685
   },
   "folders": [
@@ -5043,7 +5043,8 @@
       "isImage": true,
       "width": 12288,
       "height": 12288,
-      "dpi": 150
+      "dpi": 150,
+      "thumbUrl": "thumbs/112ab6117ba5.webp"
     },
     {
       "id": "eb11c760f3d3",
@@ -6248,7 +6249,8 @@
       "size": 721314,
       "modified": "2026-02-05T10:20:34.730000",
       "collection": "stock",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/bf142aeccc00.webp"
     },
     {
       "id": "19fde1b32737",
@@ -6325,7 +6327,8 @@
       "size": 1431390,
       "modified": "2026-02-05T10:27:17.880000",
       "collection": "stock",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/f91a6e7074cc.webp"
     },
     {
       "id": "1aa01926f580",
@@ -7166,7 +7169,8 @@
       "size": 6540770,
       "modified": "2026-02-05T10:16:09.880000",
       "collection": "stock",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/528aa6c74c63.webp"
     },
     {
       "id": "0e0d23bdf72d",
@@ -7178,7 +7182,8 @@
       "size": 2395718,
       "modified": "2026-02-05T10:23:56.760000",
       "collection": "stock",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/0e0d23bdf72d.webp"
     },
     {
       "id": "778fe5cacf9b",
@@ -7190,7 +7195,8 @@
       "size": 1010802,
       "modified": "2026-02-05T10:29:31.120000",
       "collection": "stock",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/778fe5cacf9b.webp"
     },
     {
       "id": "3588c3da3db3",
@@ -8317,7 +8323,8 @@
       "collection": "stock",
       "isImage": false,
       "width": 1600,
-      "height": 1600
+      "height": 1600,
+      "thumbUrl": "thumbs/9efae0b550a4.webp"
     },
     {
       "id": "181916712369",
@@ -10261,7 +10268,8 @@
       "isImage": true,
       "width": 576,
       "height": 768,
-      "dpi": 180
+      "dpi": 180,
+      "thumbUrl": "thumbs/15fc82f862a1.webp"
     },
     {
       "id": "d7b65e567710",
@@ -10276,7 +10284,8 @@
       "isImage": true,
       "width": 4000,
       "height": 3000,
-      "dpi": 180
+      "dpi": 180,
+      "thumbUrl": "thumbs/d7b65e567710.webp"
     },
     {
       "id": "f9138ce78c0c",
@@ -10291,7 +10300,8 @@
       "isImage": true,
       "width": 1024,
       "height": 768,
-      "dpi": 180
+      "dpi": 180,
+      "thumbUrl": "thumbs/f9138ce78c0c.webp"
     },
     {
       "id": "40c3a58ce52c",
@@ -10306,7 +10316,8 @@
       "isImage": true,
       "width": 3024,
       "height": 4032,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/40c3a58ce52c.webp"
     },
     {
       "id": "44e6807de26f",
@@ -10321,7 +10332,8 @@
       "isImage": true,
       "width": 3024,
       "height": 4032,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/44e6807de26f.webp"
     },
     {
       "id": "9acdfd2055c5",
@@ -10662,7 +10674,8 @@
       "size": 423291,
       "modified": "2026-02-02T22:08:53.380000",
       "collection": "stock",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/0880d9c38510.webp"
     },
     {
       "id": "66e6b65a5bc1",
@@ -10674,7 +10687,8 @@
       "size": 490102,
       "modified": "2026-02-03T09:47:49.030000",
       "collection": "stock",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/66e6b65a5bc1.webp"
     },
     {
       "id": "0c83429c1335",
@@ -10687,6 +10701,18 @@
       "modified": "2026-02-03T09:47:58.220000",
       "collection": "stock",
       "isImage": true
+    },
+    {
+      "id": "7e6070158b0c",
+      "name": "Executive Leadership Invite Explore",
+      "filename": "Executive Leadership Invite Explore.ai",
+      "path": "library/SHOW-COLLATERAL/Executive Leadership Invite Explore.ai",
+      "folder": "SHOW-COLLATERAL",
+      "ext": "ai",
+      "size": 733567,
+      "modified": "2026-02-05T12:35:07.410000",
+      "collection": "stock",
+      "isImage": false
     },
     {
       "id": "74b143119d27",
@@ -10733,7 +10759,8 @@
       "isImage": true,
       "width": 600,
       "height": 150,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/e0c10c9c7f3a.webp"
     },
     {
       "id": "5479c0246fdf",
@@ -10748,7 +10775,8 @@
       "isImage": true,
       "width": 1080,
       "height": 1080,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/5479c0246fdf.webp"
     },
     {
       "id": "f1977b7cfddd",
@@ -10763,7 +10791,8 @@
       "isImage": true,
       "width": 1200,
       "height": 900,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/f1977b7cfddd.webp"
     },
     {
       "id": "8ed655a7c97e",
@@ -10778,7 +10807,8 @@
       "isImage": true,
       "width": 300,
       "height": 250,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/8ed655a7c97e.webp"
     },
     {
       "id": "55ca4b11f7b6",
@@ -27252,7 +27282,8 @@
       "size": 208225,
       "modified": "2026-01-27T13:23:24.400000",
       "collection": "stock",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/3476ca3a2444.webp"
     },
     {
       "id": "c2a6994d9bb0",
@@ -29063,7 +29094,8 @@
       "collection": "publications",
       "isImage": false,
       "width": 250,
-      "height": 250
+      "height": 250,
+      "thumbUrl": "thumbs/b5887338f00f.webp"
     },
     {
       "id": "5adca9947437",
@@ -29105,7 +29137,8 @@
       "collection": "publications",
       "isImage": false,
       "width": 2100,
-      "height": 1350
+      "height": 1350,
+      "thumbUrl": "thumbs/c205797c48fc.webp"
     },
     {
       "id": "117f20b32011",
@@ -29119,7 +29152,8 @@
       "collection": "publications",
       "isImage": false,
       "width": 2100,
-      "height": 1350
+      "height": 1350,
+      "thumbUrl": "thumbs/117f20b32011.webp"
     },
     {
       "id": "bf97896578c5",
@@ -29131,7 +29165,8 @@
       "size": 1732563,
       "modified": "2026-02-03T15:45:28.920000",
       "collection": "publications",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/bf97896578c5.webp"
     },
     {
       "id": "95ca77ebe88a",
@@ -29145,7 +29180,8 @@
       "collection": "publications",
       "isImage": false,
       "width": 250,
-      "height": 250
+      "height": 250,
+      "thumbUrl": "thumbs/95ca77ebe88a.webp"
     },
     {
       "id": "b6bf24c4e275",
@@ -29160,7 +29196,8 @@
       "isImage": true,
       "width": 250,
       "height": 250,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/b6bf24c4e275.webp"
     },
     {
       "id": "e7062b4e77f1",
@@ -29174,7 +29211,8 @@
       "collection": "publications",
       "isImage": false,
       "width": 960,
-      "height": 300
+      "height": 300,
+      "thumbUrl": "thumbs/e7062b4e77f1.webp"
     },
     {
       "id": "433a214b48dc",
@@ -29189,7 +29227,8 @@
       "isImage": true,
       "width": 960,
       "height": 300,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/433a214b48dc.webp"
     },
     {
       "id": "82bc0d09c7d2",
@@ -29203,7 +29242,8 @@
       "collection": "publications",
       "isImage": false,
       "width": 2475,
-      "height": 3300
+      "height": 3300,
+      "thumbUrl": "thumbs/82bc0d09c7d2.webp"
     },
     {
       "id": "ebf8d6b20bb1",
@@ -29215,7 +29255,8 @@
       "size": 3346753,
       "modified": "2026-02-04T10:48:41.080000",
       "collection": "publications",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/ebf8d6b20bb1.webp"
     },
     {
       "id": "afc6a8e35279",
@@ -29227,7 +29268,8 @@
       "size": 3506225,
       "modified": "2026-02-04T10:57:46.360000",
       "collection": "publications",
-      "isImage": false
+      "isImage": false,
+      "thumbUrl": "thumbs/afc6a8e35279.webp"
     },
     {
       "id": "8dfc0dc47ba4",
@@ -38668,7 +38710,8 @@
       "collection": "publications",
       "isImage": false,
       "width": 448,
-      "height": 448
+      "height": 448,
+      "thumbUrl": "thumbs/46d911c43465.webp"
     },
     {
       "id": "bd81a0ecb800",
@@ -38683,7 +38726,8 @@
       "isImage": true,
       "width": 448,
       "height": 448,
-      "dpi": 72
+      "dpi": 72,
+      "thumbUrl": "thumbs/bd81a0ecb800.webp"
     },
     {
       "id": "74877259af07",
