@@ -69,6 +69,31 @@ your hand and fails on everyone else's.
 
 ---
 
+## Two ways to make an SMS code, and when each is right
+
+⭐ **The URL type already carries an `sms:` URI**, and this is often the quickest path:
+paste the whole thing into **URL** and leave the UTM fields empty. `case "URL"` returns
+the string verbatim when no UTM is set, so nothing is parsed and nothing is added.
+
+⛔ **But do not fill a UTM field on a non-http URI.** That branch runs the string through
+`new URL()` and `searchParams.set`, which re-encodes `%20` as `+` and appends the param:
+
+    sms:+18773351917?body=Hi%20-%20about…      ← what you pasted
+    sms:+18773351917?body=Hi+-+about…&utm_source=yardsign   ← what you get
+
+Spaces can render as literal `+` in the message body, and the UTM lands in the body too.
+
+⚠️ **So UTM is not the attribution channel for an SMS code.** Put the placement in the
+body text — `…(theward.online)` vs `…(yard sign)` — which is the only field the recipient
+and the sender both see anyway, and the only one you control at all (US carriers do not
+allow an alphanumeric sender ID, so the "from" is always a bare number).
+
+**The Message type** is the other path, and the better one once you want the number and
+the text as separate fields — it builds the URI for you and sanitises the number.
+⛔ Never paste a whole URI into Message's **Phone #** field; it is a number field.
+
+---
+
 ## Verifying a code before it ships
 
 ⛔ **Do not judge a QR by looking at it.** Decode it, and note how hard it was:
