@@ -1565,10 +1565,21 @@ function buildText(){
         ].filter(Boolean).join("\n");
       }
       case "Message": {
-        const num = val("smsNumber") || "5551234567";
-        const txt = encodeURIComponent(val("smsText") || "Hello");
-        // SMS URI (broadly supported): sms:+15551234567?&body=Hello
-        return `sms:${num}?&body=${txt}`;
+        // ⛔ `?body=`, NOT `?&body=`. RFC 5724 is `sms:<number>?body=<text>`; the stray
+        // ampersand made the whole thing a malformed query, and a pasted URI in the
+        // number field turned into `sms:N?body=A?&body=B` — two bodies, and the phone
+        // takes the last one. That is the "it still says Hello" report, 2026-08-29.
+        // ⛔ NO PLACEHOLDER FALLBACKS. `|| "5551234567"` and `|| "Hello"` produced a
+        // WORKING QR for an EMPTY form — a code that scans, addresses a stranger's
+        // number and says Hello. A blank field must yield a blank payload so the
+        // preview is visibly empty, not plausibly wrong.
+        // ⭐ Same construction as buildText()'s SMS case in qr_ui_toolkit.js, which
+        // was already right; this one is the live path because the manifest's type is
+        // "Message", so the correct twin was never reached. Keep them identical.
+        const num = String(val("smsNumber") || "").trim().replace(/[^\d+]/g, "");
+        const txt = String(val("smsText") || "").trim();
+        if (!num) return "";
+        return txt ? `sms:${num}?body=${encodeURIComponent(txt)}` : `sms:${num}`;
       }
       case "Event": {
         // Very light VEVENT for preview
