@@ -1490,6 +1490,34 @@ function buildText(){
         // If nothing extra was entered, return as-is
         if (!s && !m && !c) return rawTrim;
 
+        // ⛔ UTM IS FOR http(s) ONLY, AND THE OLD CODE CORRUPTED EVERYTHING ELSE.
+        // `new URL()` parses an `sms:`/`mailto:`/`tel:`/`geo:` URI perfectly well, so
+        // the try-branch below did NOT throw — it re-encoded the query and appended the
+        // param, which on an SMS code means the body arrives with `+` where its spaces
+        // were and `&utm_source=…` inside the message. Measured 2026-08-29:
+        //   in   sms:+18773351917?body=Hi%20-%20about…
+        //   out  sms:+18773351917?body=Hi+-+about…&utm_source=yardsign
+        // ⭐ There is nowhere to put a campaign tag on a non-web scheme — an SMS code's
+        // only attribution channel is the body text the sender can see. So the tag is
+        // DROPPED rather than smuggled into the payload, and it says so: silently
+        // ignoring would be a quieter version of the same bug.
+        const scheme = (rawTrim.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/) || [,''])[1].toLowerCase();
+        if (scheme && scheme !== 'http' && scheme !== 'https') {
+          const note = `UTM tags are ignored on a "${scheme}:" code — there is no web query to carry them. `
+                     + `Put the placement in the message text instead.`;
+          console.warn('[codedesk] ⛔ ' + note, { payload: rawTrim });
+          // Mark the fields the operator filled, so this is visible in the form and not
+          // only in a console nobody has open.
+          try {
+            ['utmSource','utm_source','utmMedium','utm_medium','utmCampaign','utm_campaign']
+              .forEach(function(id){
+                const el = document.getElementById(id);
+                if (el && String(el.value || '').trim()) { el.title = note; el.dataset.ignored = '1'; }
+              });
+          } catch (_e) {}
+          return rawTrim;
+        }
+
         try {
           // Robust path when rawTrim is a valid absolute URL
           const u = new URL(rawTrim);

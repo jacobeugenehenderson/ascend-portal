@@ -75,13 +75,17 @@ your hand and fails on everyone else's.
 paste the whole thing into **URL** and leave the UTM fields empty. `case "URL"` returns
 the string verbatim when no UTM is set, so nothing is parsed and nothing is added.
 
-⛔ **But do not fill a UTM field on a non-http URI.** That branch runs the string through
-`new URL()` and `searchParams.set`, which re-encodes `%20` as `+` and appends the param:
+✅ **A UTM tag on a non-http URI is now DROPPED, not smuggled in** *(guard added
+2026-08-29)*. It used to corrupt the payload: `new URL()` parses `sms:` perfectly well, so
+the branch did not throw — it re-encoded the query and appended the param.
 
-    sms:+18773351917?body=Hi%20-%20about…      ← what you pasted
-    sms:+18773351917?body=Hi+-+about…&utm_source=yardsign   ← what you get
+    sms:+18773351917?body=Hi%20-%20about…                     what you pasted
+    sms:+18773351917?body=Hi+-+about…&utm_source=yardsign     what you used to get
 
-Spaces can render as literal `+` in the message body, and the UTM lands in the body too.
+Spaces arrived as literal `+` in the message body, and the UTM landed in the body too.
+⛔ The guard **says so** — a console warning, and the UTM inputs you filled get a `title`
+explaining why they were ignored — because silently skipping would be a quieter version
+of the same bug. `http`/`https` are untouched, and so is a relative path like `/host`.
 
 ⚠️ **So UTM is not the attribution channel for an SMS code.** Put the placement in the
 body text — `…(theward.online)` vs `…(yard sign)` — which is the only field the recipient
